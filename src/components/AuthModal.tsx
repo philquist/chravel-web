@@ -16,9 +16,16 @@ interface AuthModalProps {
    * return directly to the join route after Google/Apple complete the redirect.
    */
   oauthReturnTo?: string;
+  onAuthSuccess?: () => void;
 }
 
-export const AuthModal = ({ isOpen, onClose, initialMode, oauthReturnTo }: AuthModalProps) => {
+export const AuthModal = ({
+  isOpen,
+  onClose,
+  initialMode,
+  oauthReturnTo,
+  onAuthSuccess,
+}: AuthModalProps) => {
   const { signIn, signInWithGoogle, signInWithApple, signUp, resetPassword, isLoading, user } =
     useAuth();
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -55,6 +62,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode, oauthReturnTo }: AuthM
       }
       setAwaitingAuth(false);
       onClose();
+      onAuthSuccess?.();
     }
   }, [user, isOpen, onClose]);
 
