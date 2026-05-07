@@ -105,6 +105,30 @@ const clearAllCaches = (): void => {
   }
 };
 
+const isPublicAnonymousBootstrapRoute = (): boolean => {
+  const path = window.location.pathname;
+  const isPublicRoute =
+    path === '/' ||
+    path.startsWith('/auth') ||
+    path.startsWith('/reset-password') ||
+    path.startsWith('/join') ||
+    path.startsWith('/j/') ||
+    path.startsWith('/accept-invite') ||
+    path.startsWith('/teams') ||
+    path.startsWith('/recs') ||
+    path.startsWith('/advertiser') ||
+    path.startsWith('/privacy') ||
+    path.startsWith('/support') ||
+    path.startsWith('/terms') ||
+    path.startsWith('/sms-terms') ||
+    path.startsWith('/delete-account') ||
+    path.startsWith('/demo') ||
+    path.startsWith('/healthz');
+
+  const likelyAuthenticated = Boolean(safeLocalStorageGet('chravel-auth-session'));
+  return isPublicRoute && !likelyAuthenticated;
+};
+
 // Native shell handles its own caching and lifecycle — service workers add startup
 // cost (registration, activation) without benefit inside the WebView.
 const inNativeShell = isChravelNativeShell();
@@ -138,7 +162,12 @@ if (isLovablePreview()) {
   if (storedVersion !== null && storedVersion !== currentVersion) {
     clearAllCaches();
     safeLocalStorageSet(STORED_VERSION_KEY, currentVersion);
-    window.location.reload();
+
+    if (!isPublicAnonymousBootstrapRoute()) {
+      window.location.reload();
+    }
+    // Tradeoff: on public anonymous routes we accept a potentially stale auth session snapshot
+    // to avoid paying a second cold load on landing after cache/version invalidation.
   } else {
     safeLocalStorageSet(STORED_VERSION_KEY, currentVersion);
   }
