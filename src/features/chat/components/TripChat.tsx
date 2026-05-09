@@ -848,7 +848,7 @@ export const TripChat = React.memo(
       messagesWithFailed.map(message => ({
         id: message.id,
         text: message.text || '',
-        linkPreview: message.linkPreview,
+        linkPreview: (message as any).linkPreview,
       })),
     );
 
@@ -856,7 +856,7 @@ export const TripChat = React.memo(
       () =>
         messagesWithFailed.map(message => ({
           ...message,
-          linkPreview: message.linkPreview || linkPreviewFallbacks[message.id],
+          linkPreview: (message as any).linkPreview || linkPreviewFallbacks[message.id],
         })),
       [messagesWithFailed, linkPreviewFallbacks],
     );
