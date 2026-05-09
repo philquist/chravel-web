@@ -35,6 +35,8 @@ vi.mock('@/hooks/useTripMembers', () => ({
   }),
 }));
 
+let mockTripChatError: Error | null = null;
+
 vi.mock('../../hooks/useTripChat', () => ({
   useTripChat: () => ({
     messages: [
@@ -51,7 +53,7 @@ vi.mock('../../hooks/useTripChat', () => ({
       },
     ],
     isLoading: false,
-    error: null,
+    error: mockTripChatError,
     sendMessageAsync: vi.fn(),
     isCreating: false,
     loadMore: vi.fn(),
@@ -60,6 +62,12 @@ vi.mock('../../hooks/useTripChat', () => ({
     toggleReaction: vi.fn(),
     reload: vi.fn(),
     activeChannel: { state: { read: {} } },
+  }),
+}));
+vi.mock('../../hooks/usePayments', () => ({
+  usePayments: () => ({
+    paymentMethods: [],
+    settlementSuggestions: 'bad-shape',
   }),
 }));
 
@@ -192,6 +200,7 @@ vi.mock('../MessageItem', () => ({
 describe('TripChat render path', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTripChatError = null;
   });
 
   const renderSubject = (props?: React.ComponentProps<typeof TripChat>) => {
@@ -271,4 +280,47 @@ describe('TripChat render path', () => {
       expect(messageTypeBarProps.broadcastCount).toBe(0);
     },
   );
+
+  it('keeps rendering messages when settlement-like secondary data is non-array', () => {
+    renderSubject();
+
+    expect(screen.getByTestId('message-item-msg-1')).toBeInTheDocument();
+    expect(screen.queryByText('Something went wrong in Chat')).not.toBeInTheDocument();
+  });
+
+  it('keeps chat mounted across provider re-render with cached messages', () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { rerender } = render(
+      <QueryClientProvider client={queryClient}>
+        <TripChat tripId="trip-123" />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId('message-item-msg-1')).toBeInTheDocument();
+
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <TripChat tripId="trip-123" isPro={false} />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId('message-item-msg-1')).toBeInTheDocument();
+  });
+
+  it('logs technical chat error details but only renders a generic user-facing message', () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockTripChatError = new Error('upstream stacktrace details');
+
+    renderSubject();
+
+    expect(screen.getByText('Something went wrong in Chat')).toBeInTheDocument();
+    expect(screen.queryByText('upstream stacktrace details')).not.toBeInTheDocument();
+    expect(consoleErrorSpy).toHaveBeenCalledWith('[TripChat] Chat load failure', {
+      tripId: 'trip-123',
+      message: 'upstream stacktrace details',
+    });
+
+    mockTripChatError = null;
+    consoleErrorSpy.mockRestore();
+  });
 });
