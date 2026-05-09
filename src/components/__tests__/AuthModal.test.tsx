@@ -146,7 +146,18 @@ describe('AuthModal', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('auth-modal-backdrop')).toHaveClass('items-center');
+        expect(screen.getByTestId('auth-modal-content')).toHaveClass('items-center');
+      });
+    });
+
+    it('shows premium ChravelApp branding above the sign-in sheet', async () => {
+      render(<AuthModal isOpen={true} onClose={mockOnClose} />, {
+        wrapper: createTestWrapper(),
+      });
+
+      await waitFor(() => {
+        const brand = screen.getByText('ChravelApp');
+        expect(brand).toHaveClass('gold-gradient-text');
       });
     });
 

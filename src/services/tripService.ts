@@ -342,10 +342,11 @@ export const tripService = {
 
       if (createdError) throw createdError;
 
-      const allTrips = (createdTrips || []).map(trip => ({
-        ...trip,
-        membership_status: 'owner' as const,
-      }));
+      const allTrips: Array<Record<string, any> & { id: string; membership_status: 'owner' | 'member' }> =
+        (createdTrips || []).map(trip => ({
+          ...trip,
+          membership_status: 'owner' as const,
+        }));
 
       // Fetch trips where user is an active member (not creator).
       // trip_members table does not have a status column — query without it.
@@ -439,7 +440,7 @@ export const tripService = {
           trip_members: [{ count }],
           trip_events_places: [{ count: placesCountMap.get(trip.id) || 0 }],
         };
-      });
+      }) as unknown as Trip[];
     } catch (error) {
       if (import.meta.env.DEV) {
         console.error('Error fetching trips:', error);

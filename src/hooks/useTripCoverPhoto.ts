@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { tripKeys } from '@/lib/queryKeys';
 import { isBlobOrDataUrl } from '@/utils/mediaUtils';
-import { normalizeTripCoverUrl } from '@/utils/tripCoverStorage';
+import { appendCoverCacheBust, normalizeTripCoverUrl } from '@/utils/tripCoverStorage';
 import { useAuth } from './useAuth';
 import { useDemoMode } from './useDemoMode';
 import { demoModeService } from '@/services/demoModeService';
@@ -24,12 +24,23 @@ export const useTripCoverPhoto = (
   const [coverDisplayMode, setCoverDisplayMode] = useState<CoverDisplayMode>(initialDisplayMode);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const invalidateTripCoverQueries = () => {
-    queryClient.invalidateQueries({ queryKey: tripKeys.all });
-    queryClient.invalidateQueries({ queryKey: ['proTrips'] });
-    queryClient.invalidateQueries({ queryKey: ['events'] });
-    queryClient.invalidateQueries({ queryKey: tripKeys.detail(tripId) });
-  };
+  const invalidateTripCoverQueries = useCallback(async () => {
+    // Refetch detail immediately so the open page reflects new cover bytes,
+    // and invalidate every list surface that renders trip cards.
+    await Promise.all([
+      queryClient.refetchQueries({
+        predicate: query => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key[0] === 'trip' && key[1] === tripId;
+        },
+      }),
+      queryClient.invalidateQueries({ queryKey: tripKeys.all }), // ['trips', ...]
+      queryClient.invalidateQueries({ queryKey: ['proTrips'] }),
+      queryClient.invalidateQueries({ queryKey: ['events'] }),
+      queryClient.invalidateQueries({ queryKey: ['pending-request-trip-cards'] }),
+      queryClient.invalidateQueries({ queryKey: tripKeys.members(tripId) }),
+    ]);
+  }, [queryClient, tripId]);
 
   // Keep local state aligned with TanStack Query / parent props (detail key is ['trip', id, userId], not ['trips'])
   useEffect(() => {
@@ -49,8 +60,7 @@ export const useTripCoverPhoto = (
    */
   const updateTripCacheWithCoverPhoto = useCallback(
     (photoUrl: string | null) => {
-      // Update all trip detail queries that match this tripId
-      // Uses predicate to match ['trip', tripId, ...] regardless of userId suffix
+      // Trip detail queries: ['trip', tripId, ...userIdSuffix]
       queryClient.setQueriesData<Trip | null>(
         {
           predicate: query => {
@@ -66,13 +76,29 @@ export const useTripCoverPhoto = (
         },
       );
 
-      // Also update trip list entries
+      // Consumer trip lists: ['trips', userId, isDemoMode] — Trip[] with cover_image_url
       queryClient.setQueriesData<Trip[]>({ queryKey: tripKeys.all }, old => {
         if (!Array.isArray(old)) return old;
         return old.map(trip =>
           trip.id === tripId ? { ...trip, cover_image_url: photoUrl } : trip,
         );
       });
+
+      // Pro trips & events lists use a mapped `coverPhoto` field (not cover_image_url).
+      // Patch any list whose entries reference this tripId so cards update instantly.
+      const patchMappedList = (key: readonly unknown[]) => {
+        queryClient.setQueriesData<unknown>({ queryKey: key as any }, (old: any) => {
+          if (!Array.isArray(old)) return old;
+          return old.map((item: any) =>
+            item && item.id === tripId
+              ? { ...item, coverPhoto: photoUrl ?? undefined, cover_image_url: photoUrl }
+              : item,
+          );
+        });
+      };
+      patchMappedList(['proTrips']);
+      patchMappedList(['events']);
+      patchMappedList(['pending-request-trip-cards']);
     },
     [queryClient, tripId],
   );
@@ -154,23 +180,19 @@ export const useTripCoverPhoto = (
         return false;
       }
 
-      // Update local state immediately
-      setCoverPhoto(normalizedPhotoUrl);
+      // Update local state immediately with a cache-busted URL so any cached
+      // <img> bytes are bypassed across web/PWA/iOS/Android.
+      const bustedPhotoUrl = appendCoverCacheBust(normalizedPhotoUrl, Date.now()) ?? normalizedPhotoUrl;
+      setCoverPhoto(bustedPhotoUrl);
 
       // Update query cache using predicate matching for all trip detail queries
-      updateTripCacheWithCoverPhoto(normalizedPhotoUrl);
+      updateTripCacheWithCoverPhoto(bustedPhotoUrl);
 
       // Invalidate and refetch to ensure consistency
       // Using refetchQueries ensures immediate fresh data rather than background refetch
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: tripKeys.all }),
-        queryClient.refetchQueries({
-          predicate: query => {
-            const key = query.queryKey;
-            return Array.isArray(key) && key[0] === 'trip' && key[1] === tripId;
-          },
-        }),
-      ]);
+      // Invalidate every surface that renders this trip's cover (detail page,
+      // dashboards, pro/event lists, pending requests, members) and refetch detail.
+      await invalidateTripCoverQueries();
 
       toast.success('Cover photo updated');
       return true;
@@ -238,26 +260,10 @@ export const useTripCoverPhoto = (
         }
       }
 
-      // Update local state
+      // Update local state, then patch caches and invalidate every surface.
       setCoverPhoto(undefined);
-      queryClient.setQueriesData({ queryKey: tripKeys.detail(tripId) }, old =>
-        old && typeof old === 'object' ? { ...old, cover_image_url: null } : old,
-      );
-      invalidateTripCoverQueries();
-
-      // Update query cache
       updateTripCacheWithCoverPhoto(null);
-
-      // Invalidate and refetch
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: tripKeys.all }),
-        queryClient.refetchQueries({
-          predicate: query => {
-            const key = query.queryKey;
-            return Array.isArray(key) && key[0] === 'trip' && key[1] === tripId;
-          },
-        }),
-      ]);
+      await invalidateTripCoverQueries();
 
       toast.success('Cover photo removed');
       return true;
@@ -315,15 +321,8 @@ export const useTripCoverPhoto = (
       );
 
       // Invalidate and refetch
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: tripKeys.all }),
-        queryClient.refetchQueries({
-          predicate: query => {
-            const key = query.queryKey;
-            return Array.isArray(key) && key[0] === 'trip' && key[1] === tripId;
-          },
-        }),
-      ]);
+      // Invalidate detail + every list surface so cards reflect the new fit.
+      await invalidateTripCoverQueries();
 
       return true;
     } catch (error) {

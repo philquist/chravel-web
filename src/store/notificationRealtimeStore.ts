@@ -20,6 +20,8 @@ export interface NotificationItem {
     | 'payment'
     | 'invite'
     | 'join_request'
+    | 'join_approved'
+    | 'join_rejected'
     | 'basecamp'
     | 'system';
   title: string;

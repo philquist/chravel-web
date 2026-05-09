@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NotificationsDialog } from '../home/NotificationsDialog';
 import { MemoryRouter } from 'react-router-dom';
+import * as joinRequestMutations from '@/lib/joinRequestMutations';
 
 const mockNavigate = vi.fn();
 const mockMaybeSingle = vi.fn();
@@ -32,6 +34,7 @@ vi.mock('@/hooks/useDemoMode', () => ({
 const mockMarkAsRead = vi.fn();
 const mockMarkAllAsRead = vi.fn();
 const mockClearAll = vi.fn();
+const mockDeleteNotification = vi.fn();
 
 let mockNotifications: unknown[] = [];
 let mockUnreadCount = 0;
@@ -43,7 +46,13 @@ vi.mock('@/hooks/useNotificationRealtime', () => ({
     markAsRead: mockMarkAsRead,
     markAllAsRead: mockMarkAllAsRead,
     clearAll: mockClearAll,
+    deleteNotification: mockDeleteNotification,
   }),
+}));
+
+vi.mock('@/lib/joinRequestMutations', () => ({
+  approveJoinRequestById: vi.fn().mockResolvedValue(undefined),
+  rejectJoinRequestById: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/integrations/supabase/client', () => ({
@@ -54,10 +63,15 @@ vi.mock('@/integrations/supabase/client', () => ({
 
 function renderDialog(open: boolean) {
   const onOpenChange = vi.fn();
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   const result = render(
-    <MemoryRouter>
-      <NotificationsDialog open={open} onOpenChange={onOpenChange} />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <NotificationsDialog open={open} onOpenChange={onOpenChange} />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
   return { ...result, onOpenChange };
 }
@@ -98,6 +112,11 @@ describe('NotificationsDialog', () => {
         tripName: 'Coachella',
         timestamp: '4 days ago',
         isRead: false,
+        data: {
+          trip_id: 'trip-1',
+          request_id: 'req-1',
+          trip_type: 'consumer',
+        },
       },
     ];
     mockUnreadCount = 1;
@@ -105,6 +124,59 @@ describe('NotificationsDialog', () => {
     renderDialog(true);
     expect(screen.getByText('Alice wants to join Trip')).toBeInTheDocument();
     expect(screen.getByText('Coachella')).toBeInTheDocument();
+    expect(screen.getByLabelText('Accept join request')).toBeInTheDocument();
+    expect(screen.getByLabelText('Deny join request')).toBeInTheDocument();
+  });
+
+  it('does not show inline join actions when request_id metadata is missing', () => {
+    mockNotifications = [
+      {
+        id: 'n-legacy',
+        type: 'join_request',
+        title: 'Legacy join notice',
+        description: 'No request id',
+        tripId: 'trip-1',
+        tripName: 'Coachella',
+        timestamp: '4 days ago',
+        isRead: false,
+        data: { trip_id: 'trip-1', trip_type: 'consumer' },
+      },
+    ];
+
+    renderDialog(true);
+    expect(screen.queryByLabelText('Accept join request')).not.toBeInTheDocument();
+  });
+
+  it('accepts join request from notification actions and clears the notification', async () => {
+    mockNotifications = [
+      {
+        id: 'n-1',
+        type: 'join_request',
+        title: 'Alice wants to join Trip',
+        description: 'Tap to approve or reject',
+        tripId: 'trip-1',
+        tripName: 'Coachella',
+        timestamp: '4 days ago',
+        isRead: false,
+        data: {
+          trip_id: 'trip-1',
+          request_id: 'req-uuid-1',
+          trip_type: 'consumer',
+        },
+      },
+    ];
+    mockDeleteNotification.mockResolvedValue(undefined);
+
+    renderDialog(true);
+    fireEvent.click(screen.getByLabelText('Accept join request'));
+
+    await waitFor(() => {
+      expect(joinRequestMutations.approveJoinRequestById).toHaveBeenCalledWith(expect.any(Object), {
+        requestId: 'req-uuid-1',
+        tripId: 'trip-1',
+      });
+      expect(mockDeleteNotification).toHaveBeenCalledWith('n-1');
+    });
   });
 
   it('navigates mention notification to consumer chat with metadata-first routing + handshake state', async () => {

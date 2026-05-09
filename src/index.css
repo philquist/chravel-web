@@ -1157,8 +1157,11 @@
   .group:hover .group-hover\:gold-gradient-text {
     background: linear-gradient(135deg, #533517 0%, #c49746 40%, #feeaa5 70%, #c49746 100%);
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-fill-color: transparent;
+    color: transparent;
+    display: inline-block;
   }
 
   .accent-ring-idle {

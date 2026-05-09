@@ -65,3 +65,26 @@ export function toDbPaymentInsert(
       []) as unknown as Database['public']['Tables']['trip_payment_messages']['Insert']['payment_methods'],
   };
 }
+
+function isPaymentMessage(value: unknown): value is PaymentMessage {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  const candidate = value as Partial<PaymentMessage>;
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.tripId === 'string' &&
+    typeof candidate.amount === 'number' &&
+    typeof candidate.description === 'string' &&
+    typeof candidate.isSettled === 'boolean'
+  );
+}
+
+export function normalizePaymentMessages(rawValue: unknown): PaymentMessage[] {
+  if (!Array.isArray(rawValue)) {
+    return [];
+  }
+
+  return rawValue.filter(isPaymentMessage);
+}
