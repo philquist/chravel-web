@@ -173,8 +173,19 @@ export const TripCoverPhotoUpload = ({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected: rejections => {
+      const first = rejections[0]?.errors[0];
+      if (!first) return;
+      if (first.code === 'file-too-large') {
+        toast.error('That photo is over 10MB. Please pick a smaller image.');
+      } else if (first.code === 'file-invalid-type') {
+        toast.error('Unsupported file type. Use JPG, PNG, GIF, or WebP.');
+      } else {
+        toast.error(first.message || "We couldn't use that photo.");
+      }
+    },
     accept: {
-      'image/*': ['.png', '.jpg', '.jpeg', '.gif'],
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
     },
     maxSize: 10 * 1024 * 1024, // 10MB
     multiple: false,
