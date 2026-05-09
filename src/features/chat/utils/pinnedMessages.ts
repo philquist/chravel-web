@@ -5,7 +5,7 @@ export type PinnedChatMessage = ChatMessage & {
   pinnedAt?: string;
 };
 
-export function isPinnedMessage(message: Pick<PinnedChatMessage, 'isPinned'>) {
+export function isPinnedMessage<T extends { isPinned?: boolean }>(message: T) {
   return message.isPinned === true;
 }
 
