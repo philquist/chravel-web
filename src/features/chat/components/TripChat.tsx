@@ -505,9 +505,9 @@ export const TripChat = React.memo(
         messages: liveMessages,
         tripMembers,
         currentUserId: user?.id,
-        channelReadState: streamActiveChannel?.state?.read as Record<
+        channelReadState: streamActiveChannel?.state?.read as unknown as Record<
           string,
-          { last_read?: string }
+          { last_read?: string | Date }
         >,
       });
     }, [
