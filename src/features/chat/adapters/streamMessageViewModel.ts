@@ -178,13 +178,14 @@ const buildReadStatuses = (params: {
 
     const readDate = new Date(readAt);
     if (Number.isNaN(readDate.getTime()) || readDate < messageDate) return;
+    const readAtIso = readAt instanceof Date ? readAt.toISOString() : readAt;
 
     statuses.push({
       id: `${messageId}:${readerId}`,
       message_id: messageId,
       user_id: readerId,
-      read_at: readAt,
-      created_at: readAt,
+      read_at: readAtIso,
+      created_at: readAtIso,
     });
   });
 
