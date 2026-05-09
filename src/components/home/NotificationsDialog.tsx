@@ -50,6 +50,8 @@ interface Notification {
     | 'payment'
     | 'invite'
     | 'join_request'
+    | 'join_approved'
+    | 'join_rejected'
     | 'basecamp'
     | 'system';
   title: string;
@@ -338,6 +340,7 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
     );
 
     if (!resolvedTripId) {
+      toast.error('Unable to open this trip. It may have been deleted.');
       onOpenChange(false);
       return;
     }
