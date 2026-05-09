@@ -9,7 +9,7 @@ export interface TripMemberSummary {
 }
 
 interface StreamReadState {
-  last_read?: string;
+  last_read?: string | Date;
 }
 
 interface StreamAttachment {
@@ -44,7 +44,6 @@ export interface StreamMessageViewModel {
   pinnedAt?: string;
   isEdited: boolean;
   editedAt?: string;
-  isPinned: boolean;
   tags: string[];
   message_type?: string;
   system_event_type?: string;
