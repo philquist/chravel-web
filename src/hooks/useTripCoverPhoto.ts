@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { tripKeys } from '@/lib/queryKeys';
 import { isBlobOrDataUrl } from '@/utils/mediaUtils';
-import { normalizeTripCoverUrl } from '@/utils/tripCoverStorage';
+import { appendCoverCacheBust, normalizeTripCoverUrl } from '@/utils/tripCoverStorage';
 import { useAuth } from './useAuth';
 import { useDemoMode } from './useDemoMode';
 import { demoModeService } from '@/services/demoModeService';
@@ -154,11 +154,13 @@ export const useTripCoverPhoto = (
         return false;
       }
 
-      // Update local state immediately
-      setCoverPhoto(normalizedPhotoUrl);
+      // Update local state immediately with a cache-busted URL so any cached
+      // <img> bytes are bypassed across web/PWA/iOS/Android.
+      const bustedPhotoUrl = appendCoverCacheBust(normalizedPhotoUrl, Date.now()) ?? normalizedPhotoUrl;
+      setCoverPhoto(bustedPhotoUrl);
 
       // Update query cache using predicate matching for all trip detail queries
-      updateTripCacheWithCoverPhoto(normalizedPhotoUrl);
+      updateTripCacheWithCoverPhoto(bustedPhotoUrl);
 
       // Invalidate and refetch to ensure consistency
       // Using refetchQueries ensures immediate fresh data rather than background refetch

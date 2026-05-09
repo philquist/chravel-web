@@ -116,3 +116,33 @@ export function normalizeTripCoverUrl(url?: string | null): string | undefined {
     return url;
   }
 }
+
+/**
+ * Append a cache-busting query param so freshly-replaced covers bypass any
+ * browser/CDN cache that may have keyed on a previous URL.
+ *
+ * - Skips blob/data URLs (already unique per session).
+ * - Replaces any existing `?v=` so we don't accumulate params.
+ * - `version` is normally a timestamp (ms) or trip `updated_at`.
+ *
+ * Note: uploads already write to a unique path
+ * (`cover-${ts}-${uuid}.ext`), so the URL changes on every replace.
+ * This helper is a defensive belt-and-suspenders for legacy rows that
+ * may still point at a stable filename and for aggressive edge caches.
+ */
+export function appendCoverCacheBust(
+  url?: string | null,
+  version?: string | number | null,
+): string | undefined {
+  if (!url) return undefined;
+  if (isBlobOrDataUrl(url)) return url;
+  if (version === undefined || version === null || version === '') return url;
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set('v', String(version));
+    return parsed.toString();
+  } catch {
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}v=${encodeURIComponent(String(version))}`;
+  }
+}
