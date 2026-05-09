@@ -60,8 +60,7 @@ export const useTripCoverPhoto = (
    */
   const updateTripCacheWithCoverPhoto = useCallback(
     (photoUrl: string | null) => {
-      // Update all trip detail queries that match this tripId
-      // Uses predicate to match ['trip', tripId, ...] regardless of userId suffix
+      // Trip detail queries: ['trip', tripId, ...userIdSuffix]
       queryClient.setQueriesData<Trip | null>(
         {
           predicate: query => {
@@ -77,13 +76,29 @@ export const useTripCoverPhoto = (
         },
       );
 
-      // Also update trip list entries
+      // Consumer trip lists: ['trips', userId, isDemoMode] — Trip[] with cover_image_url
       queryClient.setQueriesData<Trip[]>({ queryKey: tripKeys.all }, old => {
         if (!Array.isArray(old)) return old;
         return old.map(trip =>
           trip.id === tripId ? { ...trip, cover_image_url: photoUrl } : trip,
         );
       });
+
+      // Pro trips & events lists use a mapped `coverPhoto` field (not cover_image_url).
+      // Patch any list whose entries reference this tripId so cards update instantly.
+      const patchMappedList = (key: readonly unknown[]) => {
+        queryClient.setQueriesData<unknown>({ queryKey: key as any }, (old: any) => {
+          if (!Array.isArray(old)) return old;
+          return old.map((item: any) =>
+            item && item.id === tripId
+              ? { ...item, coverPhoto: photoUrl ?? undefined, cover_image_url: photoUrl }
+              : item,
+          );
+        });
+      };
+      patchMappedList(['proTrips']);
+      patchMappedList(['events']);
+      patchMappedList(['pending-request-trip-cards']);
     },
     [queryClient, tripId],
   );
