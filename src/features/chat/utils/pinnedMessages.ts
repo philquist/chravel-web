@@ -1,11 +1,14 @@
-import type { ChatMessage } from '../hooks/useChatComposer';
-
-export type PinnedChatMessage = ChatMessage & {
+export type PinnedChatMessage = {
+  id: string;
+  text?: string;
+  sender?: { id: string; name: string; avatar?: string };
+  createdAt?: string;
+  created_at?: string;
   isPinned?: boolean;
   pinnedAt?: string;
 };
 
-export function isPinnedMessage(message: Pick<PinnedChatMessage, 'isPinned'>) {
+export function isPinnedMessage(message: { isPinned?: boolean; [key: string]: unknown }) {
   return message.isPinned === true;
 }
 
@@ -27,8 +30,8 @@ export function derivePinnedMessages(messages: PinnedChatMessage[]) {
   }
 
   return Array.from(dedupedById.values()).sort((a, b) => {
-    const aPinnedAt = Date.parse(a.pinnedAt || a.createdAt || '');
-    const bPinnedAt = Date.parse(b.pinnedAt || b.createdAt || '');
+    const aPinnedAt = Date.parse(a.pinnedAt || a.createdAt || a.created_at || '');
+    const bPinnedAt = Date.parse(b.pinnedAt || b.createdAt || b.created_at || '');
     return bPinnedAt - aPinnedAt;
   });
 }

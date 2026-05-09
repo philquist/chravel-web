@@ -24,7 +24,7 @@ import { toast } from 'sonner';
 import { PrivacyMode, getDefaultPrivacyMode } from '../types/privacy';
 import { ProCategoryEnum, PRO_CATEGORIES_ORDERED } from '../types/proCategories';
 import { getAllProTripColors } from '../utils/proTripColors';
-import { buildTripCoverStoragePath, TRIP_COVER_BUCKET } from '../utils/tripCoverStorage';
+import { uploadTripCoverBlob } from '../utils/tripCoverStorage';
 import { getFeaturePaywallConfig } from './subscription/featurePaywall';
 import { parseLocalDate } from '@/utils/dateHelpers';
 
@@ -210,18 +210,13 @@ export const CreateTripModal = ({ isOpen, onClose }: CreateTripModalProps) => {
         // Upload cover image if selected
         if (coverImage && !isDemoMode) {
           try {
-            const fileExt = coverImage.name.split('.').pop();
-            const filePath = buildTripCoverStoragePath(newTrip.id, `cover.${fileExt}`);
-
-            const { error: uploadError } = await supabase.storage
-              .from(TRIP_COVER_BUCKET)
-              .upload(filePath, coverImage);
-
-            if (uploadError) throw uploadError;
-
-            const {
-              data: { publicUrl },
-            } = supabase.storage.from(TRIP_COVER_BUCKET).getPublicUrl(filePath);
+            const { publicUrl } = await uploadTripCoverBlob({
+              client: supabase,
+              tripId: newTrip.id,
+              blob: coverImage,
+              fileName: coverImage.name,
+              contentType: coverImage.type,
+            });
 
             // Route through useTrips update path so homepage caches invalidate immediately.
             const coverUpdated = await updateTrip(newTrip.id, { cover_image_url: publicUrl });
