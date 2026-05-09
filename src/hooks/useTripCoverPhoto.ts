@@ -24,12 +24,23 @@ export const useTripCoverPhoto = (
   const [coverDisplayMode, setCoverDisplayMode] = useState<CoverDisplayMode>(initialDisplayMode);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const invalidateTripCoverQueries = () => {
-    queryClient.invalidateQueries({ queryKey: tripKeys.all });
-    queryClient.invalidateQueries({ queryKey: ['proTrips'] });
-    queryClient.invalidateQueries({ queryKey: ['events'] });
-    queryClient.invalidateQueries({ queryKey: tripKeys.detail(tripId) });
-  };
+  const invalidateTripCoverQueries = useCallback(async () => {
+    // Refetch detail immediately so the open page reflects new cover bytes,
+    // and invalidate every list surface that renders trip cards.
+    await Promise.all([
+      queryClient.refetchQueries({
+        predicate: query => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key[0] === 'trip' && key[1] === tripId;
+        },
+      }),
+      queryClient.invalidateQueries({ queryKey: tripKeys.all }), // ['trips', ...]
+      queryClient.invalidateQueries({ queryKey: ['proTrips'] }),
+      queryClient.invalidateQueries({ queryKey: ['events'] }),
+      queryClient.invalidateQueries({ queryKey: ['pending-request-trip-cards'] }),
+      queryClient.invalidateQueries({ queryKey: tripKeys.members(tripId) }),
+    ]);
+  }, [queryClient, tripId]);
 
   // Keep local state aligned with TanStack Query / parent props (detail key is ['trip', id, userId], not ['trips'])
   useEffect(() => {
