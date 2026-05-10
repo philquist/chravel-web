@@ -487,6 +487,24 @@
 .light .bg-black\/95 {
   background-color: hsl(0 0% 95%);
 }
+.light .bg-black\/90 {
+  background-color: hsl(0 0% 95%);
+}
+.light .bg-black\/80 {
+  background-color: rgba(0, 0, 0, 0.25);
+}
+.light .bg-black\/70 {
+  background-color: hsl(0 0% 88%);
+}
+.light .bg-black\/50 {
+  background-color: rgba(0, 0, 0, 0.15);
+}
+.light .bg-black\/20 {
+  background-color: hsl(0 0% 92%);
+}
+.light .bg-black\/10 {
+  background-color: hsl(0 0% 94%);
+}
 .light .bg-neutral-900\/70 {
   background-color: hsl(0 0% 84%);
 }
