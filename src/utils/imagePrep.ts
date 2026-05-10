@@ -15,18 +15,21 @@
 
 import { MAX_TRIP_COVER_BYTES } from './tripCoverStorage';
 
-export const SUPPORTED_IMAGE_MIME = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-]);
+export const SUPPORTED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
-const HEIC_MIME = new Set(['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence']);
+const HEIC_MIME = new Set([
+  'image/heic',
+  'image/heif',
+  'image/heic-sequence',
+  'image/heif-sequence',
+]);
 const HEIC_EXT = /\.(heic|heif)$/i;
 
 export class ImagePrepError extends Error {
-  constructor(public readonly userMessage: string, cause?: unknown) {
+  constructor(
+    public readonly userMessage: string,
+    cause?: unknown,
+  ) {
     super(userMessage);
     this.name = 'ImagePrepError';
     if (cause) (this as { cause?: unknown }).cause = cause;
@@ -130,20 +133,25 @@ export async function prepareImageForUpload(
   const ctx = canvas.getContext('2d');
   if (!ctx) {
     bitmap.close?.();
-    throw new ImagePrepError("Your browser couldn't process that photo. Try another browser or device.");
+    throw new ImagePrepError(
+      "Your browser couldn't process that photo. Try another browser or device.",
+    );
   }
   ctx.drawImage(bitmap, 0, 0);
   bitmap.close?.();
 
-  const blob: Blob = await new Promise((resolve, reject) => {
+  const blob: Blob = (await new Promise((resolve, reject) => {
     canvas.toBlob(
       b => (b ? resolve(b) : reject(new Error('Canvas toBlob returned null'))),
       reencodeAs,
       quality,
     );
   }).catch(err => {
-    throw new ImagePrepError("We couldn't save the rotated photo. Please try a different image.", err);
-  }) as Blob;
+    throw new ImagePrepError(
+      "We couldn't save the rotated photo. Please try a different image.",
+      err,
+    );
+  })) as Blob;
 
   // Post-encode size re-check — orientation-baked JPEGs can occasionally
   // grow vs. an over-compressed source.

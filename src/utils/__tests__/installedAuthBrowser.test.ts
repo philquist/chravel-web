@@ -10,8 +10,9 @@ describe('openInstalledAuthBrowser', () => {
 
   it('uses Capacitor Browser when Plugins.Browser is available', async () => {
     const open = vi.fn().mockResolvedValue(undefined);
-    (window as unknown as { Capacitor: { Plugins: { Browser: { open: typeof open } } } }).Capacitor =
-      { Plugins: { Browser: { open } } };
+    (
+      window as unknown as { Capacitor: { Plugins: { Browser: { open: typeof open } } } }
+    ).Capacitor = { Plugins: { Browser: { open } } };
 
     await openInstalledAuthBrowser('https://oauth.example/start');
 
@@ -23,8 +24,9 @@ describe('openInstalledAuthBrowser', () => {
 
   it('prefers Capacitor Browser over ChravelNative.openOAuthUrl', async () => {
     const open = vi.fn().mockResolvedValue(undefined);
-    (window as unknown as { Capacitor: { Plugins: { Browser: { open: typeof open } } } }).Capacitor =
-      { Plugins: { Browser: { open } } };
+    (
+      window as unknown as { Capacitor: { Plugins: { Browser: { open: typeof open } } } }
+    ).Capacitor = { Plugins: { Browser: { open } } };
     const nativeOpen = vi.fn().mockResolvedValue(undefined);
     (window as unknown as { ChravelNative: { openOAuthUrl: typeof nativeOpen } }).ChravelNative = {
       openOAuthUrl: nativeOpen,

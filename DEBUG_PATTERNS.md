@@ -400,7 +400,18 @@ Known security anti-patterns discovered during audits. Reference this before int
 **Regression Surfaces:** Any feature whose product spec says "consumer trips only" — chat activity preferences, event log, basecamp system messages, and similar.
 **Fixed in:** `src/hooks/useTripType.ts`, `src/features/chat/components/TripChat.tsx`, `src/components/trip/EventLogDrawer.tsx`, `src/services/systemMessageService.ts` (April 2026)
 
-## 7. Stream Adapter Drops Custom Message Metadata
+## 7. Trip Cover Photo Upload Pipeline Drift
+
+**Symptom:** Beta users report "I uploaded a cover photo but it didn't show up." Repeated fix attempts (cache-busting, RLS tweaks) keep regressing. The most visible failure is a fresh pro/event trip whose cover doesn't appear on the dashboard until manual refresh; pro trip share modal never carries the cover.
+**Risk:** HIGH — affects every trip create + cover and every cover replace. Beta-blocking.
+**Root Cause:** Three independent upload code paths (`CreateTripModal`, `EditTripModal` via `TripCoverPhotoUpload`, `TripHeader`) duplicated `uploadTripCoverBlob` + DB write + cache invalidation, each with subtly different invalidation footprints. Past fixes touched one path and silently regressed the others. Three additional defects compounded the symptom: `ProTripCard.tsx:287` hardcoded `coverPhoto: undefined` in shareTrip; `CreateTripModal` invalidated only `[TRIPS_QUERY_KEY]` (missing `proTrips`/`events`/`pending-request-trip-cards`); `TripHeader` and `TripCoverPhotoUpload` prepended `?v=${Date.now()}` BEFORE `updateCoverPhoto`, persisting the cache-buster into `cover_image_url`.
+**How to Confirm:** (1) Verify migrations `20260421171000`/`210620` are in prod via `mcp__supabase__list_migrations`. (2) `select cover_image_url from trips where cover_image_url like '%?v=%' and updated_at > '<fix_deploy>'` — must be zero. (3) Open React Query devtools during upload; all of `['trips']`, `['proTrips']`, `['events']`, `['pending-request-trip-cards']`, predicate-matched `['trip', tripId]` should refetch within 1s. (4) Inspect `ProTripCard.tsx` shareTrip — `coverPhoto` must be the variable, not `undefined`.
+**Smallest Safe Fix:** Single owner for upload pipeline. New `useCoverPhotoUpload` hook (`src/features/trips/hooks/useCoverPhotoUpload.ts`) wraps `uploadTripCoverBlob` + persistence + invalidation + cleanup-on-failure. Direct mode for CreateTripModal (writes `cover_image_url` itself); callback mode for TripHeader/TripCoverPhotoUpload (delegates to existing `useTripCoverPhoto.updateCoverPhoto`). Shared invalidation in `src/lib/tripCoverInvalidation.ts` ensures all six query surfaces update together.
+**Required Tests:** E2E for create-trip-with-cover (consumer/pro/event); unit tests for `useCoverPhotoUpload` covering both modes and cleanup-on-persist-failure.
+**Regression Surfaces:** Any future cover photo bug — start at `useCoverPhotoUpload`, not call sites. Adding a new call site? Use the hook; do NOT duplicate `uploadTripCoverBlob`. New invalidation surface? Add the key to `invalidateTripCoverQueries` only — never inline in callers.
+**Fixed in:** `ProTripCard.tsx`, `CreateTripModal.tsx`, `TripHeader.tsx`, `TripCoverPhotoUpload.tsx`, `src/features/trips/hooks/useCoverPhotoUpload.ts`, `src/lib/tripCoverInvalidation.ts` (May 2026, branch `claude/fix-cover-photo-upload-RodMM`).
+
+## 8. Stream Adapter Drops Custom Message Metadata
 
 **Symptom:** Render-side filter that depends on a custom Stream message field (e.g. `system_event_type`) silently degrades to "show everything" because the field is `undefined` at the render call site.
 **Risk:** HIGH — category-level filtering breaks; UI prefs UX appears to work in tests but no real message ever has the field, so filtering is a no-op in prod.

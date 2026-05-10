@@ -342,11 +342,12 @@ export const tripService = {
 
       if (createdError) throw createdError;
 
-      const allTrips: Array<Record<string, any> & { id: string; membership_status: 'owner' | 'member' }> =
-        (createdTrips || []).map(trip => ({
-          ...trip,
-          membership_status: 'owner' as const,
-        }));
+      const allTrips: Array<
+        Record<string, any> & { id: string; membership_status: 'owner' | 'member' }
+      > = (createdTrips || []).map(trip => ({
+        ...trip,
+        membership_status: 'owner' as const,
+      }));
 
       // Fetch trips where user is an active member (not creator).
       // trip_members table does not have a status column — query without it.

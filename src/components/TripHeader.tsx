@@ -30,9 +30,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useDemoMode } from '../hooks/useDemoMode';
 import { useJoinRequests } from '../hooks/useJoinRequests';
 import { useDemoTripMembersStore } from '../store/demoTripMembersStore';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { TRIP_COVER_BUCKET, uploadTripCoverBlob } from '../utils/tripCoverStorage';
+import { useCoverPhotoUpload } from '@/features/trips/hooks/useCoverPhotoUpload';
 import { getDemoTripCoverFallback } from '@/data/demoTripCoverFallbacks';
 import { isBlobOrDataUrl } from '@/utils/mediaUtils';
 
@@ -151,6 +150,7 @@ export const TripHeader = ({
     }
   }, [searchParams, setSearchParams]);
   const { variant } = useTripVariant();
+  const { upload: uploadCoverPhoto } = useCoverPhotoUpload();
   const { coverPhoto, coverDisplayMode, updateCoverPhoto, isUpdating } = useTripCoverPhoto(
     trip.id.toString(),
     trip.coverPhoto,
@@ -364,59 +364,20 @@ export const TripHeader = ({
     }
 
     setIsUploading(true);
-    let uploadedFilePath: string | null = null;
     try {
-      const { publicUrl, filePath } = await uploadTripCoverBlob({
-        client: supabase,
-        tripId: trip.id.toString(),
-        blob: croppedBlob,
+      const result = await uploadCoverPhoto(trip.id.toString(), croppedBlob, {
+        persist: updateCoverPhoto,
       });
-      uploadedFilePath = filePath;
-
-      // Add cache-busting param for re-crops
-      const finalUrl = `${publicUrl}?v=${Date.now()}`;
-      const success = await updateCoverPhoto(finalUrl);
-      if (success) {
+      if (result.ok) {
         setShowCropModal(false);
         if (cropImageSrc && isBlobOrDataUrl(cropImageSrc)) {
           URL.revokeObjectURL(cropImageSrc);
         }
         setCropImageSrc(null);
-      }
-
-      // If database update failed, notify user and clean up the orphaned storage file
-      if (!success) {
-        toast.error('Photo uploaded but could not be saved to the trip.');
-      }
-      if (!success && uploadedFilePath) {
-        console.warn(
-          '[TripHeader] Database update failed, cleaning up storage file:',
-          uploadedFilePath,
-        );
-        await supabase.storage
-          .from(TRIP_COVER_BUCKET)
-          .remove([uploadedFilePath])
-          .catch(err => {
-            console.error('Failed to clean up orphaned storage file:', err);
-          });
-      }
-      if (!success) {
+      } else {
         toast.error('Cover photo was uploaded but could not be saved to trip details.');
       }
-      return success;
-    } catch (error) {
-      console.error('Cover photo upload error:', error);
-      toast.error('Failed to upload cover photo');
-      // Clean up storage file if it was uploaded
-      if (uploadedFilePath) {
-        await supabase.storage
-          .from(TRIP_COVER_BUCKET)
-          .remove([uploadedFilePath])
-          .catch(err => {
-            console.error('Failed to clean up orphaned storage file:', err);
-          });
-      }
-      return false;
+      return result.ok;
     } finally {
       setIsUploading(false);
     }

@@ -24,7 +24,7 @@ import { toast } from 'sonner';
 import { PrivacyMode, getDefaultPrivacyMode } from '../types/privacy';
 import { ProCategoryEnum, PRO_CATEGORIES_ORDERED } from '../types/proCategories';
 import { getAllProTripColors } from '../utils/proTripColors';
-import { uploadTripCoverBlob } from '../utils/tripCoverStorage';
+import { useCoverPhotoUpload } from '@/features/trips/hooks/useCoverPhotoUpload';
 import { getFeaturePaywallConfig } from './subscription/featurePaywall';
 import { parseLocalDate } from '@/utils/dateHelpers';
 import { prepareImageForUpload, ImagePrepError } from '@/utils/imagePrep';
@@ -65,7 +65,8 @@ export const CreateTripModal = ({ isOpen, onClose }: CreateTripModalProps) => {
   }>({});
   const titleInputRef = useRef<HTMLInputElement>(null);
 
-  const { createTrip, updateTrip, trips } = useTrips();
+  const { createTrip, trips } = useTrips();
+  const { upload: uploadCoverPhoto } = useCoverPhotoUpload();
 
   // ✅ FIXED: Always call useOrganization hook (Rules of Hooks requirement)
   // The hook handles demo mode internally, returning empty arrays when in demo mode
@@ -222,22 +223,14 @@ export const CreateTripModal = ({ isOpen, onClose }: CreateTripModalProps) => {
       const newTrip = await createTrip(tripData);
 
       if (newTrip) {
-        // Upload cover image if selected
+        // Upload cover image if selected. The unified hook writes the canonical
+        // public URL to cover_image_url AND invalidates every list surface
+        // (consumer trips, proTrips, events, pending-request-trip-cards), then
+        // cleans up the storage object if the DB write fails.
         if (coverImage && !isDemoMode) {
-          try {
-            const { publicUrl } = await uploadTripCoverBlob({
-              client: supabase,
-              tripId: newTrip.id,
-              blob: coverImage,
-            });
-
-            // Route through useTrips update path so homepage caches invalidate immediately.
-            const coverUpdated = await updateTrip(newTrip.id, { cover_image_url: publicUrl });
-            if (!coverUpdated) {
-              throw new Error('Failed to update trip cover image');
-            }
-          } catch (uploadError) {
-            if (import.meta.env.DEV) console.error('Error uploading cover image:', uploadError);
+          const result = await uploadCoverPhoto(newTrip.id, coverImage);
+          if (!result.ok) {
+            if (import.meta.env.DEV) console.error('Cover image upload failed:', result.error);
             toast.error('Trip created, but failed to upload cover image');
           }
         }

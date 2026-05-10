@@ -284,7 +284,7 @@ export const ProTripCard = ({
     location: trip.location,
     dateRange: trip.dateRange,
     participants: trip.participants || [],
-    coverPhoto: undefined,
+    coverPhoto,
     peopleCount: totalPeopleCount,
   };
 

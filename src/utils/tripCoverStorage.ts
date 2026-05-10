@@ -43,7 +43,8 @@ export async function uploadTripCoverBlob({
   maxRetries = DEFAULT_UPLOAD_RETRIES,
   retryDelayMs,
 }: UploadTripCoverBlobParams): Promise<UploadTripCoverBlobResult> {
-  const contentType = sourceContentType || blob.type || inferMimeTypeFromFilename(sourceFileName ?? '');
+  const contentType =
+    sourceContentType || blob.type || inferMimeTypeFromFilename(sourceFileName ?? '');
   if (!contentType || !COVER_EXTENSION_BY_MIME[contentType]) {
     throw new Error('Unsupported cover photo type. Use JPG, PNG, GIF, or WebP.');
   }

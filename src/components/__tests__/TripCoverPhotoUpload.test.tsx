@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { TripCoverPhotoUpload } from '../TripCoverPhotoUpload';
 
@@ -84,9 +85,14 @@ describe('TripCoverPhotoUpload', () => {
 
   it('cleans up uploaded file when DB cover update fails', async () => {
     const onPhotoUploaded = vi.fn().mockResolvedValue(false);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
 
     render(
-      <TripCoverPhotoUpload tripId="trip-1" onPhotoUploaded={onPhotoUploaded} tripName="Trip" />,
+      <QueryClientProvider client={queryClient}>
+        <TripCoverPhotoUpload tripId="trip-1" onPhotoUploaded={onPhotoUploaded} tripName="Trip" />
+      </QueryClientProvider>,
     );
 
     fireEvent.click(screen.getByText('Upload Trip Cover Photo'));

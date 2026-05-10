@@ -1104,9 +1104,7 @@ export const TripChat = React.memo(
                 {chatError && !isLoading ? (
                   <div className="flex-1 flex items-center justify-center p-6">
                     <div className="text-center space-y-3">
-                      <p className="text-sm text-muted-foreground">
-                        Something went wrong in Chat
-                      </p>
+                      <p className="text-sm text-muted-foreground">Something went wrong in Chat</p>
                       <p className="text-xs text-muted-foreground">{NON_CRITICAL_CHAT_NOTE}</p>
                       <button
                         onClick={() => {
