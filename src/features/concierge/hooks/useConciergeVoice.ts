@@ -52,7 +52,13 @@ export function useConciergeVoice({
   const { handleToolCall: _handleToolCall } = useVoiceToolHandler({ tripId, userId: userId ?? '' });
 
   const handleLiveTurnComplete = useCallback(
-    async (userText: string, assistantText: string, toolResults?: ToolCallResult[]) => {
+    async (
+      userText: string,
+      assistantText: string,
+      toolResults?: ToolCallResult[],
+      _turn?: { id: string },
+      acknowledgeTurn?: () => void,
+    ) => {
       const now = new Date().toISOString();
       const newMessages: ChatMessage[] = [];
       if (userText)
@@ -98,6 +104,7 @@ export function useConciergeVoice({
       if (newMessages.length > 0) setMessages(prev => [...prev, ...newMessages]);
       setStreamingVoiceMessage(null);
       setStreamingUserMessage(null);
+      acknowledgeTurn?.();
 
       if (userText && assistantText && userId) {
         try {
@@ -148,6 +155,31 @@ export function useConciergeVoice({
     [setMessages],
   );
 
+  const handleLivePartialTranscript = useCallback(
+    ({ role, text }: { role: 'user' | 'assistant'; text: string; isFinal: boolean }) => {
+      if (!text) return;
+      if (role === 'assistant') {
+        setStreamingVoiceMessage({
+          id: 'voice-streaming-live',
+          type: 'assistant',
+          content: text,
+          timestamp: new Date().toISOString(),
+          isStreamingVoice: true,
+        });
+        return;
+      }
+
+      setStreamingUserMessage({
+        id: 'voice-user-streaming-live',
+        type: 'user',
+        content: text,
+        timestamp: new Date().toISOString(),
+        isStreamingVoice: true,
+      });
+    },
+    [],
+  );
+
   const handleLiveError = useCallback((msg: string) => {
     toast.error('Voice error', { description: msg });
   }, []);
@@ -168,6 +200,7 @@ export function useConciergeVoice({
     onTurnComplete: handleLiveTurnComplete,
     onRichCard: handleLiveRichCard,
     onError: handleLiveError,
+    onPartialTranscript: handleLivePartialTranscript,
   });
 
   const convoVoiceState: VoiceState = dictationState;
@@ -226,41 +259,6 @@ export function useConciergeVoice({
     buildLimitReachedMessage,
     startLiveSession,
   ]);
-
-  useEffect(() => {
-    if (liveState === 'playing' && liveAssistantTranscript) {
-      setStreamingVoiceMessage({
-        id: 'voice-streaming-live',
-        type: 'assistant',
-        content: liveAssistantTranscript,
-        timestamp: new Date().toISOString(),
-        isStreamingVoice: true,
-      });
-    } else if (liveState === 'idle' || liveState === 'error' || liveState === 'ready') {
-      setStreamingVoiceMessage(null);
-    }
-  }, [liveState, liveAssistantTranscript]);
-
-  useEffect(() => {
-    const isUserSpeaking =
-      liveState === 'listening' || liveState === 'sending' || liveState === 'interrupted';
-    if (isUserSpeaking && liveUserTranscript) {
-      setStreamingUserMessage({
-        id: 'voice-user-streaming-live',
-        type: 'user',
-        content: liveUserTranscript,
-        timestamp: new Date().toISOString(),
-        isStreamingVoice: true,
-      });
-    } else if (
-      liveState === 'idle' ||
-      liveState === 'error' ||
-      liveState === 'ready' ||
-      liveState === 'playing'
-    ) {
-      setStreamingUserMessage(null);
-    }
-  }, [liveState, liveUserTranscript]);
 
   return {
     convoVoiceState,
