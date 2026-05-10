@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Mail, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { authEvents } from '@/telemetry/events';
+import { isInstalledApp } from '@/utils/platformDetection';
 
 interface AuthModalProps {
   isOpen: boolean;
