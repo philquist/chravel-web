@@ -23,6 +23,7 @@ import { executeToolSecurely } from '../_shared/security/toolRouter.ts';
 import { checkRateLimit } from '../_shared/security.ts';
 import { getBearerToken } from '../_shared/authHeaders.ts';
 import { verifyConciergeTripAccess } from '../_shared/concierge/tripAccess.ts';
+import { MUTATING_TOOL_NAMES } from '../_shared/concierge/toolRegistry.ts';
 import {
   checkMonthlyTokenBudget,
   resolveUsagePlanForUser,
@@ -137,7 +138,7 @@ serve(async (req: Request) => {
     }
 
     // ── Validate tool request ─────────────────────────────────────────────
-    const { toolName, args, tripId } = body;
+    const { toolName, args, tripId, idempotencyKey } = body;
 
     if (typeof toolName !== 'string' || !toolName) {
       return new Response(JSON.stringify({ error: 'toolName (string) is required' }), {
@@ -209,6 +210,62 @@ serve(async (req: Request) => {
       allowed_tools: [toolName],
     });
 
+    const requestIdempotencyKey =
+      typeof idempotencyKey === 'string' && idempotencyKey.trim() ? idempotencyKey.trim() : null;
+    const argsIdempotencyKey =
+      typeof argsObj.idempotency_key === 'string' && argsObj.idempotency_key.trim()
+        ? argsObj.idempotency_key.trim()
+        : null;
+    const effectiveIdempotencyKey = requestIdempotencyKey ?? argsIdempotencyKey;
+
+    const shouldApplyIdempotency =
+      MUTATING_TOOL_NAMES.has(toolName) && typeof effectiveIdempotencyKey === 'string';
+
+    if (shouldApplyIdempotency) {
+      const key = effectiveIdempotencyKey as string;
+      const reserve = await supabase.from('concierge_tool_idempotency').insert({
+        user_id: userId,
+        trip_id: tripIdStr,
+        tool_name: toolName,
+        idempotency_key: key,
+        status: 'reserved',
+      });
+
+      if (reserve.error && reserve.error.code !== '23505') {
+        throw new Error(`Failed to reserve idempotency key: ${reserve.error.message}`);
+      }
+
+      if (reserve.error?.code === '23505') {
+        const replay = await supabase
+          .from('concierge_tool_idempotency')
+          .select('result_payload, status')
+          .eq('user_id', userId)
+          .eq('trip_id', tripIdStr)
+          .eq('tool_name', toolName)
+          .eq('idempotency_key', key)
+          .maybeSingle();
+
+        if (replay.error) {
+          throw new Error(`Failed idempotency replay lookup: ${replay.error.message}`);
+        }
+
+        if (replay.data?.result_payload) {
+          return new Response(JSON.stringify(replay.data.result_payload), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          });
+        }
+
+        return new Response(
+          JSON.stringify({ success: false, skipped: true, reason: 'in_flight' }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 202,
+          },
+        );
+      }
+    }
+
     const result = await executeToolSecurely(
       supabase,
       capabilityToken,
@@ -216,6 +273,24 @@ serve(async (req: Request) => {
       argsObj,
       locationContext,
     );
+
+    if (shouldApplyIdempotency) {
+      const key = effectiveIdempotencyKey as string;
+      const finalize = await supabase
+        .from('concierge_tool_idempotency')
+        .update({
+          status: 'completed',
+          result_payload: result,
+          result_ref: (result as Record<string, unknown>)?.id ?? null,
+        })
+        .eq('user_id', userId)
+        .eq('trip_id', tripIdStr)
+        .eq('tool_name', toolName)
+        .eq('idempotency_key', key);
+      if (finalize.error) {
+        throw new Error(`Failed to persist idempotent result: ${finalize.error.message}`);
+      }
+    }
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
