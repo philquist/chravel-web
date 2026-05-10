@@ -1,44 +1,31 @@
 ## Problem
-The marketing landing page is rendering with light-mode elements (light grays, dark text on dark backgrounds) because the global `html.light` class set by `useTheme` remaps Tailwind classes like `.text-white` and `.bg-black` via `src/index.css`. The landing was designed for dark-only and must be immune to the user's app theme preference.
 
-## Fix (single file)
+`/auth` crashes with `ReferenceError: installedShell is not defined` from `src/components/AuthModal.tsx:421`. The JSX references `{installedShell && ...}` but the variable is never declared or imported in the component — it was lost (or never added) when the OAuth helper copy was introduced. This crashes the AuthModal render and bubbles to the error boundary, preventing login.
 
-**`src/components/landing/FullPageLanding.tsx`**
+## Root cause
 
-Add one `useEffect` at the top of the `FullPageLanding` component that:
-1. On mount: snapshots whether `<html>` currently has the `light` class, then removes it.
-2. On unmount: restores the previous state.
+`AuthModal.tsx` imports nothing from `@/utils/platformDetection`. The intent of the gated paragraph at line 421 is to show an OAuth note only when running inside an installed app surface (PWA standalone / Capacitor / native WebView), which corresponds exactly to `isInstalledApp()` in `src/utils/platformDetection.ts`.
 
-```tsx
-useEffect(() => {
-  const root = document.documentElement;
-  const wasLight = root.classList.contains('light');
-  root.classList.remove('light');
-  return () => {
-    if (wasLight) root.classList.add('light');
-  };
-}, []);
-```
+## Fix
 
-That's it. ~7 lines.
+Single-file edit in `src/components/AuthModal.tsx`:
 
-## Why this works
-- `localStorage.theme` is never touched, so the user's saved Light/Dark preference is preserved for the authenticated app.
-- When they navigate into the app (logged in), `useTheme` re-reads localStorage and reapplies `light` automatically.
-- Landing's existing dark gradients, `text-white`, and gold tokens render exactly as designed — no CSS, copy, layout, or token edits.
+1. Add import: `import { isInstalledApp } from '@/utils/platformDetection';`
+2. Inside the component, compute once per render: `const installedShell = isInstalledApp();`
+   - Synchronous, cheap, no hook needed (matches how `platformDetection` is used elsewhere).
 
-## Out of scope
-- No edits to `useTheme`, `index.css`, section components, gradients, copy, or any other file.
-- No changes to chat / dashboard / build-error files.
+No behavior change in browser tabs (the paragraph stays hidden as before). Inside PWA/native shells, the existing OAuth disclaimer renders as originally intended.
 
 ## Verification
-1. Toggle Settings → Appearance → Light. Log out → visit `/`:
-   - Hero "Group travel made easy" renders white on dark.
-   - All section headings and body copy render light on dark gradients.
-   - Use-case cards (touring artists, bachelor parties, weddings, community groups) keep dark backgrounds + readable white text.
-2. Log back in → app returns to Light mode (preference preserved).
-3. `npm run typecheck && npm run lint && npm run build` pass.
 
-## Risk / Rollback
-- **Risk:** LOW — one effect, one file, scoped to mount lifecycle.
-- **Rollback:** delete the added `useEffect` block.
+- Reload `/auth?mode=signup` in the preview — modal renders, no error boundary.
+- Confirm Sign In / Sign Up tabs and Google/Apple buttons appear.
+- `npm run typecheck` passes.
+
+## Risk
+
+LOW — adds a defined value where an undefined identifier currently throws. No auth logic, RLS, or OAuth flow touched.
+
+## Rollback
+
+Revert the two-line change in `src/components/AuthModal.tsx`.

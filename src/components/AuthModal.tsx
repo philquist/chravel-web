@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Mail, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { authEvents } from '@/telemetry/events';
+import { isInstalledApp } from '@/utils/platformDetection';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export const AuthModal = ({
   // Track when we're waiting for auth state to update after successful sign-in
   const [awaitingAuth, setAwaitingAuth] = useState(false);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const installedShell = isInstalledApp();
 
   useEffect(() => {
     if (!isOpen) return;
