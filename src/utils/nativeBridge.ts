@@ -8,6 +8,11 @@
  *     the first interactive surface is mounted.
  *   - Message names ('ready', 'chravel-web' source) are part of the contract — do
  *     not rename without updating chravel-mobile in lockstep.
+ *   - Optional OAuth: `window.ChravelNative.openOAuthUrl(url)` — native should open
+ *     the provider URL in an auth session (e.g. Expo `WebBrowser.openAuthSessionAsync`),
+ *     then navigate the **main** WebView to `https://chravel.app/auth-callback?...` /
+ *     hash so Supabase `detectSessionInUrl` completes in-app. Used when Capacitor
+ *     `Plugins.Browser` is not present (typical Expo shell).
  */
 
 import { isChravelNativeShell } from './platformDetection';

@@ -135,6 +135,7 @@ export const AIConciergeChat = ({
     handleLiveToggle,
     handleEndLiveSession,
     isLiveSessionActive,
+    liveTogglePending,
     streamingVoiceMessage,
     streamingUserMessage,
     liveState,
@@ -156,6 +157,8 @@ export const AIConciergeChat = ({
     setInputMessage,
     buildLimitReachedMessage,
   });
+
+  const showLiveOverlay = isLiveSessionActive || liveTogglePending;
 
   const handleTTSPlay = useCallback(
     (messageId: string) => {
@@ -320,17 +323,17 @@ export const AIConciergeChat = ({
                 type="button"
                 onClick={handleLiveToggle}
                 className={`relative min-h-[44px] min-w-[44px] h-8 px-3 rounded-full flex items-center justify-center gap-1 transition-all duration-200 select-none touch-manipulation cta-gold-ring ${
-                  isLiveSessionActive
+                  showLiveOverlay
                     ? 'bg-gradient-to-br from-[#533517] to-[#c49746] text-white shadow-md shadow-[#c49746]/25 border-transparent'
                     : 'bg-gray-800/80 text-white hover:bg-gray-700/80'
                 }`}
                 aria-label={
-                  isLiveSessionActive ? 'Stop live voice session' : 'Start live voice session'
+                  showLiveOverlay ? 'Stop live voice session' : 'Start live voice session'
                 }
                 role="switch"
-                aria-checked={isLiveSessionActive}
+                aria-checked={showLiveOverlay}
               >
-                {isLiveSessionActive && (
+                {showLiveOverlay && (
                   <span
                     aria-hidden="true"
                     className="pointer-events-none absolute -inset-0.5 rounded-full bg-gradient-to-r from-[#c49746]/30 to-[#feeaa5]/20 blur-sm"
@@ -402,7 +405,7 @@ export const AIConciergeChat = ({
         )}
 
         {/* Empty State - Compact for Mobile (hidden during live voice session) */}
-        {messages.length === 0 && !isHistoryLoading && !isLiveSessionActive && (
+        {messages.length === 0 && !isHistoryLoading && !showLiveOverlay && (
           <div className="text-center py-6 px-4 flex-shrink-0">
             <div className="text-sm text-gray-300 space-y-1 max-w-md mx-auto">
               <p className="text-xs sm:text-sm mb-1.5">Try asking:</p>
@@ -425,7 +428,7 @@ export const AIConciergeChat = ({
         )}
 
         {/* Chat area — shows inline live UI when active, otherwise normal messages */}
-        {isLiveSessionActive ? (
+        {showLiveOverlay ? (
           <VoiceLiveInline
             liveState={liveState}
             userTranscript={liveUserTranscript}
@@ -520,7 +523,7 @@ export const AIConciergeChat = ({
               </div>
             )}
           {/* End session button — aligned above dictation button on same vertical axis */}
-          {isLiveSessionActive && (
+          {showLiveOverlay && (
             <div className="mb-2 w-11">
               <button
                 type="button"

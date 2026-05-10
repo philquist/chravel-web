@@ -166,7 +166,13 @@ describe('useLiveKitVoice', () => {
     expect(firstRichCard).not.toHaveBeenCalled();
     expect(firstTurnComplete).not.toHaveBeenCalled();
     expect(secondRichCard).toHaveBeenCalledWith('searchPlaces', { title: 'Cafe' });
-    expect(secondTurnComplete).toHaveBeenCalledWith('hello', 'hi there', []);
+    expect(secondTurnComplete).toHaveBeenCalledWith(
+      'hello',
+      'hi there',
+      [],
+      expect.objectContaining({ userText: 'hello', assistantText: 'hi there', toolResults: [] }),
+      expect.any(Function),
+    );
   });
 
   it('surfaces reconnecting hook state while keeping diagnostics in the supported connection union', async () => {

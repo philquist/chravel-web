@@ -11,6 +11,8 @@
 import { BaseBillingProvider } from './base';
 import { BILLING_PRODUCTS, BILLING_FLAGS } from '../config';
 import { getEntitlements } from '../entitlements';
+import { restorePurchases as restoreRevenueCatPurchases } from '@/integrations/revenuecat/revenuecatClient';
+import { supabase } from '@/integrations/supabase/client';
 import type {
   BillingPlatform,
   Product,
@@ -132,24 +134,44 @@ export class GooglePlayProvider extends BaseBillingProvider {
       return null;
     }
 
-    // TODO: Implement restore flow
-    //
-    // try {
-    //   const result = await InAppPurchases.restoreProducts();
-    //
-    //   for (const transaction of result.transactions) {
-    //     // Validate each receipt with server
-    //     await this.validateReceipt(transaction.receipt);
-    //   }
-    //
-    //   // Return updated entitlements
-    //   return getEntitlements(userId);
-    // } catch (error) {
-    //   this.logError('Restore failed', error);
-    //   return null;
-    // }
+    try {
+      this.log('Initiating native restore via RevenueCat');
 
-    return null;
+      // Attempt to trigger a native restore through RevenueCat if available in the context
+      const restoreResult = await restoreRevenueCatPurchases(false);
+
+      if (restoreResult.success && restoreResult.data) {
+        this.log('Native restore successful, syncing entitlements to backend');
+        // Sync the freshly restored info back to our backend
+        const syncResult = await supabase.functions.invoke('sync-revenuecat-entitlement', {
+          body: { customerInfo: restoreResult.data },
+        });
+
+        if (syncResult.error) {
+          this.logError('Failed to sync restored entitlements', syncResult.error);
+        }
+      } else {
+        this.log(
+          'Native restore skipped or failed, falling back to backend fetch',
+          restoreResult.error,
+        );
+      }
+
+      // Whether the native restore succeeded or we're just falling back,
+      // we return the canonical entitlements from our backend
+      this.log('Delegating restore verification to backend');
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) throw new Error('User not authenticated');
+
+      return await getEntitlements(user.id);
+    } catch (error) {
+      this.logError('Restore failed', error);
+      return null;
+    }
   }
 
   async openManagement(): Promise<void> {

@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { useWebSpeechVoice } from '@/hooks/useWebSpeechVoice';
 import type { VoiceState } from '@/hooks/useWebSpeechVoice';
 import { useLiveKitVoice } from '@/hooks/useLiveKitVoice';
@@ -8,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { ToolCallResult } from '@/types/voice';
 import type { ChatMessage } from '@/features/concierge/types';
 import { extractRichMetadata, DUPLEX_VOICE_ENABLED } from '@/features/concierge/utils/chatHelpers';
+import { getConciergeInvalidationKeys, isConciergeWriteAction } from '@/lib/conciergeInvalidation';
 
 interface Params {
   tripId: string;
@@ -30,8 +32,10 @@ export function useConciergeVoice({
   setInputMessage,
   buildLimitReachedMessage,
 }: Params) {
+  const conciergeQueryClient = useQueryClient();
   const [streamingVoiceMessage, setStreamingVoiceMessage] = useState<ChatMessage | null>(null);
   const [streamingUserMessage, setStreamingUserMessage] = useState<ChatMessage | null>(null);
+  const [liveTogglePending, setLiveTogglePending] = useState(false);
 
   const handleDictationResult = useCallback(
     (text: string) => {
@@ -52,7 +56,13 @@ export function useConciergeVoice({
   const { handleToolCall: _handleToolCall } = useVoiceToolHandler({ tripId, userId: userId ?? '' });
 
   const handleLiveTurnComplete = useCallback(
-    async (userText: string, assistantText: string, toolResults?: ToolCallResult[]) => {
+    async (
+      userText: string,
+      assistantText: string,
+      toolResults?: ToolCallResult[],
+      _turn?: { id: string },
+      acknowledgeTurn?: () => void,
+    ) => {
       const now = new Date().toISOString();
       const newMessages: ChatMessage[] = [];
       if (userText)
@@ -98,6 +108,20 @@ export function useConciergeVoice({
       if (newMessages.length > 0) setMessages(prev => [...prev, ...newMessages]);
       setStreamingVoiceMessage(null);
       setStreamingUserMessage(null);
+      acknowledgeTurn?.();
+
+      for (const toolResult of toolResults ?? []) {
+        if (!isConciergeWriteAction(toolResult.name)) continue;
+
+        if (toolResult.result?.pending && toolResult.result?.pendingActionId) {
+          conciergeQueryClient.invalidateQueries({ queryKey: ['pendingActions', tripId] });
+          continue;
+        }
+
+        for (const queryKey of getConciergeInvalidationKeys(toolResult.name, tripId)) {
+          conciergeQueryClient.invalidateQueries({ queryKey, exact: false });
+        }
+      }
 
       if (userText && assistantText && userId) {
         try {
@@ -122,7 +146,7 @@ export function useConciergeVoice({
         }
       }
     },
-    [setMessages, tripId, userId],
+    [conciergeQueryClient, setMessages, tripId, userId],
   );
 
   const handleLiveRichCard = useCallback(
@@ -148,6 +172,31 @@ export function useConciergeVoice({
     [setMessages],
   );
 
+  const handleLivePartialTranscript = useCallback(
+    ({ role, text }: { role: 'user' | 'assistant'; text: string; isFinal: boolean }) => {
+      if (!text) return;
+      if (role === 'assistant') {
+        setStreamingVoiceMessage({
+          id: 'voice-streaming-live',
+          type: 'assistant',
+          content: text,
+          timestamp: new Date().toISOString(),
+          isStreamingVoice: true,
+        });
+        return;
+      }
+
+      setStreamingUserMessage({
+        id: 'voice-user-streaming-live',
+        type: 'user',
+        content: text,
+        timestamp: new Date().toISOString(),
+        isStreamingVoice: true,
+      });
+    },
+    [],
+  );
+
   const handleLiveError = useCallback((msg: string) => {
     toast.error('Voice error', { description: msg });
   }, []);
@@ -168,15 +217,21 @@ export function useConciergeVoice({
     onTurnComplete: handleLiveTurnComplete,
     onRichCard: handleLiveRichCard,
     onError: handleLiveError,
+    onPartialTranscript: handleLivePartialTranscript,
   });
 
   const convoVoiceState: VoiceState = dictationState;
   const isLiveSessionActive = DUPLEX_VOICE_ENABLED && liveState !== 'idle' && liveState !== 'error';
 
   const handleEndLiveSession = useCallback(async () => {
-    await endLiveSession();
-    setStreamingVoiceMessage(null);
-    setStreamingUserMessage(null);
+    setLiveTogglePending(true);
+    try {
+      await endLiveSession();
+      setStreamingVoiceMessage(null);
+      setStreamingUserMessage(null);
+    } finally {
+      setLiveTogglePending(false);
+    }
   }, [endLiveSession]);
 
   const handleConvoToggle = useCallback(() => {
@@ -211,7 +266,14 @@ export function useConciergeVoice({
         return;
       }
     }
-    await startLiveSession();
+    setLiveTogglePending(true);
+    try {
+      await startLiveSession();
+    } catch {
+      toast.error('Unable to start live voice session. Please try again.');
+    } finally {
+      setLiveTogglePending(false);
+    }
   }, [
     isDictationActive,
     toggleDictation,
@@ -227,47 +289,13 @@ export function useConciergeVoice({
     startLiveSession,
   ]);
 
-  useEffect(() => {
-    if (liveState === 'playing' && liveAssistantTranscript) {
-      setStreamingVoiceMessage({
-        id: 'voice-streaming-live',
-        type: 'assistant',
-        content: liveAssistantTranscript,
-        timestamp: new Date().toISOString(),
-        isStreamingVoice: true,
-      });
-    } else if (liveState === 'idle' || liveState === 'error' || liveState === 'ready') {
-      setStreamingVoiceMessage(null);
-    }
-  }, [liveState, liveAssistantTranscript]);
-
-  useEffect(() => {
-    const isUserSpeaking =
-      liveState === 'listening' || liveState === 'sending' || liveState === 'interrupted';
-    if (isUserSpeaking && liveUserTranscript) {
-      setStreamingUserMessage({
-        id: 'voice-user-streaming-live',
-        type: 'user',
-        content: liveUserTranscript,
-        timestamp: new Date().toISOString(),
-        isStreamingVoice: true,
-      });
-    } else if (
-      liveState === 'idle' ||
-      liveState === 'error' ||
-      liveState === 'ready' ||
-      liveState === 'playing'
-    ) {
-      setStreamingUserMessage(null);
-    }
-  }, [liveState, liveUserTranscript]);
-
   return {
     convoVoiceState,
     handleConvoToggle,
     handleLiveToggle,
     handleEndLiveSession,
     isLiveSessionActive,
+    liveTogglePending,
     streamingVoiceMessage,
     streamingUserMessage,
     liveState,
