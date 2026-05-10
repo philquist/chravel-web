@@ -124,9 +124,10 @@ export default defineAgent({
     const tripId: string = metadata.tripId || '';
     const userId: string = metadata.userId || '';
     const voice: string = metadata.voice || DEFAULT_VOICE;
+    const agentAssertion: string = metadata.agentAssertion || '';
 
-    if (!tripId) {
-      log('agent:error', { error: 'No tripId in room metadata' });
+    if (!tripId || !agentAssertion) {
+      log('agent:error', { error: 'Missing tripId or agentAssertion in room metadata' });
       return;
     }
 
@@ -161,7 +162,7 @@ export default defineAgent({
     log('agent:prompt_built', { promptLength: systemPrompt.length });
 
     // ── Create Tool Context for LLM ────────────────────────────────────────
-    const chravelToolCtx = createToolContext(tripId, userId);
+    const chravelToolCtx = createToolContext(tripId, userId, agentAssertion);
 
     // Track tool results for turn completion
     const turnToolResults: Array<{ name: string; result: unknown }> = [];
