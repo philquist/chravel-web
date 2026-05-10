@@ -55,6 +55,9 @@ jobs:
       - name: Run type check
         run: npm run typecheck
 
+      - name: Check formatting (Prettier)
+        run: npm run format:check
+
       - name: Run QA guardrails
         run: npm run qa:guardrails
 
