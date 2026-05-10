@@ -107,6 +107,16 @@ export const invokeConciergeWithTimeout = async (
   }
 };
 
+const normalizePayments = (
+  payments: FallbackTripContext['payments'],
+): NonNullable<FallbackTripContext['payments']> => {
+  if (!Array.isArray(payments)) return [];
+  return payments.filter(
+    (payment): payment is NonNullable<FallbackTripContext['payments']>[number] =>
+      typeof payment === 'object' && payment !== null,
+  );
+};
+
 export const generateFallbackResponse = (
   query: string,
   tripContext: FallbackTripContext,
@@ -139,7 +149,9 @@ export const generateFallbackResponse = (
 
   if (lowerQuery.match(/\b(payment|money|owe|spent|cost|budget|expense)\b/)) {
     if (tripContext?.payments?.length) {
-      const unsettled = tripContext.payments.filter(p => !p.isSettled && !p.settled);
+      const unsettled = normalizePayments(tripContext.payments).filter(
+        p => !p.isSettled && !p.settled,
+      );
       if (unsettled.length > 0) {
         const totalOwed = unsettled.reduce((sum: number, p) => sum + (p.amount || 0), 0);
         let response = `💰 **Outstanding Payments**\n\n`;

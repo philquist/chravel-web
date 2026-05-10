@@ -38,6 +38,7 @@ import { ChatSearchOverlay } from './ChatSearchOverlay';
 import { useEffectiveSystemMessagePreferences } from '@/hooks/useSystemMessagePreferences';
 import { useTripType } from '@/hooks/useTripType';
 import { ThreadView } from './ThreadView';
+import { FeatureErrorBoundary } from '@/components/FeatureErrorBoundary';
 import { useTripPrivacyConfig, getEffectivePrivacyMode } from '@/hooks/useTripPrivacyConfig';
 import { useTripChatMode } from '@/hooks/useTripChatMode';
 import { useLinkPreviews } from '../hooks/useLinkPreviews';
@@ -91,6 +92,14 @@ const STREAM_CAPABILITY_ALIASES: Record<StreamCapabilityName, string[]> = {
   'delete-own-message': ['delete-own-message', 'DeleteOwnMessage'],
   'delete-any-message': ['delete-any-message', 'DeleteAnyMessage'],
   'update-own-message': ['update-own-message', 'UpdateOwnMessage'],
+};
+
+const NON_CRITICAL_CHAT_NOTE = 'Some chat enhancements are temporarily unavailable.';
+
+const logNonCriticalChatError = (context: string, error: unknown) => {
+  if (import.meta.env.DEV) {
+    console.warn(`[TripChat] Non-critical ${context} failed`, error);
+  }
 };
 
 const hasStreamCapability = (
@@ -192,6 +201,14 @@ export const TripChat = React.memo(
       reload,
       activeChannel: streamActiveChannel,
     } = useTripChat(shouldSkipLiveChat ? undefined : resolvedTripId);
+
+    useEffect(() => {
+      if (!chatError) return;
+      console.error('[TripChat] Chat load failure', {
+        tripId: resolvedTripId,
+        message: chatError.message,
+      });
+    }, [chatError, resolvedTripId]);
 
     const { isRefreshing, pullDistance } = usePullToRefresh({
       onRefresh: async () => {
@@ -449,10 +466,14 @@ export const TripChat = React.memo(
 
     // Extract unique roles from participants for channel generation
 
-    const reactionUserNamesById = useMemo(
-      () => Object.fromEntries(tripMembers.map(member => [member.id, member.name])),
-      [tripMembers],
-    );
+    const reactionUserNamesById = useMemo(() => {
+      try {
+        return Object.fromEntries(tripMembers.map(member => [member.id, member.name]));
+      } catch (error) {
+        logNonCriticalChatError('reactions metadata mapping', error);
+        return {};
+      }
+    }, [tripMembers]);
 
     const participantRoles = useMemo(() => {
       if (!isPro) return [];
@@ -505,9 +526,9 @@ export const TripChat = React.memo(
         messages: liveMessages,
         tripMembers,
         currentUserId: user?.id,
-        channelReadState: streamActiveChannel?.state?.read as Record<
+        channelReadState: streamActiveChannel?.state?.read as unknown as Record<
           string,
-          { last_read?: string }
+          { last_read?: string | Date }
         >,
       });
     }, [
@@ -848,7 +869,7 @@ export const TripChat = React.memo(
       messagesWithFailed.map(message => ({
         id: message.id,
         text: message.text || '',
-        linkPreview: message.linkPreview,
+        linkPreview: (message as any).linkPreview,
       })),
     );
 
@@ -856,7 +877,7 @@ export const TripChat = React.memo(
       () =>
         messagesWithFailed.map(message => ({
           ...message,
-          linkPreview: message.linkPreview || linkPreviewFallbacks[message.id],
+          linkPreview: (message as any).linkPreview || linkPreviewFallbacks[message.id],
         })),
       [messagesWithFailed, linkPreviewFallbacks],
     );
@@ -865,15 +886,18 @@ export const TripChat = React.memo(
       () => derivePinnedMessages(liveFormattedMessages as any),
       [liveFormattedMessages],
     );
-    const readStatusesByMessage = useMemo(
-      () =>
-        selectReadStatusesByMessage({
+    const readStatusesByMessage = useMemo(() => {
+      try {
+        return selectReadStatusesByMessage({
           messages: liveMessages as any[],
           currentUserId: user?.id,
           activeChannel: streamActiveChannel as Channel | null,
-        }),
-      [liveMessages, streamActiveChannel, user?.id],
-    );
+        });
+      } catch (error) {
+        logNonCriticalChatError('read receipts projection', error);
+        return {};
+      }
+    }, [liveMessages, streamActiveChannel, user?.id]);
 
     const isLoading = demoMode.isDemoMode ? false : liveLoading;
 
@@ -1081,10 +1105,17 @@ export const TripChat = React.memo(
                   <div className="flex-1 flex items-center justify-center p-6">
                     <div className="text-center space-y-3">
                       <p className="text-sm text-muted-foreground">
-                        {chatError.message || 'Failed to load chat'}
+                        Something went wrong in Chat
                       </p>
+                      <p className="text-xs text-muted-foreground">{NON_CRITICAL_CHAT_NOTE}</p>
                       <button
-                        onClick={() => reload?.()}
+                        onClick={() => {
+                          toast.error('Chat needs a refresh', {
+                            description:
+                              'Please retry. If this persists, pull to refresh or reopen the trip.',
+                          });
+                          reload?.();
+                        }}
                         className="text-sm text-primary underline hover:no-underline"
                       >
                         Retry
@@ -1116,24 +1147,28 @@ export const TripChat = React.memo(
                         </div>
                       </div>
                     )}
-                    <VirtualizedMessageContainer
-                      messages={messagesWithPreviewFallbacks as any}
-                      renderMessage={renderMessage}
-                      onLoadMore={demoMode.isDemoMode ? () => {} : loadMoreMessages}
-                      hasMore={demoMode.isDemoMode ? false : hasMore}
-                      isLoading={isLoadingMore}
-                      initialVisibleCount={10}
-                      className="chat-scroll-container native-scroll px-3"
-                      autoScroll={true}
-                      restoreScroll={true}
-                      scrollKey={`chat-scroll-${resolvedTripId}`}
-                    />
+                    <FeatureErrorBoundary featureName="Chat Timeline Enhancements" fallback={null}>
+                      <VirtualizedMessageContainer
+                        messages={messagesWithPreviewFallbacks as any}
+                        renderMessage={renderMessage}
+                        onLoadMore={demoMode.isDemoMode ? () => {} : loadMoreMessages}
+                        hasMore={demoMode.isDemoMode ? false : hasMore}
+                        isLoading={isLoadingMore}
+                        initialVisibleCount={10}
+                        className="chat-scroll-container native-scroll px-3"
+                        autoScroll={true}
+                        restoreScroll={true}
+                        scrollKey={`chat-scroll-${resolvedTripId}`}
+                      />
+                    </FeatureErrorBoundary>
                   </>
                 )}
 
                 {/* Typing Indicator */}
                 {!demoMode.isDemoMode && typingUsers.length > 0 && (
-                  <TypingIndicator typingUsers={typingUsers} />
+                  <FeatureErrorBoundary featureName="Typing Indicator" fallback={null}>
+                    <TypingIndicator typingUsers={typingUsers} />
+                  </FeatureErrorBoundary>
                 )}
 
                 {/* Reply Bar */}

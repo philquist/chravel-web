@@ -24,9 +24,10 @@ import { toast } from 'sonner';
 import { PrivacyMode, getDefaultPrivacyMode } from '../types/privacy';
 import { ProCategoryEnum, PRO_CATEGORIES_ORDERED } from '../types/proCategories';
 import { getAllProTripColors } from '../utils/proTripColors';
-import { buildTripCoverStoragePath, TRIP_COVER_BUCKET } from '../utils/tripCoverStorage';
+import { uploadTripCoverBlob } from '../utils/tripCoverStorage';
 import { getFeaturePaywallConfig } from './subscription/featurePaywall';
 import { parseLocalDate } from '@/utils/dateHelpers';
+import { prepareImageForUpload, ImagePrepError } from '@/utils/imagePrep';
 
 interface CreateTripModalProps {
   isOpen: boolean;
@@ -150,12 +151,26 @@ export const CreateTripModal = ({ isOpen, onClose }: CreateTripModalProps) => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setCoverImage(file);
-      const previewUrl = URL.createObjectURL(file);
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset input so picking the same file twice still fires onChange
+    if (e.target) e.target.value = '';
+    if (!file) return;
+    try {
+      const prepared = await prepareImageForUpload(file);
+      // Wrap normalized blob back in a File so downstream upload keeps a name/type.
+      const normalizedFile = new File([prepared.blob], prepared.fileName, {
+        type: prepared.contentType,
+      });
+      setCoverImage(normalizedFile);
+      const previewUrl = URL.createObjectURL(prepared.blob);
       setCoverImagePreview(previewUrl);
+    } catch (err) {
+      const message =
+        err instanceof ImagePrepError
+          ? err.userMessage
+          : "We couldn't use that photo. Try a different one.";
+      toast.error(message);
     }
   };
 
@@ -210,18 +225,11 @@ export const CreateTripModal = ({ isOpen, onClose }: CreateTripModalProps) => {
         // Upload cover image if selected
         if (coverImage && !isDemoMode) {
           try {
-            const fileExt = coverImage.name.split('.').pop();
-            const filePath = buildTripCoverStoragePath(newTrip.id, `cover.${fileExt}`);
-
-            const { error: uploadError } = await supabase.storage
-              .from(TRIP_COVER_BUCKET)
-              .upload(filePath, coverImage);
-
-            if (uploadError) throw uploadError;
-
-            const {
-              data: { publicUrl },
-            } = supabase.storage.from(TRIP_COVER_BUCKET).getPublicUrl(filePath);
+            const { publicUrl } = await uploadTripCoverBlob({
+              client: supabase,
+              tripId: newTrip.id,
+              blob: coverImage,
+            });
 
             // Route through useTrips update path so homepage caches invalidate immediately.
             const coverUpdated = await updateTrip(newTrip.id, { cover_image_url: publicUrl });

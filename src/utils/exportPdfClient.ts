@@ -206,7 +206,7 @@ function hexToRgb(hex: string): [number, number, number] {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
     ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
-    : [66, 139, 202]; // Default blue
+    : [196, 151, 70]; // Default Chravel gold (#c49746)
 }
 
 function sanitizePdfText(value: string): string {
@@ -275,8 +275,9 @@ export async function generateClientPDF(
   // Clamp maxItemsPerSection to ensure it's always >= 1 to prevent infinite loops
   // Negative or zero values would cause chunkArray's loop to never progress
   const maxItems = Math.max(1, Math.floor(customization?.maxItemsPerSection || 100));
-  const primaryColor = customization?.primaryColor || '#428BCA';
-  const secondaryColor = customization?.secondaryColor || '#5BC0DE';
+  // Chravel premium gold palette
+  const primaryColor = customization?.primaryColor || '#c49746'; // warm metallic gold
+  const secondaryColor = customization?.secondaryColor || '#e8af48'; // warm glow gold
   const [primaryR, primaryG, primaryB] = hexToRgb(primaryColor);
   const [secondaryR, secondaryG, secondaryB] = hexToRgb(secondaryColor);
 
@@ -309,15 +310,17 @@ export async function generateClientPDF(
   const contentWidth = pageWidth - 2 * margin;
   let yPos = margin;
 
-  // Header
+  // Header - Trip title in Chravel gold
   doc.setFontSize(24);
   doc.setFont('NotoSans', 'bold');
+  doc.setTextColor(196, 151, 70); // Chravel warm metallic gold
   doc.text(sanitizePdfText(data.tripTitle), margin, yPos);
   yPos += 30;
 
   if (data.destination) {
     doc.setFontSize(12);
     doc.setFont('NotoSans', 'normal');
+    doc.setTextColor(60); // Dark gray for destination
     doc.text(sanitizePdfText(data.destination), margin, yPos);
     yPos += 20;
   }
@@ -338,8 +341,9 @@ export async function generateClientPDF(
     yPos += splitDesc.length * 14 + 10;
   }
 
-  // Add a separator line
-  doc.setDrawColor(200);
+  // Add a separator line in gold
+  doc.setDrawColor(196, 151, 70); // Chravel gold
+  doc.setLineWidth(0.5);
   doc.line(margin, yPos, pageWidth - margin, yPos);
   yPos += 30;
 
@@ -368,7 +372,7 @@ export async function generateClientPDF(
     yPos = checkPageBreak(doc, yPos, 60);
     doc.setFontSize(14);
     doc.setFont('NotoSans', 'bold');
-    doc.setTextColor(0);
+    doc.setTextColor(83, 53, 23); // Chravel dark bronze for section headings
     doc.text(heading, margin, yPos);
     yPos += 20;
   };
@@ -642,7 +646,8 @@ export async function generateClientPDF(
               if (hookData.section !== 'body' || hookData.column.index !== 1) return;
               if (!placeRows[hookData.row.index]?.linkUrl) return;
 
-              hookData.cell.styles.textColor = [37, 99, 235];
+              // Chravel gold for links
+              hookData.cell.styles.textColor = [196, 151, 70];
             },
             didDrawCell: hookData => {
               if (hookData.section !== 'body' || hookData.column.index !== 1) return;
@@ -1062,24 +1067,29 @@ export async function generateClientPDF(
   const totalPages = doc.internal.pages.length - 1; // jsPDF uses 1-indexed pages but array is 0-indexed
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    // Top-right brand text (no logo)
+    // Top-right brand text (no logo) - Chravel gold
     doc.setFont('NotoSans', 'bold');
     doc.setFontSize(12);
-    // Match the table header bar color for consistency and readability
-    doc.setTextColor(primaryR, primaryG, primaryB);
+    doc.setTextColor(196, 151, 70); // Chravel warm metallic gold
     const titleW = doc.getTextWidth(brandTitle);
     doc.text(brandTitle, pageWidth - margin - titleW, 22);
 
     doc.setFont('NotoSans', 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(30);
+    doc.setTextColor(83, 53, 23); // Chravel dark bronze for tagline
     const tagW = doc.getTextWidth(brandTagline);
     doc.text(brandTagline, pageWidth - margin - tagW, 36);
 
-    // Bottom-left footer
+    // Bottom-left footer with subtle gold accent
     doc.setFontSize(8);
-    doc.setTextColor(120);
+    doc.setTextColor(160, 122, 50); // Muted gold for footer
     doc.text(footerText, margin, pageHeight - 20);
+
+    // Page number on bottom right
+    doc.setTextColor(120);
+    const pageNum = `${i} / ${totalPages}`;
+    const pageNumW = doc.getTextWidth(pageNum);
+    doc.text(pageNum, pageWidth - margin - pageNumW, pageHeight - 20);
   }
 
   reportProgress(

@@ -243,7 +243,7 @@ export const TripTabs = ({
       switch (tabId) {
         case 'chat':
           return (
-            <FeatureErrorBoundary featureName="Trip Chat">
+            <FeatureErrorBoundary featureName="Trip Chat" fallback={<ChatSkeleton />}>
               <TripChat tripId={tripId} />
             </FeatureErrorBoundary>
           );
@@ -296,7 +296,7 @@ export const TripTabs = ({
           );
         default:
           return (
-            <FeatureErrorBoundary featureName="Trip Chat">
+            <FeatureErrorBoundary featureName="Trip Chat" fallback={<ChatSkeleton />}>
               <TripChat tripId={tripId} />
             </FeatureErrorBoundary>
           );

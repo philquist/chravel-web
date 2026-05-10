@@ -650,7 +650,10 @@ export const MobileTripTabs = ({
                   }`}
                 >
                   <Suspense fallback={getSkeletonForTab(tab.id)}>
-                    <FeatureErrorBoundary featureName={tab.label}>
+                    <FeatureErrorBoundary
+                      featureName={tab.label}
+                      fallback={tab.id === 'chat' ? <ChatSkeleton /> : undefined}
+                    >
                       {renderTabContent(tab.id)}
                     </FeatureErrorBoundary>
                   </Suspense>

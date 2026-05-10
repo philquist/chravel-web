@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Bell,
   MessageCircle,
@@ -8,20 +8,25 @@ import {
   FilePlus,
   Image,
   X,
+  Check,
   CheckSquare,
   DollarSign,
   UserPlus,
   MapPin,
   ChevronRight,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { useNotificationRealtime } from '@/hooks/useNotificationRealtime';
 import { mockNotifications } from '@/mockData/notifications';
+import { approveJoinRequestById, rejectJoinRequestById } from '@/lib/joinRequestMutations';
 import { cn } from '@/lib/utils';
+import { useDemoTripMembersStore } from '@/store/demoTripMembersStore';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +50,8 @@ interface Notification {
     | 'payment'
     | 'invite'
     | 'join_request'
+    | 'join_approved'
+    | 'join_rejected'
     | 'basecamp'
     | 'system';
   title: string;
@@ -94,6 +101,23 @@ function isJoinRequestApprovedNotification(notification: Notification): boolean 
     type === 'join_request_approved' ||
     title.includes('join request approved')
   );
+}
+
+function getJoinRequestIdFromMetadata(metadata: NotificationMetadata): string {
+  const raw = metadata.request_id ?? metadata.join_request_id;
+  return typeof raw === 'string' && raw.trim() !== '' ? raw : '';
+}
+
+/** In-app join request awaiting organizer action (has request id); excludes approved notices. */
+function isPendingJoinRequestWithActions(notification: Notification): boolean {
+  if (isJoinRequestApprovedNotification(notification)) {
+    return false;
+  }
+  const t = String(notification.type ?? '').toLowerCase();
+  if (t !== 'join_request') {
+    return false;
+  }
+  return getJoinRequestIdFromMetadata((notification.data || {}) as NotificationMetadata) !== '';
 }
 
 function extractTripNameFromApprovalDescription(description: string): string | null {
@@ -225,8 +249,13 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [joinActionLoadingId, setJoinActionLoadingId] = useState<string | null>(null);
+  const [demoHiddenJoinNotificationIds, setDemoHiddenJoinNotificationIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } =
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, deleteNotification } =
     useNotificationRealtime();
 
   const resolveTripRouteContext = async (
@@ -311,6 +340,7 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
     );
 
     if (!resolvedTripId) {
+      toast.error('Unable to open this trip. It may have been deleted.');
       onOpenChange(false);
       return;
     }
@@ -320,6 +350,88 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
 
     onOpenChange(false);
   };
+
+  const handleJoinRequestAccept = useCallback(
+    async (notification: Notification, e: React.MouseEvent) => {
+      e.stopPropagation();
+      const metadata = (notification.data || {}) as NotificationMetadata;
+      const requestId = getJoinRequestIdFromMetadata(metadata);
+      if (!requestId || joinActionLoadingId) {
+        return;
+      }
+
+      const tripId = getMetadataString(metadata, 'trip_id') || notification.tripId || '';
+
+      setJoinActionLoadingId(notification.id);
+      try {
+        if (isDemoMode) {
+          const requesterId = getMetadataString(metadata, 'requester_id');
+          const requesterName =
+            getMetadataString(metadata, 'requester_name') ||
+            getMetadataString(metadata, 'actor_name') ||
+            'New member';
+          const avatar =
+            typeof metadata.actor_avatar === 'string' ? metadata.actor_avatar : undefined;
+          if (requesterId && tripId) {
+            useDemoTripMembersStore.getState().addMember(tripId, {
+              id: requesterId,
+              name: requesterName,
+              avatar,
+            });
+          }
+          toast.success('✅ Request approved - member added to trip!');
+          setDemoHiddenJoinNotificationIds(prev => new Set(prev).add(notification.id));
+          return;
+        }
+
+        if (!user) {
+          return;
+        }
+
+        await approveJoinRequestById(queryClient, { requestId, tripId: tripId || undefined });
+        await deleteNotification(notification.id);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to approve request');
+      } finally {
+        setJoinActionLoadingId(null);
+      }
+    },
+    [joinActionLoadingId, isDemoMode, user, queryClient, deleteNotification],
+  );
+
+  const handleJoinRequestReject = useCallback(
+    async (notification: Notification, e: React.MouseEvent) => {
+      e.stopPropagation();
+      const metadata = (notification.data || {}) as NotificationMetadata;
+      const requestId = getJoinRequestIdFromMetadata(metadata);
+      if (!requestId || joinActionLoadingId) {
+        return;
+      }
+
+      const tripId = getMetadataString(metadata, 'trip_id') || notification.tripId || '';
+
+      setJoinActionLoadingId(notification.id);
+      try {
+        if (isDemoMode) {
+          toast.success('Request rejected');
+          setDemoHiddenJoinNotificationIds(prev => new Set(prev).add(notification.id));
+          return;
+        }
+
+        if (!user) {
+          return;
+        }
+
+        await rejectJoinRequestById(queryClient, { requestId, tripId: tripId || undefined });
+        await deleteNotification(notification.id);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to reject request');
+      } finally {
+        setJoinActionLoadingId(null);
+      }
+    },
+    [joinActionLoadingId, isDemoMode, user, queryClient, deleteNotification],
+  );
 
   const handleMarkAllAsRead = async () => {
     if (!isDemoMode && user) {
@@ -334,23 +446,30 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
   };
 
   // Demo mode: use mock data (hook returns empty when isDemoMode)
-  const displayNotifications = isDemoMode
-    ? mockNotifications.map(n => ({
-        id: n.id,
-        type: n.type as Notification['type'],
-        title: n.title,
-        description: n.message,
-        tripId: n.tripId,
-        tripName: n.data?.trip_name || 'Demo Trip',
-        timestamp: formatDistanceToNow(new Date(n.timestamp), { addSuffix: true }),
-        isRead: n.read,
-        isHighPriority: n.type === 'broadcast',
-        data: { ...n.data, tripType: n.tripType },
-      }))
-    : notifications;
+  const displayNotifications = useMemo(() => {
+    const mapped = isDemoMode
+      ? mockNotifications.map(n => ({
+          id: n.id,
+          type: n.type as Notification['type'],
+          title: n.title,
+          description: n.message,
+          tripId: n.tripId,
+          tripName: n.data?.trip_name || 'Demo Trip',
+          timestamp: formatDistanceToNow(new Date(n.timestamp), { addSuffix: true }),
+          isRead: n.read,
+          isHighPriority: n.type === 'broadcast',
+          data: { ...n.data, tripType: n.tripType },
+        }))
+      : notifications;
+
+    if (!isDemoMode) {
+      return mapped;
+    }
+    return mapped.filter(n => !demoHiddenJoinNotificationIds.has(n.id));
+  }, [isDemoMode, notifications, demoHiddenJoinNotificationIds]);
 
   const displayUnreadCount = isDemoMode
-    ? mockNotifications.filter(n => !n.read).length
+    ? displayNotifications.filter(n => !n.isRead).length
     : unreadCount;
 
   return (
@@ -434,6 +553,40 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
                     </p>
                     {isJoinRequestApprovedNotification(notification) && (
                       <p className="text-[11px] text-primary/85 mb-1">Tap to open trip</p>
+                    )}
+                    {isPendingJoinRequestWithActions(notification) && (
+                      <div
+                        className="flex flex-wrap items-center gap-2 mt-2"
+                        onClick={e => e.stopPropagation()}
+                        onKeyDown={e => e.stopPropagation()}
+                        role="group"
+                        aria-label="Join request actions"
+                      >
+                        <button
+                          type="button"
+                          disabled={joinActionLoadingId !== null}
+                          onClick={e => {
+                            void handleJoinRequestAccept(notification, e);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-md bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-medium px-2.5 py-1.5 min-h-[44px] sm:min-h-0 disabled:opacity-50"
+                          aria-label="Accept join request"
+                        >
+                          <Check size={14} className="shrink-0" aria-hidden />
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          disabled={joinActionLoadingId !== null}
+                          onClick={e => {
+                            void handleJoinRequestReject(notification, e);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-md bg-destructive/90 hover:bg-destructive text-destructive-foreground text-xs font-medium px-2.5 py-1.5 min-h-[44px] sm:min-h-0 disabled:opacity-50"
+                          aria-label="Deny join request"
+                        >
+                          <X size={14} className="shrink-0" aria-hidden />
+                          Deny
+                        </button>
+                      </div>
                     )}
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-muted-foreground/70">{notification.tripName}</p>

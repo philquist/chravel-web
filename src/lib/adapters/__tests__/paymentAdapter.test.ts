@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toAppPayment, toDbPaymentInsert } from '../paymentAdapter';
+import { normalizePaymentMessages, toAppPayment, toDbPaymentInsert } from '../paymentAdapter';
 import type { Database } from '../../../integrations/supabase/types';
 
 type PaymentRow = Database['public']['Tables']['trip_payment_messages']['Row'];
@@ -110,6 +110,22 @@ describe('paymentAdapter', () => {
       });
       expect(result.split_participants).toEqual([]);
       expect(result.payment_methods).toEqual([]);
+    });
+  });
+
+  describe('normalizePaymentMessages', () => {
+    it('returns [] for non-array inputs', () => {
+      expect(normalizePaymentMessages(undefined)).toEqual([]);
+      expect(normalizePaymentMessages(null)).toEqual([]);
+      expect(normalizePaymentMessages('payments')).toEqual([]);
+      expect(normalizePaymentMessages({ id: 'pay-1' })).toEqual([]);
+    });
+
+    it('filters invalid rows from arrays', () => {
+      const valid = toAppPayment(baseRow);
+      const result = normalizePaymentMessages([valid, { bad: true }, 123]);
+
+      expect(result).toEqual([valid]);
     });
   });
 });

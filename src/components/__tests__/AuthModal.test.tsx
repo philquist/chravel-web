@@ -140,13 +140,15 @@ describe('AuthModal', () => {
       });
     });
 
-    it('centers the sheet vertically on all breakpoints (tablet-safe)', async () => {
+    it('uses a flex column so the brand band fills space above the anchored sign-in sheet', async () => {
       render(<AuthModal isOpen={true} onClose={mockOnClose} />, {
         wrapper: createTestWrapper(),
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('auth-modal-content')).toHaveClass('items-center');
+        const content = screen.getByTestId('auth-modal-content');
+        expect(content).toHaveClass('flex-col');
+        expect(content).toHaveClass('flex-1');
       });
     });
 
@@ -204,11 +206,7 @@ describe('AuthModal', () => {
       });
 
       expect(screen.getByRole('button', { name: /^apple$/i })).toBeInTheDocument();
-      expect(
-        screen.queryByText(
-          /in-app sign-in uses email\/password to keep authentication inside the app/i,
-        ),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/To stay inside the app/i)).not.toBeInTheDocument();
     });
   });
 });

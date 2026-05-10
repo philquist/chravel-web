@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { CoverPhotoCropModal } from './CoverPhotoCropModal';
 import { CoverPhotoFullscreenModal } from './CoverPhotoFullscreenModal';
 import { TRIP_COVER_BUCKET, uploadTripCoverBlob } from '@/utils/tripCoverStorage';
+import { ImagePrepError, prepareImageForUpload } from '@/utils/imagePrep';
 import { isBlobOrDataUrl } from '@/utils/mediaUtils';
 
 interface TripCoverPhotoUploadProps {
@@ -41,14 +42,25 @@ export const TripCoverPhotoUpload = ({
   const [selectedImageSrc, setSelectedImageSrc] = useState<string>('');
   const [hasImageError, setHasImageError] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
 
     const file = acceptedFiles[0];
-    const previewUrl = URL.createObjectURL(file);
-
-    setSelectedImageSrc(previewUrl);
-    setShowCropModal(true);
+    try {
+      // Validate size + reject HEIC + bake in EXIF orientation up front so
+      // the crop modal sees a properly-rotated image and the storage upload
+      // never receives a format the browser can't render.
+      const prepared = await prepareImageForUpload(file);
+      const previewUrl = URL.createObjectURL(prepared.blob);
+      setSelectedImageSrc(previewUrl);
+      setShowCropModal(true);
+    } catch (err) {
+      const message =
+        err instanceof ImagePrepError
+          ? err.userMessage
+          : "We couldn't use that photo. Try a different one.";
+      toast.error(message);
+    }
   }, []);
 
   const handleAdjustPosition = useCallback(() => {
@@ -161,8 +173,19 @@ export const TripCoverPhotoUpload = ({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected: rejections => {
+      const first = rejections[0]?.errors[0];
+      if (!first) return;
+      if (first.code === 'file-too-large') {
+        toast.error('That photo is over 10MB. Please pick a smaller image.');
+      } else if (first.code === 'file-invalid-type') {
+        toast.error('Unsupported file type. Use JPG, PNG, GIF, or WebP.');
+      } else {
+        toast.error(first.message || "We couldn't use that photo.");
+      }
+    },
     accept: {
-      'image/*': ['.png', '.jpg', '.jpeg', '.gif'],
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
     },
     maxSize: 10 * 1024 * 1024, // 10MB
     multiple: false,
