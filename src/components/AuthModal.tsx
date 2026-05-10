@@ -43,6 +43,7 @@ export const AuthModal = ({
   // Track when we're waiting for auth state to update after successful sign-in
   const [awaitingAuth, setAwaitingAuth] = useState(false);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const installedShell = isInstalledApp();
 
   useEffect(() => {
     if (!isOpen) return;
