@@ -204,11 +204,7 @@ describe('AuthModal', () => {
       });
 
       expect(screen.getByRole('button', { name: /^apple$/i })).toBeInTheDocument();
-      expect(
-        screen.queryByText(
-          /in-app sign-in uses email\/password to keep authentication inside the app/i,
-        ),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/To stay inside the app/i)).not.toBeInTheDocument();
     });
   });
 });

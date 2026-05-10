@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Mail, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { authEvents } from '@/telemetry/events';
-import { isInstalledApp } from '@/utils/platformDetection';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -86,8 +85,6 @@ export const AuthModal = ({
   }, [awaitingAuth, onClose]);
 
   if (!isOpen) return null;
-
-  const installedShell = isInstalledApp();
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -338,7 +335,7 @@ export const AuthModal = ({
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div
           aria-hidden="true"
-          className="pointer-events-none flex shrink-0 justify-center px-4 pb-2 pt-[max(env(safe-area-inset-top),16px)]"
+          className="pointer-events-none flex shrink-0 justify-center px-4 pb-2 pt-[max(env(safe-area-inset-top),28px)]"
         >
           <span className="gold-gradient-text text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
             ChravelApp
@@ -424,13 +421,6 @@ export const AuthModal = ({
           renderForgotPassword()
         ) : (
           <>
-            {installedShell && (
-              <p className="mb-4 text-center text-xs leading-relaxed text-gray-400">
-                To stay inside the app, use email and password. Google and Apple open your
-                device&apos;s secure browser once (required for account verification), then return
-                you here automatically.
-              </p>
-            )}
             <div className="grid grid-cols-2 gap-3 mb-4">
               {/* Google OAuth Button */}
               <button
