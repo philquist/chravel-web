@@ -3,7 +3,6 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthModal } from '@/components/AuthModal';
 import { useAuth } from '@/hooks/useAuth';
 import { notifyNativeShellReady } from '@/utils/nativeBridge';
-import { AuthBrandWordmark } from '@/components/auth/AuthBrandWordmark';
 
 type AuthMode = 'signin' | 'signup';
 
@@ -70,7 +69,6 @@ const AuthPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <AuthBrandWordmark />
       <AuthModal
         isOpen={true}
         initialMode={mode}
