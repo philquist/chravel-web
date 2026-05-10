@@ -16,7 +16,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders } from '../_shared/cors.ts';
-import { executeFunctionCall } from '../_shared/functionExecutor.ts';
 import { generateCapabilityToken } from '../_shared/security/capabilityTokens.ts';
 import { executeToolSecurely } from '../_shared/security/toolRouter.ts';
 import { checkRateLimit } from '../_shared/security.ts';
@@ -57,7 +56,7 @@ serve(async (req: Request) => {
     }
 
     // Parse body early — assertion flow needs tripId from body for claim matching.
-    let body: { toolName?: unknown; args?: unknown; tripId?: unknown; userId?: unknown };
+    let body: { toolName?: unknown; args?: unknown; tripId?: unknown };
     try {
       body = await req.json();
     } catch {

@@ -144,7 +144,21 @@ serve(async req => {
     const agentAssertion = await generateAgentAssertion({
       user_id: user.id,
       trip_id: tripId,
-      allowed_tools: ['*'],
+      allowed_tools: [
+        'searchPlaces',
+        'searchWeb',
+        'searchFlights',
+        'searchHotels',
+        'getHotelDetails',
+        'getWeatherForecast',
+        'searchImages',
+        'getPlaceDetails',
+        'getDirectionsETA',
+        'getDistanceMatrix',
+        'getStaticMapUrl',
+        'makeReservation',
+        'emitReservationDraft',
+      ],
     });
 
     await roomService.createRoom({
