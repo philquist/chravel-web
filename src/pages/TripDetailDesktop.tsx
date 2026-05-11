@@ -1,10 +1,9 @@
 import React, { useState, Suspense, lazy } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { LogIn, Users } from 'lucide-react';
 import { MessageInbox } from '../components/MessageInbox';
 import { TripDetailHeader } from '../components/trip/TripDetailHeader';
 import { TripDetailModals } from '../components/trip/TripDetailModals';
-import { LoadingSpinner } from '../components/LoadingSpinner';
 import { usePerformanceMonitor } from '../hooks/usePerformanceMonitor';
 
 // 🚀 OPTIMIZATION: Lazy load heavy components for faster initial render
@@ -35,6 +34,7 @@ import { useDemoMode } from '../hooks/useDemoMode';
 import { useQueryClient } from '@tanstack/react-query';
 import { tripKeys } from '@/lib/queryKeys';
 import { usePendingActions } from '../hooks/usePendingActions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * TripDetailDesktop Component
@@ -48,6 +48,7 @@ export const TripDetailDesktop = () => {
   usePerformanceMonitor('TripDetailDesktop');
   const { tripId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
   const queryClient = useQueryClient();
@@ -99,20 +100,26 @@ export const TripDetailDesktop = () => {
     }
   }, [trip, tripDescription]);
 
-  // Auto-scroll to chat on page load for desktop
+  // Auto-scroll to chat only when navigation explicitly targets chat context.
   React.useEffect(() => {
-    if (!loading && trip) {
-      const scrollToChat = () => {
-        setTimeout(() => {
-          const chatElement = document.querySelector('[data-chat-container]');
-          if (chatElement) {
-            chatElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 300);
-      };
-      scrollToChat();
-    }
-  }, [loading, trip]);
+    if (loading || !trip) return;
+
+    const searchParams = new URLSearchParams(location.search);
+    const hasExplicitChatIntent =
+      searchParams.get('tab') === 'chat' ||
+      searchParams.get('scrollTo') === 'chat' ||
+      searchParams.get('focus') === 'chat' ||
+      location.hash === '#chat';
+
+    if (!hasExplicitChatIntent) return;
+
+    window.setTimeout(() => {
+      const chatElement = document.querySelector('[data-chat-container]');
+      if (chatElement) {
+        chatElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 300);
+  }, [loading, trip, location.search, location.hash]);
 
   // 🔒 FIX: REMOVED dangerous cache cleanup on unmount
   // This was causing race conditions where queries were removed during navigation.
@@ -206,39 +213,35 @@ export const TripDetailDesktop = () => {
   if (loading || isAuthLoading) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="container mx-auto px-6 py-4 pb-8 max-w-7xl" aria-hidden="true">
-          {/* Skeleton Header Navigation */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="h-8 w-32 bg-white/[0.06] rounded-lg animate-pulse" />
+        <div className="mx-auto w-full max-w-7xl px-4 py-4 pb-8 md:px-6 lg:px-8" aria-hidden="true">
+          <div className="mb-6 flex items-center justify-between">
+            <Skeleton className="h-8 w-32 rounded-lg bg-white/[0.06]" />
             <div className="flex gap-2">
-              <div className="h-10 w-10 bg-white/[0.06] rounded-full animate-pulse" />
-              <div className="h-10 w-10 bg-white/[0.06] rounded-full animate-pulse" />
+              <Skeleton className="h-10 w-10 rounded-full bg-white/[0.06]" />
+              <Skeleton className="h-10 w-10 rounded-full bg-white/[0.06]" />
             </div>
           </div>
-          {/* Skeleton Cover Photo + Details */}
-          <div className="mb-8 animate-pulse">
-            <div className="h-64 bg-white/[0.03] rounded-3xl mb-4" />
-            <div className="rounded-2xl md:rounded-3xl p-3 md:p-4 border border-white/[0.08] bg-white/[0.03]">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="mb-8">
+            <Skeleton className="mb-4 h-64 rounded-3xl bg-white/[0.03]" />
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 md:rounded-3xl md:p-4">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div className="space-y-4">
-                  <div className="h-5 bg-white/[0.04] rounded w-2/3" />
-                  <div className="h-4 bg-white/[0.04] rounded w-1/2" />
+                  <Skeleton className="h-5 w-2/3 bg-white/[0.04]" />
+                  <Skeleton className="h-4 w-1/2 bg-white/[0.04]" />
                 </div>
-                <div className="rounded-2xl p-3 border border-white/[0.05] bg-white/[0.02] h-[120px]" />
+                <Skeleton className="h-[120px] rounded-2xl border border-white/[0.05] bg-white/[0.02]" />
               </div>
             </div>
           </div>
-          {/* Skeleton Tabs */}
-          <div className="flex gap-2 mb-4">
+          <div className="mb-4 flex gap-2">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="h-10 w-24 bg-white/[0.06] rounded-xl animate-pulse" />
+              <Skeleton key={i} className="h-10 w-24 rounded-xl bg-white/[0.06]" />
             ))}
           </div>
-          {/* Skeleton Content */}
           <div className="space-y-4">
-            <div className="h-20 bg-white/[0.03] rounded-2xl animate-pulse" />
-            <div className="h-20 bg-white/[0.03] rounded-2xl animate-pulse" />
-            <div className="h-20 bg-white/[0.03] rounded-2xl animate-pulse" />
+            <Skeleton className="h-20 rounded-2xl bg-white/[0.03]" />
+            <Skeleton className="h-20 rounded-2xl bg-white/[0.03]" />
+            <Skeleton className="h-20 rounded-2xl bg-white/[0.03]" />
           </div>
         </div>
       </div>
@@ -564,7 +567,7 @@ export const TripDetailDesktop = () => {
   // Desktop experience
   return (
     <div className="min-h-screen bg-black">
-      <div className="container mx-auto px-6 py-4 pb-8 max-w-7xl">
+      <div className="mx-auto w-full max-w-7xl px-4 py-4 pb-8 md:px-6 lg:px-8">
         {/* Top Navigation */}
         <TripDetailHeader
           tripContext={tripContext}
@@ -585,15 +588,15 @@ export const TripDetailDesktop = () => {
         {/* Trip Header with Cover Photo Upload */}
         <Suspense
           fallback={
-            <div className="mb-8 animate-pulse" aria-hidden="true">
-              <div className="h-64 bg-white/[0.03] rounded-3xl mb-4" />
-              <div className="rounded-2xl md:rounded-3xl p-3 md:p-4 border border-white/[0.08] bg-white/[0.03]">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="mb-8" aria-hidden="true">
+              <Skeleton className="mb-4 h-64 rounded-3xl bg-white/[0.03]" />
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 md:rounded-3xl md:p-4">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   <div className="space-y-4">
-                    <div className="h-5 bg-white/[0.04] rounded w-2/3" />
-                    <div className="h-4 bg-white/[0.04] rounded w-1/2" />
+                    <Skeleton className="h-5 w-2/3 bg-white/[0.04]" />
+                    <Skeleton className="h-4 w-1/2 bg-white/[0.04]" />
                   </div>
-                  <div className="rounded-2xl p-3 border border-white/[0.05] bg-white/[0.02] h-[120px]" />
+                  <Skeleton className="h-[120px] rounded-2xl border border-white/[0.05] bg-white/[0.02]" />
                 </div>
               </div>
             </div>
@@ -615,7 +618,7 @@ export const TripDetailDesktop = () => {
         </Suspense>
 
         {/* Main Content */}
-        <Suspense fallback={<LoadingSpinner className="my-12" />}>
+        <Suspense fallback={<Skeleton className="my-12 h-48 rounded-2xl bg-white/[0.03]" />}>
           <TripDetailContent
             activeTab={activeTab}
             onTabChange={setActiveTab}
