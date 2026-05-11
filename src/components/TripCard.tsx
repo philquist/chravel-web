@@ -148,7 +148,7 @@ export const TripCard = ({
 
   const actionButtonClass = cn(
     buttonVariants({ variant: 'ghost', size: 'sm' }),
-    'bg-gray-800/50 text-white border border-gold-primary/30 hover:bg-gray-700/50 hover:border-gold-primary/50 disabled:opacity-50 disabled:cursor-not-allowed md:min-h-[44px] md:text-sm text-xs px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
+    'bg-gray-800/50 text-white border border-white/15 hover:bg-gray-700/50 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed md:min-h-[44px] md:text-sm text-xs px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
   );
 
   const handleArchiveTrip = async () => {
@@ -414,7 +414,7 @@ export const TripCard = ({
 
   return (
     <div
-      className="group bg-white/5 hover:bg-white/10 backdrop-blur-xl border border-white/10 hover:border-gold-primary/30 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-lg md:shadow-black/20"
+      className="group bg-white/5 hover:bg-white/10 backdrop-blur-xl border border-white/15 hover:border-white/30 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-black/30"
       onMouseEnter={handlePrefetch}
       onFocus={handlePrefetch}
       onTouchStart={handlePrefetch}
@@ -486,21 +486,21 @@ export const TripCard = ({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2 text-white mb-1 md:mb-3 text-sm md:text-base">
+            <div className="flex items-center gap-2 text-white mb-1 md:mb-3 text-sm md:text-base min-w-0">
               <MapPin size={14} className="md:hidden gold-gradient-icon" />
               <MapPin size={18} className="hidden md:block gold-gradient-icon" />
-              <span title={trip.location} className="font-medium md:truncate md:max-w-[220px]">
+              <span title={trip.location} className="font-medium truncate">
                 {trip.location}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-white text-sm md:text-base">
+            <div className="flex items-center gap-2 text-white text-sm md:text-base min-w-0">
               <span className="md:hidden inline-flex gold-gradient-icon">
                 <CalendarGlyph size={14} />
               </span>
               <span className="hidden md:inline-flex gold-gradient-icon">
                 <CalendarGlyph size={18} />
               </span>
-              <span title={trip.dateRange} className="font-medium md:truncate md:max-w-[220px]">
+              <span title={trip.dateRange} className="font-medium truncate">
                 {trip.dateRange}
               </span>
             </div>

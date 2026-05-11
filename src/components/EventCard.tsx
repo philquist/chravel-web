@@ -47,6 +47,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+import { Badge } from './ui/badge';
+import { buttonVariants } from './ui/button';
+import { cn } from '@/lib/utils';
 
 // Stable empty array reference - prevents infinite re-renders from Zustand selector
 const EMPTY_PARTICIPANTS: Array<{ id: number | string; name: string; avatar?: string }> = [];
@@ -212,6 +215,11 @@ export const EventCard = ({
     }
   };
 
+  const actionButtonClass = cn(
+    buttonVariants({ variant: 'ghost', size: 'sm' }),
+    'bg-black/30 hover:bg-black/40 text-white border border-white/20 hover:border-white/30 md:min-h-[44px] md:text-sm text-xs px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
+  );
+
   // Build share trip data for ShareTripModal
   const shareTripData = {
     id: event.id,
@@ -225,7 +233,10 @@ export const EventCard = ({
 
   return (
     <div
-      className={`bg-gradient-to-br ${eventColor.cardGradient} backdrop-blur-xl border border-white/20 hover:border-white/40 rounded-3xl overflow-hidden transition-all duration-300 shadow-lg hover:scale-[1.02] relative group`}
+      className={cn(
+        'bg-gradient-to-br backdrop-blur-xl border border-white/15 hover:border-white/30 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 shadow-black/30 hover:scale-[1.02] hover:shadow-2xl relative group',
+        eventColor.cardGradient,
+      )}
     >
       {/* Header */}
       <div
@@ -243,16 +254,28 @@ export const EventCard = ({
         <div className="relative z-10 flex justify-between items-start h-full">
           {/* Event Info */}
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col justify-end">
-            <h3 className="text-2xl font-bold text-white mb-2 line-clamp-2">{event.title}</h3>
-            <div className="flex items-center gap-2 text-white/80 mb-2">
-              <MapPin size={16} className="gold-gradient-icon" />
-              <span className="font-medium">{event.location}</span>
+            <div className="flex items-center gap-2 mb-2">
+              <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">Event</Badge>
             </div>
-            <div className="flex items-center gap-2 text-white/80">
+            <h3
+              className="text-lg md:text-xl font-bold text-white mb-2 line-clamp-2 md:line-clamp-1"
+              title={event.title}
+            >
+              {event.title}
+            </h3>
+            <div className="flex items-center gap-2 text-white/80 mb-2 min-w-0">
+              <MapPin size={16} className="gold-gradient-icon" />
+              <span className="font-medium truncate" title={event.location}>
+                {event.location}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-white/80 min-w-0">
               <span className="gold-gradient-icon inline-flex">
                 <CalendarGlyph size={16} />
               </span>
-              <span className="font-medium">{event.dateRange}</span>
+              <span className="font-medium truncate" title={event.dateRange}>
+                {event.dateRange}
+              </span>
             </div>
           </div>
 
@@ -330,30 +353,18 @@ export const EventCard = ({
 
         {/* Action Buttons - 2x2 Grid matching TripCard/ProTripCard */}
         <div className="grid grid-cols-2 gap-2 md:gap-3">
-          <button
-            onClick={() => setShowExportModal(true)}
-            className="bg-black/30 hover:bg-black/40 text-white py-2.5 md:py-3 px-3 rounded-lg md:rounded-xl transition-all duration-200 font-medium border border-white/20 hover:border-white/30 text-xs md:text-sm flex items-center justify-center gap-2"
-          >
+          <button onClick={() => setShowExportModal(true)} className={actionButtonClass}>
             <FileDown size={16} />
             Recap
           </button>
-          <button
-            onClick={() => setShowInviteModal(true)}
-            className="bg-black/30 hover:bg-black/40 text-white py-2.5 md:py-3 px-3 rounded-lg md:rounded-xl transition-all duration-200 font-medium border border-white/20 hover:border-white/30 text-xs md:text-sm flex items-center justify-center gap-2"
-          >
+          <button onClick={() => setShowInviteModal(true)} className={actionButtonClass}>
             <UserPlus size={16} />
             Invite
           </button>
-          <button
-            onClick={handleViewEvent}
-            className="bg-black/30 hover:bg-black/40 text-white font-medium py-2.5 md:py-3 px-3 rounded-lg md:rounded-xl transition-all duration-200 text-xs md:text-sm border border-white/20 hover:border-white/30 flex items-center justify-center gap-2"
-          >
+          <button onClick={handleViewEvent} className={actionButtonClass}>
             View Event
           </button>
-          <button
-            onClick={() => setShowShareModal(true)}
-            className="bg-black/30 hover:bg-black/40 text-white py-2.5 md:py-3 px-3 rounded-lg md:rounded-xl transition-all duration-200 font-medium border border-white/20 hover:border-white/30 text-xs md:text-sm flex items-center justify-center gap-2"
-          >
+          <button onClick={() => setShowShareModal(true)} className={actionButtonClass}>
             <Share2 size={16} />
             Share
           </button>
