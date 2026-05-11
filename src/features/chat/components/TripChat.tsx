@@ -21,7 +21,7 @@ import { useTripChat } from '../hooks/useTripChat';
 import { useAuth } from '@/hooks/useAuth';
 import { hapticService } from '@/services/hapticService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Pin, WifiOff } from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 import { useRoleChannels } from '@/hooks/useRoleChannels';
 import { ChannelChatView } from '@/components/pro/channels/ChannelChatView';
 import { TypingIndicator } from './TypingIndicator';
@@ -510,7 +510,7 @@ export const TripChat = React.memo(
     });
 
     // Track unread counts with real-time updates
-    const { broadcastCount, messageUnreadCount } = useUnreadCounts({
+    const { totalBroadcastCount, messageUnreadCount } = useUnreadCounts({
       tripId: resolvedTripId,
       messages: liveMessages,
       userId: user?.id || null,
@@ -1081,7 +1081,7 @@ export const TripChat = React.memo(
               hasChannels={availableChannels.length > 0 || participantRoles.length > 0}
               onSearchClick={() => setShowSearchOverlay(true)}
               isPro={isPro}
-              broadcastCount={broadcastCount}
+              broadcastBadgeCount={totalBroadcastCount}
               unreadCount={messageUnreadCount}
               pinnedCount={pinnedMessages.length}
               availableChannels={availableChannels as any}

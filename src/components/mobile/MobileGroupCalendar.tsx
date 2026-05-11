@@ -360,9 +360,9 @@ export const MobileGroupCalendar = ({
           isRetrying={isFetching}
         />
       ) : (
-        <>
+        <div className="flex min-h-0 flex-1 flex-col">
           {/* Month Navigation */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+          <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
             <button
               onClick={handlePreviousMonth}
               className="p-2 hover:bg-white/10 rounded-lg active:scale-95 transition-all"
@@ -382,9 +382,15 @@ export const MobileGroupCalendar = ({
 
           {/* DAY VIEW (list mode): Events at TOP, compact calendar at BOTTOM */}
           {currentViewMode === 'list' && (
-            <>
-              {/* Day Header + Events List - NOW AT TOP */}
-              <div className="flex-1 overflow-y-auto px-4 py-3">
+            <div className="flex flex-col flex-1 min-h-0">
+              {/* Day Header + Events List — only grows when this day has events (empty state should not steal vertical space from the calendar). */}
+              <div
+                className={
+                  eventsForSelectedDate.length > 0
+                    ? 'flex-1 min-h-0 overflow-y-auto px-4 py-3'
+                    : 'shrink-0 px-4 py-3'
+                }
+              >
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-semibold text-white">
                     {format(selectedDate, 'EEEE, MMMM d')}
@@ -399,7 +405,7 @@ export const MobileGroupCalendar = ({
 
                 <div className="space-y-3">
                   {eventsForSelectedDate.length === 0 ? (
-                    <div className="text-center py-8">
+                    <div className="text-center py-3">
                       <p className="text-gray-400 text-sm">No events for this day.</p>
                     </div>
                   ) : (
@@ -433,7 +439,7 @@ export const MobileGroupCalendar = ({
               </div>
 
               {/* Action Buttons - Middle section */}
-              <div className="flex justify-center gap-2 px-4 py-2 border-y border-white/10 bg-black/50">
+              <div className="flex shrink-0 justify-center gap-2 px-4 py-2 border-y border-white/10 bg-black/50">
                 <button
                   onClick={handleImport}
                   className="flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-gray-300 transition-colors active:scale-95"
@@ -471,10 +477,16 @@ export const MobileGroupCalendar = ({
                 </button>
               </div>
 
-              {/* Compact Mini Calendar - NOW AT BOTTOM */}
-              <div className="px-4 py-2 border-t border-white/10 bg-black/30">
+              {/* Compact Mini Calendar - expands into leftover height when the selected day has no events */}
+              <div
+                className={
+                  eventsForSelectedDate.length === 0
+                    ? 'flex flex-1 min-h-0 flex-col px-4 py-2 border-t border-white/10 bg-black/30'
+                    : 'shrink-0 px-4 py-2 border-t border-white/10 bg-black/30'
+                }
+              >
                 {/* Compact Month Navigation */}
-                <div className="flex items-center justify-between py-1.5 mb-1">
+                <div className="flex shrink-0 items-center justify-between py-1.5 mb-1">
                   <button
                     onClick={handlePreviousMonth}
                     className="p-1.5 hover:bg-white/10 rounded-lg active:scale-95 transition-all"
@@ -493,7 +505,7 @@ export const MobileGroupCalendar = ({
                 </div>
 
                 {/* Compact Weekday Headers */}
-                <div className="grid grid-cols-7 gap-0.5 mb-1">
+                <div className="mb-1 grid shrink-0 grid-cols-7 gap-0.5">
                   {weekDays.map(day => (
                     <div
                       key={`compact-${day}`}
@@ -504,21 +516,29 @@ export const MobileGroupCalendar = ({
                   ))}
                 </div>
 
-                {/* Compact Calendar Days - 5 rows max */}
-                <div className="grid grid-cols-7 gap-0.5">
+                {/* Compact Calendar Days - 5 rows max; rows stretch when this day is empty so the grid is easier to tap */}
+                <div
+                  className={
+                    eventsForSelectedDate.length === 0
+                      ? 'grid min-h-0 flex-1 grid-cols-7 gap-0.5 pt-0.5 [grid-template-rows:repeat(5,minmax(1.875rem,1fr))]'
+                      : 'grid grid-cols-7 gap-0.5'
+                  }
+                >
                   {calendarDays.slice(0, 35).map((date, index) => {
                     const isCurrentMonth = isSameMonth(date, currentMonth);
                     const isSelected = isSameDay(date, selectedDate);
                     const isToday = isSameDay(date, new Date());
                     const hasEvents = events.some(e => isSameDay(e.date, date));
+                    const expandDayCells = eventsForSelectedDate.length === 0;
 
                     return (
                       <button
                         key={`compact-day-${index}`}
                         onClick={() => handleDateSelect(date)}
                         className={`
-                          h-7 rounded flex items-center justify-center text-xs relative
+                          rounded flex items-center justify-center text-xs relative
                           transition-all duration-150 active:scale-95
+                          ${expandDayCells ? 'h-full min-h-[1.875rem] w-full' : 'h-7'}
                           ${isCurrentMonth ? 'text-gray-300' : 'text-gray-600'}
                           ${
                             isSelected
@@ -538,14 +558,14 @@ export const MobileGroupCalendar = ({
                   })}
                 </div>
               </div>
-            </>
+            </div>
           )}
 
           {/* MONTH GRID VIEW: Full calendar grid with inline events */}
           {currentViewMode === 'grid' && (
-            <>
+            <div className="flex min-h-0 flex-1 flex-col">
               {/* Action Buttons for Month Grid */}
-              <div className="flex justify-center gap-2 px-4 py-3 border-b border-white/10">
+              <div className="flex shrink-0 justify-center gap-2 border-b border-white/10 px-4 py-3">
                 <button
                   onClick={handleImport}
                   className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm text-gray-300 transition-colors active:scale-95"
@@ -584,7 +604,7 @@ export const MobileGroupCalendar = ({
               </div>
 
               {/* Full Month Grid with Events */}
-              <div className="flex-1 overflow-y-auto px-4 py-4">
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
                 <div className="grid grid-cols-7 gap-1">
                   {/* Weekday Headers */}
                   {weekDays.map(day => (
@@ -639,9 +659,9 @@ export const MobileGroupCalendar = ({
                   })}
                 </div>
               </div>
-            </>
+            </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Create/Edit Event Modal */}

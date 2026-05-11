@@ -35,7 +35,7 @@ interface MessageTypeBarProps {
   onFilterChange: (filter: 'all' | 'broadcasts' | 'pinned' | 'channels') => void;
   hasChannels?: boolean;
   isPro?: boolean;
-  broadcastCount?: number;
+  broadcastBadgeCount?: number;
   unreadCount?: number;
   pinnedCount?: number;
   // Channel-specific props
@@ -51,7 +51,7 @@ export const MessageTypeBar = ({
   onFilterChange,
   hasChannels = false,
   isPro = false,
-  broadcastCount = 0,
+  broadcastBadgeCount = 0,
   unreadCount = 0,
   pinnedCount = 0,
   availableChannels = [],
@@ -127,14 +127,14 @@ export const MessageTypeBar = ({
           >
             <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Broadcasts</span>
-            {broadcastCount > 0 && activeFilter !== 'broadcasts' && (
+            {broadcastBadgeCount > 0 && activeFilter !== 'broadcasts' && (
               <span
                 className={cn(
                   'ml-1 px-1.5 py-0.5 text-xs rounded-full font-semibold',
                   SEGMENT_COLORS.broadcasts.badge,
                 )}
               >
-                {broadcastCount}
+                {broadcastBadgeCount}
               </span>
             )}
           </button>

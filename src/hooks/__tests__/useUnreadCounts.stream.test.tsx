@@ -53,7 +53,7 @@ describe('useUnreadCounts (Stream source)', () => {
       }),
     );
 
-    expect(result.current.broadcastCount).toBe(2);
+    expect(result.current.broadcastUnreadCount).toBe(2);
     expect(result.current.messageUnreadCount).toBe(1);
   });
 
@@ -80,7 +80,7 @@ describe('useUnreadCounts (Stream source)', () => {
       }),
     );
 
-    expect(result.current.broadcastCount).toBe(0);
+    expect(result.current.broadcastUnreadCount).toBe(0);
     expect(result.current.messageUnreadCount).toBe(5);
   });
 
@@ -122,7 +122,7 @@ describe('useUnreadCounts (Stream source)', () => {
       }),
     );
 
-    expect(result.current.broadcastCount).toBe(0);
+    expect(result.current.broadcastUnreadCount).toBe(0);
     expect(result.current.messageUnreadCount).toBe(4);
   });
 
@@ -164,7 +164,7 @@ describe('useUnreadCounts (Stream source)', () => {
       }),
     );
 
-    expect(result.current.broadcastCount).toBe(0);
+    expect(result.current.broadcastUnreadCount).toBe(0);
     expect(result.current.messageUnreadCount).toBe(2);
   });
 
@@ -206,7 +206,7 @@ describe('useUnreadCounts (Stream source)', () => {
       }),
     );
 
-    expect(result.current.broadcastCount).toBe(0);
+    expect(result.current.broadcastUnreadCount).toBe(0);
     expect(result.current.messageUnreadCount).toBe(1);
   });
 });
