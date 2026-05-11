@@ -181,17 +181,17 @@ export const PaymentHistory = ({
   if (enrichedPayments.length === 0) {
     return (
       <Card className="rounded-lg">
-        <CardHeader className="py-3 px-4">
+        <CardHeader className="px-4 pt-4 pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <CheckCircle size={18} className="text-green-500" />
             Completed Payments
           </CardTitle>
         </CardHeader>
-        <CardContent className="py-6 px-4">
+        <CardContent className="px-4 pb-4">
           <div className="text-center text-muted-foreground">
-            <Clock size={32} className="mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No completed payments yet.</p>
-            <p className="text-xs mt-1">Settled payments will appear here.</p>
+            <Clock size={28} className="mx-auto mb-2 opacity-60" />
+            <p className="text-sm">No settled payments yet.</p>
+            <p className="text-xs mt-1">Completed payments will appear here.</p>
           </div>
         </CardContent>
       </Card>
@@ -201,7 +201,7 @@ export const PaymentHistory = ({
   return (
     <>
       <Card className="rounded-lg">
-        <CardHeader className="py-3 px-4">
+        <CardHeader className="px-4 pt-4 pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <CheckCircle size={18} className="text-green-500" />
             Completed Payments
@@ -211,7 +211,7 @@ export const PaymentHistory = ({
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">Fully settled payment requests</p>
         </CardHeader>
-        <CardContent className="py-3 px-4">
+        <CardContent className="px-4 pb-4 pt-2">
           <div className="space-y-1">
             {enrichedPayments.map(payment => {
               const isCreator = user?.id === payment.createdBy;
