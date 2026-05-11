@@ -637,7 +637,12 @@ interface ScrapeScheduleEvent {
   title: string;
   date: string;
   start_time?: string;
+  end_time?: string;
   location?: string;
+  timezone?: string;
+  confidence?: number;
+  source_text?: string;
+  category?: string;
 }
 
 interface ScrapeScheduleResponse {
@@ -647,6 +652,7 @@ interface ScrapeScheduleResponse {
   events?: ScrapeScheduleEvent[];
   events_found?: number;
   events_filtered?: number;
+  source_url?: string;
 }
 
 export async function parseURLSchedule(url: string): Promise<SmartParseResult> {
@@ -698,12 +704,24 @@ export async function parseURLSchedule(url: string): Promise<SmartParseResult> {
       const startTime = parseFlexibleDate(se.date, se.start_time);
       if (!startTime) continue;
 
+      const endTime = se.end_time
+        ? (parseFlexibleDate(se.date, se.end_time) ?? startTime)
+        : startTime;
+      const descriptionParts = [
+        se.category ? `Category: ${se.category}` : '',
+        se.timezone ? `Timezone: ${se.timezone}` : '',
+        response.scrape_method ? `Scrape method: ${response.scrape_method}` : '',
+        response.source_url ? `Source URL: ${response.source_url}` : '',
+        se.source_text ? `Source excerpt: ${se.source_text}` : '',
+      ].filter(Boolean);
+
       events.push({
         uid: `imported-url-${Date.now()}-${i}`,
         title: se.title,
         startTime,
-        endTime: startTime,
+        endTime,
         location: se.location,
+        description: descriptionParts.length > 0 ? descriptionParts.join('\n') : undefined,
         isAllDay: !se.start_time,
       });
     }

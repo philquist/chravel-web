@@ -48,6 +48,41 @@ describe('calendarImportParsers parseURLSchedule', () => {
     expect(result.urlMeta).toEqual({ eventsFound: 0, eventsFiltered: 0 });
   });
 
+  it('maps enriched scrape metadata into calendar event fields', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      data: {
+        success: true,
+        scrape_method: 'firecrawl',
+        source_url: 'https://example.com/tour',
+        events: [
+          {
+            title: 'Band Tour Night 1',
+            date: '2026-06-12',
+            start_time: '20:00',
+            end_time: '22:30',
+            location: 'MSG',
+            timezone: 'America/New_York',
+            source_text: 'Fri Jun 12 8:00 PM',
+            category: 'concert',
+          },
+        ],
+      },
+      error: null,
+    } as unknown as Awaited<ReturnType<typeof supabase.functions.invoke>>);
+
+    const result = await parseURLSchedule('https://example.com/tour');
+
+    expect(result.isValid).toBe(true);
+    expect(result.events).toHaveLength(1);
+    const [event] = result.events;
+    expect(event.endTime.getHours()).toBe(22);
+    expect(event.endTime.getMinutes()).toBe(30);
+    expect(event.description).toContain('Category: concert');
+    expect(event.description).toContain('Timezone: America/New_York');
+    expect(event.description).toContain('Scrape method: firecrawl');
+    expect(event.description).toContain('Source URL: https://example.com/tour');
+  });
+
   it('maps events and falls back url meta counts safely', async () => {
     vi.mocked(supabase.functions.invoke).mockResolvedValue({
       data: {
