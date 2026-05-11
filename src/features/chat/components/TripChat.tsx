@@ -21,7 +21,7 @@ import { useTripChat } from '../hooks/useTripChat';
 import { useAuth } from '@/hooks/useAuth';
 import { hapticService } from '@/services/hapticService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Pin, WifiOff } from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 import { useRoleChannels } from '@/hooks/useRoleChannels';
 import { ChannelChatView } from '@/components/pro/channels/ChannelChatView';
 import { TypingIndicator } from './TypingIndicator';
@@ -1126,25 +1126,6 @@ export const TripChat = React.memo(
                   </div>
                 ) : (
                   <>
-                    {messageFilter !== 'pinned' && pinnedMessages.length > 0 && (
-                      <div className="mx-3 mt-3 mb-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2">
-                        <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-amber-200">
-                          <Pin className="h-3.5 w-3.5" />
-                          <span>Pinned Messages</span>
-                        </div>
-                        <div className="space-y-1.5">
-                          {pinnedMessages.slice(0, 3).map(message => (
-                            <button
-                              key={message.id}
-                              onClick={() => scrollToMessage(message.id)}
-                              className="block w-full truncate rounded-md bg-black/15 px-2 py-1 text-left text-xs text-amber-100 hover:bg-black/25"
-                            >
-                              {message.sender.name}: {message.text || 'Attachment'}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                     <FeatureErrorBoundary featureName="Chat Timeline Enhancements" fallback={null}>
                       <VirtualizedMessageContainer
                         messages={messagesWithPreviewFallbacks as any}
