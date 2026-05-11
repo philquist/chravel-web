@@ -150,6 +150,10 @@ export const TripCard = ({
     buttonVariants({ variant: 'ghost', size: 'sm' }),
     'bg-gray-800/50 text-white border border-white/15 hover:bg-gray-700/50 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed md:min-h-[44px] md:text-sm text-xs px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
   );
+  const secondaryActionButtonClass = cn(
+    actionButtonClass,
+    'flex items-center justify-center gap-1.5',
+  );
 
   const handleArchiveTrip = async () => {
     // Demo mode: session-scoped, non-persistent archive
@@ -439,7 +443,7 @@ export const TripCard = ({
               <div className="flex-1">
                 <h3
                   title={trip.title}
-                  className="text-lg md:text-xl font-bold text-white transition-all duration-300 line-clamp-2 md:line-clamp-1"
+                  className="text-lg md:text-xl font-bold text-white transition-all duration-300 line-clamp-2 md:line-clamp-1 md:truncate"
                 >
                   {trip.title}
                 </h3>
@@ -489,7 +493,10 @@ export const TripCard = ({
             <div className="flex items-center gap-2 text-white mb-1 md:mb-3 text-sm md:text-base min-w-0">
               <MapPin size={14} className="md:hidden gold-gradient-icon" />
               <MapPin size={18} className="hidden md:block gold-gradient-icon" />
-              <span title={trip.location} className="font-medium truncate">
+              <span
+                title={trip.location}
+                className="font-medium max-w-full md:max-w-[220px] md:truncate"
+              >
                 {trip.location}
               </span>
             </div>
@@ -500,7 +507,10 @@ export const TripCard = ({
               <span className="hidden md:inline-flex gold-gradient-icon">
                 <CalendarGlyph size={18} />
               </span>
-              <span title={trip.dateRange} className="font-medium truncate">
+              <span
+                title={trip.dateRange}
+                className="font-medium max-w-full md:max-w-[220px] md:truncate"
+              >
                 {trip.dateRange}
               </span>
             </div>
@@ -570,7 +580,7 @@ export const TripCard = ({
               setShowExportModal(true);
             }}
             disabled={pendingApproval}
-            className={`${actionButtonClass} flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={secondaryActionButtonClass}
           >
             <FileDown size={14} className="md:hidden" />
             <FileDown size={16} className="hidden md:block" />
@@ -583,7 +593,7 @@ export const TripCard = ({
               setShowInviteModal(true);
             }}
             disabled={pendingApproval}
-            className={`${actionButtonClass} flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={secondaryActionButtonClass}
           >
             <User size={14} className="md:hidden" />
             <User size={16} className="hidden md:block" />
@@ -607,7 +617,7 @@ export const TripCard = ({
               setShowShareModal(true);
             }}
             disabled={pendingApproval}
-            className={`${actionButtonClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={actionButtonClass}
           >
             Share
           </button>
