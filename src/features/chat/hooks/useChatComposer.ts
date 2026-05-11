@@ -4,6 +4,7 @@ import { getMockAvatar } from '@/utils/mockAvatars';
 import { useAuth } from '@/hooks/useAuth';
 import { usePayments } from '@/hooks/usePayments';
 import { derivePinnedMessages } from '../utils/pinnedMessages';
+import { getFilteredMessagesByChatView } from '../utils/messageClassification';
 
 export interface ChatMessage {
   id: string;
@@ -178,11 +179,8 @@ export const useChatComposer = ({
 
   const filterMessages = useCallback(
     (messages: ChatMessage[]) => {
-      if (messageFilter === 'all') return messages;
-      if (messageFilter === 'broadcasts') return messages.filter(m => m.isBroadcast === true);
       if (messageFilter === 'pinned') return derivePinnedMessages(messages);
-      if (messageFilter === 'channels') return []; // Channels handled separately
-      return messages;
+      return getFilteredMessagesByChatView(messages, messageFilter);
     },
     [messageFilter],
   );

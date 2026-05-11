@@ -1,3 +1,5 @@
+import { isPinnedMessage } from './messageClassification';
+
 export type PinnedChatMessage = {
   id: string;
   text?: string;
@@ -7,10 +9,6 @@ export type PinnedChatMessage = {
   isPinned?: boolean;
   pinnedAt?: string;
 };
-
-export function isPinnedMessage(message: { isPinned?: boolean; [key: string]: unknown }) {
-  return message.isPinned === true;
-}
 
 /**
  * Stream may deliver updated message snapshots more than once while events settle.

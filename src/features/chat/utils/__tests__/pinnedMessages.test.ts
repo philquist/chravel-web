@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { derivePinnedMessages, isPinnedMessage } from '../pinnedMessages';
+import { derivePinnedMessages } from '../pinnedMessages';
+import { isPinnedMessage } from '../messageClassification';
 
 describe('derivePinnedMessages', () => {
   it('returns pinned messages sorted by pinned_at desc', () => {
