@@ -36,11 +36,9 @@ describe('TripExportModal layout (footer visibility)', () => {
   });
 
   it('keeps footer actions in the modal flex column so they are not pushed below max-height', () => {
-    const { container } = render(<TripExportModal {...baseProps} />);
+    render(<TripExportModal {...baseProps} />);
 
-    const panel = container.querySelector(
-      '.max-h-\\[min\\(80vh\\,100dvh\\)\\]',
-    ) as HTMLElement | null;
+    const panel = screen.getByTestId('trip-export-modal-panel');
     expect(panel).toBeTruthy();
 
     const scrollRegion = screen.getByTestId('trip-export-modal-scroll');
