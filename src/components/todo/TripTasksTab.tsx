@@ -143,7 +143,7 @@ export const TripTasksTab = React.memo(({ tripId }: TripTasksTabProps) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 md:space-y-7">
       {/* Header - Title Row */}
       <div
         className={
@@ -154,18 +154,22 @@ export const TripTasksTab = React.memo(({ tripId }: TripTasksTabProps) => {
               : TRIP_PARITY_ROW_CLASS
         }
       >
-        <h2
-          className={`text-xl font-semibold text-white ${variant === 'pro' ? PRO_PARITY_HEADER_SPAN_CLASS : variant === 'events' ? EVENT_PARITY_HEADER_SPAN_CLASS : TRIP_PARITY_HEADER_SPAN_CLASS}`}
+        <div
+          className={`space-y-1 ${variant === 'pro' ? PRO_PARITY_HEADER_SPAN_CLASS : variant === 'events' ? EVENT_PARITY_HEADER_SPAN_CLASS : TRIP_PARITY_HEADER_SPAN_CLASS}`}
         >
-          Tasks
-        </h2>
+          <h2 className="text-xl font-semibold text-white">Tasks</h2>
+          {!showInlineCreate && (
+            <p className="text-gray-400 text-sm">Keep track of everything that needs to get done</p>
+          )}
+        </div>
         {!showInlineCreate && (
           <ActionPill
             variant="manualOutline"
             leftIcon={<Plus />}
             iconOnly
+            aria-label="Create task"
             onClick={() => setShowCreateModal(true)}
-            className={`${variant === 'pro' ? PRO_PARITY_COL_START.team : variant === 'events' ? EVENT_PARITY_COL_START.tasks : TRIP_PARITY_COL_START.tasks} w-full`}
+            className={`${variant === 'pro' ? PRO_PARITY_COL_START.team : variant === 'events' ? EVENT_PARITY_COL_START.tasks : TRIP_PARITY_COL_START.tasks} w-full md:w-auto md:min-w-[44px] md:justify-self-end ring-1 ring-amber-400/40`}
           />
         )}
       </div>
@@ -181,9 +185,8 @@ export const TripTasksTab = React.memo(({ tripId }: TripTasksTabProps) => {
         />
       ) : (
         <>
-          {/* Subtitle + Filters on same row */}
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <p className="text-gray-400 text-sm">Keep track of everything that needs to get done</p>
+          {/* Filters row */}
+          <div className="flex justify-end">
             <TaskFilters
               status={status}
               sortBy={sortBy}
@@ -217,13 +220,17 @@ export const TripTasksTab = React.memo(({ tripId }: TripTasksTabProps) => {
 
           {/* Task Summary Footer */}
           {displayTasks.length > 0 && (
-            <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-white/5">
-              <span>
-                {openTasks.length} open, {completedTasks.length} completed
-              </span>
-              {completedTasks.length > 0 && displayTasks.length > 0 && (
-                <span>{Math.round((completedTasks.length / displayTasks.length) * 100)}% done</span>
-              )}
+            <div className="mt-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 md:px-4 md:py-3">
+              <div className="flex items-center justify-between text-xs text-gray-300">
+                <span>
+                  {openTasks.length} open, {completedTasks.length} completed
+                </span>
+                {completedTasks.length > 0 && displayTasks.length > 0 && (
+                  <span>
+                    {Math.round((completedTasks.length / displayTasks.length) * 100)}% done
+                  </span>
+                )}
+              </div>
             </div>
           )}
         </>

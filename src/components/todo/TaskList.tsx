@@ -91,7 +91,7 @@ export const TaskList = ({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
       <div className="flex items-center gap-2">
         {isCompletedSection ? (
           <button
