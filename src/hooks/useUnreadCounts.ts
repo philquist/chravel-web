@@ -23,7 +23,15 @@ interface UseUnreadCountsOptions {
 }
 
 interface UnreadCounts {
-  broadcastCount: number;
+  /**
+   * Unread broadcast count (derived from unread split when Stream read markers are trustworthy).
+   */
+  broadcastUnreadCount: number;
+  /**
+   * Total broadcast count in currently loaded messages.
+   * Use this for tab badges / feed-size indicators.
+   */
+  totalBroadcastCount: number;
   messageUnreadCount: number;
 }
 
@@ -41,14 +49,16 @@ export function useUnreadCounts({
   enabled = true,
   activeChannel,
 }: UseUnreadCountsOptions): UnreadCounts {
-  const [broadcastCount, setBroadcastCount] = useState(0);
+  const [broadcastUnreadCount, setBroadcastUnreadCount] = useState(0);
+  const [totalBroadcastCount, setTotalBroadcastCount] = useState(0);
   const [messageUnreadCount, setMessageUnreadCount] = useState(0);
 
   const stableMessages = useMemo(() => messages, [messages]);
 
   useEffect(() => {
     if (!enabled || !tripId || !userId) {
-      setBroadcastCount(0);
+      setBroadcastUnreadCount(0);
+      setTotalBroadcastCount(0);
       setMessageUnreadCount(0);
       return;
     }
@@ -56,7 +66,7 @@ export function useUnreadCounts({
     const readState = activeChannel?.state.read?.[userId];
     const totalUnreadFromStream = activeChannel?.countUnread?.() ?? readState?.unread_messages ?? 0;
 
-    const { broadcastCount: nextBroadcastCount, messageUnreadCount: nextMessageUnreadCount } =
+    const { broadcastCount: nextBroadcastUnreadCount, messageUnreadCount: nextMessageUnreadCount } =
       splitUnreadFromStreamReadState({
         messages: stableMessages,
         userId,
@@ -64,9 +74,14 @@ export function useUnreadCounts({
         readState,
       });
 
-    setBroadcastCount(nextBroadcastCount);
+    const nextTotalBroadcastCount = stableMessages.filter(
+      message => message.privacy_mode === 'broadcast' || message.message_type === 'broadcast',
+    ).length;
+
+    setBroadcastUnreadCount(nextBroadcastUnreadCount);
+    setTotalBroadcastCount(nextTotalBroadcastCount);
     setMessageUnreadCount(nextMessageUnreadCount);
   }, [tripId, userId, stableMessages, enabled, activeChannel]);
 
-  return { broadcastCount, messageUnreadCount };
+  return { broadcastUnreadCount, totalBroadcastCount, messageUnreadCount };
 }
