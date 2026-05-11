@@ -469,8 +469,11 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Wallet Summary */}
-      <div className="bg-gradient-to-br from-glass-orange/20 to-glass-orange/5 border border-glass-orange/30 rounded-2xl p-5">
+      {/* Account Summary Band */}
+      <section
+        className="bg-gradient-to-br from-glass-orange/20 to-glass-orange/5 border border-glass-orange/30 shadow-sm rounded-2xl p-5"
+        aria-label="Wallet account summary"
+      >
         <div className="flex items-center gap-3 mb-3">
           <Wallet size={24} className="text-glass-orange" />
           <h2 className="text-lg font-bold text-white">Travel Wallet</h2>
@@ -494,10 +497,78 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
             Add your loyalty programs to keep all your travel rewards in one place.
           </p>
         )}
-      </div>
+      </section>
+
+      {/* Payment Methods Band */}
+      <section
+        className="bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl p-6 overflow-hidden"
+        aria-label="Payment methods"
+      >
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-white">Payment Methods</h3>
+          <p className="text-sm text-gray-400">Manage how group members can settle up with you.</p>
+        </div>
+        <PaymentMethodsSettings userId={userId} />
+      </section>
+
+      {/* Recent Activity & Actions Band */}
+      <section
+        className="bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl p-6 overflow-hidden"
+        aria-label="Recent activity and wallet actions"
+      >
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-white">Recent Activity & Actions</h3>
+            <p className="text-sm text-gray-400">
+              Quick wallet actions and latest metadata snapshots.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setShowAddForm(true)}
+              className="bg-glass-orange hover:bg-glass-orange/80 text-white px-4 py-2.5 min-h-[44px] rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glass-orange/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            >
+              Add Loyalty Program
+            </button>
+            <button
+              type="button"
+              onClick={loadPrograms}
+              className="border border-white/30 text-white hover:bg-white/10 px-4 py-2.5 min-h-[44px] rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            >
+              Refresh Wallet Data
+            </button>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-white/15 bg-black/20 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wide text-gray-400">Total Programs</p>
+            <p className="mt-1 text-2xl font-semibold text-white tabular-nums">{totalPrograms}</p>
+          </div>
+          <div className="rounded-xl border border-white/15 bg-black/20 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wide text-gray-400">Preferred Programs</p>
+            <p className="mt-1 text-2xl font-semibold text-white tabular-nums">
+              {
+                [...airlinePrograms, ...hotelPrograms, ...rentalCarPrograms].filter(
+                  program => program.isPreferred,
+                ).length
+              }
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/15 bg-black/20 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wide text-gray-400">Active Category</p>
+            <p className="mt-1 text-base font-semibold text-white">
+              {tabs.find(tab => tab.id === activeTab)?.label}
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Loyalty Programs */}
-      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 overflow-hidden">
+      <section
+        className="bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl p-6 overflow-hidden"
+        aria-label="Loyalty programs"
+      >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-white flex items-center gap-2">
             <Wallet size={24} className="text-glass-orange" />
@@ -616,10 +687,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Payment Methods for Trip Expenses */}
-      <PaymentMethodsSettings userId={userId} />
+      </section>
     </div>
   );
 };

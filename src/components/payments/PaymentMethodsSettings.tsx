@@ -183,7 +183,7 @@ export const PaymentMethodsSettings = ({ userId }: PaymentMethodsSettingsProps) 
   };
 
   return (
-    <Card className="bg-background border-muted">
+    <Card className="bg-background/60 border-muted shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CreditCard size={20} className="text-primary" />
@@ -327,7 +327,10 @@ export const PaymentMethodsSettings = ({ userId }: PaymentMethodsSettingsProps) 
             {/* Payment Methods List */}
             <div className="space-y-3">
               {paymentMethods.map(method => (
-                <Card key={method.id} className="bg-background border-muted overflow-hidden">
+                <Card
+                  key={method.id}
+                  className="bg-background border-muted shadow-sm overflow-hidden"
+                >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between gap-3 min-w-0">
                       <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
@@ -355,7 +358,7 @@ export const PaymentMethodsSettings = ({ userId }: PaymentMethodsSettingsProps) 
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-11 w-11 min-h-[44px] min-w-[44px] p-0"
+                          className="h-11 w-11 min-h-[44px] min-w-[44px] p-0 border-primary/40 text-primary hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                           onClick={() => handleEdit(method)}
                           aria-label={`Edit payment method: ${method.displayName || getDefaultDisplayName(method.type)}`}
                         >
@@ -364,7 +367,7 @@ export const PaymentMethodsSettings = ({ userId }: PaymentMethodsSettingsProps) 
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-11 w-11 min-h-[44px] min-w-[44px] p-0"
+                          className="h-11 w-11 min-h-[44px] min-w-[44px] p-0 border-red-500/40 text-red-300 hover:bg-red-500/10 hover:text-red-200 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
                           onClick={() => handleDelete(method.id)}
                           aria-label={`Delete payment method: ${method.displayName || getDefaultDisplayName(method.type)}`}
                         >
@@ -389,7 +392,10 @@ export const PaymentMethodsSettings = ({ userId }: PaymentMethodsSettingsProps) 
             )}
 
             {!showAddForm && paymentMethods.length > 0 && (
-              <Button onClick={() => setShowAddForm(true)} className="w-full">
+              <Button
+                onClick={() => setShowAddForm(true)}
+                className="w-full min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
                 <Plus size={16} className="mr-2" />
                 Add Payment Method
               </Button>
