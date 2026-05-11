@@ -101,7 +101,11 @@ vi.mock('@/hooks/usePullToRefresh', () => ({
   usePullToRefresh: () => ({ isRefreshing: false, pullDistance: 0 }),
 }));
 vi.mock('@/hooks/useUnreadCounts', () => ({
-  useUnreadCounts: () => ({ broadcastCount: 0, messageUnreadCount: 0 }),
+  useUnreadCounts: () => ({
+    broadcastUnreadCount: 0,
+    totalBroadcastCount: 0,
+    messageUnreadCount: 0,
+  }),
 }));
 vi.mock('../../hooks/useChatReadReceipts', () => ({ useChatReadReceipts: () => ({}) }));
 vi.mock('../../hooks/useChatTypingIndicators', () => ({

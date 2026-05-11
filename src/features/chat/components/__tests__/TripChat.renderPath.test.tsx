@@ -116,7 +116,11 @@ vi.mock('@/hooks/usePullToRefresh', () => ({
   usePullToRefresh: () => ({ isRefreshing: false, pullDistance: 0 }),
 }));
 vi.mock('@/hooks/useUnreadCounts', () => ({
-  useUnreadCounts: () => ({ broadcastCount: 0, messageUnreadCount: 0 }),
+  useUnreadCounts: () => ({
+    broadcastUnreadCount: 0,
+    totalBroadcastCount: 0,
+    messageUnreadCount: 0,
+  }),
 }));
 vi.mock('../../hooks/useChatReadReceipts', () => ({ useChatReadReceipts: () => ({}) }));
 vi.mock('../../hooks/useChatTypingIndicators', () => ({
@@ -277,7 +281,7 @@ describe('TripChat render path', () => {
 
       const messageTypeBarProps = mockMessageTypeBar.mock.calls[0][0];
       expect(messageTypeBarProps.activeFilter).toBe('all');
-      expect(messageTypeBarProps.broadcastCount).toBe(0);
+      expect(messageTypeBarProps.broadcastBadgeCount).toBe(0);
     },
   );
 
