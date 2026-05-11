@@ -225,23 +225,10 @@ if (!isMarketingShellPath) {
   scheduleWhenIdle(() => setupGlobalPurchaseListener());
 }
 
+// Release guard: set VITE_MARKETING_SPLIT=0 to force legacy App bootstrap.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {hasRequiredSupabaseEnv && App ? (
-      <TripVariantProvider variant="consumer">
-        <BasecampProvider>
-          <Suspense
-            fallback={
-              <div className="app-suspense-fallback min-h-screen flex items-center justify-center bg-background">
-                <div className="app-suspense-spinner app-suspense-spin w-12 h-12 animate-spin gold-gradient-spinner" />
-              </div>
-            }
-          >
-            <App />
-          </Suspense>
-        </BasecampProvider>
-      </TripVariantProvider>
-      // Release guard: set VITE_MARKETING_SPLIT=0 to force legacy App bootstrap.
       shouldUseMarketingSplit && MarketingApp ? (
         <MarketingApp />
       ) : (
@@ -249,8 +236,8 @@ createRoot(document.getElementById('root')!).render(
           <BasecampProvider>
             <Suspense
               fallback={
-                <div className="min-h-screen flex items-center justify-center bg-background">
-                  <div className="w-12 h-12 animate-spin gold-gradient-spinner" />
+                <div className="app-suspense-fallback min-h-screen flex items-center justify-center bg-background">
+                  <div className="app-suspense-spinner app-suspense-spin w-12 h-12 animate-spin gold-gradient-spinner" />
                 </div>
               }
             >
