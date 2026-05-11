@@ -60,6 +60,7 @@ describe('AuthModal', () => {
       });
 
       await waitFor(() => {
+        expect(screen.getByTestId('auth-modal-logo')).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/your@email.com/i)).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/••••••••/i)).toBeInTheDocument();
       });
