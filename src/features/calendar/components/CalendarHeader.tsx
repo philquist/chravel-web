@@ -105,7 +105,7 @@ export const CalendarHeader = ({
         <ActionPill
           variant="aiOutline"
           onClick={onImport}
-          className={`${colImport} w-full`}
+          className={`${colImport} w-full md:min-h-11 md:px-4 focus-visible:ring-primary/50`}
           disabled={!onImport}
         >
           <span className="hidden lg:inline whitespace-nowrap">Import</span>
@@ -116,7 +116,7 @@ export const CalendarHeader = ({
           variant="manualOutline"
           leftIcon={<Download />}
           onClick={onExport}
-          className={`${colExport} w-full`}
+          className={`${colExport} w-full md:min-h-11 md:px-4 focus-visible:ring-primary/50`}
           disabled={!onExport}
         >
           <span className="hidden lg:inline whitespace-nowrap">Export</span>
@@ -127,7 +127,7 @@ export const CalendarHeader = ({
           variant="manualOutline"
           leftIcon={getViewButtonIcon()}
           onClick={onToggleView}
-          className={`${colViewToggle} w-full`}
+          className={`${colViewToggle} w-full md:min-h-11 md:px-4 focus-visible:ring-primary/50`}
         >
           <span className="hidden lg:inline whitespace-nowrap">{getViewButtonLabel()}</span>
         </ActionPill>
@@ -137,7 +137,7 @@ export const CalendarHeader = ({
           variant="manualOutline"
           leftIcon={<Plus />}
           onClick={onAddEvent}
-          className={`${colAddEvent} w-full`}
+          className={`${colAddEvent} w-full md:min-h-11 md:px-4 focus-visible:ring-primary/50`}
           disabled={!onAddEvent}
         >
           <span className="hidden lg:inline whitespace-nowrap">Add Event</span>

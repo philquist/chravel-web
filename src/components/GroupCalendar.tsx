@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar } from './ui/calendar';
-import { Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ItineraryView } from './ItineraryView';
 import { useCalendarManagement } from '@/features/calendar/hooks/useCalendarManagement';
@@ -24,6 +23,8 @@ import type { CalendarEvent } from '@/types/calendar';
 import { CalendarErrorState } from '@/features/calendar/components/CalendarErrorState';
 import { ExportDialog } from '@/features/calendar/components/ExportDialog';
 import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
+import { CalendarLoadingState } from '@/features/calendar/components/CalendarLoadingState';
+import { CalendarEmptyState } from '@/features/calendar/components/CalendarEmptyState';
 
 interface GroupCalendarProps {
   tripId: string;
@@ -226,44 +227,9 @@ export const GroupCalendar = React.memo(({ tripId }: GroupCalendarProps) => {
             isRetrying={isFetching}
           />
         ) : isLoading ? (
-          <div className="space-y-4" aria-busy="true" aria-label="Loading calendar">
-            {/* Calendar skeleton */}
-            <div className="bg-card border border-border rounded-lg">
-              <div className="flex items-center justify-between p-4 border-b border-border">
-                <div className="h-8 w-8 rounded bg-muted animate-pulse" />
-                <div className="h-6 w-36 rounded bg-muted animate-pulse" />
-                <div className="h-8 w-8 rounded bg-muted animate-pulse" />
-              </div>
-              <div className="grid grid-cols-7 border-b border-border">
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <div key={i} className="p-2 flex justify-center">
-                    <div className="h-4 w-8 rounded bg-muted animate-pulse" />
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7">
-                {Array.from({ length: 35 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="min-h-[100px] md:min-h-[120px] p-2 border-b border-r border-border"
-                  >
-                    <div className="h-4 w-4 rounded bg-muted animate-pulse mb-2" />
-                    {i % 5 === 0 && <div className="h-3 w-16 rounded bg-muted/60 animate-pulse" />}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <CalendarLoadingState variant="grid" />
         ) : events.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <CalendarIcon className="w-8 h-8 text-primary/60" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">No events scheduled</h3>
-            <p className="text-muted-foreground text-sm max-w-md mb-4">
-              Your trip calendar is empty. Add events to start building your itinerary.
-            </p>
-          </div>
+          <CalendarEmptyState onAddEvent={() => setShowAddEvent(true)} />
         ) : (
           <CalendarGrid
             events={events}
@@ -376,39 +342,7 @@ export const GroupCalendar = React.memo(({ tripId }: GroupCalendarProps) => {
           isRetrying={isFetching}
         />
       ) : isLoading ? (
-        <div
-          className="grid grid-cols-1 md:grid-cols-2 gap-6 md:h-[420px]"
-          aria-busy="true"
-          aria-label="Loading calendar"
-        >
-          {/* Calendar skeleton */}
-          <div className="bg-glass-slate-card border border-glass-slate-border rounded-2xl p-4 flex flex-col gap-3 h-full shadow-enterprise-lg">
-            <div className="flex items-center justify-between mb-2">
-              <div className="h-5 w-5 rounded bg-muted/60 animate-pulse" />
-              <div className="h-5 w-28 rounded bg-muted/60 animate-pulse" />
-              <div className="h-5 w-5 rounded bg-muted/60 animate-pulse" />
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: 7 }).map((_, i) => (
-                <div key={i} className="h-4 rounded bg-muted/40 animate-pulse" />
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1 flex-1">
-              {Array.from({ length: 35 }).map((_, i) => (
-                <div key={i} className="h-8 rounded bg-muted/40 animate-pulse" />
-              ))}
-            </div>
-          </div>
-          {/* Event list skeleton */}
-          <div className="bg-glass-slate-card border border-glass-slate-border rounded-2xl p-4 flex flex-col h-full shadow-enterprise-lg">
-            <div className="h-5 w-48 rounded bg-muted/60 animate-pulse mb-4" />
-            <div className="space-y-3 flex-1">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-16 rounded-lg bg-muted/40 animate-pulse" />
-              ))}
-            </div>
-          </div>
-        </div>
+        <CalendarLoadingState variant="split" />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:h-[420px]">
           <div className="bg-glass-slate-card border border-glass-slate-border rounded-2xl p-2 flex items-center h-full shadow-enterprise-lg">
