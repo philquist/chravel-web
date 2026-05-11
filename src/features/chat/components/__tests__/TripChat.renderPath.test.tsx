@@ -9,6 +9,7 @@ const mockVirtualizedMessageContainer = vi.fn();
 const mockMessageItem = vi.fn();
 const mockMessageTypeBar = vi.fn();
 const mockTripTypeState = { isConsumer: true, isPro: false, isEvent: false };
+let mockMessageFilter: 'all' | 'broadcasts' | 'pinned' | 'channels' = 'all';
 const mockTripChatModeState = {
   effectiveChatMode: 'all',
   canPost: true,
@@ -75,7 +76,7 @@ vi.mock('../../hooks/useChatComposer', () => ({
   useChatComposer: () => ({
     inputMessage: '',
     setInputMessage: vi.fn(),
-    messageFilter: 'all',
+    messageFilter: mockMessageFilter,
     setMessageFilter: vi.fn(),
     replyingTo: null,
     setReply: mockSetReply,
@@ -205,6 +206,7 @@ describe('TripChat render path', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockTripChatError = null;
+    mockMessageFilter = 'all';
   });
 
   const renderSubject = (props?: React.ComponentProps<typeof TripChat>) => {
@@ -277,13 +279,18 @@ describe('TripChat render path', () => {
       expect(messageItemProps.message.isPinned).toBe(true);
       expect(messageItemProps.message.pinnedAt).toBe('2026-01-01T00:02:00.000Z');
       expect(messageItemProps.message.isBroadcast).toBe(true);
-      expect(screen.getByText('Pinned Messages')).toBeInTheDocument();
-
       const messageTypeBarProps = mockMessageTypeBar.mock.calls[0][0];
       expect(messageTypeBarProps.activeFilter).toBe('all');
       expect(messageTypeBarProps.broadcastBadgeCount).toBe(0);
     },
   );
+
+  it.each(['all', 'broadcasts'] as const)('does not render pinned banner in %s view', filter => {
+    mockMessageFilter = filter;
+    renderSubject();
+
+    expect(screen.queryByText('Pinned Messages')).not.toBeInTheDocument();
+  });
 
   it('keeps rendering messages when settlement-like secondary data is non-array', () => {
     renderSubject();
