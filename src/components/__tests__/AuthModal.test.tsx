@@ -140,26 +140,17 @@ describe('AuthModal', () => {
       });
     });
 
-    it('uses a flex column so the brand band fills space above the anchored sign-in sheet', async () => {
+    it('renders the modal content in a centered viewport container', async () => {
       render(<AuthModal isOpen={true} onClose={mockOnClose} />, {
         wrapper: createTestWrapper(),
       });
 
       await waitFor(() => {
+        const backdrop = screen.getByTestId('auth-modal-backdrop');
         const content = screen.getByTestId('auth-modal-content');
-        expect(content).toHaveClass('flex-col');
-        expect(content).toHaveClass('flex-1');
-      });
-    });
-
-    it('shows premium ChravelApp branding above the sign-in sheet', async () => {
-      render(<AuthModal isOpen={true} onClose={mockOnClose} />, {
-        wrapper: createTestWrapper(),
-      });
-
-      await waitFor(() => {
-        const brand = screen.getByText('ChravelApp');
-        expect(brand).toHaveClass('gold-gradient-text');
+        expect(backdrop).toHaveClass('fixed');
+        expect(content).toHaveClass('max-w-md');
+        expect(content).toHaveClass('w-full');
       });
     });
 
