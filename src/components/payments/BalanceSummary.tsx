@@ -30,7 +30,7 @@ export const BalanceSummary = ({ summary }: BalanceSummaryProps) => {
       role="region"
       aria-label="Payment balance summary"
     >
-      <CardContent className="py-3 px-4">
+      <CardContent className="px-4 pt-4 pb-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* You Owe */}
           <div className="text-center space-y-0.5">
