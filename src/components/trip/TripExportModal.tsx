@@ -119,13 +119,13 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
   const headerTitle = isEvent ? 'Create Event Recap' : 'Create Trip Recap';
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-2">
-      <div className="bg-gray-900 rounded-t-2xl sm:rounded-xl shadow-2xl max-w-md w-full max-h-[min(80vh,100dvh)] sm:max-h-[min(85vh,100dvh)] border border-gray-700 flex min-h-0 flex-col">
-        {/* Header */}
-        <div
-          className="flex items-center justify-between p-3 border-b border-gray-700/50 flex-shrink-0"
-          style={{ paddingTop: 'max(12px, calc(env(safe-area-inset-top, 0px) + 12px))' }}
-        >
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm max-sm:pb-[env(safe-area-inset-bottom,0px)] sm:items-center sm:p-2">
+      <div
+        data-testid="trip-export-modal-panel"
+        className="flex max-h-[min(85dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1rem))] min-h-0 w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-gray-700 bg-gray-900 shadow-2xl sm:max-h-[min(85dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] sm:rounded-xl"
+      >
+        {/* Header — safe top inset without stacking extra padding on top of large notches */}
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-700/50 px-3 pb-2.5 pt-[max(10px,calc(env(safe-area-inset-top,0px)+8px))]">
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-[#e8af48] via-[#c49746] to-[#a07a32] p-1.5 rounded-lg shadow-[0_0_8px_rgba(196,151,70,0.3)]">
               <FileText size={16} className="text-black" />
@@ -144,7 +144,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
         {/* Content */}
         <div
           data-testid="trip-export-modal-scroll"
-          className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3"
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto px-3 pb-3 pt-2"
           style={
             !hasAccess
               ? { paddingBottom: 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 12px))' }
