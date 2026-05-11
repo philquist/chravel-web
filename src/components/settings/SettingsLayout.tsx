@@ -49,7 +49,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
         <div className="flex-shrink-0 p-3 md:p-4 border-b border-white/20">
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="w-full flex items-center justify-between p-2 md:p-3 bg-white/10 rounded-xl text-white"
+            className="w-full flex items-center justify-between p-3 bg-black/50 border border-white/15 rounded-xl text-white min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-primary/70"
           >
             <div className="flex items-center gap-3">
               {currentSection && <currentSection.icon size={20} />}
@@ -79,7 +79,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                     }}
                     role="tab"
                     aria-selected={isActive}
-                    className={`w-full flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 text-left transition-colors min-h-[44px] ${sectionButtonClass(
+                    className={`w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 text-left text-sm font-medium rounded-xl transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-primary/70 ${sectionButtonClass(
                       isActive,
                     )}`}
                   >

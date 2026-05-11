@@ -139,10 +139,10 @@ export const SettingsMenu = ({
                   onClick={() => setSettingsType('consumer')}
                   aria-label="My Trips settings"
                   aria-pressed={settingsType === 'consumer'}
-                  className={`py-2 px-4 min-h-[44px] rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                  className={`py-2 px-4 min-h-[44px] rounded-lg text-sm font-medium transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-primary/70 ${
                     settingsType === 'consumer'
-                      ? 'bg-black/60 border border-gold-primary/60 text-white shadow-ring-glow'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-black/70 border border-gold-primary/60 text-gold-primary shadow-ring-glow'
+                      : 'text-gray-300 hover:text-white hover:bg-white/10 border border-transparent'
                   }`}
                 >
                   My Trips
@@ -153,8 +153,8 @@ export const SettingsMenu = ({
                   aria-pressed={settingsType === 'enterprise'}
                   className={`py-2 px-4 min-h-[44px] rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                     settingsType === 'enterprise'
-                      ? 'bg-black/60 border border-gold-primary/60 text-white shadow-ring-glow'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-black/70 border border-gold-primary/60 text-gold-primary shadow-ring-glow'
+                      : 'text-gray-300 hover:text-white hover:bg-white/10 border border-transparent'
                   }`}
                 >
                   Pro
@@ -165,8 +165,8 @@ export const SettingsMenu = ({
                   aria-pressed={settingsType === 'events'}
                   className={`py-2 px-4 min-h-[44px] rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                     settingsType === 'events'
-                      ? 'bg-black/60 border border-gold-primary/60 text-white shadow-ring-glow'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-black/70 border border-gold-primary/60 text-gold-primary shadow-ring-glow'
+                      : 'text-gray-300 hover:text-white hover:bg-white/10 border border-transparent'
                   }`}
                 >
                   Events
@@ -176,10 +176,10 @@ export const SettingsMenu = ({
                     onClick={() => setSettingsType('advertiser')}
                     aria-label="Advertiser settings"
                     aria-pressed={settingsType === 'advertiser'}
-                    className={`py-2 px-4 min-h-[44px] rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                    className={`py-2 px-4 min-h-[44px] rounded-lg text-sm font-medium whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-primary/70 ${
                       settingsType === 'advertiser'
-                        ? 'bg-black/60 border border-gold-primary/60 text-white shadow-ring-glow'
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                        ? 'bg-black/70 border border-gold-primary/60 text-gold-primary shadow-ring-glow'
+                        : 'text-gray-300 hover:text-white hover:bg-white/10 border border-transparent'
                     }`}
                   >
                     Advertiser
