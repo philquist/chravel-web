@@ -154,6 +154,10 @@ export const TripCard = ({
     actionButtonClass,
     'flex items-center justify-center gap-1.5',
   );
+  const secondaryActionButtonClass = cn(
+    actionButtonClass,
+    'flex items-center justify-center gap-1.5',
+  );
 
   const handleArchiveTrip = async () => {
     // Demo mode: session-scoped, non-persistent archive
@@ -490,17 +494,17 @@ export const TripCard = ({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2 text-white mb-1 md:mb-3 text-sm md:text-base min-w-0">
+            <div className="flex min-w-0 items-center gap-2 text-white mb-1 md:mb-3 text-sm md:text-base">
               <MapPin size={14} className="md:hidden gold-gradient-icon" />
               <MapPin size={18} className="hidden md:block gold-gradient-icon" />
               <span
                 title={trip.location}
-                className="font-medium max-w-full md:max-w-[220px] md:truncate"
+                className="min-w-0 font-medium max-w-full md:max-w-[220px] md:truncate"
               >
                 {trip.location}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-white text-sm md:text-base min-w-0">
+            <div className="flex min-w-0 items-center gap-2 text-white text-sm md:text-base">
               <span className="md:hidden inline-flex gold-gradient-icon">
                 <CalendarGlyph size={14} />
               </span>
@@ -509,7 +513,7 @@ export const TripCard = ({
               </span>
               <span
                 title={trip.dateRange}
-                className="font-medium max-w-full md:max-w-[220px] md:truncate"
+                className="min-w-0 font-medium max-w-full md:max-w-[220px] md:truncate"
               >
                 {trip.dateRange}
               </span>
