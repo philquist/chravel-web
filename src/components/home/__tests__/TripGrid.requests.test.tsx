@@ -125,7 +125,7 @@ describe('TripGrid requests tab', () => {
     expect(screen.getByText('Cancel request')).toBeInTheDocument();
   });
 
-  it('ignores legacy outbound request props when pending-card RPC rows are absent', () => {
+  it('shows empty requests state when the RPC returns no pending-card rows', () => {
     render(
       <TripGrid
         viewMode="myTrips"
@@ -133,22 +133,7 @@ describe('TripGrid requests tab', () => {
         proTrips={{}}
         events={{}}
         activeFilter="requests"
-        pendingRequestCards={[
-          {
-            requestId: 'req-200',
-            tripId: 'trip-200',
-            tripType: 'consumer',
-            requestedAt: null,
-            title: 'Outbound Source Of Truth',
-            destination: 'Tokyo',
-            startDate: '2026-05-01',
-            endDate: '2026-05-04',
-            dateLabel: 'May 1, 2026 - May 4, 2026',
-            coverImageUrl: null,
-            peopleCount: 1,
-            placesCount: 0,
-          },
-        ]}
+        pendingRequestCards={[]}
       />,
     );
 

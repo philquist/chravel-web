@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { RotateCcw, Mic, AlertTriangle, WifiOff } from 'lucide-react';
 import type { GeminiLiveState, VoiceDiagnostics } from '@/types/voice';
 
@@ -67,6 +67,8 @@ function rmsToPercent(rms: number): number {
 /**
  * VoiceLiveInline — Inline live voice UI rendered inside the concierge chat area.
  *
+ * presentation-only; must not own session lifecycle.
+ *
  * Renders a premium gold waveform with AI transcript above (white) and user
  * transcript below (gold). Subtle animation with RMS-responsive glow.
  * Includes error recovery UI, circuit breaker state, audio level indicator,
@@ -86,21 +88,56 @@ export function VoiceLiveInline({
   const barRef = useRef<SVGSVGElement>(null);
   const rafRef = useRef<number>(0);
   const assistantScrollRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScrollRef = useRef(true);
+  const [isDocumentVisible, setIsDocumentVisible] = useState(
+    typeof document === 'undefined' ? true : !document.hidden,
+  );
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  // Auto-scroll assistant transcript to bottom
+  const isAnimationActive =
+    liveState === 'listening' ||
+    liveState === 'playing' ||
+    liveState === 'requesting_mic' ||
+    liveState === 'reconnecting';
+
+  const handleAssistantScroll = useCallback(() => {
+    const container = assistantScrollRef.current;
+    if (!container) return;
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    shouldAutoScrollRef.current = distanceFromBottom <= 40;
+  }, []);
+
+  // Auto-scroll assistant transcript only when user is near the bottom.
   useEffect(() => {
-    if (assistantScrollRef.current) {
-      assistantScrollRef.current.scrollTop = assistantScrollRef.current.scrollHeight;
+    const container = assistantScrollRef.current;
+    if (!container) return;
+
+    if (shouldAutoScrollRef.current) {
+      container.scrollTop = container.scrollHeight;
     }
   }, [assistantTranscript]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleChange = () => setPrefersReducedMotion(mediaQuery.matches);
+    handleChange();
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const handleVisibility = () => setIsDocumentVisible(!document.hidden);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
 
   // rAF loop: read RMS values and set CSS custom properties on the waveform
   const animateBar = useCallback(() => {
     const bar = barRef.current;
-    if (!bar) {
-      rafRef.current = requestAnimationFrame(animateBar);
-      return;
-    }
+    if (!bar) return;
 
     const mode = getBarMode(liveState);
     const micRms = diagnostics.micRms || 0;
@@ -118,9 +155,18 @@ export function VoiceLiveInline({
   }, [liveState, diagnostics.micRms, diagnostics.playbackRms]);
 
   useEffect(() => {
+    const shouldAnimate = isAnimationActive && isDocumentVisible && !prefersReducedMotion;
+    if (!shouldAnimate) {
+      if (barRef.current) {
+        barRef.current.style.setProperty('--bar-glow', '0');
+      }
+      cancelAnimationFrame(rafRef.current);
+      return;
+    }
+
     rafRef.current = requestAnimationFrame(animateBar);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [animateBar]);
+  }, [animateBar, isAnimationActive, isDocumentVisible, prefersReducedMotion]);
 
   const barMode = getBarMode(liveState);
   const isMicPermissionDenied = error?.toLowerCase().includes('microphone permission denied');
@@ -179,6 +225,7 @@ export function VoiceLiveInline({
       {/* AI transcript — above bar, scrollable, bright white */}
       <div
         ref={assistantScrollRef}
+        onScroll={handleAssistantScroll}
         className="flex-1 w-full max-w-[90%] sm:max-w-2xl overflow-y-auto flex flex-col justify-end min-h-0 mb-4"
         role="log"
         aria-label="Assistant speech"
@@ -210,7 +257,7 @@ export function VoiceLiveInline({
       <div className="w-full flex-shrink-0">
         <svg
           ref={barRef}
-          className={`w-full ${barMode === 'connecting' || barMode === 'thinking' ? 'animate-[wave-breathe_3s_ease-in-out_infinite]' : ''}`}
+          className={`w-full ${!prefersReducedMotion && (barMode === 'connecting' || barMode === 'thinking') ? 'animate-[wave-breathe_3s_ease-in-out_infinite]' : ''}`}
           viewBox="0 0 200 20"
           height="24"
           preserveAspectRatio="none"

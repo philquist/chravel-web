@@ -342,7 +342,9 @@ export const tripService = {
 
       if (createdError) throw createdError;
 
-      const allTrips = (createdTrips || []).map(trip => ({
+      const allTrips: Array<
+        Record<string, any> & { id: string; membership_status: 'owner' | 'member' }
+      > = (createdTrips || []).map(trip => ({
         ...trip,
         membership_status: 'owner' as const,
       }));
@@ -439,7 +441,7 @@ export const tripService = {
           trip_members: [{ count }],
           trip_events_places: [{ count: placesCountMap.get(trip.id) || 0 }],
         };
-      });
+      }) as unknown as Trip[];
     } catch (error) {
       if (import.meta.env.DEV) {
         console.error('Error fetching trips:', error);

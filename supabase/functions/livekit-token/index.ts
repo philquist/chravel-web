@@ -16,6 +16,7 @@ import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { requireSecrets } from '../_shared/validateSecrets.ts';
 import { getBearerToken } from '../_shared/authHeaders.ts';
+import { generateAgentAssertion } from '../_shared/security/agentAssertions.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -140,12 +141,33 @@ serve(async req => {
     const httpUrl = toHttpUrl(LIVEKIT_URL);
     const roomService = new RoomServiceClient(httpUrl, LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
 
+    const agentAssertion = await generateAgentAssertion({
+      user_id: user.id,
+      trip_id: tripId,
+      allowed_tools: [
+        'searchPlaces',
+        'searchWeb',
+        'searchFlights',
+        'searchHotels',
+        'getHotelDetails',
+        'getWeatherForecast',
+        'searchImages',
+        'getPlaceDetails',
+        'getDirectionsETA',
+        'getDistanceMatrix',
+        'getStaticMapUrl',
+        'makeReservation',
+        'emitReservationDraft',
+      ],
+    });
+
     await roomService.createRoom({
       name: roomName,
       metadata: JSON.stringify({
         tripId,
         userId: user.id,
         voice,
+        agentAssertion,
       }),
       emptyTimeout: 30,
       // intentional: RoomAgentDispatch requires fields we don't need for basic agent dispatch

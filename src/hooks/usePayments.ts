@@ -15,7 +15,7 @@ import {
   replaceOptimisticPaymentId,
   buildPaymentMessage,
 } from '@/lib/paymentCacheUtils';
-import { toAppPayment } from '@/lib/adapters/paymentAdapter';
+import { normalizePaymentMessages, toAppPayment } from '@/lib/adapters/paymentAdapter';
 
 class CreatePaymentMutationError extends Error {
   public readonly code: string;
@@ -36,6 +36,17 @@ export const usePayments = (tripId?: string) => {
 
   const userId = user?.id;
   const demoActive = isDemoMode && checkDemoTrip(tripId);
+  const logPaymentsNormalizationDrop = useCallback(
+    (rawValue: unknown) => {
+      if (!import.meta.env.DEV) return;
+      console.warn('[payments-normalization] Dropped invalid payments payload shape', {
+        marker: 'payments-normalization',
+        tripId: tripId ?? null,
+        rawType: typeof rawValue,
+      });
+    },
+    [tripId],
+  );
 
   // ⚡ Trip payments via TanStack Query — enables prefetch cache + stale-while-revalidate
   const { data: tripPayments = [], isLoading: paymentsLoading } = useQuery({
@@ -382,13 +393,18 @@ export const usePayments = (tripId?: string) => {
   };
 
   // Derived state: separate settled and unsettled payments
-  const outstandingPayments = tripPayments.filter(p => !p.isSettled);
-  const completedPayments = tripPayments.filter(p => p.isSettled);
+  const rawTripPayments: unknown = tripPayments;
+  const safeTripPayments = normalizePaymentMessages(rawTripPayments);
+  if (!Array.isArray(rawTripPayments) || safeTripPayments.length !== rawTripPayments.length) {
+    logPaymentsNormalizationDrop(rawTripPayments);
+  }
+  const outstandingPayments = safeTripPayments.filter(p => !p.isSettled);
+  const completedPayments = safeTripPayments.filter(p => p.isSettled);
 
   return {
     // Data
     paymentMethods,
-    tripPayments,
+    tripPayments: safeTripPayments,
     outstandingPayments,
     completedPayments,
     // Loading states
@@ -409,4 +425,8 @@ export const usePayments = (tripId?: string) => {
     unsettlePayment,
     getTripPaymentSummary,
   };
+};
+
+export const normalizePaymentRows = <T>(value: unknown): T[] => {
+  return Array.isArray(value) ? (value as T[]) : [];
 };

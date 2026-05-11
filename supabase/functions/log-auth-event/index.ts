@@ -97,24 +97,28 @@ serve(async req => {
       null;
 
     const userAgent = (sanitizedDetails.user_agent as string | undefined) ?? null;
-    // Remove user_agent from details since it has its own column
     delete sanitizedDetails.user_agent;
 
-    // Insert into security_audit_log
+    // Map to actual security_audit_log schema:
+    // (id, user_id, action, table_name, record_id, metadata, created_at)
     const { error: insertError } = await supabase.from('security_audit_log').insert({
-      event_type: eventType,
       user_id: userId,
-      ip_address: clientIp,
-      user_agent: userAgent,
-      details: sanitizedDetails,
+      action: eventType,
+      table_name: 'auth',
+      metadata: {
+        ...sanitizedDetails,
+        ip_address: clientIp,
+        user_agent: userAgent,
+      },
     });
 
     if (insertError) {
       logError('LOG_AUTH_EVENT', insertError, { eventType, userId });
-      return new Response(JSON.stringify({ error: 'Failed to log event' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      // Telemetry must never block auth — return 200 with error envelope
+      return new Response(
+        JSON.stringify({ success: false, error: 'SERVICE_UNAVAILABLE', fallback: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     return new Response(JSON.stringify({ success: true }), {
@@ -123,9 +127,9 @@ serve(async req => {
     });
   } catch (error) {
     logError('LOG_AUTH_EVENT', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ success: false, error: 'INTERNAL_ERROR', fallback: true }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
   }
 });

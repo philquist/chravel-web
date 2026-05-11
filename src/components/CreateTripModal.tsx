@@ -24,9 +24,10 @@ import { toast } from 'sonner';
 import { PrivacyMode, getDefaultPrivacyMode } from '../types/privacy';
 import { ProCategoryEnum, PRO_CATEGORIES_ORDERED } from '../types/proCategories';
 import { getAllProTripColors } from '../utils/proTripColors';
-import { buildTripCoverStoragePath, TRIP_COVER_BUCKET } from '../utils/tripCoverStorage';
+import { useCoverPhotoUpload } from '@/features/trips/hooks/useCoverPhotoUpload';
 import { getFeaturePaywallConfig } from './subscription/featurePaywall';
 import { parseLocalDate } from '@/utils/dateHelpers';
+import { prepareImageForUpload, ImagePrepError } from '@/utils/imagePrep';
 
 interface CreateTripModalProps {
   isOpen: boolean;
@@ -64,7 +65,8 @@ export const CreateTripModal = ({ isOpen, onClose }: CreateTripModalProps) => {
   }>({});
   const titleInputRef = useRef<HTMLInputElement>(null);
 
-  const { createTrip, updateTrip, trips } = useTrips();
+  const { createTrip, trips } = useTrips();
+  const { upload: uploadCoverPhoto } = useCoverPhotoUpload();
 
   // ✅ FIXED: Always call useOrganization hook (Rules of Hooks requirement)
   // The hook handles demo mode internally, returning empty arrays when in demo mode
@@ -150,12 +152,26 @@ export const CreateTripModal = ({ isOpen, onClose }: CreateTripModalProps) => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setCoverImage(file);
-      const previewUrl = URL.createObjectURL(file);
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset input so picking the same file twice still fires onChange
+    if (e.target) e.target.value = '';
+    if (!file) return;
+    try {
+      const prepared = await prepareImageForUpload(file);
+      // Wrap normalized blob back in a File so downstream upload keeps a name/type.
+      const normalizedFile = new File([prepared.blob], prepared.fileName, {
+        type: prepared.contentType,
+      });
+      setCoverImage(normalizedFile);
+      const previewUrl = URL.createObjectURL(prepared.blob);
       setCoverImagePreview(previewUrl);
+    } catch (err) {
+      const message =
+        err instanceof ImagePrepError
+          ? err.userMessage
+          : "We couldn't use that photo. Try a different one.";
+      toast.error(message);
     }
   };
 
@@ -207,29 +223,14 @@ export const CreateTripModal = ({ isOpen, onClose }: CreateTripModalProps) => {
       const newTrip = await createTrip(tripData);
 
       if (newTrip) {
-        // Upload cover image if selected
+        // Upload cover image if selected. The unified hook writes the canonical
+        // public URL to cover_image_url AND invalidates every list surface
+        // (consumer trips, proTrips, events, pending-request-trip-cards), then
+        // cleans up the storage object if the DB write fails.
         if (coverImage && !isDemoMode) {
-          try {
-            const fileExt = coverImage.name.split('.').pop();
-            const filePath = buildTripCoverStoragePath(newTrip.id, `cover.${fileExt}`);
-
-            const { error: uploadError } = await supabase.storage
-              .from(TRIP_COVER_BUCKET)
-              .upload(filePath, coverImage);
-
-            if (uploadError) throw uploadError;
-
-            const {
-              data: { publicUrl },
-            } = supabase.storage.from(TRIP_COVER_BUCKET).getPublicUrl(filePath);
-
-            // Route through useTrips update path so homepage caches invalidate immediately.
-            const coverUpdated = await updateTrip(newTrip.id, { cover_image_url: publicUrl });
-            if (!coverUpdated) {
-              throw new Error('Failed to update trip cover image');
-            }
-          } catch (uploadError) {
-            if (import.meta.env.DEV) console.error('Error uploading cover image:', uploadError);
+          const result = await uploadCoverPhoto(newTrip.id, coverImage);
+          if (!result.ok) {
+            if (import.meta.env.DEV) console.error('Cover image upload failed:', result.error);
             toast.error('Trip created, but failed to upload cover image');
           }
         }

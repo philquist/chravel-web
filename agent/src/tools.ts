@@ -30,6 +30,7 @@ export interface ToolContext {
   supabase: SupabaseClient;
   supabaseUrl: string;
   supabaseServiceKey: string;
+  agentAssertion: string;
 }
 
 // ── Supabase Client ────────────────────────────────────────────────────────────
@@ -46,13 +47,18 @@ export function getSupabase(): SupabaseClient {
   return _supabase;
 }
 
-export function createToolContext(tripId: string, userId: string): ToolContext {
+export function createToolContext(
+  tripId: string,
+  userId: string,
+  agentAssertion: string,
+): ToolContext {
   return {
     tripId,
     userId,
     supabase: getSupabase(),
     supabaseUrl: process.env.SUPABASE_URL!,
     supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    agentAssertion,
   };
 }
 
@@ -74,6 +80,7 @@ async function callEdgeFunction(
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${ctx.supabaseServiceKey}`,
+      'X-Agent-Assertion': ctx.agentAssertion,
     },
     body: JSON.stringify({
       toolName,

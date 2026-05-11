@@ -63,6 +63,51 @@ describe('tripConverter', () => {
       expect(mockTrip.placesCount).toBe(0);
     });
 
+    it('normalizes legacy cover image field aliases in one place', () => {
+      const snakeAliasTrip = {
+        ...baseSupabaseTrip,
+        cover_image_url: undefined,
+        cover_photo_url: 'https://example.com/snake.jpg',
+      } as SupabaseTrip & { cover_photo_url?: string };
+
+      const camelAliasTrip = {
+        ...baseSupabaseTrip,
+        cover_image_url: undefined,
+        coverPhotoUrl: 'https://example.com/camel.jpg',
+      } as SupabaseTrip & { coverPhotoUrl?: string };
+
+      expect(convertSupabaseTripToMock(snakeAliasTrip).coverPhoto).toBe(
+        'https://example.com/snake.jpg',
+      );
+      expect(convertSupabaseTripToMock(camelAliasTrip).coverPhoto).toBe(
+        'https://example.com/camel.jpg',
+      );
+    });
+
+    it('prefers canonical cover_image_url over legacy aliases when both exist', () => {
+      const mixedTrip = {
+        ...baseSupabaseTrip,
+        cover_image_url: 'https://example.com/canonical.jpg',
+        coverPhotoUrl: 'https://example.com/legacy.jpg',
+      } as SupabaseTrip & { coverPhotoUrl?: string };
+
+      expect(convertSupabaseTripToMock(mixedTrip).coverPhoto).toBe(
+        'https://example.com/canonical.jpg',
+      );
+    });
+
+    it('ignores blank cover aliases', () => {
+      const blankAliasTrip = {
+        ...baseSupabaseTrip,
+        cover_image_url: '   ',
+        coverPhotoUrl: 'https://example.com/fallback.jpg',
+      } as SupabaseTrip & { coverPhotoUrl?: string };
+
+      expect(convertSupabaseTripToMock(blankAliasTrip).coverPhoto).toBe(
+        'https://example.com/fallback.jpg',
+      );
+    });
+
     it('formats date range correctly when dates are valid', () => {
       const mockTrip = convertSupabaseTripToMock(baseSupabaseTrip);
       expect(mockTrip.dateRange).toBe('Oct 1 - Oct 15, 2023');

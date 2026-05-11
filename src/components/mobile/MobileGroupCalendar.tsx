@@ -38,6 +38,7 @@ import { toast } from 'sonner';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { hasPaidAccess } from '@/utils/paidAccess';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useTripMembersQuery } from '@/hooks/useTripMembersQuery';
 import type { TripEvent } from '@/services/calendarService';
 import { useCalendarExport } from '@/features/calendar/hooks/useCalendarExport';
 import { CalendarErrorState } from '@/features/calendar/components/CalendarErrorState';
@@ -95,6 +96,7 @@ export const MobileGroupCalendar = ({
   const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
   const canUseSmartImport = hasPaidAccess({ tier, status: subscription?.status, isSuperAdmin });
   const { canPerformAction, isLoading: permissionsLoading } = useRolePermissions(tripId);
+  const { tripMembers } = useTripMembersQuery(tripId);
 
   // Background URL import
   const {
@@ -187,7 +189,7 @@ export const MobileGroupCalendar = ({
           hour12: true,
         }),
         location: event.location || undefined,
-        participants: 0, // TODO: Get actual participant count
+        participants: tripMembers?.length || 0,
         color: EVENT_COLORS[index % EVENT_COLORS.length],
         // Keep original event data for editing
         originalEvent: event,
@@ -195,7 +197,7 @@ export const MobileGroupCalendar = ({
       return calendarEvent;
     });
     return calendarEvents;
-  }, [tripEvents]);
+  }, [tripEvents, tripMembers?.length]);
 
   const { isRefreshing, pullDistance } = usePullToRefresh({
     onRefresh: async () => {

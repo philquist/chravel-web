@@ -24,6 +24,27 @@ import type { QueryClass } from './queryClassifier.ts';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+export const MUTATING_TOOL_NAMES = new Set<string>([
+  'addToCalendar',
+  'createTask',
+  'createPoll',
+  'savePlace',
+  'setBasecamp',
+  'addToAgenda',
+  'createBroadcast',
+  'createNotification',
+  'updateCalendarEvent',
+  'deleteCalendarEvent',
+  'bulkDeleteCalendarEvents',
+  'updateTask',
+  'deleteTask',
+  'settleExpense',
+  'generateTripImage',
+  'setTripHeaderImage',
+  'emitSmartImportPreview',
+  'emitReservationDraft',
+]);
+
 export interface ToolDeclaration {
   name: string;
   description: string;

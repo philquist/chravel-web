@@ -15,6 +15,7 @@
 1. **Demo mode is sacred.** Mock data is NEVER modified. Authenticated mode uses parallel real data paths. This is a hard architectural invariant.
 1. **Anti-Goldfish Protocol.** Before coding: read `claude-progress.txt` + recent git log. Implement ONE feature → E2E test → commit → update breadcrumbs. Never multi-task features.
 1. **Learn from trajectories.** Before non-trivial tasks, read `DEBUG_PATTERNS.md` + `LESSONS.md`. After completing, update memory files with evidence-backed learnings. See CLAUDE.md § AGENT LEARNING PROTOCOL.
+1. **Deferral discipline.** No "out of scope" hand-waves. Adjacent issues are either fixed in-branch or captured as a paste-ready Follow-Up Issue Plan. Every coding response ends with the 7-section footer (Fixed now · Discovered · Intentionally deferred · Why · Follow-up prompt · Validation · Remaining launch blockers). Full rules: `DEFERRAL_DISCIPLINE.md`.
 
 -----
 

@@ -210,7 +210,9 @@ serve(async req => {
       type: action === 'approve' ? 'join_approved' : 'join_rejected',
       trip_id: joinRequest.trip_id,
       metadata: {
+        trip_id: joinRequest.trip_id,
         trip_name: joinRequest.trips.name,
+        trip_type: joinRequest.trips.trip_type,
         action: action,
         resolved_by: user.id,
       },

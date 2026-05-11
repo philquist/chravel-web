@@ -786,3 +786,27 @@
 - **Evidence:** Trip preview previously returned no invite and blocked Join CTA. Adding `ensureInvite` to `get-trip-preview` plus a retry call from `TripPreview` restored deterministic join routing for existing shared trips.
 - **Provenance:** April 2026 trip invite bootstrap hardening.
 - **Confidence:** high
+
+### When duplicated handlers exist across components, fixes that target one path leave the others broken — unify before patching
+- **Tip:** When you find the same multi-step pipeline (`upload + persist + cleanup`, `fetch + transform + commit`, etc.) in three or more places, do not patch one location. Extract a single owner (hook or utility) and migrate every call site to it before fixing the underlying bug. Otherwise each "fix" silently regresses the unfixed paths.
+- **Applies when:** Multi-step async pipelines appear in more than two components, especially when their cache invalidation or error handling differs.
+- **Avoid when:** Components have legitimately different requirements — unify only the truly shared steps.
+- **Evidence:** Trip cover photo upload had three call sites (`CreateTripModal`, `EditTripModal`/`TripCoverPhotoUpload`, `TripHeader`) with subtly different invalidation footprints. Past fixes touched one path each and never resolved the underlying beta complaint. Unification under `useCoverPhotoUpload` (`src/features/trips/hooks/useCoverPhotoUpload.ts`) eliminated the drift surface in a single PR.
+- **Provenance:** May 2026 cover photo upload definitive fix (branch `claude/fix-cover-photo-upload-RodMM`).
+- **Confidence:** high
+
+### Never persist cache-busting query params into canonical DB columns
+- **Tip:** Cache-busters (`?v=${Date.now()}`) belong in in-memory state only — never in the column you treat as canonical. Persisting them dirties the column with timestamps, breaks string-equality dedup, and forces every reader to strip the param. Apply the cache-buster after the DB write returns the canonical URL, not before.
+- **Applies when:** Any flow that updates a media/asset URL column where browser/CDN caching is a concern.
+- **Avoid when:** The "?v=" param is part of upstream signed-URL semantics (then it must be stored verbatim).
+- **Evidence:** `TripHeader.tsx:377` and `TripCoverPhotoUpload.tsx:104` prepended `?v=${Date.now()}` BEFORE calling `updateCoverPhoto`, which then wrote the buster-decorated URL into `trips.cover_image_url`. Fix: pass canonical `publicUrl` to the persist step; let `appendCoverCacheBust` decorate only the local state URL post-write.
+- **Provenance:** May 2026 cover photo upload definitive fix.
+- **Confidence:** high
+
+### Cache invalidation footprint is the contract — extract it once, reference it everywhere
+- **Tip:** When multiple mutation hooks render the same logical entity across different list keys (e.g., `trips`, `proTrips`, `events`, `pending-request-trip-cards`), centralize the invalidation set in one utility and have every mutator call it. Inline invalidation in mutators is the #1 source of "feature works in path A but not path B" bugs.
+- **Applies when:** A single underlying resource is rendered by 3+ list query keys after converter mapping.
+- **Avoid when:** Lists are genuinely independent and a mutation legitimately affects only one.
+- **Evidence:** `useTripCoverPhoto.invalidateTripCoverQueries` covered 6 keys; `useTrips.updateTripMutation` covered 1. `CreateTripModal` called the latter, leaving pro/event/pending-request lists stale on every new trip with cover. Extraction to `src/lib/tripCoverInvalidation.ts` made the contract explicit and re-usable for the new `useCoverPhotoUpload` hook.
+- **Provenance:** May 2026 cover photo upload definitive fix.
+- **Confidence:** high

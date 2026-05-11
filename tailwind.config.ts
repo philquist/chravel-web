@@ -107,6 +107,26 @@ export default {
           'navy-blue': 'hsl(217, 91%, 25%)',
           'navy-blue-light': 'hsl(217, 80%, 35%)',
         },
+        // ─── Theme-driven semantic surface / ink scale ───
+        // Prefer these over raw bg-black/N, bg-gray-N, text-white, etc.
+        // They flip automatically between dark and .light themes.
+        'surface-0': 'hsl(var(--surface-0))',
+        'surface-1': 'hsl(var(--surface-1))',
+        'surface-2': 'hsl(var(--surface-2))',
+        'surface-3': 'hsl(var(--surface-3))',
+        'surface-4': 'hsl(var(--surface-4))',
+        'overlay-strong': 'hsl(var(--overlay-strong))',
+        'overlay-soft': 'hsl(var(--overlay-soft))',
+        ink: {
+          1: 'hsl(var(--ink-1))',
+          2: 'hsl(var(--ink-2))',
+          3: 'hsl(var(--ink-3))',
+          'on-accent': 'hsl(var(--ink-on-accent))',
+        },
+        hairline: {
+          DEFAULT: 'hsl(var(--hairline-soft))',
+          strong: 'hsl(var(--hairline-strong))',
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

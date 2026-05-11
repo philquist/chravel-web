@@ -34,7 +34,20 @@ interface UseLiveKitVoiceOptions {
     userText: string,
     assistantText: string,
     toolResults?: ToolCallResult[],
+    turn?: {
+      id: string;
+      userText: string;
+      assistantText: string;
+      toolResults: ToolCallResult[];
+      createdAt: string;
+    },
+    acknowledgeTurn?: () => void,
   ) => void;
+  onPartialTranscript?: (partial: {
+    role: 'user' | 'assistant';
+    text: string;
+    isFinal: boolean;
+  }) => void;
   onRichCard?: (toolName: string, cardData: Record<string, unknown>) => void;
   onError?: (message: string) => void;
   onCircuitBreakerOpen?: () => void;
@@ -135,6 +148,14 @@ export function useLiveKitVoice(options: UseLiveKitVoiceOptions): UseLiveKitVoic
   const turnAssistantTextRef = useRef('');
   const onTurnCompleteRef = useRef(onTurnComplete);
   const onRichCardRef = useRef(onRichCard);
+  const onPartialTranscriptRef = useRef(options.onPartialTranscript);
+  const pendingTurnRef = useRef<{
+    id: string;
+    userText: string;
+    assistantText: string;
+    toolResults: ToolCallResult[];
+    createdAt: string;
+  } | null>(null);
 
   useEffect(() => {
     onTurnCompleteRef.current = onTurnComplete;
@@ -144,7 +165,19 @@ export function useLiveKitVoice(options: UseLiveKitVoiceOptions): UseLiveKitVoic
     onRichCardRef.current = onRichCard;
   }, [onRichCard]);
 
+  useEffect(() => {
+    onPartialTranscriptRef.current = options.onPartialTranscript;
+  }, [options.onPartialTranscript]);
+
   // ── Data Message Handler ─────────────────────────────────────────────────
+
+  const clearTurnBuffers = useCallback(() => {
+    pendingTurnRef.current = null;
+    turnUserTextRef.current = '';
+    turnAssistantTextRef.current = '';
+    setUserTranscript('');
+    setAssistantTranscript('');
+  }, []);
 
   const handleDataMessage = useCallback(
     (payload: Uint8Array, _participant?: unknown, _kind?: unknown, topic?: string) => {
@@ -162,7 +195,13 @@ export function useLiveKitVoice(options: UseLiveKitVoiceOptions): UseLiveKitVoic
         switch (topic) {
           case 'transcript':
             if (msg.role === 'user') {
+              if (pendingTurnRef.current) clearTurnBuffers();
               setUserTranscript(msg.text);
+              onPartialTranscriptRef.current?.({
+                role: 'user',
+                text: msg.text,
+                isFinal: Boolean(msg.isFinal),
+              });
               if (msg.isFinal) {
                 turnUserTextRef.current = msg.text;
                 setConversationHistory(prev => [...prev, { role: 'user', text: msg.text }]);
@@ -176,6 +215,11 @@ export function useLiveKitVoice(options: UseLiveKitVoiceOptions): UseLiveKitVoic
               }
             } else if (msg.role === 'assistant') {
               setAssistantTranscript(msg.text);
+              onPartialTranscriptRef.current?.({
+                role: 'assistant',
+                text: msg.text,
+                isFinal: Boolean(msg.isFinal),
+              });
               if (msg.isFinal) {
                 turnAssistantTextRef.current = msg.text;
                 setConversationHistory(prev => [...prev, { role: 'assistant', text: msg.text }]);
@@ -183,18 +227,29 @@ export function useLiveKitVoice(options: UseLiveKitVoiceOptions): UseLiveKitVoic
             }
             break;
 
-          case 'turn_complete':
+          case 'turn_complete': {
+            const deterministicTurn = {
+              id: msg.turnId || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+              userText: turnUserTextRef.current || msg.userText || '',
+              assistantText: turnAssistantTextRef.current || msg.assistantText || '',
+              toolResults: Array.isArray(msg.toolResults)
+                ? (msg.toolResults as ToolCallResult[])
+                : [],
+              createdAt: new Date().toISOString(),
+            };
+            pendingTurnRef.current = deterministicTurn;
+            const acknowledgeTurn = () => {
+              if (pendingTurnRef.current?.id === deterministicTurn.id) clearTurnBuffers();
+            };
             onTurnCompleteRef.current?.(
-              turnUserTextRef.current || msg.userText,
-              turnAssistantTextRef.current || msg.assistantText,
-              msg.toolResults,
+              deterministicTurn.userText,
+              deterministicTurn.assistantText,
+              deterministicTurn.toolResults,
+              deterministicTurn,
+              acknowledgeTurn,
             );
-            // Reset for next turn
-            turnUserTextRef.current = '';
-            turnAssistantTextRef.current = '';
-            setUserTranscript('');
-            setAssistantTranscript('');
             break;
+          }
 
           case 'rich_card':
             onRichCardRef.current?.(msg.toolName, msg.cardData);
@@ -224,7 +279,7 @@ export function useLiveKitVoice(options: UseLiveKitVoiceOptions): UseLiveKitVoic
         // Ignore malformed data messages
       }
     },
-    [],
+    [clearTurnBuffers],
   );
 
   // ── Fetch Token Helper ───────────────────────────────────────────────────

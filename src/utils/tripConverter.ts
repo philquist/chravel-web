@@ -7,6 +7,33 @@ import { ProTripData } from '@/types/pro';
 import { normalizeLegacyCategory } from '@/types/proCategories';
 import { EventData } from '@/types/events';
 
+type CoverImageFieldShape = {
+  cover_image_url?: string | null;
+  cover_photo_url?: string | null;
+  coverPhotoUrl?: string | null;
+  coverPhoto?: string | null;
+  hero_image?: string | null;
+  trip_cover?: string | null;
+  image_url?: string | null;
+};
+
+const getCanonicalCoverImageUrl = (trip: CoverImageFieldShape): string | undefined => {
+  const candidates = [
+    trip.cover_image_url,
+    trip.cover_photo_url,
+    trip.coverPhotoUrl,
+    trip.coverPhoto,
+    trip.hero_image,
+    trip.trip_cover,
+    trip.image_url,
+  ];
+
+  const resolved = candidates.find(
+    candidate => typeof candidate === 'string' && candidate.trim().length > 0,
+  );
+  return resolved?.trim() ?? undefined;
+};
+
 /**
  * Converts a Supabase trip to the mock trip format expected by UI components
  */
@@ -43,7 +70,7 @@ export function convertSupabaseTripToMock(supabaseTrip: SupabaseTrip): MockTrip 
     dateRange,
     description: supabaseTrip.description || '',
     participants: [], // Participants loaded separately via trip_members
-    coverPhoto: supabaseTrip.cover_image_url,
+    coverPhoto: getCanonicalCoverImageUrl(supabaseTrip),
     coverDisplayMode: supabaseTrip.cover_display_mode ?? undefined,
     trip_type: (supabaseTrip.trip_type || 'consumer') as 'consumer' | 'pro' | 'event',
     archived: supabaseTrip.is_archived,
@@ -109,7 +136,7 @@ export function convertSupabaseTripToProTrip(supabaseTrip: SupabaseTrip): ProTri
     trip_type: 'pro',
     privacy_mode: 'standard',
     ai_access_enabled: true,
-    coverPhoto: supabaseTrip.cover_image_url ?? undefined,
+    coverPhoto: getCanonicalCoverImageUrl(supabaseTrip),
     coverDisplayMode: supabaseTrip.cover_display_mode ?? undefined,
     card_color: (supabaseTrip as Record<string, unknown>).card_color as string | undefined,
   };
@@ -151,7 +178,7 @@ export function convertSupabaseTripToEvent(supabaseTrip: SupabaseTrip): EventDat
       categories: [],
     },
     itinerary: [],
-    coverPhoto: supabaseTrip.cover_image_url ?? undefined,
+    coverPhoto: getCanonicalCoverImageUrl(supabaseTrip),
     coverDisplayMode: supabaseTrip.cover_display_mode ?? undefined,
     card_color: (supabaseTrip as Record<string, unknown>).card_color as string | undefined,
     organizer_display_name: supabaseTrip.organizer_display_name ?? undefined,

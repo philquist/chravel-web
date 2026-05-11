@@ -143,3 +143,12 @@
 - **Suggested tests:** Run `e2e/specs/chat/messaging.spec.ts --grep "CHAT-001|CHAT-002|CHAT-003"` against staging with `SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_URL` set. Add to scheduled staging E2E workflow.
 - **Priority:** high
 - **Provenance:** April 2026 messaging e2e suite (`claude/fix-getstream-messaging-xmHa9`)
+
+## Trip cover photo upload end-to-end coverage
+- **Area:** `src/features/trips/hooks/useCoverPhotoUpload.ts`, `src/components/CreateTripModal.tsx`, `src/components/TripHeader.tsx`, `src/components/TripCoverPhotoUpload.tsx`
+- **Why this gap matters:** The "create trip with cover" flow has been beta-blocking for multiple sprints across multiple fix attempts because no integration or E2E test exercises the full pipeline: storage upload → DB write → cache invalidation across all six query surfaces (`['trips']`, `['proTrips']`, `['events']`, `['pending-request-trip-cards']`, `['trip', tripId, ...]`, `['trip-members', tripId]`). The existing `TripCoverPhotoUpload.test.tsx` is broken on baseline because `prepareImageForUpload` requires JSDOM image APIs (`createImageBitmap`) that aren't available.
+- **Missing coverage:** (1) Unit test for `useCoverPhotoUpload` covering direct mode happy path, callback mode happy path, persist returns false (storage cleanup verified), upload throws (storage cleanup verified). (2) E2E (Playwright) for create-trip-with-cover on consumer + pro + event types, asserting the dashboard card renders the cover within 2s. (3) E2E for cover replace via `TripHeader` asserting old cached image is not shown after refresh.
+- **Failure mode if untested:** Same recurring beta complaint pattern — cover uploads "succeed" silently but the surface that should render them stays stale, and partial cleanup leaves orphaned storage objects.
+- **Suggested tests:** Vitest for the hook with `@tanstack/react-query` test client + mocked `supabase`. Playwright E2E using a fresh authenticated test user and a small fixture image, asserting card rendering on `/dashboard`, `/dashboard/pro`, `/dashboard/events`.
+- **Priority:** high
+- **Provenance:** May 2026 cover photo upload definitive fix (branch `claude/fix-cover-photo-upload-RodMM`)

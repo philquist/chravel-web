@@ -73,6 +73,7 @@
 - `LESSONS.md` — Reusable engineering tips
 - `TEST_GAPS.md` — Missing test coverage by subsystem
 - `AGENTS.md` — Agent operating principles
+- `DEFERRAL_DISCIPLINE.md` — Rules for handling adjacent issues without lazy tech debt
 - `agent_memory.jsonl` — Structured machine-readable memory
 
 ---
@@ -270,6 +271,25 @@ iOS → Capacitor shell → same web app → same Supabase backend
 5. **Report** — root cause · files changed · fix applied · tests added · evidence it passes · regression risk.
 
 **Non-negotiables:** Never claim "fixed" without proof. Never skip reproduction. Never refactor as a substitute for diagnosis.
+
+---
+
+## DEFERRAL DISCIPLINE
+
+**Headline rule:** If you see something, say something — then plan to do something.
+
+When you discover an adjacent defect, fragile mapping, blocked hook, weak RLS policy, dead code, missing migration, missing test coverage, or regression risk, do **one** of the following:
+
+1. **Fix in current branch** — required if it's directly connected to the bug, affects correctness, creates duplicate logic, or is needed for feature reliability.
+2. **Produce a paste-ready Follow-Up Issue Plan** — never a vague parking-lot note.
+
+**Banned phrases:** `out of scope` · `future cleanup PR` · `temporary duplication` · `known tech debt` · `could be addressed later` · `not addressed in this branch`.
+
+**Critical-path override:** for auth, chat, media uploads, record creation/editing, payments, invites, and mobile wrapper behavior — reliability beats narrow scope. If the feature remains fragile after the fix, say so directly and propose the next fix in the same response.
+
+**Mandatory response footer** on every coding task: (1) Fixed now · (2) Discovered · (3) Intentionally deferred · (4) Why deferral was necessary · (5) Paste-ready follow-up prompt for each deferred item · (6) Validation completed · (7) Remaining launch blockers.
+
+Full rules, template, blocked-path protocol, and duplicate-logic carve-out: see `DEFERRAL_DISCIPLINE.md`.
 
 ---
 

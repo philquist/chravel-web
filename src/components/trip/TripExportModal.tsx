@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { X, Download, FileText, Crown, Gift, Sparkles } from 'lucide-react';
+import { X, Download, FileText, Crown, Gift, Sparkles, Check } from 'lucide-react';
 import { ExportSection } from '@/types/tripExport';
 import { isConsumerTrip } from '@/utils/tripTierDetector';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
@@ -119,18 +119,18 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
   const headerTitle = isEvent ? 'Create Event Recap' : 'Create Trip Recap';
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-2">
-      <div className="bg-gray-900 rounded-t-2xl sm:rounded-xl shadow-2xl max-w-md w-full max-h-[min(80vh,100dvh)] sm:max-h-[min(85vh,100dvh)] border border-gray-700 flex min-h-0 flex-col">
-        {/* Header */}
-        <div
-          className="flex items-center justify-between p-3 border-b border-gray-700 flex-shrink-0"
-          style={{ paddingTop: 'max(12px, calc(env(safe-area-inset-top, 0px) + 12px))' }}
-        >
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm max-sm:pb-[env(safe-area-inset-bottom,0px)] sm:items-center sm:p-2">
+      <div
+        data-testid="trip-export-modal-panel"
+        className="flex max-h-[min(85dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1rem))] min-h-0 w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-gray-700 bg-gray-900 shadow-2xl sm:max-h-[min(85dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] sm:rounded-xl"
+      >
+        {/* Header — safe top inset without stacking extra padding on top of large notches */}
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-700/50 px-3 pb-2.5 pt-[max(10px,calc(env(safe-area-inset-top,0px)+8px))]">
           <div className="flex items-center gap-2">
-            <div className="bg-blue-600 p-1.5 rounded-lg">
-              <FileText size={16} />
+            <div className="bg-gradient-to-br from-[#e8af48] via-[#c49746] to-[#a07a32] p-1.5 rounded-lg shadow-[0_0_8px_rgba(196,151,70,0.3)]">
+              <FileText size={16} className="text-black" />
             </div>
-            <h2 className="text-base font-bold text-white">{headerTitle}</h2>
+            <h2 className="text-base font-bold gold-gradient-text">{headerTitle}</h2>
           </div>
           <button
             onClick={onClose}
@@ -144,7 +144,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
         {/* Content */}
         <div
           data-testid="trip-export-modal-scroll"
-          className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3"
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto px-3 pb-3 pt-2"
           style={
             !hasAccess
               ? { paddingBottom: 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 12px))' }
@@ -153,10 +153,12 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
         >
           {/* Upgrade prompt when free export is used */}
           {showUpgradePrompt ? (
-            <div className="bg-gradient-to-r from-primary/10 to-primary/15 border border-primary/30 rounded-lg p-4 mb-3">
+            <div className="bg-gradient-to-r from-[#c49746]/10 to-[#e8af48]/15 border border-[#c49746]/30 rounded-lg p-4 mb-3">
               <div className="flex items-center gap-2 mb-2">
-                <Crown size={18} className="text-yellow-400" />
-                <h3 className="text-sm font-semibold text-white">Upgrade for Unlimited Exports</h3>
+                <Crown size={18} className="text-[#e8af48]" />
+                <h3 className="text-sm font-semibold gold-gradient-text">
+                  Upgrade for Unlimited Exports
+                </h3>
               </div>
               <p className="text-gray-300 text-xs mb-3">
                 You've used your free export for this trip. Upgrade to create unlimited PDF recaps
@@ -208,9 +210,9 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
                 <div className="flex items-center gap-2 mb-2">
                   <Badge
                     variant="secondary"
-                    className="bg-purple-500/20 text-purple-300 text-[10px]"
+                    className="bg-[#c49746]/20 text-[#feeaa5] text-[10px] border border-[#c49746]/30"
                   >
-                    <Sparkles size={10} className="mr-1" />
+                    <Sparkles size={10} className="mr-1 text-[#e8af48]" />
                     Unlimited Exports
                   </Badge>
                 </div>
@@ -227,26 +229,40 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
 
               {/* Section Selection */}
               <div className="grid grid-cols-2 gap-1.5 mb-2">
-                {sections.map(section => (
-                  <label
-                    key={section.id}
-                    className={`flex items-center gap-1.5 py-2 px-2.5 rounded-lg border transition-all h-10 ${
-                      selectedSections.includes(section.id)
-                        ? 'bg-blue-900/30 border-blue-500 cursor-pointer hover:border-blue-400'
-                        : 'bg-gray-800 border-gray-700 cursor-pointer hover:border-gray-600'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedSections.includes(section.id)}
-                      onChange={() => toggleSection(section.id)}
-                      className="w-4 h-4 rounded border-gray-600 text-primary focus:ring-primary focus:ring-offset-gray-900 flex-shrink-0"
-                    />
-                    <span className="text-[11px] font-medium truncate text-white">
-                      {section.label}
-                    </span>
-                  </label>
-                ))}
+                {sections.map(section => {
+                  const isSelected = selectedSections.includes(section.id);
+                  return (
+                    <label
+                      key={section.id}
+                      className={`flex items-center gap-2 py-2 px-2.5 rounded-lg border transition-all h-10 cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#c49746]/15 border-[#c49746]/60 hover:border-[#c49746]'
+                          : 'bg-gray-800/60 border-gray-700/50 hover:border-gray-600 hover:bg-gray-800'
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
+                          isSelected
+                            ? 'bg-gradient-to-br from-[#e8af48] via-[#c49746] to-[#a07a32] shadow-[0_0_6px_rgba(196,151,70,0.4)]'
+                            : 'border border-gray-600 bg-gray-900'
+                        }`}
+                      >
+                        {isSelected && <Check size={10} className="text-black" strokeWidth={3} />}
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSection(section.id)}
+                        className="sr-only"
+                      />
+                      <span
+                        className={`text-[11px] font-medium truncate ${isSelected ? 'text-white' : 'text-gray-300'}`}
+                      >
+                        {section.label}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
 
               {error && (
@@ -256,10 +272,10 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
               )}
 
               {/* Info Banner */}
-              <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-1.5">
+              <div className="bg-[#c49746]/10 border border-[#c49746]/25 rounded-lg p-1.5">
                 <p className="text-gray-300 text-[10px]">
-                  <strong>🔒</strong> Emails and phone numbers hidden. Chat and AI history never
-                  included.
+                  <span className="text-[#c49746]">🔒</span> Emails and phone numbers hidden. Chat
+                  and AI history never included.
                 </p>
               </div>
             </>
@@ -282,11 +298,11 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
             <button
               onClick={handleExport}
               disabled={isExporting || selectedSections.length === 0}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 text-sm rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+              className="bg-gradient-to-r from-[#e8af48] via-[#c49746] to-[#a07a32] hover:from-[#f0b850] hover:via-[#d4a74f] hover:to-[#b08a3e] text-black font-semibold px-4 py-2.5 text-sm rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] shadow-[0_0_12px_rgba(196,151,70,0.3)] hover:shadow-[0_0_16px_rgba(196,151,70,0.45)]"
             >
               {isExporting ? (
                 <>
-                  <div className="h-4 w-4 animate-spin gold-gradient-spinner" />
+                  <div className="h-4 w-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                   Generating...
                 </>
               ) : (

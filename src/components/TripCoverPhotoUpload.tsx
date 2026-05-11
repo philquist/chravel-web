@@ -3,11 +3,11 @@ import { useDropzone } from 'react-dropzone';
 import { Upload, Camera, Check, Crop, Eye, Trash2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useDemoMode } from '../hooks/useDemoMode';
-import { supabase } from '../integrations/supabase/client';
 import { toast } from 'sonner';
 import { CoverPhotoCropModal } from './CoverPhotoCropModal';
 import { CoverPhotoFullscreenModal } from './CoverPhotoFullscreenModal';
-import { TRIP_COVER_BUCKET, uploadTripCoverBlob } from '@/utils/tripCoverStorage';
+import { useCoverPhotoUpload } from '@/features/trips/hooks/useCoverPhotoUpload';
+import { ImagePrepError, prepareImageForUpload } from '@/utils/imagePrep';
 import { isBlobOrDataUrl } from '@/utils/mediaUtils';
 
 interface TripCoverPhotoUploadProps {
@@ -33,6 +33,7 @@ export const TripCoverPhotoUpload = ({
 }: TripCoverPhotoUploadProps) => {
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
+  const { upload: uploadCoverPhoto } = useCoverPhotoUpload();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
@@ -41,14 +42,25 @@ export const TripCoverPhotoUpload = ({
   const [selectedImageSrc, setSelectedImageSrc] = useState<string>('');
   const [hasImageError, setHasImageError] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
 
     const file = acceptedFiles[0];
-    const previewUrl = URL.createObjectURL(file);
-
-    setSelectedImageSrc(previewUrl);
-    setShowCropModal(true);
+    try {
+      // Validate size + reject HEIC + bake in EXIF orientation up front so
+      // the crop modal sees a properly-rotated image and the storage upload
+      // never receives a format the browser can't render.
+      const prepared = await prepareImageForUpload(file);
+      const previewUrl = URL.createObjectURL(prepared.blob);
+      setSelectedImageSrc(previewUrl);
+      setShowCropModal(true);
+    } catch (err) {
+      const message =
+        err instanceof ImagePrepError
+          ? err.userMessage
+          : "We couldn't use that photo. Try a different one.";
+      toast.error(message);
+    }
   }, []);
 
   const handleAdjustPosition = useCallback(() => {
@@ -61,37 +73,37 @@ export const TripCoverPhotoUpload = ({
   const handleCropComplete = useCallback(
     async (croppedBlob: Blob) => {
       setIsUploading(true);
-      let uploadedFilePath: string | null = null;
 
       try {
         // Demo mode: use blob URL
         if (isDemoMode || !user) {
           const croppedUrl = URL.createObjectURL(croppedBlob);
-          const success = await onPhotoUploaded(croppedUrl);
-          if (success) {
-            setShowCropModal(false);
-            setUploadSuccess(true);
-            setTimeout(() => setUploadSuccess(false), 2000);
-            if (selectedImageSrc && isBlobOrDataUrl(selectedImageSrc)) {
-              URL.revokeObjectURL(selectedImageSrc);
+          let demoUrlConsumed = false;
+          try {
+            const success = await onPhotoUploaded(croppedUrl);
+            if (success) {
+              demoUrlConsumed = true;
+              setShowCropModal(false);
+              setUploadSuccess(true);
+              setTimeout(() => setUploadSuccess(false), 2000);
+              if (selectedImageSrc && isBlobOrDataUrl(selectedImageSrc)) {
+                URL.revokeObjectURL(selectedImageSrc);
+              }
+              setSelectedImageSrc('');
             }
-            setSelectedImageSrc('');
+            setIsUploading(false);
+            return success;
+          } finally {
+            if (!demoUrlConsumed) {
+              URL.revokeObjectURL(croppedUrl);
+            }
           }
-          setIsUploading(false);
-          return success;
         }
 
-        const { publicUrl, filePath } = await uploadTripCoverBlob({
-          client: supabase,
-          tripId,
-          blob: croppedBlob,
+        const result = await uploadCoverPhoto(tripId, croppedBlob, {
+          persist: onPhotoUploaded,
         });
-        uploadedFilePath = filePath;
-
-        // Add cache-busting param for re-crops
-        const finalUrl = `${publicUrl}?v=${Date.now()}`;
-        const success = await onPhotoUploaded(finalUrl);
-        if (success) {
+        if (result.ok) {
           setShowCropModal(false);
           setHasImageError(false);
           setUploadSuccess(true);
@@ -102,30 +114,17 @@ export const TripCoverPhotoUpload = ({
           setSelectedImageSrc('');
           return true;
         }
-        if (uploadedFilePath) {
-          await supabase.storage
-            .from(TRIP_COVER_BUCKET)
-            .remove([uploadedFilePath])
-            .catch(() => null);
-        }
         toast.error('Cover photo was uploaded but could not be saved to trip details.');
         return false;
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
         console.error('Photo upload error:', error);
-        if (uploadedFilePath) {
-          await supabase.storage
-            .from(TRIP_COVER_BUCKET)
-            .remove([uploadedFilePath])
-            .catch(() => null);
-        }
-        toast.error(`Failed to upload cover photo. Please try again.`);
+        toast.error('Failed to upload cover photo. Please try again.');
         return false;
       } finally {
         setIsUploading(false);
       }
     },
-    [user, isDemoMode, tripId, onPhotoUploaded, selectedImageSrc],
+    [user, isDemoMode, tripId, onPhotoUploaded, selectedImageSrc, uploadCoverPhoto],
   );
 
   const handleCropCancel = useCallback(() => {
@@ -161,8 +160,19 @@ export const TripCoverPhotoUpload = ({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected: rejections => {
+      const first = rejections[0]?.errors[0];
+      if (!first) return;
+      if (first.code === 'file-too-large') {
+        toast.error('That photo is over 10MB. Please pick a smaller image.');
+      } else if (first.code === 'file-invalid-type') {
+        toast.error('Unsupported file type. Use JPG, PNG, GIF, or WebP.');
+      } else {
+        toast.error(first.message || "We couldn't use that photo.");
+      }
+    },
     accept: {
-      'image/*': ['.png', '.jpg', '.jpeg', '.gif'],
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
     },
     maxSize: 10 * 1024 * 1024, // 10MB
     multiple: false,

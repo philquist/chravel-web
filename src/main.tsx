@@ -20,6 +20,7 @@ if (missingEnvVars.length > 0) {
 }
 const hasRequiredSupabaseEnv = missingEnvVars.length === 0;
 const App = hasRequiredSupabaseEnv ? lazy(() => import('./App.tsx')) : null;
+const MarketingApp = hasRequiredSupabaseEnv ? lazy(() => import('./MarketingApp.tsx')) : null;
 
 // Kick off the AuthPage chunk in parallel with App.tsx when the cold-start route
 // is /auth. Without this, AuthPage waits behind App.tsx parse + AuthProvider mount
@@ -43,6 +44,50 @@ const safeLocalStorageGet = (key: string): string | null => {
   }
 };
 
+const safeCookieIncludes = (needle: string): boolean => {
+  try {
+    return document.cookie.includes(needle);
+  } catch {
+    return false;
+  }
+};
+
+const AUTH_STORAGE_MARKERS = [
+  'supabase.auth.token',
+  'sb-',
+  'chravel-auth',
+  'firebase:authUser',
+] as const;
+
+const storageContainsAuthMarker = (storage: Storage): boolean => {
+  try {
+    for (let i = 0; i < storage.length; i += 1) {
+      const key = storage.key(i);
+      if (key && AUTH_STORAGE_MARKERS.some(marker => key.includes(marker))) {
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+};
+
+const isAnonymousRootRoute = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  if (window.location.pathname !== '/') return false;
+
+  const hasAuthMarker =
+    storageContainsAuthMarker(localStorage) ||
+    storageContainsAuthMarker(sessionStorage) ||
+    AUTH_STORAGE_MARKERS.some(marker => safeCookieIncludes(marker));
+
+  return !hasAuthMarker;
+};
+
+const shouldUseMarketingSplit =
+  import.meta.env.VITE_MARKETING_SPLIT === '1' && isAnonymousRootRoute();
 const safeLocalStorageSet = (key: string, value: string): void => {
   try {
     localStorage.setItem(key, value);
@@ -60,6 +105,39 @@ const clearAllCaches = (): void => {
   }
 };
 
+const scheduleWhenIdle = (task: () => void): void => {
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => task());
+    return;
+  }
+
+  setTimeout(task, 0);
+};
+
+const isPublicAnonymousBootstrapRoute = (): boolean => {
+  const path = window.location.pathname;
+  const isPublicRoute =
+    path === '/' ||
+    path.startsWith('/auth') ||
+    path.startsWith('/reset-password') ||
+    path.startsWith('/join') ||
+    path.startsWith('/j/') ||
+    path.startsWith('/accept-invite') ||
+    path.startsWith('/teams') ||
+    path.startsWith('/recs') ||
+    path.startsWith('/advertiser') ||
+    path.startsWith('/privacy') ||
+    path.startsWith('/support') ||
+    path.startsWith('/terms') ||
+    path.startsWith('/sms-terms') ||
+    path.startsWith('/delete-account') ||
+    path.startsWith('/demo') ||
+    path.startsWith('/healthz');
+
+  const likelyAuthenticated = Boolean(safeLocalStorageGet('chravel-auth-session'));
+  return isPublicRoute && !likelyAuthenticated;
+};
+
 // Native shell handles its own caching and lifecycle — service workers add startup
 // cost (registration, activation) without benefit inside the WebView.
 const inNativeShell = isChravelNativeShell();
@@ -67,12 +145,14 @@ const inNativeShell = isChravelNativeShell();
 // Unregister stale service workers from old hosts on first load.
 // Skip in the native shell to avoid pointless work on cold start.
 if (!inNativeShell && 'serviceWorker' in navigator) {
-  navigator.serviceWorker
-    .getRegistrations()
-    .then(registrations => {
-      registrations.forEach(reg => reg.unregister());
-    })
-    .catch(() => {});
+  if (navigator.serviceWorker.controller !== null) {
+    navigator.serviceWorker
+      .getRegistrations()
+      .then(registrations => {
+        registrations.forEach(reg => reg.unregister());
+      })
+      .catch(() => {});
+  }
 }
 
 // Initialize theme
@@ -93,7 +173,12 @@ if (isLovablePreview()) {
   if (storedVersion !== null && storedVersion !== currentVersion) {
     clearAllCaches();
     safeLocalStorageSet(STORED_VERSION_KEY, currentVersion);
-    window.location.reload();
+
+    if (!isPublicAnonymousBootstrapRoute()) {
+      window.location.reload();
+    }
+    // Tradeoff: on public anonymous routes we accept a potentially stale auth session snapshot
+    // to avoid paying a second cold load on landing after cache/version invalidation.
   } else {
     safeLocalStorageSet(STORED_VERSION_KEY, currentVersion);
   }
@@ -108,32 +193,36 @@ if (import.meta.env.PROD && !inNativeShell) {
 // with the auth route's first paint.
 const initTelemetry = () =>
   telemetry.init().catch(err => console.warn('[Telemetry] Init failed:', err));
-if (inNativeShell) {
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(() => initTelemetry());
-  } else {
-    setTimeout(initTelemetry, 0);
-  }
-} else {
-  initTelemetry();
-}
+scheduleWhenIdle(initTelemetry);
 
 // Global error listeners — catch unhandled errors outside React boundaries
 window.addEventListener('unhandledrejection', (e: PromiseRejectionEvent) => {
-  telemetry.captureError(e.reason instanceof Error ? e.reason : new Error(String(e.reason)), {
-    context: 'unhandledrejection',
-  });
+  const error = e.reason instanceof Error ? e.reason : new Error(String(e.reason));
+
+  if (document.readyState === 'complete') {
+    telemetry.captureError(error, { context: 'unhandledrejection' });
+    return;
+  }
+
+  scheduleWhenIdle(() => telemetry.captureError(error, { context: 'unhandledrejection' }));
 });
 
 window.addEventListener('error', (e: ErrorEvent) => {
-  telemetry.captureError(e.error ?? new Error(e.message), { context: 'window.onerror' });
+  const error = e.error ?? new Error(e.message);
+
+  if (document.readyState === 'complete') {
+    telemetry.captureError(error, { context: 'window.onerror' });
+    return;
+  }
+
+  scheduleWhenIdle(() => telemetry.captureError(error, { context: 'window.onerror' }));
 });
 
-// Initialize global listener for native purchases (deferred — not needed before first paint)
-if ('requestIdleCallback' in window) {
-  requestIdleCallback(() => setupGlobalPurchaseListener());
-} else {
-  setTimeout(() => setupGlobalPurchaseListener(), 0);
+// Initialize global listener for purchases only after non-marketing app shell paths.
+const isMarketingShellPath =
+  window.location.pathname === '/' || window.location.pathname.startsWith('/marketing');
+if (!isMarketingShellPath) {
+  scheduleWhenIdle(() => setupGlobalPurchaseListener());
 }
 
 createRoot(document.getElementById('root')!).render(
@@ -152,6 +241,24 @@ createRoot(document.getElementById('root')!).render(
           </Suspense>
         </BasecampProvider>
       </TripVariantProvider>
+      // Release guard: set VITE_MARKETING_SPLIT=0 to force legacy App bootstrap.
+      shouldUseMarketingSplit && MarketingApp ? (
+        <MarketingApp />
+      ) : (
+        <TripVariantProvider variant="consumer">
+          <BasecampProvider>
+            <Suspense
+              fallback={
+                <div className="min-h-screen flex items-center justify-center bg-background">
+                  <div className="w-12 h-12 animate-spin gold-gradient-spinner" />
+                </div>
+              }
+            >
+              <App />
+            </Suspense>
+          </BasecampProvider>
+        </TripVariantProvider>
+      )
     ) : (
       <RuntimeConfigError vars={missingEnvVars} />
     )}

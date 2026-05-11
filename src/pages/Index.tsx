@@ -62,7 +62,7 @@ import {
   calculateProTripStats,
   calculateEventStats,
 } from '../utils/tripStatsCalculator';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMobilePortrait } from '../hooks/useMobilePortrait';
 import {
   convertSupabaseTripsToMock,
@@ -85,7 +85,7 @@ import { isInstalledApp } from '../utils/platformDetection';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { X } from 'lucide-react';
 
-const Index = () => {
+const AuthIndex = () => {
   usePerformanceMonitor('Index');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
@@ -1378,6 +1378,45 @@ const Index = () => {
       />
     </div>
   );
+};
+
+const UnauthIndex = ({
+  authLoading,
+  isInstalled,
+}: {
+  authLoading: boolean;
+  isInstalled: boolean;
+}) => {
+  const navigate = useNavigate();
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (isInstalled) {
+    return <Navigate to="/auth?mode=signin&returnTo=%2F" replace />;
+  }
+
+  return (
+    <div className="min-h-screen min-h-mobile-screen bg-background font-outfit">
+      <Suspense fallback={<div className="min-h-screen bg-background" />}>
+        <FullPageLanding onSignUp={() => navigate('/auth?mode=signup&returnTo=%2F')} />
+      </Suspense>
+    </div>
+  );
+};
+
+const Index = () => {
+  const { user, isLoading: authLoading } = useAuth();
+  const { demoView } = useDemoMode();
+  if (demoView === 'off' && !user) {
+    return <UnauthIndex authLoading={authLoading} isInstalled={isInstalledApp()} />;
+  }
+
+  return <AuthIndex />;
 };
 
 export default Index;

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { getMockPendingRequests } from '@/mockData/joinRequests';
 import { useDemoTripMembersStore } from '@/store/demoTripMembersStore';
 import { tripKeys } from '@/lib/queryKeys';
+import { approveJoinRequestById, rejectJoinRequestById } from '@/lib/joinRequestMutations';
 
 export interface JoinRequest {
   id: string;
@@ -194,30 +195,7 @@ export const useJoinRequests = ({
       }
 
       try {
-        const { data, error } = await supabase.rpc('approve_join_request', {
-          _request_id: requestId,
-        });
-
-        if (error) throw error;
-
-        // Check the response for success/failure
-        const result = data as { success: boolean; message: string; cleaned_up?: boolean } | null;
-
-        if (result && !result.success) {
-          // If the request was cleaned up (orphaned user), show info message and refresh
-          if (result.cleaned_up) {
-            toast.info(result.message || 'This request is no longer valid');
-            await fetchRequests();
-            return;
-          }
-          throw new Error(result.message || 'Failed to approve request');
-        }
-
-        toast.success('✅ Request approved');
-        queryClient.invalidateQueries({ queryKey: tripKeys.all });
-        queryClient.invalidateQueries({ queryKey: ['proTrips'] }); // Ensure pro trips refresh
-        queryClient.invalidateQueries({ queryKey: ['events'] }); // Ensure events refresh
-        queryClient.invalidateQueries({ queryKey: tripKeys.members(tripId) });
+        await approveJoinRequestById(queryClient, { requestId, tripId });
         await fetchRequests();
       } catch (error) {
         console.error('Error approving request:', error);
@@ -243,29 +221,7 @@ export const useJoinRequests = ({
       }
 
       try {
-        const { data, error } = await supabase.rpc('reject_join_request', {
-          _request_id: requestId,
-        });
-
-        if (error) throw error;
-
-        // Check the response for success/failure
-        const result = data as { success: boolean; message: string; cleaned_up?: boolean } | null;
-
-        if (result && !result.success) {
-          throw new Error(result.message || 'Failed to reject request');
-        }
-
-        // Show appropriate message based on whether it was a cleanup or normal rejection
-        if (result?.cleaned_up) {
-          toast.info(result.message || 'Invalid request removed');
-        } else {
-          toast.success('Request rejected');
-        }
-
-        queryClient.invalidateQueries({ queryKey: tripKeys.all });
-        queryClient.invalidateQueries({ queryKey: ['proTrips'] });
-        queryClient.invalidateQueries({ queryKey: ['events'] });
+        await rejectJoinRequestById(queryClient, { requestId, tripId });
         await fetchRequests();
       } catch (error) {
         console.error('Error rejecting request:', error);

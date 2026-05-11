@@ -140,13 +140,17 @@ describe('AuthModal', () => {
       });
     });
 
-    it('centers the sheet vertically on all breakpoints (tablet-safe)', async () => {
+    it('renders the modal content in a centered viewport container', async () => {
       render(<AuthModal isOpen={true} onClose={mockOnClose} />, {
         wrapper: createTestWrapper(),
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('auth-modal-backdrop')).toHaveClass('items-center');
+        const backdrop = screen.getByTestId('auth-modal-backdrop');
+        const content = screen.getByTestId('auth-modal-content');
+        expect(backdrop).toHaveClass('fixed');
+        expect(content).toHaveClass('max-w-md');
+        expect(content).toHaveClass('w-full');
       });
     });
 
@@ -193,11 +197,7 @@ describe('AuthModal', () => {
       });
 
       expect(screen.getByRole('button', { name: /^apple$/i })).toBeInTheDocument();
-      expect(
-        screen.queryByText(
-          /in-app sign-in uses email\/password to keep authentication inside the app/i,
-        ),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/To stay inside the app/i)).not.toBeInTheDocument();
     });
   });
 });

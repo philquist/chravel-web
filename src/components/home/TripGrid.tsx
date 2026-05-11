@@ -60,15 +60,10 @@ type TripGridBaseProps = {
   onTripStateChange?: () => void;
 };
 
-type TripGridProps =
-  | (TripGridBaseProps & {
-      activeFilter: 'requests';
-      pendingRequestCards: PendingRequestTripCard[];
-    })
-  | (TripGridBaseProps & {
-      activeFilter?: Exclude<string, 'requests'>;
-      pendingRequestCards?: never;
-    });
+type TripGridProps = TripGridBaseProps & {
+  activeFilter?: string;
+  pendingRequestCards?: PendingRequestTripCard[];
+};
 
 export const TripGrid = React.memo(
   ({

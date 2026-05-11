@@ -5,24 +5,24 @@
  *
  * Supports two auth modes:
  * 1. User JWT (browser) — standard Supabase JWT, RLS applies
- * 2. Service-role key (LiveKit agent) — server-to-server, userId from body
+ * 2. Short-lived agent assertion (LiveKit agent) + service-role bearer transport
  *
  * Security:
- *  - Service-role key is a server-side env var, never exposed to browsers
- *  - When service-role is used, userId is extracted from request body
- *    (agent already verified trip membership in the livekit-token edge function)
+ *  - LiveKit agent calls must present a signed short-lived assertion header
+ *  - Assertion claims (user_id/trip_id/allowed_tools/exp) are verified server-side
  *  - Rate limiting applies to both auth modes, keyed by userId
  *  - Google API calls happen server-side (keys never reach the browser)
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders } from '../_shared/cors.ts';
-import { executeFunctionCall } from '../_shared/functionExecutor.ts';
 import { generateCapabilityToken } from '../_shared/security/capabilityTokens.ts';
 import { executeToolSecurely } from '../_shared/security/toolRouter.ts';
 import { checkRateLimit } from '../_shared/security.ts';
 import { getBearerToken } from '../_shared/authHeaders.ts';
 import { verifyConciergeTripAccess } from '../_shared/concierge/tripAccess.ts';
+import { verifyAgentAssertion } from '../_shared/security/agentAssertions.ts';
+import { MUTATING_TOOL_NAMES } from '../_shared/concierge/toolRegistry.ts';
 import {
   checkMonthlyTokenBudget,
   resolveUsagePlanForUser,
@@ -56,8 +56,8 @@ serve(async (req: Request) => {
       });
     }
 
-    // Parse body early — service-role path needs userId from body.
-    let body: { toolName?: unknown; args?: unknown; tripId?: unknown; userId?: unknown };
+    // Parse body early — assertion flow needs tripId from body for claim matching.
+    let body: { toolName?: unknown; args?: unknown; tripId?: unknown };
     try {
       body = await req.json();
     } catch {
@@ -68,10 +68,8 @@ serve(async (req: Request) => {
     }
 
     // Two auth modes:
-    // 1. Service-role: LiveKit agent sends SUPABASE_SERVICE_ROLE_KEY as Bearer.
-    //    The key is a server-side env var, never exposed to browsers. When matched,
-    //    userId is extracted from body (agent verified membership via livekit-token).
-    // 2. User JWT: Browser sends Supabase JWT. Validated via auth.getUser().
+    // 1. Agent assertion JWT (LiveKit agent) in X-Agent-Assertion header.
+    // 2. User JWT (browser) in Authorization header.
     const token = getBearerToken(authHeader);
     if (!token) {
       return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
@@ -79,20 +77,35 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const isServiceRole = SUPABASE_SERVICE_ROLE_KEY && token === SUPABASE_SERVICE_ROLE_KEY;
+
+    const agentAssertionHeader = req.headers.get('X-Agent-Assertion');
+    const hasAgentAssertion =
+      typeof agentAssertionHeader === 'string' && agentAssertionHeader.trim().length > 0;
 
     let supabase;
     let userId: string;
+    let agentAllowedTools: string[] | null = null;
 
-    if (isServiceRole) {
-      supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-      userId = typeof body?.userId === 'string' ? body.userId : '';
-      if (!userId) {
-        return new Response(JSON.stringify({ error: 'userId required for service-role calls' }), {
-          status: 400,
+    if (hasAgentAssertion) {
+      let assertion;
+      try {
+        assertion = await verifyAgentAssertion(agentAssertionHeader!.trim());
+      } catch {
+        return new Response(JSON.stringify({ error: 'Invalid agent assertion' }), {
+          status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+
+      userId = assertion.user_id;
+      if (assertion.trip_id !== body.tripId) {
+        return new Response(JSON.stringify({ error: 'tripId mismatch with agent assertion' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      agentAllowedTools = assertion.allowed_tools;
+      supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     } else {
       // Browser call — validate user JWT, Supabase RLS applies.
       supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -112,7 +125,6 @@ serve(async (req: Request) => {
       }
       userId = user.id;
     }
-
     // Per-user AI tool rate limit: 20 requests per hour (both auth modes)
     const rlResult = await checkRateLimit(
       supabase,
@@ -137,7 +149,7 @@ serve(async (req: Request) => {
     }
 
     // ── Validate tool request ─────────────────────────────────────────────
-    const { toolName, args, tripId } = body;
+    const { toolName, args, tripId, idempotencyKey } = body;
 
     if (typeof toolName !== 'string' || !toolName) {
       return new Response(JSON.stringify({ error: 'toolName (string) is required' }), {
@@ -163,6 +175,17 @@ serve(async (req: Request) => {
     if (!tripAccess.allowed) {
       return new Response(JSON.stringify({ error: tripAccess.error }), {
         status: tripAccess.status || 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (
+      agentAllowedTools &&
+      !agentAllowedTools.includes(toolName) &&
+      !agentAllowedTools.includes('*')
+    ) {
+      return new Response(JSON.stringify({ error: 'Tool not permitted by agent assertion' }), {
+        status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -209,6 +232,62 @@ serve(async (req: Request) => {
       allowed_tools: [toolName],
     });
 
+    const requestIdempotencyKey =
+      typeof idempotencyKey === 'string' && idempotencyKey.trim() ? idempotencyKey.trim() : null;
+    const argsIdempotencyKey =
+      typeof argsObj.idempotency_key === 'string' && argsObj.idempotency_key.trim()
+        ? argsObj.idempotency_key.trim()
+        : null;
+    const effectiveIdempotencyKey = requestIdempotencyKey ?? argsIdempotencyKey;
+
+    const shouldApplyIdempotency =
+      MUTATING_TOOL_NAMES.has(toolName) && typeof effectiveIdempotencyKey === 'string';
+
+    if (shouldApplyIdempotency) {
+      const key = effectiveIdempotencyKey as string;
+      const reserve = await supabase.from('concierge_tool_idempotency').insert({
+        user_id: userId,
+        trip_id: tripIdStr,
+        tool_name: toolName,
+        idempotency_key: key,
+        status: 'reserved',
+      });
+
+      if (reserve.error && reserve.error.code !== '23505') {
+        throw new Error(`Failed to reserve idempotency key: ${reserve.error.message}`);
+      }
+
+      if (reserve.error?.code === '23505') {
+        const replay = await supabase
+          .from('concierge_tool_idempotency')
+          .select('result_payload, status')
+          .eq('user_id', userId)
+          .eq('trip_id', tripIdStr)
+          .eq('tool_name', toolName)
+          .eq('idempotency_key', key)
+          .maybeSingle();
+
+        if (replay.error) {
+          throw new Error(`Failed idempotency replay lookup: ${replay.error.message}`);
+        }
+
+        if (replay.data?.result_payload) {
+          return new Response(JSON.stringify(replay.data.result_payload), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          });
+        }
+
+        return new Response(
+          JSON.stringify({ success: false, skipped: true, reason: 'in_flight' }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 202,
+          },
+        );
+      }
+    }
+
     const result = await executeToolSecurely(
       supabase,
       capabilityToken,
@@ -216,6 +295,24 @@ serve(async (req: Request) => {
       argsObj,
       locationContext,
     );
+
+    if (shouldApplyIdempotency) {
+      const key = effectiveIdempotencyKey as string;
+      const finalize = await supabase
+        .from('concierge_tool_idempotency')
+        .update({
+          status: 'completed',
+          result_payload: result,
+          result_ref: (result as Record<string, unknown>)?.id ?? null,
+        })
+        .eq('user_id', userId)
+        .eq('trip_id', tripIdStr)
+        .eq('tool_name', toolName)
+        .eq('idempotency_key', key);
+      if (finalize.error) {
+        throw new Error(`Failed to persist idempotent result: ${finalize.error.message}`);
+      }
+    }
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

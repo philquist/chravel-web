@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Mail, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { authEvents } from '@/telemetry/events';
@@ -16,9 +17,16 @@ interface AuthModalProps {
    * return directly to the join route after Google/Apple complete the redirect.
    */
   oauthReturnTo?: string;
+  onAuthSuccess?: () => void;
 }
 
-export const AuthModal = ({ isOpen, onClose, initialMode, oauthReturnTo }: AuthModalProps) => {
+export const AuthModal = ({
+  isOpen,
+  onClose,
+  initialMode,
+  oauthReturnTo,
+  onAuthSuccess,
+}: AuthModalProps) => {
   const { signIn, signInWithGoogle, signInWithApple, signUp, resetPassword, isLoading, user } =
     useAuth();
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -32,9 +40,14 @@ export const AuthModal = ({ isOpen, onClose, initialMode, oauthReturnTo }: AuthM
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [isPortalReady, setIsPortalReady] = useState(false);
   // Track when we're waiting for auth state to update after successful sign-in
   const [awaitingAuth, setAwaitingAuth] = useState(false);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setIsPortalReady(true);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -55,6 +68,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode, oauthReturnTo }: AuthM
       }
       setAwaitingAuth(false);
       onClose();
+      onAuthSuccess?.();
     }
   }, [user, isOpen, onClose]);
 
@@ -76,7 +90,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode, oauthReturnTo }: AuthM
     }
   }, [awaitingAuth, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !isPortalReady) return null;
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -318,192 +332,198 @@ export const AuthModal = ({ isOpen, onClose, initialMode, oauthReturnTo }: AuthM
     </form>
   );
 
-  return (
+  return createPortal(
     <div
       data-testid="auth-modal-backdrop"
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 z-[100] flex flex-col animate-fade-in"
     >
-      <div className="bg-slate-950/90 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 sm:p-8 max-w-md w-full safe-bottom animate-scale-in max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">
-            {mode === 'forgot'
-              ? 'Reset Password'
-              : mode === 'signup'
-                ? 'Create Account'
-                : 'Welcome Back'}
-          </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <X size={24} />
-          </button>
-        </div>
+      <div className="absolute inset-0 bg-black/95 backdrop-blur-sm" aria-hidden="true" />
+      <div className="relative flex min-h-0 flex-1 items-center justify-center p-4 sm:p-6">
+        <div data-testid="auth-modal-content" className="w-full max-w-md">
+          <div className="bg-slate-950/90 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 sm:p-8 animate-scale-in max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">
+                {mode === 'forgot'
+                  ? 'Reset Password'
+                  : mode === 'signup'
+                    ? 'Create Account'
+                    : 'Welcome Back'}
+              </h2>
+              <button onClick={onClose} className="text-gray-400 hover:text-white">
+                <X size={24} />
+              </button>
+            </div>
 
-        {success && (
-          <div
-            data-auth-message
-            className="mb-4 p-4 bg-green-500/20 border border-green-500/50 rounded-xl text-green-200 text-sm animate-fade-in"
-          >
-            <p className="font-medium mb-1">✓ {success}</p>
-            <p className="text-xs text-green-300/80 mt-1">
-              You can close this and sign in once confirmed.
-            </p>
-          </div>
-        )}
+            {success && (
+              <div
+                data-auth-message
+                className="mb-4 p-4 bg-green-500/20 border border-green-500/50 rounded-xl text-green-200 text-sm animate-fade-in"
+              >
+                <p className="font-medium mb-1">✓ {success}</p>
+                <p className="text-xs text-green-300/80 mt-1">
+                  You can close this and sign in once confirmed.
+                </p>
+              </div>
+            )}
 
-        {error && (
-          <div
-            data-auth-message
-            className="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 text-sm animate-fade-in"
-          >
-            <p className="font-medium mb-1">{error}</p>
-            {error.includes('email') && (
-              <p className="text-xs text-red-300/80 mt-1">
-                Check your email for a confirmation link
-              </p>
+            {error && (
+              <div
+                data-auth-message
+                className="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 text-sm animate-fade-in"
+              >
+                <p className="font-medium mb-1">{error}</p>
+                {error.includes('email') && (
+                  <p className="text-xs text-red-300/80 mt-1">
+                    Check your email for a confirmation link
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Tab Navigation - Only show for signin/signup */}
+            {mode !== 'forgot' && (
+              <div className="flex rounded-lg bg-white/5 p-1 mb-6">
+                <button
+                  onClick={() => {
+                    setMode('signin');
+                    setError('');
+                  }}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                    mode === 'signin'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => {
+                    setMode('signup');
+                    setError('');
+                  }}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                    mode === 'signup'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Sign Up
+                </button>
+              </div>
+            )}
+
+            {mode === 'forgot' ? (
+              renderForgotPassword()
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {/* Google OAuth Button */}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setGoogleLoading(true);
+                      setError('');
+                      if (mode === 'signup') {
+                        authEvents.signupStarted('google');
+                      } else {
+                        authEvents.loginStarted('google');
+                      }
+                      const result = await signInWithGoogle(oauthReturnTo);
+                      if (result.error) {
+                        if (mode === 'signup') {
+                          authEvents.signupFailed('google', result.error);
+                        } else {
+                          authEvents.loginFailed('google', result.error);
+                        }
+                        setError(result.error);
+                        setGoogleLoading(false);
+                      }
+                      // If no error, browser will redirect to Google
+                    }}
+                    disabled={isLoading || googleLoading || appleLoading || awaitingAuth}
+                    className="w-full flex items-center justify-center gap-2 bg-white/12 hover:bg-white/18 border border-white/15 text-white font-medium py-3 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all disabled:opacity-50 min-h-[48px]"
+                  >
+                    {googleLoading ? (
+                      <div className="w-5 h-5 animate-spin gold-gradient-spinner" />
+                    ) : (
+                      <svg viewBox="0 0 24 24" width="20" height="20" className="flex-shrink-0">
+                        <path
+                          fill="#4285F4"
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                        />
+                      </svg>
+                    )}
+                    <span>{googleLoading ? 'Redirecting…' : 'Google'}</span>
+                  </button>
+
+                  {/* Apple OAuth Button */}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setAppleLoading(true);
+                      setError('');
+                      if (mode === 'signup') {
+                        authEvents.signupStarted('apple');
+                      } else {
+                        authEvents.loginStarted('apple');
+                      }
+                      const result = await signInWithApple(oauthReturnTo);
+                      if (result.error) {
+                        if (mode === 'signup') {
+                          authEvents.signupFailed('apple', result.error);
+                        } else {
+                          authEvents.loginFailed('apple', result.error);
+                        }
+                        setError(result.error);
+                        setAppleLoading(false);
+                      }
+                      // If no error, browser will redirect to Apple
+                    }}
+                    disabled={isLoading || appleLoading || googleLoading || awaitingAuth}
+                    className="w-full flex items-center justify-center gap-2 bg-white/12 hover:bg-white/18 border border-white/15 text-white font-medium py-3 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all disabled:opacity-50 min-h-[48px]"
+                  >
+                    {appleLoading ? (
+                      <div className="w-5 h-5 animate-spin gold-gradient-spinner" />
+                    ) : (
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="20"
+                        height="20"
+                        className="flex-shrink-0"
+                        fill="currentColor"
+                      >
+                        <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.52-3.23 0-1.44.64-2.2.45-3.06-.4C3.79 16.17 4.36 9.53 8.7 9.31c1.24.06 2.1.7 2.82.73.99-.2 1.94-.78 3-.83 1.4.06 2.42.56 3.14 1.48-2.8 1.73-2.15 5.53.56 6.68-.5 1.39-1.18 2.74-2.17 3.91zM12.04 9.25C11.88 7.15 13.58 5.4 15.5 5.25c.28 2.38-2.13 4.2-3.46 4z" />
+                      </svg>
+                    )}
+                    <span>{appleLoading ? 'Redirecting...' : 'Apple'}</span>
+                  </button>
+                </div>
+
+                {/* Divider */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex-1 h-px bg-white/20" />
+                  <span className="text-xs text-gray-400 uppercase tracking-wider">or</span>
+                  <div className="flex-1 h-px bg-white/20" />
+                </div>
+                {renderEmailForm()}
+              </>
             )}
           </div>
-        )}
-
-        {/* Tab Navigation - Only show for signin/signup */}
-        {mode !== 'forgot' && (
-          <div className="flex rounded-lg bg-white/5 p-1 mb-6">
-            <button
-              onClick={() => {
-                setMode('signin');
-                setError('');
-              }}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                mode === 'signin'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => {
-                setMode('signup');
-                setError('');
-              }}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                mode === 'signup'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Sign Up
-            </button>
-          </div>
-        )}
-
-        {mode === 'forgot' ? (
-          renderForgotPassword()
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              {/* Google OAuth Button */}
-              <button
-                type="button"
-                onClick={async () => {
-                  setGoogleLoading(true);
-                  setError('');
-                  if (mode === 'signup') {
-                    authEvents.signupStarted('google');
-                  } else {
-                    authEvents.loginStarted('google');
-                  }
-                  const result = await signInWithGoogle(oauthReturnTo);
-                  if (result.error) {
-                    if (mode === 'signup') {
-                      authEvents.signupFailed('google', result.error);
-                    } else {
-                      authEvents.loginFailed('google', result.error);
-                    }
-                    setError(result.error);
-                    setGoogleLoading(false);
-                  }
-                  // If no error, browser will redirect to Google
-                }}
-                disabled={isLoading || googleLoading || appleLoading || awaitingAuth}
-                className="w-full flex items-center justify-center gap-2 bg-white/12 hover:bg-white/18 border border-white/15 text-white font-medium py-3 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all disabled:opacity-50 min-h-[48px]"
-              >
-                {googleLoading ? (
-                  <div className="w-5 h-5 animate-spin gold-gradient-spinner" />
-                ) : (
-                  <svg viewBox="0 0 24 24" width="20" height="20" className="flex-shrink-0">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                )}
-                <span>{googleLoading ? 'Redirecting…' : 'Google'}</span>
-              </button>
-
-              {/* Apple OAuth Button */}
-              <button
-                type="button"
-                onClick={async () => {
-                  setAppleLoading(true);
-                  setError('');
-                  if (mode === 'signup') {
-                    authEvents.signupStarted('apple');
-                  } else {
-                    authEvents.loginStarted('apple');
-                  }
-                  const result = await signInWithApple(oauthReturnTo);
-                  if (result.error) {
-                    if (mode === 'signup') {
-                      authEvents.signupFailed('apple', result.error);
-                    } else {
-                      authEvents.loginFailed('apple', result.error);
-                    }
-                    setError(result.error);
-                    setAppleLoading(false);
-                  }
-                  // If no error, browser will redirect to Apple
-                }}
-                disabled={isLoading || appleLoading || googleLoading || awaitingAuth}
-                className="w-full flex items-center justify-center gap-2 bg-white/12 hover:bg-white/18 border border-white/15 text-white font-medium py-3 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all disabled:opacity-50 min-h-[48px]"
-              >
-                {appleLoading ? (
-                  <div className="w-5 h-5 animate-spin gold-gradient-spinner" />
-                ) : (
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="20"
-                    height="20"
-                    className="flex-shrink-0"
-                    fill="currentColor"
-                  >
-                    <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.52-3.23 0-1.44.64-2.2.45-3.06-.4C3.79 16.17 4.36 9.53 8.7 9.31c1.24.06 2.1.7 2.82.73.99-.2 1.94-.78 3-.83 1.4.06 2.42.56 3.14 1.48-2.8 1.73-2.15 5.53.56 6.68-.5 1.39-1.18 2.74-2.17 3.91zM12.04 9.25C11.88 7.15 13.58 5.4 15.5 5.25c.28 2.38-2.13 4.2-3.46 4z" />
-                  </svg>
-                )}
-                <span>{appleLoading ? 'Redirecting...' : 'Apple'}</span>
-              </button>
-            </div>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex-1 h-px bg-white/20" />
-              <span className="text-xs text-gray-400 uppercase tracking-wider">or</span>
-              <div className="flex-1 h-px bg-white/20" />
-            </div>
-            {renderEmailForm()}
-          </>
-        )}
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

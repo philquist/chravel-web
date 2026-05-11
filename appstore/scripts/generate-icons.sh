@@ -10,7 +10,7 @@ set -e
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-SOURCE_ICON="${1:-$PROJECT_ROOT/public/chravel-logo.png}"
+SOURCE_ICON="${1:-$PROJECT_ROOT/public/chravel-pwa-icon.png}"
 OUTPUT_DIR="${2:-$PROJECT_ROOT/appstore/icons}"
 IOS_ASSETS_DIR="$PROJECT_ROOT/ios/App/App/Assets.xcassets/AppIcon.appiconset"
 
