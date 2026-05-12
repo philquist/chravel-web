@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { CalendarPlus, Share2, RefreshCw } from 'lucide-react';
-import createNewTrip from '@/assets/app-screenshots/create-trip-modal-v3.png';
-import tripInviteCoachella from '@/assets/app-screenshots/trip-invite-coachella.png';
-import oneHubChat from '@/assets/landing/one-hub-chat-cropped.png';
+import createNewTrip from '@/assets/app-screenshots/create-trip-modal-v3.webp';
+import tripInviteCoachella from '@/assets/app-screenshots/trip-invite-coachella.webp';
+import oneHubChat from '@/assets/landing/one-hub-chat-cropped.webp';
 
 export const ProblemSolutionSection = () => {
   const steps = [
@@ -180,7 +180,9 @@ export const ProblemSolutionSection = () => {
                 src={createNewTrip}
                 alt="Create New Trip form interface"
                 className="w-full h-full object-contain rounded-2xl shadow-2xl border border-border/50 hover:border-primary/30 hover:scale-[1.02] transition-all duration-300"
-              />
+              loading="lazy"
+              decoding="async"
+            />
             </div>
           </motion.div>
 
@@ -197,7 +199,9 @@ export const ProblemSolutionSection = () => {
                 src={tripInviteCoachella}
                 alt="Coachella trip invite card showing invitation interface"
                 className="w-full h-auto max-h-full object-contain rounded-2xl shadow-2xl border border-border/50 hover:border-primary/30 hover:scale-[1.02] transition-all duration-300"
-              />
+              loading="lazy"
+              decoding="async"
+            />
             </div>
           </motion.div>
 
@@ -214,7 +218,9 @@ export const ProblemSolutionSection = () => {
                 src={oneHubChat}
                 alt="Trip chat interface showing group messages and activity"
                 className="w-full h-full object-contain rounded-2xl shadow-2xl border border-border/50 hover:border-primary/30 hover:scale-[1.02] transition-all duration-300"
-              />
+              loading="lazy"
+              decoding="async"
+            />
             </div>
           </motion.div>
         </div>
@@ -234,7 +240,9 @@ export const ProblemSolutionSection = () => {
                 src={createNewTrip}
                 alt="Create New Trip form interface"
                 className="w-full h-auto rounded-xl shadow-xl border border-border/50"
-              />
+              loading="lazy"
+              decoding="async"
+            />
             </div>
           </motion.div>
 
@@ -251,7 +259,9 @@ export const ProblemSolutionSection = () => {
                 src={tripInviteCoachella}
                 alt="Coachella trip invite card showing invitation interface"
                 className="w-full h-auto rounded-xl shadow-xl border border-border/50"
-              />
+              loading="lazy"
+              decoding="async"
+            />
             </div>
           </motion.div>
 
@@ -268,7 +278,9 @@ export const ProblemSolutionSection = () => {
                 src={oneHubChat}
                 alt="Trip chat interface showing group messages and activity"
                 className="w-full h-auto rounded-xl shadow-xl border border-border/50"
-              />
+              loading="lazy"
+              decoding="async"
+            />
             </div>
           </motion.div>
         </div>

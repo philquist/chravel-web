@@ -3299,6 +3299,48 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_pending_actions: {
+        Row: {
+          created_at: string
+          id: string
+          payload: Json
+          resolved_at: string | null
+          resolved_by: string | null
+          source_type: string
+          status: string
+          tool_call_id: string | null
+          tool_name: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source_type?: string
+          status?: string
+          tool_call_id?: string | null
+          tool_name: string
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source_type?: string
+          status?: string
+          tool_call_id?: string | null
+          tool_name?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       trip_personal_basecamps: {
         Row: {
           address: string

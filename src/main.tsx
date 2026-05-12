@@ -86,8 +86,11 @@ const isAnonymousRootRoute = (): boolean => {
   return !hasAuthMarker;
 };
 
+// Anonymous visitors to `/` always boot the lightweight MarketingApp shell.
+// The full authed App lazy-loads on sign-in or any non-marketing route.
+// Set VITE_MARKETING_SPLIT=0 to force legacy bootstrap if ever needed.
 const shouldUseMarketingSplit =
-  import.meta.env.VITE_MARKETING_SPLIT === '1' && isAnonymousRootRoute();
+  import.meta.env.VITE_MARKETING_SPLIT !== '0' && isAnonymousRootRoute();
 const safeLocalStorageSet = (key: string, value: string): void => {
   try {
     localStorage.setItem(key, value);

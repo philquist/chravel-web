@@ -49,40 +49,65 @@ export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
 
     const root = scrollRoot;
     const useWindow = root === undefined;
+    let rafId = 0;
 
-    const handleScroll = () => {
+    const computeScroll = () => {
+      rafId = 0;
       const viewportH = useWindow ? window.innerHeight : root.clientHeight;
       const scrollTop = useWindow ? window.scrollY : root.scrollTop;
       const scrollableH = useWindow
         ? Math.max(0, document.documentElement.scrollHeight - viewportH)
         : Math.max(0, root.scrollHeight - root.clientHeight);
 
-      // Show nav after scrolling past hero
       setIsVisible(scrollTop > viewportH * 0.3);
-
-      // Calculate scroll progress (0–100) within the scrollable region
       const progress = scrollableH > 0 ? (scrollTop / scrollableH) * 100 : 0;
       setScrollProgress(Math.min(Math.max(progress, 0), 100));
+    };
 
-      // Update active section based on scroll position
-      const scope: ParentNode = useWindow ? document : root;
-      const sections = scope.querySelectorAll('[id^="section-"]');
-      let current = 'hero';
-
-      sections.forEach(section => {
-        const rect = section.getBoundingClientRect();
-        if (rect.top <= viewportH / 3 && rect.bottom >= viewportH / 3) {
-          current = section.id.replace('section-', '');
-        }
-      });
-
-      setActiveSection(current);
+    const handleScroll = () => {
+      if (rafId !== 0) return;
+      rafId = requestAnimationFrame(computeScroll);
     };
 
     const target: HTMLElement | Window = useWindow ? window : root;
     target.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => target.removeEventListener('scroll', handleScroll);
+    computeScroll();
+
+    // Track active section via IntersectionObserver — replaces per-scroll
+    // getBoundingClientRect() loop that forced layout every frame.
+    const scope: ParentNode = useWindow ? document : root;
+    const sectionEls = Array.from(
+      scope.querySelectorAll<HTMLElement>('[id^="section-"]'),
+    );
+    const visibility = new Map<string, number>();
+    const io = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          visibility.set(entry.target.id, entry.intersectionRatio);
+        });
+        let bestId = 'hero';
+        let bestRatio = 0;
+        visibility.forEach((ratio, id) => {
+          if (ratio > bestRatio) {
+            bestRatio = ratio;
+            bestId = id.replace('section-', '');
+          }
+        });
+        if (bestRatio > 0) setActiveSection(bestId);
+      },
+      {
+        root: useWindow ? null : root,
+        rootMargin: '-33% 0px -50% 0px',
+        threshold: [0, 0.25, 0.5, 0.75, 1],
+      },
+    );
+    sectionEls.forEach(el => io.observe(el));
+
+    return () => {
+      target.removeEventListener('scroll', handleScroll);
+      if (rafId !== 0) cancelAnimationFrame(rafId);
+      io.disconnect();
+    };
   }, [scrollRoot]);
 
   const scrollToSection = (id: string) => {
@@ -109,8 +134,8 @@ export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
 
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
-        <div className="text-xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-          Chravel
+        <div className="text-xl font-bold text-gradient-gold">
+          ChravelApp
         </div>
 
         {/* For Teams Link (Desktop) */}
