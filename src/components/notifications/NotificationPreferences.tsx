@@ -7,11 +7,9 @@
  * - Quiet hours
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Switch } from '../ui/switch';
-import { Button } from '../ui/button';
 import { Label } from '../ui/label';
-import { toast } from 'sonner';
 import {
   Bell,
   Moon,
@@ -22,110 +20,10 @@ import {
   Users,
   Megaphone,
 } from 'lucide-react';
-import {
-  userPreferencesService,
-  NotificationPreferences as NotificationPrefs,
-} from '@/services/userPreferencesService';
-import { useAuth } from '@/hooks/useAuth';
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 
 export const NotificationPreferences = () => {
-  const { user } = useAuth();
-  const [prefs, setPrefs] = useState<NotificationPrefs>({
-    push_enabled: true,
-    email_enabled: true,
-    sms_enabled: false,
-    chat_messages: false,
-    mentions_only: false,
-    broadcasts: true,
-    tasks: true,
-    payments: true,
-    calendar_events: true,
-    calendar_reminders: true,
-    polls: true,
-    trip_invites: true,
-    join_requests: true,
-    basecamp_updates: true,
-    quiet_hours_enabled: false,
-    quiet_start: '22:00',
-    quiet_end: '08:00',
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (user?.id) {
-      loadPreferences();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadPreferences deps covered by user?.id
-  }, [user?.id]);
-
-  const loadPreferences = async () => {
-    if (!user?.id) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const preferences = await userPreferencesService.getNotificationPreferences(user.id);
-      setPrefs(preferences);
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('Failed to load notification preferences:', error);
-      }
-      toast.error('Failed to load notification preferences');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updatePreference = async (
-    key: keyof NotificationPrefs,
-    value: NotificationPrefs[keyof NotificationPrefs],
-  ) => {
-    if (!user?.id) {
-      toast.error('You must be logged in to update preferences');
-      return;
-    }
-
-    // Optimistically update local state
-    setPrefs(prev => ({ ...prev, [key]: value }));
-
-    try {
-      await userPreferencesService.updateNotificationPreferences(user.id, {
-        [key]: value,
-      });
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('Failed to update notification preference:', error);
-      }
-      // Rollback on error - reload preferences
-      await loadPreferences();
-      toast.error('Failed to update preference');
-    }
-  };
-
-  const saveAllPreferences = async () => {
-    if (!user?.id) {
-      toast.error('You must be logged in to save preferences');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      await userPreferencesService.updateNotificationPreferences(user.id, prefs);
-      toast.success('Notification preferences saved!');
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('Failed to save notification preferences:', error);
-      }
-      toast.error('Failed to save preferences. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const { preferences: prefs, isLoading: loading, updatePreference } = useNotificationPreferences();
 
   if (loading) {
     return (
@@ -162,7 +60,7 @@ export const NotificationPreferences = () => {
             <Switch
               id="push"
               checked={prefs.push_enabled}
-              onCheckedChange={v => updatePreference('push_enabled', v)}
+              onCheckedChange={v => void updatePreference('push_enabled', v)}
               aria-label="Toggle push notifications"
             />
           </div>
@@ -175,7 +73,7 @@ export const NotificationPreferences = () => {
             <Switch
               id="email"
               checked={prefs.email_enabled}
-              onCheckedChange={v => updatePreference('email_enabled', v)}
+              onCheckedChange={v => void updatePreference('email_enabled', v)}
               aria-label="Toggle email notifications"
             />
           </div>
@@ -188,7 +86,7 @@ export const NotificationPreferences = () => {
             <Switch
               id="sms"
               checked={prefs.sms_enabled}
-              onCheckedChange={v => updatePreference('sms_enabled', v)}
+              onCheckedChange={v => void updatePreference('sms_enabled', v)}
               aria-label="Toggle SMS notifications"
             />
           </div>
@@ -206,8 +104,8 @@ export const NotificationPreferences = () => {
             </div>
             <Switch
               id="broadcasts"
-              checked={prefs.broadcasts}
-              onCheckedChange={v => updatePreference('broadcasts', v)}
+              checked={prefs.broadcasts_and_pins}
+              onCheckedChange={v => void updatePreference('broadcasts_and_pins', v)}
               aria-label="Toggle broadcast message notifications"
             />
           </div>
@@ -220,7 +118,7 @@ export const NotificationPreferences = () => {
             <Switch
               id="tasks"
               checked={prefs.tasks}
-              onCheckedChange={v => updatePreference('tasks', v)}
+              onCheckedChange={v => void updatePreference('tasks', v)}
               aria-label="Toggle task assignment notifications"
             />
           </div>
@@ -233,7 +131,7 @@ export const NotificationPreferences = () => {
             <Switch
               id="payments"
               checked={prefs.payments}
-              onCheckedChange={v => updatePreference('payments', v)}
+              onCheckedChange={v => void updatePreference('payments', v)}
               aria-label="Toggle payment request notifications"
             />
           </div>
@@ -245,8 +143,8 @@ export const NotificationPreferences = () => {
             </div>
             <Switch
               id="calendar"
-              checked={prefs.calendar_reminders}
-              onCheckedChange={v => updatePreference('calendar_reminders', v)}
+              checked={prefs.calendar_events}
+              onCheckedChange={v => void updatePreference('calendar_events', v)}
               aria-label="Toggle calendar event reminder notifications"
             />
           </div>
@@ -258,8 +156,8 @@ export const NotificationPreferences = () => {
             </div>
             <Switch
               id="invites"
-              checked={prefs.trip_invites}
-              onCheckedChange={v => updatePreference('trip_invites', v)}
+              checked={(prefs as any).trip_invites}
+              onCheckedChange={v => updatePreference('trip_invites' as any, v)}
               aria-label="Toggle trip invitation notifications"
             />
           </div>
@@ -279,64 +177,11 @@ export const NotificationPreferences = () => {
               Pause non-urgent notifications during these hours
             </p>
           </div>
-          <Switch
-            id="quiet"
-            checked={prefs.quiet_hours_enabled}
-            onCheckedChange={v => updatePreference('quiet_hours_enabled', v)}
-            aria-label="Toggle quiet hours"
-          />
+          <Switch id="quiet" checked={false} disabled aria-label="Toggle quiet hours" />
         </div>
-
-        {prefs.quiet_hours_enabled && (
-          <div className="flex gap-4 items-center ml-6">
-            <div>
-              <Label htmlFor="quiet_start" className="text-xs">
-                From
-              </Label>
-              <input
-                id="quiet_start"
-                type="time"
-                value={prefs.quiet_start}
-                onChange={e => updatePreference('quiet_start', e.target.value)}
-                className="block mt-1 px-3 py-2 border rounded bg-background"
-              />
-            </div>
-            <span className="mt-6">to</span>
-            <div>
-              <Label htmlFor="quiet_end" className="text-xs">
-                Until
-              </Label>
-              <input
-                id="quiet_end"
-                type="time"
-                value={prefs.quiet_end}
-                onChange={e => updatePreference('quiet_end', e.target.value)}
-                className="block mt-1 px-3 py-2 border rounded bg-background"
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Save Button */}
-      <div className="flex justify-end gap-4">
-        <Button
-          variant="outline"
-          onClick={loadPreferences}
-          disabled={saving}
-          className="min-h-[44px]"
-          aria-label="Reset notification preferences"
-        >
-          Reset
-        </Button>
-        <Button
-          onClick={saveAllPreferences}
-          disabled={saving}
-          className="min-h-[44px]"
-          aria-label="Save notification preferences"
-        >
-          {saving ? 'Saving...' : 'Save Preferences'}
-        </Button>
+        <p className="text-xs text-muted-foreground">
+          Quiet hours are managed in advanced settings.
+        </p>
       </div>
     </div>
   );

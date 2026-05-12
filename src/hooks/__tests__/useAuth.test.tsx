@@ -323,4 +323,88 @@ describe('AuthProvider', () => {
       'https://appleid.apple.com/auth/authorize',
     );
   });
+
+  it('returns null from fetchUserProfile on non-PGRST116 errors without retrying with a narrower select', async () => {
+    // Establish a session so transformUser invokes fetchUserProfile.
+    mockSupabaseClient.auth.getSession.mockResolvedValue({
+      data: { session: mockSession },
+      error: null,
+    });
+    mockSupabaseClient.auth.getUser.mockResolvedValue({
+      data: { user: mockUser },
+      error: null,
+    });
+
+    const profileSelectCalls: string[] = [];
+    (mockSupabaseClient.from as any).mockImplementation((table: string) => {
+      if (table !== 'profiles') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          insert: vi.fn().mockReturnThis(),
+          update: vi.fn().mockReturnThis(),
+          upsert: vi.fn().mockReturnThis(),
+          delete: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          neq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+          then: vi.fn((resolve: (value: { data: never[]; error: null }) => void) =>
+            resolve({ data: [], error: null }),
+          ),
+        };
+      }
+      // Track every select() argument against the profiles table and force
+      // a non-PGRST116 error on .single() so the error branch is exercised.
+      const chain = {
+        select: vi.fn((cols: string) => {
+          profileSelectCalls.push(cols);
+          return chain;
+        }),
+        insert: vi.fn(() => chain),
+        update: vi.fn(() => chain),
+        upsert: vi.fn().mockResolvedValue({ data: null, error: null }),
+        delete: vi.fn(() => chain),
+        eq: vi.fn(() => chain),
+        neq: vi.fn(() => chain),
+        single: vi.fn().mockResolvedValue({
+          data: null,
+          error: { code: 'PGRST200', message: 'column "job_title" does not exist' },
+        }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      } as unknown as ReturnType<typeof vi.fn>;
+      return chain;
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    // Auth should still resolve (session-derived user), but the profile
+    // payload is null — no half-populated fallback row.
+    expect(result.current.user).toBeTruthy();
+    expect(result.current.user?.jobTitle).toBeUndefined();
+
+    // The legacy fallback issued a SECOND select with a narrower column
+    // list. The current code must not — exactly one profile select per
+    // fetchUserProfile call, always with the full column set including
+    // subscription/role fields.
+    const minimalFallback = profileSelectCalls.find(
+      cols =>
+        cols.includes('show_phone') &&
+        !cols.includes('app_role') &&
+        !cols.includes('subscription_status'),
+    );
+    expect(minimalFallback).toBeUndefined();
+    // Every profile select that we did issue must include role and
+    // subscription columns — those were the columns the old fallback
+    // silently dropped, which is the regression we're guarding against.
+    for (const cols of profileSelectCalls) {
+      if (cols.includes('show_phone')) {
+        expect(cols).toContain('app_role');
+        expect(cols).toContain('subscription_status');
+      }
+    }
+  });
 });

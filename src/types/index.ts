@@ -15,3 +15,5 @@ export * from './payments';
 export * from './pro';
 export type { Receipt, ReceiptUpload } from './receipts';
 export * from './tripContext';
+
+export * from './notifications';
