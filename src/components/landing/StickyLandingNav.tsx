@@ -3,8 +3,6 @@ import { cn } from '@/lib/utils';
 import { DemoModeSelector } from '../DemoModeSelector';
 import { HeaderAuthButton } from '../HeaderAuthButton';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { SUPER_ADMIN_EMAILS } from '@/constants/admins';
 
 interface NavSection {
   id: string;
@@ -41,8 +39,8 @@ export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
   const [activeSection, setActiveSection] = useState('hero');
   const [isVisible, setIsVisible] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const { user } = useAuth();
-  const isSuperAdmin = user?.email && SUPER_ADMIN_EMAILS.includes(user.email);
+  const user = null;
+  const isSuperAdmin = false;
 
   useEffect(() => {
     if (scrollRoot === null) return;
