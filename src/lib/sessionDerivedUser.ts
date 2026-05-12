@@ -38,11 +38,11 @@ export type SessionDerivedAppUser = {
   organizationId?: string;
   permissions: string[];
   notificationSettings: {
-    messages: boolean;
-    broadcasts: boolean;
-    tripUpdates: boolean;
-    email: boolean;
-    push: boolean;
+    messages: boolean | null;
+    broadcasts: boolean | null;
+    tripUpdates: boolean | null;
+    email: boolean | null;
+    push: boolean | null;
   };
 };
 
@@ -80,11 +80,11 @@ export function buildSessionDerivedUser(supabaseUser: SupabaseUser): SessionDeri
     organizationId: undefined,
     permissions: ['read'],
     notificationSettings: {
-      messages: true,
-      broadcasts: true,
-      tripUpdates: true,
-      email: true,
-      push: false,
+      messages: null,
+      broadcasts: null,
+      tripUpdates: null,
+      email: null,
+      push: null,
     },
   };
 }

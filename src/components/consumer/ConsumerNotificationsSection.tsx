@@ -94,7 +94,7 @@ export const ConsumerNotificationsSection = () => {
   const { isNative: isNativePush, registerForPush, unregisterFromPush } = useNativePush();
   const { showDemoContent } = useDemoMode();
   const { tier, isSuperAdmin } = useConsumerSubscription();
-  const [_isLoading, setIsLoading] = useState(true);
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(true);
   const [isUpdatingPush, setIsUpdatingPush] = useState(false);
 
   // SMS phone number modal state
@@ -188,7 +188,7 @@ export const ConsumerNotificationsSection = () => {
   useEffect(() => {
     const loadPreferences = async () => {
       if (!user?.id) {
-        setIsLoading(false);
+        setIsLoadingPreferences(false);
         return;
       }
 
@@ -218,7 +218,7 @@ export const ConsumerNotificationsSection = () => {
       } catch (error) {
         if (import.meta.env.DEV) console.error('Error loading notification preferences:', error);
       } finally {
-        setIsLoading(false);
+        setIsLoadingPreferences(false);
       }
     };
     loadPreferences();
@@ -242,6 +242,7 @@ export const ConsumerNotificationsSection = () => {
   }, [notificationSettings.sms, showDemoContent, smsDeliveryEligible, user?.id]);
 
   const handleNotificationToggle = async (setting: string) => {
+    if (isLoadingPreferences) return;
     const newValue = !notificationSettings[setting];
 
     if (setting === 'sms' && !smsDeliveryEligible) {
@@ -468,9 +469,10 @@ export const ConsumerNotificationsSection = () => {
   const renderToggle = (key: string, isEnabled: boolean, isDisabled?: boolean) => (
     <button
       onClick={() => handleNotificationToggle(key)}
-      disabled={isDisabled}
+      disabled={isLoadingPreferences || isDisabled}
       aria-checked={isEnabled}
       role="switch"
+      aria-busy={isLoadingPreferences}
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
         isEnabled ? 'bg-green-500' : 'bg-gray-600'
       }`}
@@ -514,6 +516,9 @@ export const ConsumerNotificationsSection = () => {
             </div>
           ))}
         </div>
+        {isLoadingPreferences && (
+          <p className="mt-3 text-xs text-gray-400">Loading saved preferences…</p>
+        )}
       </div>
 
       {/* Delivery Methods */}
