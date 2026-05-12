@@ -652,7 +652,7 @@ export async function analyzeChatMessagesForPayment(
     // Fetch recent chat messages
     const { data: messages, error } = await supabase
       .from('trip_chat_messages')
-      .select('id, message_content, sender_id, created_at')
+      .select('id, content, user_id, created_at')
       .eq('trip_id', tripId)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -689,18 +689,15 @@ export async function analyzeChatMessagesForPayment(
       'pound',
     ];
 
-    // Find messages with payment context
-    // The query selects columns that may differ between DB versions; cast to a flexible shape
+    // Columns match the trip_chat_messages schema (see scripts/check-schema-drift.ts).
     const typedMessages = messages as unknown as Array<{
       id: string;
-      message_content?: string;
-      content?: string;
-      sender_id?: string;
-      author_id?: string;
+      content: string | null;
+      user_id: string | null;
       created_at: string;
     }>;
     const paymentMessages = typedMessages.filter(msg => {
-      const content = (msg.content || msg.message_content || '').toLowerCase();
+      const content = (msg.content ?? '').toLowerCase();
       return paymentKeywords.some(keyword => content.includes(keyword));
     });
 
@@ -711,9 +708,9 @@ export async function analyzeChatMessagesForPayment(
     // Analyze the most recent payment-related message
     const mostRecentPaymentMessage = paymentMessages[0];
     const result = await detectPaymentParticipantsFromMessage(
-      mostRecentPaymentMessage.content || mostRecentPaymentMessage.message_content || '',
+      mostRecentPaymentMessage.content ?? '',
       tripId,
-      mostRecentPaymentMessage.sender_id || mostRecentPaymentMessage.author_id || userId,
+      mostRecentPaymentMessage.user_id ?? userId,
     );
 
     // Only return if we have reasonable confidence

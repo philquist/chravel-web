@@ -286,14 +286,15 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
             {program.isPreferred && <Star size={16} className="text-yellow-500 fill-current" />}
             <button
               onClick={onEdit}
-              className="text-gray-400 hover:text-white p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="text-gray-400 hover:text-white p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-md"
               aria-label={`Edit ${companyName} loyalty program`}
             >
               <Edit size={14} />
             </button>
+            <span className="h-5 w-px bg-white/20" aria-hidden="true" />
             <button
               onClick={onDelete}
-              className="text-gray-400 hover:text-red-400 p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="text-red-300 hover:text-red-200 p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-md"
               aria-label={`Delete ${companyName} loyalty program`}
             >
               <Trash2 size={14} />
@@ -471,25 +472,31 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
     <div className="space-y-6">
       {/* Account Summary Band */}
       <section
-        className="bg-gradient-to-br from-glass-orange/20 to-glass-orange/5 border border-glass-orange/30 shadow-sm rounded-2xl p-5"
+        className="bg-gradient-to-br from-glass-orange/18 to-glass-orange/4 border border-glass-orange/25 shadow-sm rounded-2xl p-5 md:p-6"
         aria-label="Wallet account summary"
       >
         <div className="flex items-center gap-3 mb-3">
           <Wallet size={24} className="text-glass-orange" />
           <h2 className="text-lg font-bold text-white">Travel Wallet</h2>
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-white">{airlinePrograms.length}</p>
-            <p className="text-xs text-gray-400">Airlines</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+          <div className="rounded-xl border border-white/15 bg-black/20 px-3 py-3 text-center">
+            <p className="text-2xl font-semibold text-white tabular-nums tracking-tight">
+              {airlinePrograms.length}
+            </p>
+            <p className="text-[11px] uppercase tracking-wide text-gray-400">Airlines</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-white">{hotelPrograms.length}</p>
-            <p className="text-xs text-gray-400">Hotels</p>
+          <div className="rounded-xl border border-white/15 bg-black/20 px-3 py-3 text-center">
+            <p className="text-2xl font-semibold text-white tabular-nums tracking-tight">
+              {hotelPrograms.length}
+            </p>
+            <p className="text-[11px] uppercase tracking-wide text-gray-400">Hotels</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-white">{rentalCarPrograms.length}</p>
-            <p className="text-xs text-gray-400">Car Rentals</p>
+          <div className="rounded-xl border border-white/15 bg-black/20 px-3 py-3 text-center">
+            <p className="text-2xl font-semibold text-white tabular-nums tracking-tight">
+              {rentalCarPrograms.length}
+            </p>
+            <p className="text-[11px] uppercase tracking-wide text-gray-400">Car Rentals</p>
           </div>
         </div>
         {totalPrograms === 0 && !isLoading && (
@@ -501,7 +508,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
 
       {/* Payment Methods Band */}
       <section
-        className="bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl p-6 overflow-hidden"
+        className="bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl p-6 overflow-hidden md:p-7"
         aria-label="Payment methods"
       >
         <div className="mb-4">
@@ -513,7 +520,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
 
       {/* Recent Activity & Actions Band */}
       <section
-        className="bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl p-6 overflow-hidden"
+        className="bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl p-6 overflow-hidden md:p-7"
         aria-label="Recent activity and wallet actions"
       >
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -523,7 +530,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
               Quick wallet actions and latest metadata snapshots.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setShowAddForm(true)}
@@ -566,7 +573,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
 
       {/* Loyalty Programs */}
       <section
-        className="bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl p-6 overflow-hidden"
+        className="bg-white/10 backdrop-blur-md border border-white/20 shadow-sm rounded-2xl p-6 overflow-hidden md:p-7"
         aria-label="Loyalty programs"
       >
         <div className="flex items-center justify-between mb-6">

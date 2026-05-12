@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LogIn } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useOptionalAuth } from '@/hooks/useAuth';
 import { AuthModal } from './AuthModal';
 import { SettingsMenu } from './SettingsMenu';
 import { Button } from './ui/button';
@@ -15,7 +15,8 @@ interface HeaderAuthButtonProps {
 }
 
 export const HeaderAuthButton = ({ showLoggedOut = true }: HeaderAuthButtonProps) => {
-  const { user } = useAuth();
+  const auth = useOptionalAuth();
+  const user = auth?.user ?? null;
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -58,7 +59,13 @@ export const HeaderAuthButton = ({ showLoggedOut = true }: HeaderAuthButtonProps
   return (
     <>
       <Button
-        onClick={() => setShowAuthModal(true)}
+        onClick={() => {
+          if (auth) {
+            setShowAuthModal(true);
+            return;
+          }
+          window.location.assign('/auth?mode=signin');
+        }}
         variant="outline"
         size="sm"
         className="flex items-center justify-center gap-1.5 transition-all duration-200 rounded-lg
@@ -68,7 +75,7 @@ export const HeaderAuthButton = ({ showLoggedOut = true }: HeaderAuthButtonProps
         <LogIn className="h-3.5 w-3.5" />
         <span className="text-[11px] font-semibold">Log In</span>
       </Button>
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      {auth && <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />}
     </>
   );
 };

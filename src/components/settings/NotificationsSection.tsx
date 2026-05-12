@@ -1,19 +1,25 @@
 import React from 'react';
 import { Bell } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { useTripVariant } from '../../contexts/TripVariantContext';
 
 export const NotificationsSection = () => {
-  const { user, updateNotificationSettings } = useAuth();
+  const { preferences, updatePreference, isLoading } = useNotificationPreferences();
   const { accentColors: _accentColors } = useTripVariant();
 
-  if (!user) return null;
-
-  const handleNotificationToggle = (setting: string) => {
-    updateNotificationSettings({
-      [setting]: !user.notificationSettings[setting as keyof typeof user.notificationSettings],
-    });
+  const labels: Record<string, string> = {
+    messages: 'Messages',
+    broadcasts_and_pins: 'Broadcasts & Pins',
+    calendar_events: 'Calendar Events',
+    payments: 'Payments',
+    tasks: 'Tasks',
+    polls: 'Polls',
+    push_enabled: 'Push Notifications',
+    email_enabled: 'Email Notifications',
+    sms_enabled: 'SMS Notifications',
   };
+
+  if (isLoading) return null;
 
   return (
     <div className="space-y-3">
@@ -22,7 +28,7 @@ export const NotificationsSection = () => {
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
         <h4 className="text-base font-semibold text-white mb-3">App Notifications</h4>
         <div className="space-y-3">
-          {Object.entries(user.notificationSettings).map(([key, value]) => (
+          {Object.entries(preferences).map(([key, value]) => (
             <div
               key={key}
               className="flex items-center justify-between p-3 bg-white/5 rounded-xl min-h-[44px]"
@@ -30,11 +36,11 @@ export const NotificationsSection = () => {
               <div className="flex items-center gap-3">
                 <Bell size={16} className="text-gray-400" />
                 <span className="text-white capitalize">
-                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                  {labels[key] ?? key.replace(/_/g, ' ')}
                 </span>
               </div>
               <button
-                onClick={() => handleNotificationToggle(key)}
+                onClick={() => void updatePreference(key as keyof typeof preferences, !value)}
                 aria-checked={value}
                 role="switch"
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${

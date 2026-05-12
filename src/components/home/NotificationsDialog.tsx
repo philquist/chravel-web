@@ -36,41 +36,13 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 
-interface Notification {
-  id: string;
-  type:
-    | 'message'
-    | 'broadcast'
-    | 'calendar'
-    | 'poll'
-    | 'files'
-    | 'photos'
-    | 'chat'
-    | 'mention'
-    | 'task'
-    | 'payment'
-    | 'invite'
-    | 'join_request'
-    | 'join_approved'
-    | 'join_rejected'
-    | 'basecamp'
-    | 'system';
-  title: string;
-  description: string;
-  tripId: string;
-  tripName: string;
-  timestamp: string;
-  isRead: boolean;
-  isHighPriority?: boolean;
-  data?: Record<string, unknown>;
-}
+import type { NotificationPayload as Notification } from '@/types/notifications';
+import { parseNotificationMetadata, resolveNotificationTab } from '@/lib/notifications/navigation';
 
 interface NotificationsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-type NotificationMetadata = Record<string, unknown>;
 
 interface NavigationTarget {
   path: string;
@@ -86,7 +58,7 @@ interface NavigationTarget {
   };
 }
 
-function getMetadataString(metadata: NotificationMetadata, key: string): string {
+function getMetadataString(metadata: Record<string, unknown>, key: string): string {
   const value = metadata[key];
   return typeof value === 'string' ? value : '';
 }
@@ -104,7 +76,7 @@ function isJoinRequestApprovedNotification(notification: Notification): boolean 
   );
 }
 
-function getJoinRequestIdFromMetadata(metadata: NotificationMetadata): string {
+function getJoinRequestIdFromMetadata(metadata: Record<string, unknown>): string {
   const raw = metadata.request_id ?? metadata.join_request_id;
   return typeof raw === 'string' && raw.trim() !== '' ? raw : '';
 }
@@ -118,7 +90,7 @@ function isPendingJoinRequestWithActions(notification: Notification): boolean {
   if (t !== 'join_request') {
     return false;
   }
-  return getJoinRequestIdFromMetadata((notification.data || {}) as NotificationMetadata) !== '';
+  return getJoinRequestIdFromMetadata((notification.data || {}) as Record<string, unknown>) !== '';
 }
 
 function extractTripNameFromApprovalDescription(description: string): string | null {
@@ -153,7 +125,7 @@ function buildNavigationTarget(
   notification: Notification,
   resolvedTripId: string,
   tripType: string,
-  metadata: NotificationMetadata,
+  metadata: Record<string, unknown>,
 ): NavigationTarget {
   const normalizedTripType = tripType.toLowerCase();
   let baseRoute = `/trip/${resolvedTripId}`;
@@ -248,7 +220,7 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
 
   const resolveTripRouteContext = async (
     notification: Notification,
-    metadata: NotificationMetadata,
+    metadata: Record<string, unknown>,
   ): Promise<{ tripId: string; tripType: string }> => {
     const resolvedTripId = getMetadataString(metadata, 'trip_id') || notification.tripId || '';
     const resolvedTripType =
@@ -321,7 +293,7 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
       await markAsRead(notification.id);
     }
 
-    const notificationData = (notification.data || {}) as NotificationMetadata;
+    const notificationData = parseNotificationMetadata(notification.data);
     const { tripId: resolvedTripId, tripType } = await resolveTripRouteContext(
       notification,
       notificationData,
@@ -342,7 +314,7 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
   const handleJoinRequestAccept = useCallback(
     async (notification: Notification, e: React.MouseEvent) => {
       e.stopPropagation();
-      const metadata = (notification.data || {}) as NotificationMetadata;
+      const metadata = parseNotificationMetadata(notification.data);
       const requestId = getJoinRequestIdFromMetadata(metadata);
       if (!requestId || joinActionLoadingId) {
         return;
@@ -390,7 +362,7 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
   const handleJoinRequestReject = useCallback(
     async (notification: Notification, e: React.MouseEvent) => {
       e.stopPropagation();
-      const metadata = (notification.data || {}) as NotificationMetadata;
+      const metadata = parseNotificationMetadata(notification.data);
       const requestId = getJoinRequestIdFromMetadata(metadata);
       if (!requestId || joinActionLoadingId) {
         return;

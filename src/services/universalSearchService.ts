@@ -124,7 +124,7 @@ async function searchTrips(
 
   const tripQuery = supabase
     .from('trips')
-    .select('id, name, destination, start_date, header_image_url')
+    .select('id, name, destination, start_date, cover_image_url')
     .or(`name.ilike.%${safeQuery}%,destination.ilike.%${safeQuery}%`);
 
   if (tripIds && tripIds.length > 0) {
@@ -147,7 +147,7 @@ async function searchTrips(
     title: trip.name,
     matchScore: 0.9,
     deepLink: `/trip/${trip.id}`,
-    thumbnailUrl: (trip as Record<string, unknown>).header_image_url as string | undefined,
+    thumbnailUrl: (trip as Record<string, unknown>).cover_image_url as string | undefined,
     timestamp: trip.start_date ?? undefined,
   }));
 }
@@ -391,7 +391,9 @@ async function searchTasks(
 
   const taskQuery = supabase
     .from('trip_tasks')
-    .select('id, title, description, priority, status, created_at, trip_id, trips(name)')
+    .select(
+      'id, title, description, priority, status, completed, due_at, created_at, trip_id, trips(name)',
+    )
     .or(`title.ilike.%${safeQuery}%,description.ilike.%${safeQuery}%`)
     .order('created_at', { ascending: false });
 
@@ -418,8 +420,10 @@ async function searchTasks(
       matchScore: 0.86,
       deepLink: `/trip/${task.trip_id}#task-${task.id}`,
       metadata: {
-        priority: (task as Record<string, unknown>).priority,
-        status: (task as Record<string, unknown>).status,
+        priority: task.priority,
+        status: task.status,
+        completed: task.completed,
+        dueAt: task.due_at,
       },
       timestamp: task.created_at,
     };
