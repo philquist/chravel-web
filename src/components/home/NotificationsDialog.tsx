@@ -37,7 +37,10 @@ import {
 } from '@/components/ui/dialog';
 
 import type { NotificationPayload as Notification } from '@/types/notifications';
-import { parseNotificationMetadata, resolveNotificationTab } from '@/lib/notifications/navigation';
+import {
+  parseNotificationMetadata,
+  resolveNotificationNavigation,
+} from '@/lib/notifications/navigation';
 
 interface NotificationsDialogProps {
   open: boolean;
@@ -136,7 +139,8 @@ function buildNavigationTarget(
     baseRoute = `/event/${resolvedTripId}`;
   }
 
-  const tab = resolveNotificationTab(notification, metadata);
+  const navigation = resolveNotificationNavigation(notification, metadata);
+  const { tab } = navigation;
   const isJoinApproved = isJoinRequestApprovedNotification(notification);
   const path = !isJoinApproved && tab ? `${baseRoute}?tab=${tab}` : baseRoute;
 
@@ -154,7 +158,7 @@ function buildNavigationTarget(
     getMetadataString(metadata, 'channel_type');
   const openThreadId = getMetadataString(metadata, 'thread_id');
 
-  const shouldHandshakeChat = tab === 'chat' || notification.type.toLowerCase() === 'mention';
+  const shouldHandshakeChat = navigation.shouldHandshakeChat;
 
   if (!shouldHandshakeChat) {
     return { path };

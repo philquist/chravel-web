@@ -16,26 +16,34 @@ import { useDemoMode } from './useDemoMode';
 import { useNotificationRealtimeStore } from '@/store/notificationRealtimeStore';
 import { formatDistanceToNow } from 'date-fns';
 import type { NotificationItem } from '@/store/notificationRealtimeStore';
-import { parseNotificationMetadata } from '@/lib/notifications/navigation';
+import {
+  parseNotificationIngestionRow,
+  parseNotificationMetadata,
+} from '@/lib/notifications/navigation';
 
 const NOTIFICATION_COLUMNS =
   'id, type, title, message, is_read, is_visible, metadata, trip_id, created_at';
 
-export function mapRowToNotification(row: Record<string, unknown>): NotificationItem {
-  const metadata = parseNotificationMetadata(row.metadata);
+export function mapRowToNotification(row: Record<string, unknown>): NotificationItem | null {
+  const parsedRow = parseNotificationIngestionRow(row);
+  if (!parsedRow) {
+    return null;
+  }
+
+  const metadata = parseNotificationMetadata(parsedRow.metadata);
   return {
-    id: row.id as string,
-    type: (row.type || 'system') as NotificationItem['type'],
-    title: (row.title as string) || '',
-    description: (row.message as string) || '',
+    id: parsedRow.id,
+    type: parsedRow.type,
+    title: parsedRow.title,
+    description: parsedRow.message,
     // Prefer metadata for modern notifications, but fall back to column for legacy rows.
-    tripId: (metadata.trip_id as string) || (row.trip_id as string) || '',
+    tripId: (metadata.trip_id as string) || parsedRow.trip_id || '',
     tripName: (metadata.trip_name as string) || '',
-    timestamp: formatDistanceToNow(new Date((row.created_at as string) || Date.now()), {
+    timestamp: formatDistanceToNow(new Date(parsedRow.created_at), {
       addSuffix: true,
     }),
-    isRead: (row.is_read as boolean) || false,
-    isHighPriority: row.type === 'broadcast',
+    isRead: parsedRow.is_read,
+    isHighPriority: parsedRow.type === 'broadcast',
     data: metadata,
   };
 }
@@ -153,7 +161,9 @@ export function useNotificationRealtime() {
     }
 
     if (data) {
-      const mapped = data.map(row => mapRowToNotification(row as Record<string, unknown>));
+      const mapped = data
+        .map(row => mapRowToNotification(row as Record<string, unknown>))
+        .filter((item): item is NotificationItem => item !== null);
       setNotifications(mapped);
     }
   }, [user, setNotifications]);
@@ -193,6 +203,7 @@ export function useNotificationRealtime() {
     const cleanup = ensureSubscription(user.id, {
       onInsert: (newRow: Record<string, unknown>) => {
         const item = mapRowToNotification(newRow);
+        if (!item) return;
         addNotification(item);
       },
       onUpdate: (updatedRow: Record<string, unknown>) => {

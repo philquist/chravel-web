@@ -1,4 +1,6 @@
 import type {
+  NotificationIngestionRow,
+  NotificationNavigationContract,
   NotificationChannelType,
   NotificationPayload,
   NotificationPayloadMetadata,
@@ -76,7 +78,44 @@ export function resolveNotificationTab(
   notification: Pick<NotificationPayload, 'type'>,
   metadata: NotificationPayloadMetadata,
 ): NotificationTab | null {
-  if (metadata.tab) return metadata.tab;
-  if (metadata.channel_type === 'chat' || metadata.channel_type === 'messages') return 'chat';
-  return NOTIFICATION_TAB_BY_TYPE[notification.type] ?? null;
+  return resolveNotificationNavigation(notification, metadata).tab;
+}
+
+export function resolveNotificationNavigation(
+  notification: Pick<NotificationPayload, 'type'>,
+  metadata: NotificationPayloadMetadata,
+): NotificationNavigationContract {
+  const tab =
+    metadata.tab ??
+    (metadata.channel_type === 'chat' || metadata.channel_type === 'messages'
+      ? 'chat'
+      : (NOTIFICATION_TAB_BY_TYPE[notification.type] ?? null));
+
+  return {
+    tab,
+    shouldHandshakeChat: tab === 'chat' || notification.type === 'mention',
+  };
+}
+
+export function parseNotificationIngestionRow(raw: unknown): NotificationIngestionRow | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const row = raw as Record<string, unknown>;
+  const id = asString(row.id);
+  const type = asString(row.type) as NotificationType | undefined;
+  const title = asString(row.title);
+  const message = asString(row.message);
+  const createdAt = asString(row.created_at);
+
+  if (!id || !type || !title || !message || !createdAt) return null;
+
+  return {
+    id,
+    type,
+    title,
+    message,
+    is_read: row.is_read === true,
+    trip_id: asString(row.trip_id) ?? null,
+    created_at: createdAt,
+    metadata: row.metadata,
+  };
 }

@@ -14,6 +14,7 @@ describe('mapRowToNotification', () => {
       created_at: '2026-03-19T12:00:00.000Z',
     });
 
+    expect(mapped).not.toBeNull();
     expect(mapped.tripId).toBe('trip-from-column');
     expect(mapped.tripName).toBe('MLB All Star Weekend');
   });
@@ -30,6 +31,12 @@ describe('mapRowToNotification', () => {
       created_at: '2026-03-19T12:00:00.000Z',
     });
 
+    expect(mapped).not.toBeNull();
     expect(mapped.tripId).toBe('trip-from-metadata');
+  });
+
+  it('returns null for malformed rows', () => {
+    const mapped = mapRowToNotification({ id: 'notif-bad' });
+    expect(mapped).toBeNull();
   });
 });
