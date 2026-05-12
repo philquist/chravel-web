@@ -25,6 +25,7 @@ import { logAuthEvent } from '@/utils/authTelemetry';
 import { buildSessionDerivedUser } from '@/lib/sessionDerivedUser';
 import { generateSafeUuid } from '@/utils/uuid';
 import { openInstalledAuthBrowser } from '@/utils/installedAuthBrowser';
+import { errorTracking } from '@/services/errorTracking';
 
 const TRIPS_QUERY_KEY = 'trips';
 
@@ -224,57 +225,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  // Helper function to fetch user profile with defensive fallback for schema drift
+  // Fetch the authenticated user's profile row. Columns must match
+  // public.profiles in supabase/types.ts — drift is caught by
+  // scripts/check-schema-drift.ts in CI. PGRST116 means "no row", which we
+  // surface as null. Any other error is reported to Sentry and we return
+  // null rather than serving a half-populated profile (the old fallback
+  // dropped app_role and subscription_* columns, which is a worse failure
+  // mode than failing closed).
   const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
-    try {
-      // Full select including real_name and name_preference
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(
-          'id, user_id, display_name, real_name, name_preference, first_name, last_name, avatar_url, bio, phone, show_email, show_phone, job_title, show_job_title, ' +
-            'notification_settings, timezone, app_role, role, subscription_status, subscription_product_id, ' +
-            'subscription_end, free_pro_trips_used, free_pro_trip_limit, free_events_used, free_event_limit, ' +
-            'created_at, updated_at',
-        )
-        .eq('user_id', userId)
-        .single();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(
+        'id, user_id, display_name, real_name, name_preference, first_name, last_name, avatar_url, bio, phone, show_email, show_phone, ' +
+          'notification_settings, timezone, app_role, role, subscription_status, subscription_product_id, ' +
+          'subscription_end, free_pro_trips_used, free_pro_trip_limit, free_events_used, free_event_limit, ' +
+          'created_at, updated_at',
+      )
+      .eq('user_id', userId)
+      .single();
 
-      if (error && error.code !== 'PGRST116') {
-        // Schema drift fallback: retry with minimal columns to keep auth working
-        if (import.meta.env.DEV) {
-          console.warn('[Auth] Full profile select failed, retrying minimal:', error.message);
-        }
-        const { data: minData, error: minError } = await supabase
-          .from('profiles')
-          .select(
-            'id, user_id, display_name, real_name, name_preference, first_name, last_name, avatar_url, bio, phone, show_email, show_phone',
-          )
-          .eq('user_id', userId)
-          .single();
-
-        if (minError || !minData) return null;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Schema drift fallback requires dynamic access
-        const d = minData as any;
-        return {
-          ...d,
-          real_name: d.real_name ?? null,
-          name_preference: d.name_preference ?? 'display',
-          bio: d.bio ?? null,
-          phone: d.phone ?? null,
-        } as UserProfile;
-      }
-
-      if (!data) {
-        return null;
-      }
-
-      return data as unknown as UserProfile;
-    } catch (error) {
+    if (error) {
+      if (error.code === 'PGRST116') return null;
       if (import.meta.env.DEV) {
-        console.error('Error fetching profile:', error);
+        console.error('[Auth] Profile fetch failed:', error.message);
       }
+      errorTracking.captureException(error, {
+        userId,
+        context: 'auth.fetchUserProfile',
+        additionalData: { code: error.code },
+      });
       return null;
     }
+
+    return (data as unknown as UserProfile) ?? null;
   };
 
   // Helper function to transform Supabase user to app User
