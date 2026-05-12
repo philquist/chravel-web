@@ -35,6 +35,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { tripKeys } from '@/lib/queryKeys';
 import { usePendingActions } from '../hooks/usePendingActions';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  TripDetailContentSkeleton,
+  TripDetailHeaderSkeleton,
+} from '@/components/ui/loading-skeleton';
 
 /**
  * TripDetailDesktop Component
@@ -52,6 +56,7 @@ export const TripDetailDesktop = () => {
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
   const queryClient = useQueryClient();
+  const desktopContainerClass = 'mx-auto w-full max-w-6xl px-4 py-4 pb-8 md:px-6 lg:px-10 xl:px-12';
 
   // ⚡ PERFORMANCE: Use unified hook for parallel data fetching with TanStack Query cache
   // 🔄 FIX: Also get isMembersLoading to prevent "0 members" flash during loading
@@ -100,7 +105,7 @@ export const TripDetailDesktop = () => {
     }
   }, [trip, tripDescription]);
 
-  // Auto-scroll to chat only when navigation explicitly targets chat context.
+  // Auto-scroll only when route intent explicitly targets chat.
   React.useEffect(() => {
     if (loading || !trip) return;
 
@@ -213,7 +218,7 @@ export const TripDetailDesktop = () => {
   if (loading || isAuthLoading) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="mx-auto w-full max-w-7xl px-4 py-4 pb-8 md:px-6 lg:px-8" aria-hidden="true">
+        <div className={desktopContainerClass} aria-hidden="true">
           <div className="mb-6 flex items-center justify-between">
             <Skeleton className="h-8 w-32 rounded-lg bg-white/[0.06]" />
             <div className="flex gap-2">
@@ -221,18 +226,7 @@ export const TripDetailDesktop = () => {
               <Skeleton className="h-10 w-10 rounded-full bg-white/[0.06]" />
             </div>
           </div>
-          <div className="mb-8">
-            <Skeleton className="mb-4 h-64 rounded-3xl bg-white/[0.03]" />
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 md:rounded-3xl md:p-4">
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <div className="space-y-4">
-                  <Skeleton className="h-5 w-2/3 bg-white/[0.04]" />
-                  <Skeleton className="h-4 w-1/2 bg-white/[0.04]" />
-                </div>
-                <Skeleton className="h-[120px] rounded-2xl border border-white/[0.05] bg-white/[0.02]" />
-              </div>
-            </div>
-          </div>
+          <TripDetailHeaderSkeleton />
           <div className="mb-4 flex gap-2">
             {[1, 2, 3, 4, 5, 6].map(i => (
               <Skeleton key={i} className="h-10 w-24 rounded-xl bg-white/[0.06]" />
@@ -567,7 +561,7 @@ export const TripDetailDesktop = () => {
   // Desktop experience
   return (
     <div className="min-h-screen bg-black">
-      <div className="mx-auto w-full max-w-7xl px-4 py-4 pb-8 md:px-6 lg:px-8">
+      <div className={desktopContainerClass}>
         {/* Top Navigation */}
         <TripDetailHeader
           tripContext={tripContext}
@@ -586,22 +580,7 @@ export const TripDetailDesktop = () => {
         )}
 
         {/* Trip Header with Cover Photo Upload */}
-        <Suspense
-          fallback={
-            <div className="mb-8" aria-hidden="true">
-              <Skeleton className="mb-4 h-64 rounded-3xl bg-white/[0.03]" />
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 md:rounded-3xl md:p-4">
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                  <div className="space-y-4">
-                    <Skeleton className="h-5 w-2/3 bg-white/[0.04]" />
-                    <Skeleton className="h-4 w-1/2 bg-white/[0.04]" />
-                  </div>
-                  <Skeleton className="h-[120px] rounded-2xl border border-white/[0.05] bg-white/[0.02]" />
-                </div>
-              </div>
-            </div>
-          }
-        >
+        <Suspense fallback={<TripDetailHeaderSkeleton />}>
           <TripHeader
             trip={tripWithUpdatedData}
             onDescriptionUpdate={setTripDescription}
@@ -618,7 +597,7 @@ export const TripDetailDesktop = () => {
         </Suspense>
 
         {/* Main Content */}
-        <Suspense fallback={<Skeleton className="my-12 h-48 rounded-2xl bg-white/[0.03]" />}>
+        <Suspense fallback={<TripDetailContentSkeleton />}>
           <TripDetailContent
             activeTab={activeTab}
             onTabChange={setActiveTab}
