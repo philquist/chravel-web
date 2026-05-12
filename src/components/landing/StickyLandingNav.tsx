@@ -3,8 +3,6 @@ import { cn } from '@/lib/utils';
 import { DemoModeSelector } from '../DemoModeSelector';
 import { HeaderAuthButton } from '../HeaderAuthButton';
 import { Link } from 'react-router-dom';
-import { useOptionalAuth } from '@/hooks/useAuth';
-import { SUPER_ADMIN_EMAILS } from '@/constants/admins';
 
 interface NavSection {
   id: string;
