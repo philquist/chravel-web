@@ -66,7 +66,7 @@ describe('isPinnedMessage', () => {
         sender: { id: 'u1', name: 'A' },
         createdAt: '2026-01-01T00:00:00.000Z',
         isPinned: true,
-      }),
+      } as any),
     ).toBe(true);
 
     expect(
@@ -76,7 +76,7 @@ describe('isPinnedMessage', () => {
         sender: { id: 'u1', name: 'A' },
         createdAt: '2026-01-01T00:00:00.000Z',
         isPinned: false,
-      }),
+      } as any),
     ).toBe(false);
 
     expect(

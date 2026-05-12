@@ -5,11 +5,11 @@ type MessageClassificationShape = {
   isPinned?: boolean;
 };
 
-export function isBroadcastMessage<T extends MessageClassificationShape>(message: T) {
+export function isBroadcastMessage(message: MessageClassificationShape) {
   return message.isBroadcast === true;
 }
 
-export function isPinnedMessage<T extends MessageClassificationShape>(message: T) {
+export function isPinnedMessage(message: MessageClassificationShape) {
   return message.isPinned === true;
 }
 

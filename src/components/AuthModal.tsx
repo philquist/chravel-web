@@ -342,16 +342,12 @@ export const AuthModal = ({
         <div data-testid="auth-modal-content" className="w-full max-w-md">
           <div className="bg-slate-950/90 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 sm:p-8 animate-scale-in max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] overflow-y-auto">
             <div className="flex flex-col items-center mb-5">
-              <img
-                src="/chravel-logo.png"
-                alt="ChravelApp"
-                width={200}
-                height={56}
-                decoding="async"
-                fetchPriority="high"
-                className="h-11 w-auto max-w-[min(100%,220px)] object-contain object-center select-none pointer-events-none"
+              <span
+                className="text-3xl font-bold text-gradient-gold select-none"
                 data-testid="auth-modal-logo"
-              />
+              >
+                ChravelApp
+              </span>
             </div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white">

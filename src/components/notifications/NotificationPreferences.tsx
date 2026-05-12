@@ -156,7 +156,7 @@ export const NotificationPreferences = () => {
             </div>
             <Switch
               id="invites"
-              checked={(prefs as any).trip_invites ?? true}
+              checked={(prefs as any).trip_invites}
               onCheckedChange={v => updatePreference('trip_invites' as any, v)}
               aria-label="Toggle trip invitation notifications"
             />

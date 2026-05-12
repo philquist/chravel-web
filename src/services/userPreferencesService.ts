@@ -84,8 +84,6 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   push_enabled: true,
   email_enabled: false,
   sms_enabled: false,
-  messages: false,
-  broadcasts_and_pins: true,
   chat_messages: false,
   mentions_only: true,
   broadcasts: true,
@@ -97,11 +95,13 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   trip_invites: true,
   join_requests: true,
   basecamp_updates: true,
+  messages: false,
+  broadcasts_and_pins: true,
   quiet_hours_enabled: false,
   quiet_start: '22:00',
   quiet_end: '08:00',
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-};
+} as any;
 
 export const userPreferencesService = {
   async get(userId: string): Promise<AppPreferences> {
