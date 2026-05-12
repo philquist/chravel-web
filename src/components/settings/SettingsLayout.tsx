@@ -37,8 +37,11 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
 
   const sectionButtonClass = (isActive: boolean) =>
     isActive
-      ? 'bg-glass-orange/20 text-glass-orange border border-glass-orange/30'
-      : 'text-muted-foreground hover:text-foreground hover:bg-white/10 text-gray-300 hover:text-white';
+      ? 'border border-gold-primary/60 bg-black/70 text-gold-primary shadow-ring-glow'
+      : 'border border-transparent text-gray-300 hover:border-gold-primary/30 hover:bg-black/45 hover:text-gold-primary';
+
+  const sectionButtonBaseClass =
+    'w-full min-h-[44px] rounded-xl px-3 py-2 text-left text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black';
 
   if (isMobile) {
     return (
@@ -46,7 +49,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
         <div className="flex-shrink-0 p-3 md:p-4 border-b border-white/20">
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="w-full flex items-center justify-between p-2 md:p-3 bg-white/10 rounded-xl text-white"
+            className="w-full flex items-center justify-between p-3 bg-black/50 border border-white/15 rounded-xl text-white min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-primary/70"
           >
             <div className="flex items-center gap-3">
               {currentSection && <currentSection.icon size={20} />}
@@ -76,7 +79,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                     }}
                     role="tab"
                     aria-selected={isActive}
-                    className={`w-full flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 text-left transition-colors min-h-[44px] ${sectionButtonClass(
+                    className={`w-full flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 text-left text-sm font-medium rounded-xl transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-primary/70 ${sectionButtonClass(
                       isActive,
                     )}`}
                   >
@@ -99,10 +102,10 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   }
 
   return (
-    <div className="flex h-full w-full min-w-0">
-      <aside className="w-64 flex-shrink-0 bg-white/5 backdrop-blur-md border-r border-white/10 p-4 overflow-y-auto">
-        <h2 className="text-xl font-bold text-white mb-3">{title}</h2>
-        {subtitle && <p className="text-xs text-gray-400 mb-4">{subtitle}</p>}
+    <div className="flex h-full w-full min-w-0 bg-black/30">
+      <aside className="w-72 flex-shrink-0 border-r border-gold-primary/15 bg-black/60 p-4 backdrop-blur-md overflow-y-auto">
+        <h2 className="text-xl font-semibold tracking-tight text-white mb-2">{title}</h2>
+        {subtitle && <p className="mb-4 text-xs text-gray-400">{subtitle}</p>}
         <nav className="space-y-1.5" role="tablist" aria-label="Settings sections">
           {sections.map(section => {
             const Icon = section.icon;
@@ -113,9 +116,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                 onClick={() => onSectionChange(section.id)}
                 role="tab"
                 aria-selected={isActive}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-colors min-h-[44px] ${sectionButtonClass(
-                  isActive,
-                )}`}
+                className={`${sectionButtonBaseClass} flex items-center gap-3 ${sectionButtonClass(isActive)}`}
               >
                 <Icon size={20} />
                 <span className="flex-1 text-left text-sm">{section.label}</span>
@@ -126,7 +127,12 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
       </aside>
 
       <main className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
-        <div className="p-4 pb-16 min-w-0">{children}</div>
+        <div className="sticky top-0 z-10 border-b border-gold-primary/15 bg-black/70 px-6 py-4 backdrop-blur-md">
+          <h3 className="text-lg font-semibold tracking-tight text-white">
+            {currentSection?.label ?? title}
+          </h3>
+        </div>
+        <div className="min-w-0 space-y-4 px-6 py-5 pb-20">{children}</div>
       </main>
     </div>
   );

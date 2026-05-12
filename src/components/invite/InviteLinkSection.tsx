@@ -13,6 +13,7 @@ import { Button } from '../ui/button';
 import { isDemoInviteLink } from '@/lib/inviteLinkUtils';
 
 interface InviteLinkSectionProps {
+  initialActionRef?: React.RefObject<HTMLButtonElement>;
   inviteLink: string;
   loading: boolean;
   copied: boolean;
@@ -27,6 +28,7 @@ interface InviteLinkSectionProps {
 }
 
 export const InviteLinkSection = ({
+  initialActionRef,
   inviteLink,
   loading,
   copied,
@@ -123,6 +125,7 @@ export const InviteLinkSection = ({
       <div className="flex gap-2">
         {/* Copy button - first */}
         <Button
+          ref={initialActionRef}
           onClick={onCopyLink}
           disabled={loading || !inviteLink}
           size="sm"

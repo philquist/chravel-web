@@ -10,6 +10,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { toast } from 'sonner';
 
+const POLL_CARD_STACK_CLASS = 'space-y-3';
+const POLL_CARD_SHELL_CLASS = 'bg-white/5 border border-white/10 rounded-xl p-4 space-y-3';
+
 interface PollPermissions {
   canView: boolean;
   canVote: boolean;
@@ -246,12 +249,12 @@ export const PollComponent = ({
   };
 
   return (
-    <div className="space-y-3">
+    <div className={POLL_CARD_STACK_CLASS}>
       {/* Show create button only if not hidden, user can create, and not showing form */}
       {!hideCreateButton && effectivePermissions.canCreate && !showCreatePoll && (
         <Button
           onClick={() => setShowCreatePoll(true)}
-          className="w-full h-11 min-h-[44px] rounded-xl font-semibold text-sm"
+          className="w-full h-11 min-h-[44px] rounded-xl text-sm font-medium md:font-semibold"
           aria-label="Create a new poll"
         >
           <BarChart3 size={18} className="mr-2" />
@@ -269,12 +272,9 @@ export const PollComponent = ({
       )}
 
       {isLoading ? (
-        <div className="space-y-3" role="status" aria-label="Loading polls">
+        <div className={POLL_CARD_STACK_CLASS} role="status" aria-label="Loading polls">
           {[0, 1].map(i => (
-            <div
-              key={i}
-              className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3 animate-pulse"
-            >
+            <div key={i} className={`${POLL_CARD_SHELL_CLASS} animate-pulse`}>
               <div className="h-5 bg-white/10 rounded w-3/4" />
               <div className="space-y-2">
                 <div className="h-10 bg-white/5 rounded-lg" />
@@ -286,7 +286,7 @@ export const PollComponent = ({
           ))}
         </div>
       ) : formattedPolls.length === 0 && !showCreatePoll ? (
-        <PollsEmptyState />
+        <PollsEmptyState containerClassName={POLL_CARD_SHELL_CLASS} />
       ) : (
         formattedPolls.map(poll => (
           <Poll

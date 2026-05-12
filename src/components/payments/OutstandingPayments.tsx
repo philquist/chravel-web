@@ -353,14 +353,14 @@ export const OutstandingPayments = ({
 
   if (loading) {
     return (
-      <Card className="bg-card border border-border">
-        <CardHeader className="pb-3">
+      <Card className="bg-card border border-border rounded-lg">
+        <CardHeader className="px-4 pt-4 pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Clock size={18} className="text-yellow-500" />
             Outstanding Payments
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pb-4">
           <div className="flex items-center justify-center py-8">
             <div className="w-6 h-6 animate-spin gold-gradient-spinner" />
           </div>
@@ -371,18 +371,18 @@ export const OutstandingPayments = ({
 
   if (enrichedPayments.length === 0) {
     return (
-      <Card className="bg-card border border-border">
-        <CardHeader className="pb-3">
+      <Card className="bg-card border border-border rounded-lg">
+        <CardHeader className="px-4 pt-4 pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Clock size={18} className="text-yellow-500" />
             Outstanding Payments
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pb-4">
           <div className="text-center py-6 text-muted-foreground">
-            <Users size={32} className="mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No outstanding payments.</p>
-            <p className="text-xs mt-1">All current expenses have been settled.</p>
+            <Users size={28} className="mx-auto mb-2 opacity-60" />
+            <p className="text-sm">No outstanding payments right now.</p>
+            <p className="text-xs mt-1">Everyone is currently settled.</p>
           </div>
         </CardContent>
       </Card>
@@ -391,8 +391,8 @@ export const OutstandingPayments = ({
 
   return (
     <>
-      <Card className="bg-card border border-border">
-        <CardHeader className="pb-3">
+      <Card className="bg-card border border-border rounded-lg">
+        <CardHeader className="px-4 pt-4 pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Clock size={18} className="text-yellow-500" />
             Outstanding Payments
@@ -401,7 +401,7 @@ export const OutstandingPayments = ({
             </Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="px-4 pb-4 space-y-4">
           {enrichedPayments.map(payment => (
             <Card key={payment.id} className="bg-muted/30 border-border/50">
               <CardContent className="p-4">

@@ -81,10 +81,10 @@ describe('TripCard pending approval mode', () => {
 
     expect(screen.getByRole('button', { name: 'Recap' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Invite' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'View' })).not.toBeDisabled();
+    expect(screen.getAllByRole('button', { name: 'View Trip' })[0]).not.toBeDisabled();
     expect(screen.getByRole('button', { name: 'Share' })).toBeDisabled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'View' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'View Trip' })[0]);
     expect(mockNavigate).not.toHaveBeenCalled();
     expect(mockToast).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -112,9 +112,9 @@ describe('TripCard pending approval mode', () => {
     );
 
     expect(screen.getByText('Awaiting host approval')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'View' })).not.toBeDisabled();
+    expect(screen.getAllByRole('button', { name: 'View Trip' })[0]).not.toBeDisabled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'View' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'View Trip' })[0]);
     expect(mockNavigate).not.toHaveBeenCalled();
     expect(mockToast).toHaveBeenCalledWith(
       expect.objectContaining({
