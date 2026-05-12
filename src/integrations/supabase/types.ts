@@ -101,6 +101,57 @@ export type Database = {
         }
         Relationships: []
       }
+      basecamp_change_history: {
+        Row: {
+          action: string
+          basecamp_type: string
+          created_at: string
+          id: string
+          new_address: string | null
+          new_latitude: number | null
+          new_longitude: number | null
+          new_name: string | null
+          previous_address: string | null
+          previous_latitude: number | null
+          previous_longitude: number | null
+          previous_name: string | null
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          basecamp_type: string
+          created_at?: string
+          id?: string
+          new_address?: string | null
+          new_latitude?: number | null
+          new_longitude?: number | null
+          new_name?: string | null
+          previous_address?: string | null
+          previous_latitude?: number | null
+          previous_longitude?: number | null
+          previous_name?: string | null
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          basecamp_type?: string
+          created_at?: string
+          id?: string
+          new_address?: string | null
+          new_latitude?: number | null
+          new_longitude?: number | null
+          new_name?: string | null
+          previous_address?: string | null
+          previous_latitude?: number | null
+          previous_longitude?: number | null
+          previous_name?: string | null
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       broadcast_reactions: {
         Row: {
           broadcast_id: string
@@ -1125,6 +1176,13 @@ export type Database = {
             referencedRelation: "gmail_accounts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "gmail_import_jobs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "gmail_accounts_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       invite_links: {
@@ -1850,6 +1908,39 @@ export type Database = {
           },
         ]
       }
+      payment_split_patterns: {
+        Row: {
+          created_at: string
+          frequency: number
+          id: string
+          last_split_at: string
+          participant_id: string
+          trip_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          frequency?: number
+          id?: string
+          last_split_at?: string
+          participant_id: string
+          trip_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          frequency?: number
+          id?: string
+          last_split_at?: string
+          participant_id?: string
+          trip_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_splits: {
         Row: {
           amount_owed: number
@@ -1949,6 +2040,7 @@ export type Database = {
           free_pro_trip_limit: number | null
           free_pro_trips_used: number | null
           id: string
+          job_title: string | null
           last_name: string | null
           name_preference: string | null
           notification_settings: Json | null
@@ -1956,6 +2048,7 @@ export type Database = {
           real_name: string | null
           role: string | null
           show_email: boolean | null
+          show_job_title: boolean
           show_phone: boolean | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -1979,6 +2072,7 @@ export type Database = {
           free_pro_trip_limit?: number | null
           free_pro_trips_used?: number | null
           id?: string
+          job_title?: string | null
           last_name?: string | null
           name_preference?: string | null
           notification_settings?: Json | null
@@ -1986,6 +2080,7 @@ export type Database = {
           real_name?: string | null
           role?: string | null
           show_email?: boolean | null
+          show_job_title?: boolean
           show_phone?: boolean | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -2009,6 +2104,7 @@ export type Database = {
           free_pro_trip_limit?: number | null
           free_pro_trips_used?: number | null
           id?: string
+          job_title?: string | null
           last_name?: string | null
           name_preference?: string | null
           notification_settings?: Json | null
@@ -2016,6 +2112,7 @@ export type Database = {
           real_name?: string | null
           role?: string | null
           show_email?: boolean | null
+          show_job_title?: boolean
           show_phone?: boolean | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -2661,6 +2758,72 @@ export type Database = {
           },
         ]
       }
+      trip_artifacts: {
+        Row: {
+          ai_summary: string | null
+          artifact_type: string
+          artifact_type_confidence: number
+          classification_method: string | null
+          created_at: string
+          creator_id: string
+          embedding_input_modality: string | null
+          embedding_status: string
+          extracted_entities: Json
+          extracted_text: string | null
+          file_name: string | null
+          file_size_bytes: number | null
+          file_url: string | null
+          id: string
+          metadata: Json
+          mime_type: string | null
+          source_type: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          artifact_type?: string
+          artifact_type_confidence?: number
+          classification_method?: string | null
+          created_at?: string
+          creator_id: string
+          embedding_input_modality?: string | null
+          embedding_status?: string
+          extracted_entities?: Json
+          extracted_text?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          file_url?: string | null
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          source_type?: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          ai_summary?: string | null
+          artifact_type?: string
+          artifact_type_confidence?: number
+          classification_method?: string | null
+          created_at?: string
+          creator_id?: string
+          embedding_input_modality?: string | null
+          embedding_status?: string
+          extracted_entities?: Json
+          extracted_text?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          file_url?: string | null
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          source_type?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trip_channels: {
         Row: {
           archived_at: string | null
@@ -2926,6 +3089,7 @@ export type Database = {
           file_category: string | null
           file_structure: Json | null
           file_type: string
+          file_url: string | null
           id: string
           name: string
           ocr_confidence: number | null
@@ -2945,6 +3109,7 @@ export type Database = {
           file_category?: string | null
           file_structure?: Json | null
           file_type: string
+          file_url?: string | null
           id?: string
           name: string
           ocr_confidence?: number | null
@@ -2964,6 +3129,7 @@ export type Database = {
           file_category?: string | null
           file_structure?: Json | null
           file_type?: string
+          file_url?: string | null
           id?: string
           name?: string
           ocr_confidence?: number | null
@@ -3299,6 +3465,48 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_pending_actions: {
+        Row: {
+          created_at: string
+          id: string
+          payload: Json
+          resolved_at: string | null
+          resolved_by: string | null
+          source_type: string
+          status: string
+          tool_call_id: string | null
+          tool_name: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source_type?: string
+          status?: string
+          tool_call_id?: string | null
+          tool_name: string
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source_type?: string
+          status?: string
+          tool_call_id?: string | null
+          tool_name?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       trip_personal_basecamps: {
         Row: {
           address: string
@@ -3341,6 +3549,48 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_places: {
+        Row: {
+          added_by: string
+          address: string | null
+          category: string | null
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          name: string
+          notes: string | null
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          added_by: string
+          address?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          notes?: string | null
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string
+          address?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          notes?: string | null
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trip_polls: {
         Row: {
           allow_multiple: boolean | null
@@ -3354,6 +3604,7 @@ export type Database = {
           is_anonymous: boolean | null
           options: Json
           question: string
+          source_type: string
           status: string
           total_votes: number
           trip_id: string
@@ -3372,6 +3623,7 @@ export type Database = {
           is_anonymous?: boolean | null
           options?: Json
           question: string
+          source_type?: string
           status?: string
           total_votes?: number
           trip_id: string
@@ -3390,6 +3642,7 @@ export type Database = {
           is_anonymous?: boolean | null
           options?: Json
           question?: string
+          source_type?: string
           status?: string
           total_votes?: number
           trip_id?: string
@@ -3586,6 +3839,9 @@ export type Database = {
           due_at: string | null
           id: string
           is_poll: boolean
+          priority: string | null
+          source_type: string
+          status: string
           title: string
           trip_id: string
           updated_at: string
@@ -3600,6 +3856,9 @@ export type Database = {
           due_at?: string | null
           id?: string
           is_poll?: boolean
+          priority?: string | null
+          source_type?: string
+          status?: string
           title: string
           trip_id: string
           updated_at?: string
@@ -3614,6 +3873,9 @@ export type Database = {
           due_at?: string | null
           id?: string
           is_poll?: boolean
+          priority?: string | null
+          source_type?: string
+          status?: string
           title?: string
           trip_id?: string
           updated_at?: string
@@ -3660,6 +3922,7 @@ export type Database = {
           is_archived: boolean | null
           is_hidden: boolean | null
           media_upload_mode: string
+          member_count: number
           name: string
           organizer_display_name: string | null
           privacy_mode: string | null
@@ -3691,6 +3954,7 @@ export type Database = {
           is_archived?: boolean | null
           is_hidden?: boolean | null
           media_upload_mode?: string
+          member_count?: number
           name: string
           organizer_display_name?: string | null
           privacy_mode?: string | null
@@ -3722,6 +3986,7 @@ export type Database = {
           is_archived?: boolean | null
           is_hidden?: boolean | null
           media_upload_mode?: string
+          member_count?: number
           name?: string
           organizer_display_name?: string | null
           privacy_mode?: string | null
@@ -4105,6 +4370,42 @@ export type Database = {
           start_date?: string | null
           status?: string | null
           tags?: string[] | null
+        }
+        Relationships: []
+      }
+      gmail_accounts_safe: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string | null
+          is_active: boolean | null
+          last_synced_at: string | null
+          scopes: string | null
+          token_expires_at: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_synced_at?: string | null
+          scopes?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_synced_at?: string | null
+          scopes?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
