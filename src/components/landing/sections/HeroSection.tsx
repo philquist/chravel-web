@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '../../ui/button';
-import demoPreviewHero from '@/assets/demo-preview-hero.png';
+import demoPreviewHero from '@/assets/demo-preview-hero.webp';
 
 interface HeroSectionProps {
   onSignUp: () => void;
@@ -93,6 +93,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
               src={demoPreviewHero}
               alt="ChravelApp trip dashboard preview"
               className="w-full h-auto"
+              fetchPriority="high"
+              decoding="async"
             />
             {/* Subtle overlay to blend edges */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#070B1A]/30 via-transparent to-transparent pointer-events-none" />
