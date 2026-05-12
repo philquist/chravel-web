@@ -6,15 +6,9 @@ import type {
   NotificationType,
 } from '@/types/notifications';
 
+import { resolveNotificationTabFromType } from '@/lib/notifications/categoryMap';
+
 const NOTIFICATION_TAB_BY_TYPE: Partial<Record<NotificationType, NotificationTab>> = {
-  mention: 'chat',
-  message: 'chat',
-  chat: 'chat',
-  broadcast: 'broadcasts',
-  calendar: 'calendar',
-  task: 'tasks',
-  payment: 'payments',
-  poll: 'polls',
   photos: 'media',
   join_request: 'collaborators',
   basecamp: 'places',
@@ -78,5 +72,7 @@ export function resolveNotificationTab(
 ): NotificationTab | null {
   if (metadata.tab) return metadata.tab;
   if (metadata.channel_type === 'chat' || metadata.channel_type === 'messages') return 'chat';
-  return NOTIFICATION_TAB_BY_TYPE[notification.type] ?? null;
+  return (
+    NOTIFICATION_TAB_BY_TYPE[notification.type] ?? resolveNotificationTabFromType(notification.type)
+  );
 }
