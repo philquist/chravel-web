@@ -120,7 +120,7 @@ export const SettingsMenu = ({
         onClick={onClose}
       >
         <div
-          className="w-full h-full md:h-[85vh] md:max-w-6xl bg-black/90 md:bg-card/95 md:backdrop-blur-xl md:border md:border-white/10 md:rounded-2xl shadow-2xl flex flex-col animate-fade-in overflow-hidden min-w-0"
+          className="w-full h-full max-h-[100dvh] md:h-auto md:max-h-[calc(100dvh-2rem)] md:max-w-6xl bg-black/90 md:bg-card/95 md:backdrop-blur-xl md:border md:border-white/10 md:rounded-2xl shadow-2xl flex flex-col animate-fade-in overflow-hidden min-w-0"
           onClick={e => e.stopPropagation()}
         >
           {/* Combined Header with Settings Type Toggle */}
@@ -228,7 +228,10 @@ export const SettingsMenu = ({
           </div>
 
           {/* Render appropriate settings based on toggle */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div
+            className="flex-1 flex flex-col min-h-0 overflow-hidden"
+            style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 0px))' }}
+          >
             {settingsType === 'consumer' ? (
               <div className="flex-1 min-h-0">
                 <ErrorBoundary compact>
