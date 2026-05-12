@@ -89,3 +89,5 @@
 - 2026-05-12: Completed AI Concierge voice architecture audit comparing LiveKit+Gemini vs OpenAI Realtime; documented current transport/tooling split, decision matrix, phased migration plan (D→C→E), rollback strategy, and external service checklist in docs/ai-concierge-voice-migration-audit-2026-05-12.md.
 
 - 2026-05-12: Implemented provider-flagged OpenAI Realtime voice path (default openai) with new Supabase edge function create-openai-realtime-session (auth + trip membership + ephemeral session), frontend WebRTC hook useOpenAIRealtimeVoice, and useConciergeVoice runtime selector while preserving LiveKit fallback.
+
+- 2026-05-12: Updated OpenAI Realtime voice defaults to Onyx (`OPENAI_REALTIME_VOICE` fallback and frontend session request default) per product direction; preserved explicit per-session override support.

@@ -79,7 +79,7 @@ export function useOpenAIRealtimeVoice(
 ): UseOpenAIRealtimeVoiceReturn {
   const {
     tripId,
-    voice = 'marin',
+    voice = 'onyx',
     onTurnComplete,
     onPartialTranscript,
     onError,

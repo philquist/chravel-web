@@ -56,7 +56,8 @@ serve(async req => {
 
   const body = await req.json().catch(() => ({}));
   const tripId = typeof body?.tripId === 'string' ? body.tripId.trim() : '';
-  const voice = typeof body?.voice === 'string' ? body.voice.trim() : 'marin';
+  const fallbackVoice = (Deno.env.get('OPENAI_REALTIME_VOICE') || 'onyx').trim();
+  const voice = typeof body?.voice === 'string' ? body.voice.trim() : fallbackVoice;
 
   if (!tripId) {
     return new Response(JSON.stringify({ error: 'tripId is required' }), {
