@@ -1289,6 +1289,15 @@
 
 /* Native App Feel Optimizations */
 @layer utilities {
+  /* Premium gold gradient text — brand wordmarks */
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #533517 0%, #c49746 50%, #feeaa5 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+  }
+
   /* Hide scrollbars while maintaining scroll functionality */
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
