@@ -3,14 +3,13 @@ export type ChatViewFilter = 'all' | 'broadcasts' | 'pinned' | 'channels';
 type MessageClassificationShape = {
   isBroadcast?: boolean;
   isPinned?: boolean;
-  [key: string]: unknown;
 };
 
-export function isBroadcastMessage(message: MessageClassificationShape) {
+export function isBroadcastMessage<T extends MessageClassificationShape>(message: T) {
   return message.isBroadcast === true;
 }
 
-export function isPinnedMessage(message: MessageClassificationShape) {
+export function isPinnedMessage<T extends MessageClassificationShape>(message: T) {
   return message.isPinned === true;
 }
 
