@@ -373,8 +373,12 @@ export const TripGrid = React.memo(
     // Show loading skeleton
     if (loading) {
       return (
-        <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
-          <TripCardSkeleton count={isMobile ? 3 : 6} />
+        <div className="w-full max-w-[1440px] mx-auto rounded-2xl border border-border/40 bg-card/20 p-4 sm:p-5 lg:p-6">
+          <div
+            className={`grid gap-4 sm:gap-5 xl:gap-6 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2 xl:grid-cols-3'}`}
+          >
+            <TripCardSkeleton count={isMobile ? 3 : 6} />
+          </div>
         </div>
       );
     }
@@ -514,8 +518,8 @@ export const TripGrid = React.memo(
           )}
 
           <div
-            className={`grid gap-6 w-full ${
-              isMobile ? 'grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'
+            className={`grid w-full max-w-[1440px] mx-auto gap-4 sm:gap-5 xl:gap-6 ${
+              isMobile ? 'grid-cols-1' : 'md:grid-cols-2 xl:grid-cols-3'
             }`}
           >
             {activeFilter === 'requests' ? (

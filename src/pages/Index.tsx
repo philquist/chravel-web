@@ -802,27 +802,32 @@ const AuthIndex = () => {
 
             <div className="max-w-[1500px] mx-auto">
               {/* Desktop navigation - hidden on mobile, use NativeTabBar instead */}
-              <div className="hidden lg:flex w-full flex-col lg:flex-row gap-1.5 sm:gap-3 lg:gap-6 items-stretch mb-3 sm:mb-6">
-                <TripViewToggle
-                  viewMode={viewMode}
-                  onViewModeChange={handleViewModeChange}
-                  showRecsTab={false}
-                  recsTabDisabled={false}
-                  className="w-full lg:flex-1 h-12 sm:h-16"
-                  requireAuth={true}
-                  onAuthRequired={() => setIsAuthModalOpen(true)}
-                />
-                <TripActionBar
-                  onSettings={() => setIsSettingsOpen(true)}
-                  onCreateTrip={handleCreateTrip}
-                  onSearch={() => setIsSearchOpen(true)}
-                  onNotifications={() => {}}
-                  isNotificationsOpen={isNotificationsOpen}
-                  setIsNotificationsOpen={setIsNotificationsOpen}
-                  className="w-full lg:flex-1 h-12 sm:h-16"
-                  requireAuth={true}
-                  onAuthRequired={() => setIsAuthModalOpen(true)}
-                />
+              <div className="hidden lg:grid w-full grid-cols-12 items-stretch gap-4 xl:gap-5 2xl:gap-6 mb-3 sm:mb-6">
+                <div className="col-span-12 xl:col-span-5">
+                  <TripActionBar
+                    onSettings={() => setIsSettingsOpen(true)}
+                    onCreateTrip={handleCreateTrip}
+                    onSearch={() => setIsSearchOpen(true)}
+                    onNotifications={() => {}}
+                    isNotificationsOpen={isNotificationsOpen}
+                    setIsNotificationsOpen={setIsNotificationsOpen}
+                    className="w-full h-12 sm:h-16"
+                    requireAuth={true}
+                    onAuthRequired={() => setIsAuthModalOpen(true)}
+                  />
+                </div>
+                <div className="col-span-12 xl:col-span-4">
+                  <TripViewToggle
+                    viewMode={viewMode}
+                    onViewModeChange={handleViewModeChange}
+                    showRecsTab={false}
+                    recsTabDisabled={false}
+                    className="w-full h-12 sm:h-16"
+                    requireAuth={true}
+                    onAuthRequired={() => setIsAuthModalOpen(true)}
+                  />
+                </div>
+                <div className="col-span-12 xl:col-span-3" />
               </div>
 
               <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
@@ -994,23 +999,28 @@ const AuthIndex = () => {
 
           <div className="max-w-[1500px] mx-auto">
             {/* Desktop navigation - hidden on mobile, use NativeTabBar instead */}
-            <div className="hidden lg:flex w-full flex-col lg:flex-row gap-1.5 sm:gap-3 lg:gap-6 items-stretch mb-3 sm:mb-6">
-              <TripViewToggle
-                viewMode={viewMode}
-                onViewModeChange={handleViewModeChange}
-                showRecsTab={isDemoMode}
-                recsTabDisabled={false}
-                className="w-full lg:flex-1 h-12 sm:h-16"
-              />
-              <TripActionBar
-                onSettings={() => setIsSettingsOpen(true)}
-                onCreateTrip={handleCreateTrip}
-                onSearch={() => setIsSearchOpen(true)}
-                onNotifications={() => {}}
-                isNotificationsOpen={isNotificationsOpen}
-                setIsNotificationsOpen={setIsNotificationsOpen}
-                className="w-full lg:flex-1 h-12 sm:h-16"
-              />
+            <div className="hidden lg:grid w-full grid-cols-12 items-stretch gap-4 xl:gap-5 2xl:gap-6 mb-3 sm:mb-6">
+              <div className="col-span-12 xl:col-span-5">
+                <TripActionBar
+                  onSettings={() => setIsSettingsOpen(true)}
+                  onCreateTrip={handleCreateTrip}
+                  onSearch={() => setIsSearchOpen(true)}
+                  onNotifications={() => {}}
+                  isNotificationsOpen={isNotificationsOpen}
+                  setIsNotificationsOpen={setIsNotificationsOpen}
+                  className="w-full h-12 sm:h-16"
+                />
+              </div>
+              <div className="col-span-12 xl:col-span-4">
+                <TripViewToggle
+                  viewMode={viewMode}
+                  onViewModeChange={handleViewModeChange}
+                  showRecsTab={isDemoMode}
+                  recsTabDisabled={false}
+                  className="w-full h-12 sm:h-16"
+                />
+              </div>
+              <div className="col-span-12 xl:col-span-3" />
             </div>
 
             <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
@@ -1206,29 +1216,34 @@ const AuthIndex = () => {
         {/* Mobile auth moved to Settings menu - no floating button needed */}
 
         {/* Desktop navigation - hidden on mobile, use NativeTabBar instead */}
-        <div className="hidden lg:flex w-full flex-col lg:flex-row gap-1.5 sm:gap-3 lg:gap-6 items-stretch mb-3 sm:mb-6">
-          <TripViewToggle
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            showRecsTab={isDemoMode}
-            recsTabDisabled={false}
-            className="w-full lg:flex-1 h-12 sm:h-16"
-          />
-          <TripActionBar
-            onSettings={() => {
-              setSettingsInitialType('consumer');
-              setIsSettingsOpen(true);
-            }}
-            onCreateTrip={handleCreateTrip}
-            onSearch={(query: string) => {
-              setSearchQuery(query);
-              setIsSearchOpen(true);
-            }}
-            onNotifications={() => {}}
-            isNotificationsOpen={isNotificationsOpen}
-            setIsNotificationsOpen={setIsNotificationsOpen}
-            className="w-full lg:flex-1 h-12 sm:h-16"
-          />
+        <div className="hidden lg:grid w-full grid-cols-12 items-stretch gap-4 xl:gap-5 2xl:gap-6 mb-3 sm:mb-6">
+          <div className="col-span-12 xl:col-span-5">
+            <TripActionBar
+              onSettings={() => {
+                setSettingsInitialType('consumer');
+                setIsSettingsOpen(true);
+              }}
+              onCreateTrip={handleCreateTrip}
+              onSearch={(query: string) => {
+                setSearchQuery(query);
+                setIsSearchOpen(true);
+              }}
+              onNotifications={() => {}}
+              isNotificationsOpen={isNotificationsOpen}
+              setIsNotificationsOpen={setIsNotificationsOpen}
+              className="w-full h-12 sm:h-16"
+            />
+          </div>
+          <div className="col-span-12 xl:col-span-4">
+            <TripViewToggle
+              viewMode={viewMode}
+              onViewModeChange={handleViewModeChange}
+              showRecsTab={isDemoMode}
+              recsTabDisabled={false}
+              className="w-full h-12 sm:h-16"
+            />
+          </div>
+          <div className="col-span-12 xl:col-span-3" />
         </div>
 
         {/* Trip Stats Overview with loading state - moved above filters for travel recs */}
