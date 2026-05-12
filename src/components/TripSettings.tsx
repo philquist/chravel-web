@@ -118,8 +118,8 @@ export const TripSettings = ({
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50">
       <div className="flex h-full">
         {/* Sidebar */}
-        <div className="w-80 bg-white/5 backdrop-blur-md border-r border-white/10 p-6">
-          <div className="flex items-center justify-between mb-8">
+        <div className="w-80 bg-white/5 backdrop-blur-md border-r border-white/10 p-4 overflow-y-auto">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold text-white">Trip Settings</h2>
             <button
               onClick={onClose}
@@ -129,14 +129,14 @@ export const TripSettings = ({
             </button>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {tabs.map(tab => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-colors min-h-[44px] ${
                     activeTab === tab.id
                       ? 'bg-glass-orange/20 text-glass-orange border border-glass-orange/30'
                       : 'text-gray-300 hover:text-white hover:bg-white/10'
@@ -151,8 +151,8 @@ export const TripSettings = ({
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-8">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="p-4 pb-16 min-w-0">
             {activeTab === 'users' && (
               <TripUserManagement
                 tripId={tripId}
@@ -165,7 +165,7 @@ export const TripSettings = ({
             )}
 
             {activeTab === 'general' && (
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
+              <div className="bg-white/5 backdrop-blur-md border border-white/15 rounded-2xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-6">General Settings</h3>
 
                 {/* Trip Category Selection */}
@@ -230,19 +230,20 @@ export const TripSettings = ({
             )}
 
             {activeTab === 'activity' && showEventLogTab && (
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
+              <div className="bg-white/5 backdrop-blur-md border border-white/15 rounded-2xl p-6">
                 <TripActivitySettings tripId={tripId} />
               </div>
             )}
 
             {activeTab === 'eventlog' && showEventLogTab && (
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Event Log</h3>
+              <div className="bg-white/5 backdrop-blur-md border border-white/15 rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-2">Event Log</h3>
                 <p className="text-gray-400 mb-6">View system events and activity for this trip.</p>
                 <button
                   onClick={() => setShowEventLog(true)}
-                  className="bg-glass-orange hover:bg-glass-orange/80 text-white px-6 py-3 rounded-xl transition-colors"
+                  className="inline-flex items-center gap-2 min-h-[44px] bg-glass-orange hover:bg-glass-orange/80 text-white px-6 py-3 rounded-xl transition-colors font-medium"
                 >
+                  <ScrollText size={18} />
                   Open Event Log
                 </button>
               </div>

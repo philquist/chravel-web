@@ -1,37 +1,18 @@
 import React, { useState, useCallback } from 'react';
-import {
-  ClipboardList,
-  Plus,
-  Trash2,
-  GripVertical,
-  Edit2,
-  Check,
-  X,
-  AlertCircle,
-  RefreshCw,
-} from 'lucide-react';
+import { ClipboardList, Plus, Trash2, GripVertical, Edit2, Check, X } from 'lucide-react';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '../mobile/PullToRefreshIndicator';
 import { Button } from '../ui/button';
 import { ActionPill } from '../ui/ActionPill';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
-import {
-  EVENT_PARITY_ROW_CLASS,
-  EVENT_PARITY_COL_START,
-  EVENT_PARITY_HEADER_SPAN_CLASS,
-} from '@/lib/tabParity';
 import { Card, CardContent } from '../ui/card';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../ui/alert-dialog';
+  EVENT_TAB_PANEL_CLASS,
+  EventTabErrorState,
+  EventTabHeader,
+  EventTabLoadingState,
+} from './EventTabPrimitives';
 import { useToast } from '../../hooks/use-toast';
 import { useDemoMode } from '../../hooks/useDemoMode';
 import { useEventTasks } from '../../hooks/useEventTasks';
@@ -108,7 +89,6 @@ export const EventTasksTab = ({ eventId, permissions }: EventTasksTabProps) => {
 
   const [demoTasks, setDemoTasks] = useState<EventTask[]>(DEMO_TASKS);
   const [isAddingTask, setIsAddingTask] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
   const [loadError, setLoadError] = useState(false);
 
   const tasks = isDemoMode ? demoTasks : dbTasks;
@@ -191,22 +171,6 @@ export const EventTasksTab = ({ eventId, permissions }: EventTasksTabProps) => {
     }
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    if (!canDelete) return;
-
-    if (isDemoMode) {
-      setDemoTasks(prev => prev.filter(t => t.id !== taskId));
-      toast({ title: 'Task removed' });
-    } else {
-      try {
-        await deleteTask(taskId);
-      } catch {
-        toast({ title: 'Failed to remove task', variant: 'destructive' });
-      }
-    }
-    setDeleteConfirm(null);
-  };
-
   const startEditing = (task: EventTask) => {
     if (!canEdit) return;
     setEditingTaskId(task.id);
@@ -214,41 +178,21 @@ export const EventTasksTab = ({ eventId, permissions }: EventTasksTabProps) => {
   };
 
   if (!isDemoMode && isLoading) {
-    return (
-      <div
-        className="flex items-center justify-center py-12"
-        role="status"
-        aria-label="Loading tasks"
-      >
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 gold-gradient-spinner" />
-          <p className="text-sm text-gray-400">Loading tasks...</p>
-        </div>
-      </div>
-    );
+    return <EventTabLoadingState label="tasks" />;
   }
 
   if (!isDemoMode && loadError) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 gap-4">
-        <AlertCircle size={48} className="text-red-400" />
-        <h3 className="text-lg font-medium text-white">Failed to load tasks</h3>
-        <p className="text-gray-400 text-sm">Something went wrong. Please try again.</p>
-        <Button
-          onClick={() => setLoadError(false)}
-          variant="outline"
-          className="flex items-center gap-2"
-          aria-label="Retry loading tasks"
-        >
-          <RefreshCw size={16} />
-          Retry
-        </Button>
-      </div>
+      <EventTabErrorState
+        title="Failed to load tasks"
+        description="Something went wrong. Please try again."
+        onRetry={() => setLoadError(false)}
+      />
     );
   }
 
   return (
-    <div className="relative p-4 space-y-4">
+    <div className={EVENT_TAB_PANEL_CLASS}>
       {(isRefreshing || pullDistance > 0) && (
         <PullToRefreshIndicator
           isRefreshing={isRefreshing}
@@ -256,28 +200,25 @@ export const EventTasksTab = ({ eventId, permissions }: EventTasksTabProps) => {
           threshold={80}
         />
       )}
-      {/* Header */}
-      <div className={EVENT_PARITY_ROW_CLASS}>
-        <div className={`flex items-center gap-3 ${EVENT_PARITY_HEADER_SPAN_CLASS}`}>
-          <ClipboardList size={24} className="gold-gradient-icon" />
-          <div>
-            <h2 className="text-xl font-semibold text-white">Event Tasks</h2>
-            <p className="text-gray-400 text-sm">
-              {canCreate ? 'Manage attendee action items' : 'Things to do at this event'}
-            </p>
-          </div>
-        </div>
+      <EventTabHeader
+        icon={<ClipboardList size={24} className="gold-gradient-icon" />}
+        title="Event Tasks"
+        subtitle={
+          canCreate ? 'Manage event to-dos and assignments' : 'Event to-dos and assignments'
+        }
+      />
 
-        {canCreate && !isAddingTask && (
+      {canCreate && !isAddingTask && (
+        <div className="flex justify-end">
           <ActionPill
             variant="manualOutline"
             leftIcon={<Plus size={16} />}
             iconOnly
             onClick={() => setIsAddingTask(true)}
-            className={`${EVENT_PARITY_COL_START.tasks} w-full`}
+            className="w-full sm:w-auto sm:min-w-[120px]"
           />
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Add Task Form */}
       {isAddingTask && canCreate && (

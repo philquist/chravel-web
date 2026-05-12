@@ -48,6 +48,7 @@ import { formatSessionDateTime } from '@/lib/formatSessionDateTime';
 import { toast } from 'sonner';
 import { EVENT_PARITY_COL_START, EVENT_PARITY_ROW_CLASS } from '@/lib/tabParity';
 import { ActionPill } from '../ui/ActionPill';
+import { EVENT_TAB_PANEL_CLASS } from './EventTabPrimitives';
 import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
 
 interface LineupPermissions {
@@ -211,7 +212,7 @@ export const LineupTab = ({
   const isImageMime = (mime: string) => mime.startsWith('image/');
 
   return (
-    <div className="relative p-4 space-y-4">
+    <div className={EVENT_TAB_PANEL_CLASS}>
       {canCreate && canUploadMore && (
         <input
           ref={fileInputRef}

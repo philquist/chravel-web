@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Copy, Check, MapPin, Calendar, Users, Share2, Image } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
 import { toast } from 'sonner';
 import { buildTripPreviewLink } from '@/lib/unfurlConfig';
 
@@ -72,14 +73,15 @@ export const ShareTripModal = ({ isOpen, onClose, trip }: ShareTripModalProps) =
 
   // Prevent body scroll when modal is open
   useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = previousOverflow;
     }
 
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = previousOverflow;
     };
   }, [isOpen]);
 
@@ -129,13 +131,13 @@ export const ShareTripModal = ({ isOpen, onClose, trip }: ShareTripModalProps) =
       aria-modal="true"
       aria-label={`Share trip: ${trip.title}`}
     >
-      <div className="bg-background/95 backdrop-blur-md border border-border rounded-2xl max-w-md w-full animate-scale-in">
+      <div className="bg-background/95 backdrop-blur-md border border-border rounded-2xl max-w-md md:max-w-2xl w-full animate-scale-in">
         {/* Compact Header with X */}
         <div
-          className="flex items-center justify-between px-3 py-2 border-b border-border"
+          className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-border"
           style={{ paddingTop: 'max(8px, calc(env(safe-area-inset-top, 0px) + 8px))' }}
         >
-          <span className="text-sm font-medium text-foreground">Share Trip</span>
+          <span className="text-base font-semibold text-foreground">Share Trip</span>
           <Button
             onClick={onClose}
             variant="ghost"
@@ -143,19 +145,21 @@ export const ShareTripModal = ({ isOpen, onClose, trip }: ShareTripModalProps) =
             aria-label="Close share dialog"
             className="hover:bg-destructive/20 hover:text-destructive text-muted-foreground w-7 h-7 rounded-full min-w-[44px] min-h-[44px]"
           >
-            <X size={16} />
+            <X size={18} />
           </Button>
         </div>
 
         {/* Content - Compact */}
-        <div className="p-3">
+        <div className="p-4 md:p-6 md:space-y-5 space-y-4">
           {/* Share Card Preview */}
-          <div className="relative rounded-xl overflow-hidden mb-3 border border-border">
+          <div className="relative rounded-xl overflow-hidden border border-border">
             {/* Cover Image with loading/fallback */}
-            <div className="relative h-24">
+            <div className="relative h-24 md:h-32">
               {hasCoverPhoto && !coverImageLoaded && (
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
-                  <div className="h-5 w-5 animate-spin gold-gradient-spinner" />
+                <div className="absolute inset-0 p-3 md:p-4 space-y-2 md:space-y-3 bg-muted/40">
+                  <Skeleton className="h-4 w-24 bg-muted" />
+                  <Skeleton className="h-3 w-2/3 bg-muted" />
+                  <Skeleton className="h-3 w-1/2 bg-muted" />
                 </div>
               )}
               {hasCoverPhoto ? (
@@ -163,17 +167,17 @@ export const ShareTripModal = ({ isOpen, onClose, trip }: ShareTripModalProps) =
                   <img
                     src={trip.coverPhoto}
                     alt={`Cover photo for ${trip.title}`}
-                    className={`w-full h-24 object-cover transition-opacity duration-300 ${coverImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    className={`w-full h-24 md:h-32 object-cover transition-opacity duration-300 ${coverImageLoaded ? 'opacity-100' : 'opacity-0'}`}
                     onLoad={() => setCoverImageLoaded(true)}
                     onError={() => setCoverImageError(true)}
                   />
                 </>
               ) : (
-                <div className="h-24 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-900 flex items-center justify-center">
+                <div className="h-24 md:h-32 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-900 flex items-center justify-center">
                   <Image size={24} className="text-gray-400 dark:text-gray-500" />
                 </div>
               )}
-              <div className="absolute inset-0 h-24 bg-gradient-to-t from-black/40 dark:from-black/80 via-transparent to-transparent" />
+              <div className="absolute inset-0 h-24 md:h-32 bg-gradient-to-t from-black/40 dark:from-black/80 via-transparent to-transparent" />
             </div>
 
             {/* Chravel Badge */}
@@ -182,7 +186,7 @@ export const ShareTripModal = ({ isOpen, onClose, trip }: ShareTripModalProps) =
             </div>
 
             {/* Trip Details with fallback display */}
-            <div className="p-3 bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-900/95 dark:to-gray-800/95">
+            <div className="p-3 md:p-4 bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-900/95 dark:to-gray-800/95">
               <h3 className="text-base font-bold text-foreground mb-2">
                 {hasTitle ? trip.title : 'Untitled Trip'}
               </h3>
@@ -218,44 +222,15 @@ export const ShareTripModal = ({ isOpen, onClose, trip }: ShareTripModalProps) =
             </div>
           </div>
 
-          {/* Social Share Buttons */}
-          <div className="flex gap-2 mb-3">
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + previewLink)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Share trip via WhatsApp"
-              className="flex-1 flex items-center justify-center gap-1.5 bg-[#128C7E]/15 hover:bg-[#128C7E]/25 text-[#128C7E] border border-[#128C7E]/30 rounded-lg py-2 text-xs font-medium transition-colors min-h-[44px]"
-            >
-              WhatsApp
-            </a>
-            <a
-              href={`https://www.instagram.com/`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Share trip on Instagram"
-              className="flex-1 flex items-center justify-center gap-1.5 bg-[#C13584]/15 hover:bg-[#C13584]/25 text-[#C13584] border border-[#C13584]/30 rounded-lg py-2 text-xs font-medium transition-colors min-h-[44px]"
-            >
-              Instagram
-            </a>
-            <a
-              href={`mailto:?subject=${encodeURIComponent(trip.title)}&body=${encodeURIComponent(shareText + '\n\n' + previewLink)}`}
-              aria-label="Share trip via Email"
-              className="flex-1 flex items-center justify-center gap-1.5 bg-white/5 hover:bg-white/10 text-foreground border border-border rounded-lg py-2 text-xs font-medium transition-colors min-h-[44px]"
-            >
-              Email
-            </a>
-          </div>
-
           {/* Preview Link */}
-          <div>
+          <div className="space-y-2">
             <label
               className="block text-foreground text-xs font-medium mb-1"
               id="preview-link-label"
             >
               Preview Link
             </label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap md:flex-nowrap gap-2">
               <Button
                 onClick={handleCopyLink}
                 size="sm"
@@ -294,6 +269,35 @@ export const ShareTripModal = ({ isOpen, onClose, trip }: ShareTripModalProps) =
                 </Button>
               )}
             </div>
+          </div>
+
+          {/* Social Share Buttons */}
+          <div className="flex flex-wrap md:flex-nowrap gap-2">
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + previewLink)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Share trip via WhatsApp"
+              className="flex-1 flex items-center justify-center gap-1.5 bg-[#128C7E]/15 hover:bg-[#128C7E]/25 text-[#128C7E] border border-[#128C7E]/30 rounded-lg py-2 text-xs font-medium transition-colors min-h-[44px]"
+            >
+              WhatsApp
+            </a>
+            <a
+              href={`https://www.instagram.com/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Share trip on Instagram"
+              className="flex-1 flex items-center justify-center gap-1.5 bg-[#C13584]/15 hover:bg-[#C13584]/25 text-[#C13584] border border-[#C13584]/30 rounded-lg py-2 text-xs font-medium transition-colors min-h-[44px]"
+            >
+              Instagram
+            </a>
+            <a
+              href={`mailto:?subject=${encodeURIComponent(trip.title)}&body=${encodeURIComponent(shareText + '\n\n' + previewLink)}`}
+              aria-label="Share trip via Email"
+              className="flex-1 flex items-center justify-center gap-1.5 bg-white/5 hover:bg-white/10 text-foreground border border-border rounded-lg py-2 text-xs font-medium transition-colors min-h-[44px]"
+            >
+              Email
+            </a>
           </div>
         </div>
       </div>

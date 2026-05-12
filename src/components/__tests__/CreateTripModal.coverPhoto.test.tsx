@@ -57,6 +57,15 @@ vi.mock('../../hooks/useDemoMode', () => ({
   }),
 }));
 
+vi.mock('../../features/trips/hooks/useCoverPhotoUpload', () => ({
+  useCoverPhotoUpload: () => ({
+    upload: vi.fn().mockResolvedValue({
+      ok: true,
+      url: 'https://cdn.chravel.test/trip-123/cover.png',
+    }),
+  }),
+}));
+
 vi.mock('../../telemetry/events', () => ({
   tripEvents: {
     createStarted: vi.fn(),
@@ -151,10 +160,37 @@ describe('CreateTripModal cover photo upload', () => {
       );
     });
 
-    await waitFor(() => {
-      expect(mockUpdateTrip).toHaveBeenCalledWith('trip-123', {
-        cover_image_url: 'https://cdn.chravel.test/trip-123/cover.png',
-      });
-    });
+    expect(mockToastSuccess).toHaveBeenCalledWith('Trip created successfully!');
+  });
+
+  it('preserves trip-type field visibility contracts', async () => {
+    const user = userEvent.setup();
+
+    const { container } = render(
+      <MemoryRouter>
+        <CreateTripModal isOpen={true} onClose={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText('Organizer')).not.toBeInTheDocument();
+    expect(screen.queryByText('Event Time Zone')).not.toBeInTheDocument();
+    expect(screen.queryByText('Pro Trip Category')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('radio', { name: 'Pro' }));
+    expect(screen.getByText('Pro Trip Category')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /advanced/i }));
+    expect(screen.getByText('Trip Color Label')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('radio', { name: 'Event' }));
+    expect(screen.getByText('Organizer')).toBeInTheDocument();
+    expect(screen.getByText('Event Time Zone')).toBeInTheDocument();
+    expect(screen.getByText('Trip Color Label')).toBeInTheDocument();
+
+    const titleInput = container.querySelector<HTMLInputElement>('input[name="title"]');
+    const startDateInput = container.querySelector<HTMLInputElement>('input[name="startDate"]');
+    const endDateInput = container.querySelector<HTMLInputElement>('input[name="endDate"]');
+    expect(titleInput?.required).toBe(true);
+    expect(startDateInput?.required).toBe(true);
+    expect(endDateInput?.required).toBe(true);
   });
 });

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Archive, Calendar, MapPin, Users, Search } from 'lucide-react';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
+import { cn } from '@/lib/utils';
 import { useDemoMode } from '../hooks/useDemoMode';
 import { tripsData } from '../data/tripsData';
 import { proTripMockData } from '../data/proTripMockData';
@@ -72,11 +73,13 @@ const ArchivePage = () => {
   const getTypeBadge = (type: string) => {
     switch (type) {
       case 'pro':
-        return <Badge className="bg-yellow-500/20 text-yellow-400">Pro</Badge>;
+        return <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">Pro</Badge>;
       case 'event':
-        return <Badge className="bg-purple-500/20 text-purple-400">Event</Badge>;
+        return (
+          <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">Event</Badge>
+        );
       default:
-        return <Badge className="bg-blue-500/20 text-blue-400">Trip</Badge>;
+        return <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">Trip</Badge>;
     }
   };
 
@@ -126,21 +129,27 @@ const ArchivePage = () => {
             <div
               key={`${trip.type}-${trip.id}`}
               onClick={() => navigate(trip.deepLink)}
-              className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-800/50 transition-colors"
+              className="bg-white/5 backdrop-blur-xl border border-white/15 rounded-2xl p-4 md:p-5 cursor-pointer hover:bg-white/10 hover:border-white/30 transition-all duration-300 hover:shadow-2xl shadow-black/30"
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-white mb-1">{trip.title}</h3>
-                  <div className="flex items-center gap-4 text-sm text-gray-400 mb-2">
-                    <div className="flex items-center gap-1">
-                      <MapPin size={14} />
-                      {trip.location}
+                  <h3 className="font-semibold text-white mb-1 truncate" title={trip.title}>
+                    {trip.title}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 text-sm text-gray-300 mb-2">
+                    <div className="flex items-center gap-1 min-w-0">
+                      <MapPin size={14} className="shrink-0" />
+                      <span className="truncate" title={trip.location}>
+                        {trip.location}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar size={14} />
-                      {trip.dateRange}
+                    <div className="flex items-center gap-1 min-w-0">
+                      <Calendar size={14} className="shrink-0" />
+                      <span className="truncate" title={trip.dateRange}>
+                        {trip.dateRange}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 md:justify-end">
                       <Users size={14} />
                       {trip.participants?.length || 0}
                     </div>
@@ -150,7 +159,7 @@ const ArchivePage = () => {
 
               <div className="flex gap-2">
                 {getTypeBadge(trip.type)}
-                <Badge className="bg-gray-500/20 text-gray-400">
+                <Badge className={cn('bg-gray-500/20 text-gray-300 border-gray-500/30')}>
                   <Archive size={12} className="mr-1" />
                   Archived
                 </Badge>

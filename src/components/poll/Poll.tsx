@@ -190,21 +190,25 @@ export const Poll = ({
           const maxVotes = Math.max(0, ...options.map(o => o.votes));
           const hasVotes = poll.totalVotes > 0;
           return options.map(option => (
-            <PollOption
+            <div
               key={option.id}
-              option={option}
-              totalVotes={poll.totalVotes}
-              userVote={poll.userVote}
-              selectedOptions={selectedOptions}
-              onVote={handleVote}
-              disabled={!canVote && !canChangeVote}
-              isMultiple={poll.allow_multiple}
-              isLeading={
-                hasVotes &&
-                option.votes === maxVotes &&
-                options.filter(o => o.votes === maxVotes).length === 1
-              }
-            />
+              className="rounded-lg focus-within:ring-2 focus-within:ring-primary/70 focus-within:ring-offset-2 focus-within:ring-offset-background"
+            >
+              <PollOption
+                option={option}
+                totalVotes={poll.totalVotes}
+                userVote={poll.userVote}
+                selectedOptions={selectedOptions}
+                onVote={handleVote}
+                disabled={!canVote && !canChangeVote}
+                isMultiple={poll.allow_multiple}
+                isLeading={
+                  hasVotes &&
+                  option.votes === maxVotes &&
+                  options.filter(o => o.votes === maxVotes).length === 1
+                }
+              />
+            </div>
           ));
         })()}
       </div>
@@ -237,7 +241,7 @@ export const Poll = ({
               disabled={isRemovingVote}
               variant="ghost"
               size="sm"
-              className="h-9 min-h-[44px] px-3 text-xs text-muted-foreground hover:text-white"
+              className="h-9 min-h-[44px] px-3 text-xs text-muted-foreground hover:text-white focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               aria-label={`Remove your vote from poll: ${poll.question}`}
             >
               <Trash2 size={12} className="mr-1" />
@@ -252,7 +256,7 @@ export const Poll = ({
               disabled={isClosing}
               variant="ghost"
               size="sm"
-              className="h-9 min-h-[44px] px-3 text-xs text-muted-foreground hover:text-white"
+              className="h-9 min-h-[44px] px-3 text-xs text-muted-foreground hover:text-white focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               aria-label={`Close poll: ${poll.question}`}
             >
               {isClosing ? 'Closing...' : 'Close Poll'}
@@ -266,7 +270,7 @@ export const Poll = ({
               disabled={isDeleting}
               variant="ghost"
               size="sm"
-              className="h-9 min-h-[44px] px-3 text-xs text-destructive hover:text-destructive/80"
+              className="h-9 min-h-[44px] px-3 text-xs text-destructive hover:text-destructive/80 focus-visible:ring-2 focus-visible:ring-destructive/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               aria-label={`Delete poll: ${poll.question}`}
             >
               <Trash2 size={12} className="mr-1" />
