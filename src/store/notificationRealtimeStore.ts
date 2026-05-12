@@ -5,7 +5,8 @@
 
 import { create } from 'zustand';
 
-import type { NotificationPayload as NotificationItem } from '@/types/notifications';
+import type { NotificationPayload } from '@/types/notifications';
+export type NotificationItem = NotificationPayload;
 
 interface NotificationRealtimeState {
   notifications: NotificationItem[];
