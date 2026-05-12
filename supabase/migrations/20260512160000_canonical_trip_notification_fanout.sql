@@ -307,18 +307,119 @@ BEGIN
   END IF;
 END $$;
 
+
+-- 3b) Ensure all category triggers route through canonical wrappers
+DROP TRIGGER IF EXISTS trigger_notify_broadcast ON public.trip_broadcasts;
+CREATE TRIGGER trigger_notify_broadcast
+  AFTER INSERT ON public.trip_broadcasts
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_on_broadcast();
+
+DROP TRIGGER IF EXISTS trigger_notify_chat_message ON public.trip_chat_messages;
+CREATE TRIGGER trigger_notify_chat_message
+  AFTER INSERT ON public.trip_chat_messages
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_on_chat_message();
+
+DROP TRIGGER IF EXISTS trigger_notify_calendar_event ON public.calendar_events;
+CREATE TRIGGER trigger_notify_calendar_event
+  AFTER INSERT ON public.calendar_events
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_on_calendar_event();
+
+DROP TRIGGER IF EXISTS trigger_notify_payment ON public.trip_payments;
+CREATE TRIGGER trigger_notify_payment
+  AFTER INSERT ON public.trip_payments
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_on_payment();
+
+DROP TRIGGER IF EXISTS trigger_notify_task ON public.task_assignments;
+CREATE TRIGGER trigger_notify_task
+  AFTER INSERT ON public.task_assignments
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_on_task_assignment();
+
+DROP TRIGGER IF EXISTS trigger_notify_poll_created ON public.trip_polls;
+CREATE TRIGGER trigger_notify_poll_created
+  AFTER INSERT ON public.trip_polls
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_on_poll_created();
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'pinned_messages'
+  ) THEN
+    EXECUTE 'DROP TRIGGER IF EXISTS trigger_notify_pin_created ON public.pinned_messages';
+    EXECUTE 'CREATE TRIGGER trigger_notify_pin_created AFTER INSERT ON public.pinned_messages FOR EACH ROW EXECUTE FUNCTION public.notify_on_pin_created()';
+  END IF;
+END $$;
+
 -- 4) Deterministic verification queries (run manually in SQL editor)
--- broadcasts
--- SELECT count(*) FROM public.notifications WHERE metadata->>'entity_type'='broadcast' AND created_at > now() - interval '10 minutes';
--- pins
--- SELECT count(*) FROM public.notifications WHERE metadata->>'entity_type'='pin' AND created_at > now() - interval '10 minutes';
--- calendar
--- SELECT count(*) FROM public.notifications WHERE metadata->>'entity_type'='calendar_event' AND created_at > now() - interval '10 minutes';
--- payments
--- SELECT count(*) FROM public.notifications WHERE metadata->>'entity_type'='payment' AND created_at > now() - interval '10 minutes';
--- tasks
--- SELECT count(*) FROM public.notifications WHERE metadata->>'entity_type'='task' AND created_at > now() - interval '10 minutes';
--- polls
--- SELECT count(*) FROM public.notifications WHERE metadata->>'entity_type'='poll' AND created_at > now() - interval '10 minutes';
--- chat messages
--- SELECT count(*) FROM public.notifications WHERE metadata->>'entity_type'='chat_message' AND created_at > now() - interval '10 minutes';
+-- These checks validate each category path is routed through create_notification_for_trip_members
+-- and that idempotency keys prevent duplicate fanout rows.
+--
+-- Pattern (use one category/event key at a time):
+-- 1) Fire the underlying event once.
+-- 2) Re-fire the same INSERT payload (or replay webhook) to simulate duplicate delivery.
+-- 3) Validate actual recipients == expected recipients and duplicates == 0.
+--
+-- Expected recipients for one event:
+--   SELECT count(*)
+--   FROM public.trip_members tm
+--   WHERE tm.trip_id = :trip_id
+--     AND tm.user_id <> :actor_user_id
+--     AND public.should_send_notification(tm.user_id, :preference_key);
+--
+-- Broadcast path (entity_type=broadcast)
+-- SELECT
+--   count(*) FILTER (WHERE metadata->>'entity_type' = 'broadcast') AS actual_rows,
+--   count(*) FILTER (WHERE metadata->>'entity_type' = 'broadcast')
+--     - count(DISTINCT user_id) FILTER (WHERE metadata->>'entity_type' = 'broadcast') AS duplicate_rows
+-- FROM public.notifications
+-- WHERE trip_id = :trip_id
+--   AND metadata->>'fanout_event_key' LIKE 'broadcast:%';
+--
+-- Pin path (entity_type=pin)
+-- SELECT count(*) AS pin_rows
+-- FROM public.notifications
+-- WHERE trip_id = :trip_id
+--   AND metadata->>'entity_type' = 'pin'
+--   AND metadata->>'fanout_event_key' LIKE 'pin:%';
+--
+-- Calendar path (entity_type=calendar_event)
+-- SELECT count(*) AS calendar_rows
+-- FROM public.notifications
+-- WHERE trip_id = :trip_id
+--   AND metadata->>'entity_type' = 'calendar_event'
+--   AND metadata->>'fanout_event_key' LIKE 'calendar_event:%';
+--
+-- Payment path (entity_type=payment)
+-- SELECT count(*) AS payment_rows
+-- FROM public.notifications
+-- WHERE trip_id = :trip_id
+--   AND metadata->>'entity_type' = 'payment'
+--   AND metadata->>'fanout_event_key' LIKE 'payment:%';
+--
+-- Task path (entity_type=task)
+-- SELECT count(*) AS task_rows
+-- FROM public.notifications
+-- WHERE trip_id = :trip_id
+--   AND metadata->>'entity_type' = 'task'
+--   AND metadata->>'fanout_event_key' LIKE 'task_assignment:%';
+--
+-- Poll path (entity_type=poll)
+-- SELECT count(*) AS poll_rows
+-- FROM public.notifications
+-- WHERE trip_id = :trip_id
+--   AND metadata->>'entity_type' = 'poll'
+--   AND metadata->>'fanout_event_key' LIKE 'poll:%';
+--
+-- Chat path (entity_type=chat_message)
+-- SELECT count(*) AS chat_rows
+-- FROM public.notifications
+-- WHERE trip_id = :trip_id
+--   AND metadata->>'entity_type' = 'chat_message'
+--   AND metadata->>'fanout_event_key' LIKE 'chat_message:%';

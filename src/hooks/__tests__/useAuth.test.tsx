@@ -336,7 +336,7 @@ describe('AuthProvider', () => {
     });
 
     const profileSelectCalls: string[] = [];
-    mockSupabaseClient.from.mockImplementation((table: string) => {
+    (mockSupabaseClient.from as any).mockImplementation((table: string) => {
       if (table !== 'profiles') {
         return {
           select: vi.fn().mockReturnThis(),

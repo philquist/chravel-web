@@ -90,11 +90,11 @@ interface User {
   permissions: string[];
   /** @deprecated Use useNotificationPreferences hook for notification preference reads/writes. */
   notificationSettings: {
-    messages: boolean;
-    broadcasts: boolean;
-    tripUpdates: boolean;
-    email: boolean;
-    push: boolean;
+    messages: boolean | null;
+    broadcasts: boolean | null;
+    tripUpdates: boolean | null;
+    email: boolean | null;
+    push: boolean | null;
   };
 }
 
@@ -318,8 +318,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 push_enabled: false,
                 email_enabled: true,
                 sms_enabled: false,
-                messages: true,
-                broadcasts_and_pins: true,
                 chat_messages: true,
                 mentions_only: false,
                 broadcasts: true,
@@ -331,6 +329,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 trip_invites: true,
                 join_requests: false,
                 basecamp_updates: true,
+                messages: true,
+                broadcasts_and_pins: true,
                 quiet_hours_enabled: false,
                 quiet_start: '22:00',
                 quiet_end: '08:00',
@@ -1366,4 +1366,8 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+export const useOptionalAuth = () => {
+  return useContext(AuthContext) ?? null;
 };

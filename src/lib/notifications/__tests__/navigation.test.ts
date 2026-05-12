@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseNotificationMetadata, resolveNotificationTab } from '../navigation';
+import {
+  parseNotificationIngestionRow,
+  parseNotificationMetadata,
+  resolveNotificationTab,
+} from '../navigation';
 
 describe('notification navigation metadata parser', () => {
   it('normalizes canonical metadata keys', () => {
@@ -44,11 +48,44 @@ describe('resolveNotificationTab', () => {
     expect(resolveNotificationTab({ type: 'poll' }, {})).toBe('polls');
   });
 
+  it('resolves message notifications to chat tab', () => {
+    expect(resolveNotificationTab({ type: 'message' }, {})).toBe('chat');
+  });
+
+  it('resolves pin/broadcast-channel metadata to broadcasts tab', () => {
+    expect(resolveNotificationTab({ type: 'system' }, { tab: 'broadcasts' })).toBe('broadcasts');
+  });
+
   it('uses metadata tab override when valid', () => {
     expect(resolveNotificationTab({ type: 'system' }, { tab: 'payments' })).toBe('payments');
   });
 
   it('resolves channel_type chat metadata to chat tab', () => {
     expect(resolveNotificationTab({ type: 'system' }, { channel_type: 'chat' })).toBe('chat');
+  });
+});
+
+describe('parseNotificationIngestionRow', () => {
+  it('accepts valid notification rows', () => {
+    expect(
+      parseNotificationIngestionRow({
+        id: 'n-1',
+        type: 'broadcast',
+        title: 'Broadcast',
+        message: 'Body',
+        created_at: '2026-03-19T12:00:00.000Z',
+        is_read: false,
+      }),
+    ).toMatchObject({ id: 'n-1', type: 'broadcast', is_read: false });
+  });
+
+  it('rejects malformed notification rows', () => {
+    expect(
+      parseNotificationIngestionRow({
+        id: 'n-1',
+        type: 'broadcast',
+        title: 'Broadcast',
+      }),
+    ).toBeNull();
   });
 });

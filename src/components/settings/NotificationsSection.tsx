@@ -7,6 +7,14 @@ export const NotificationsSection = () => {
   const { preferences, updatePreference, isLoading } = useNotificationPreferences();
   const { accentColors: _accentColors } = useTripVariant();
 
+  if (!user) return null;
+
+  const handleNotificationToggle = (setting: string) => {
+    updateNotificationSettings({
+      [setting]: !(
+        user.notificationSettings[setting as keyof typeof user.notificationSettings] ?? false
+      ),
+    });
   const labels: Record<string, string> = {
     messages: 'Messages',
     broadcasts_and_pins: 'Broadcasts & Pins',
@@ -40,8 +48,8 @@ export const NotificationsSection = () => {
                 </span>
               </div>
               <button
-                onClick={() => void updatePreference(key as keyof typeof preferences, !value)}
-                aria-checked={value}
+                onClick={() => handleNotificationToggle(key)}
+                aria-checked={Boolean(value)}
                 role="switch"
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                   value ? 'bg-green-500' : 'bg-gray-600'

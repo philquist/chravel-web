@@ -15,6 +15,13 @@ describe('buildSessionDerivedUser', () => {
     expect(app.displayName).toBe('jane');
     expect(app.permissions).toEqual(['read']);
     expect(app.isPro).toBe(false);
+    expect(app.notificationSettings).toEqual({
+      messages: null,
+      broadcasts: null,
+      tripUpdates: null,
+      email: null,
+      push: null,
+    });
   });
 
   it('prefers display_name from metadata', () => {
