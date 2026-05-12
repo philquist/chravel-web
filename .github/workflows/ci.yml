@@ -52,6 +52,9 @@ jobs:
         env:
           ESLINT_WARNING_BASELINE: '1293'
 
+      - name: Check Supabase schema drift
+        run: npx tsx scripts/check-schema-drift.ts
+
       - name: Run type check
         run: npm run typecheck
 

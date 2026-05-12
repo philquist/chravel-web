@@ -410,18 +410,22 @@ export class TripContextAggregator {
 
   private static async fetchTasks(tripId: string) {
     try {
+      // trip_tasks columns now match the live schema. Assignee is sourced
+      // via task_assignments in a follow-up query if needed by the consumer;
+      // this aggregator returns just the task fields the concierge needs.
       const { data, error } = (await supabase
         .from('trip_tasks')
-        .select('id, content, assignee_id, due_date, is_complete, profiles:assignee_id(full_name)')
+        .select('id, title, description, due_at, completed, priority, status')
         .eq('trip_id', tripId)
         .limit(200)) as {
         data: Array<{
           id: string;
-          content: string;
-          assignee_id: string | null;
-          due_date: string | null;
-          is_complete: boolean;
-          profiles: { full_name: string } | null;
+          title: string | null;
+          description: string | null;
+          due_at: string | null;
+          completed: boolean;
+          priority: string | null;
+          status: string | null;
         }> | null;
         error: { message: string; code: string } | null;
       };
@@ -431,10 +435,10 @@ export class TripContextAggregator {
       return (
         data?.map(t => ({
           id: t.id,
-          content: t.content,
-          assignee: t.profiles?.full_name,
-          dueDate: t.due_date,
-          isComplete: t.is_complete,
+          content: t.title ?? t.description ?? '',
+          assignee: undefined,
+          dueDate: t.due_at,
+          isComplete: t.completed,
         })) || []
       );
     } catch (error) {
@@ -451,7 +455,7 @@ export class TripContextAggregator {
       const { data, error } = (await supabase
         .from('trip_payment_messages')
         .select(
-          'id, description, amount, created_by, split_participants, is_settled, profiles:created_by(full_name)',
+          'id, description, amount, created_by, split_participants, is_settled, profiles:created_by(display_name)',
         )
         .eq('trip_id', tripId)
         .limit(200)) as {
@@ -462,7 +466,7 @@ export class TripContextAggregator {
           created_by: string;
           split_participants: unknown;
           is_settled: boolean | null;
-          profiles: { full_name: string } | null;
+          profiles: { display_name: string } | null;
         }> | null;
         error: { message: string; code: string } | null;
       };
@@ -474,7 +478,7 @@ export class TripContextAggregator {
           id: p.id,
           description: p.description,
           amount: p.amount,
-          paidBy: p.profiles?.full_name || 'Unknown',
+          paidBy: p.profiles?.display_name || 'Unknown',
           participants: p.split_participants as string[],
           isSettled: p.is_settled,
         })) || []
@@ -594,18 +598,18 @@ export class TripContextAggregator {
       const { data, error } = (await supabase
         .from('trip_files')
         .select(
-          'id, file_name, file_type, file_url, uploaded_by, created_at, profiles:uploaded_by(full_name)',
+          'id, name, file_type, file_url, uploaded_by, created_at, profiles:uploaded_by(display_name)',
         )
         .eq('trip_id', tripId)
         .limit(200)) as {
         data: Array<{
           id: string;
-          file_name: string;
+          name: string;
           file_type: string;
-          file_url: string;
+          file_url: string | null;
           uploaded_by: string;
           created_at: string;
-          profiles: { full_name: string } | null;
+          profiles: { display_name: string } | null;
         }> | null;
         error: { message: string; code: string } | null;
       };
@@ -615,10 +619,10 @@ export class TripContextAggregator {
       return (
         data?.map(f => ({
           id: f.id,
-          name: f.file_name,
+          name: f.name,
           type: f.file_type,
-          url: f.file_url,
-          uploadedBy: f.profiles?.full_name || 'Unknown',
+          url: f.file_url ?? undefined,
+          uploadedBy: f.profiles?.display_name || 'Unknown',
           uploadedAt: f.created_at,
         })) || []
       );
@@ -634,7 +638,7 @@ export class TripContextAggregator {
     try {
       const { data, error } = (await supabase
         .from('trip_links')
-        .select('id, url, title, category, added_by, profiles:added_by(full_name)')
+        .select('id, url, title, category, added_by, profiles:added_by(display_name)')
         .eq('trip_id', tripId)
         .limit(200)) as {
         data: Array<{
@@ -643,7 +647,7 @@ export class TripContextAggregator {
           title: string;
           category: string | null;
           added_by: string;
-          profiles: { full_name: string } | null;
+          profiles: { display_name: string } | null;
         }> | null;
         error: { message: string; code: string } | null;
       };
@@ -656,7 +660,7 @@ export class TripContextAggregator {
           url: l.url,
           title: l.title,
           category: l.category,
-          addedBy: l.profiles?.full_name || 'Unknown',
+          addedBy: l.profiles?.display_name || 'Unknown',
         })) || []
       );
     } catch (error) {

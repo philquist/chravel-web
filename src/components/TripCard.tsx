@@ -154,10 +154,6 @@ export const TripCard = ({
     actionButtonClass,
     'flex items-center justify-center gap-1.5',
   );
-  const secondaryActionButtonClass = cn(
-    actionButtonClass,
-    'flex items-center justify-center gap-1.5',
-  );
 
   const handleArchiveTrip = async () => {
     // Demo mode: session-scoped, non-persistent archive
