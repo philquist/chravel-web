@@ -122,7 +122,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm max-sm:pb-[env(safe-area-inset-bottom,0px)] sm:items-center sm:p-2">
       <div
         data-testid="trip-export-modal-panel"
-        className="flex max-h-[min(85dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1rem))] min-h-0 w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-gray-700 bg-gray-900 shadow-2xl md:max-w-xl sm:max-h-[min(85dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] sm:rounded-xl"
+        className="flex max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-0.75rem)] min-h-0 w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-gray-700 bg-gray-900 shadow-2xl md:max-w-xl sm:max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-2rem)] sm:rounded-xl"
       >
         {/* Header — safe top inset without stacking extra padding on top of large notches */}
         <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-700/50 px-3 pb-2.5 pt-[max(10px,calc(env(safe-area-inset-top,0px)+8px))]">
@@ -144,12 +144,12 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
         {/* Content */}
         <div
           data-testid="trip-export-modal-scroll"
-          className="min-h-0 min-w-0 flex-1 overflow-y-auto px-3 pb-3 pt-2"
-          style={
-            !hasAccess
-              ? { paddingBottom: 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 12px))' }
-              : undefined
-          }
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto px-3 pt-2"
+          style={{
+            paddingBottom: hasAccess
+              ? 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 12px))'
+              : 'max(16px, calc(env(safe-area-inset-bottom, 0px) + 16px))',
+          }}
         >
           {/* Upgrade prompt when free export is used */}
           {showUpgradePrompt ? (
