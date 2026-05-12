@@ -180,7 +180,6 @@ export const ProblemSolutionSection = () => {
                 src={createNewTrip}
                 alt="Create New Trip form interface"
                 className="w-full h-full object-contain rounded-2xl shadow-2xl border border-border/50 hover:border-primary/30 hover:scale-[1.02] transition-all duration-300"
-              />
               loading="lazy"
               decoding="async"
             />
@@ -200,7 +199,6 @@ export const ProblemSolutionSection = () => {
                 src={tripInviteCoachella}
                 alt="Coachella trip invite card showing invitation interface"
                 className="w-full h-auto max-h-full object-contain rounded-2xl shadow-2xl border border-border/50 hover:border-primary/30 hover:scale-[1.02] transition-all duration-300"
-              />
               loading="lazy"
               decoding="async"
             />
@@ -220,7 +218,6 @@ export const ProblemSolutionSection = () => {
                 src={oneHubChat}
                 alt="Trip chat interface showing group messages and activity"
                 className="w-full h-full object-contain rounded-2xl shadow-2xl border border-border/50 hover:border-primary/30 hover:scale-[1.02] transition-all duration-300"
-              />
               loading="lazy"
               decoding="async"
             />
@@ -243,7 +240,6 @@ export const ProblemSolutionSection = () => {
                 src={createNewTrip}
                 alt="Create New Trip form interface"
                 className="w-full h-auto rounded-xl shadow-xl border border-border/50"
-              />
               loading="lazy"
               decoding="async"
             />
@@ -263,7 +259,6 @@ export const ProblemSolutionSection = () => {
                 src={tripInviteCoachella}
                 alt="Coachella trip invite card showing invitation interface"
                 className="w-full h-auto rounded-xl shadow-xl border border-border/50"
-              />
               loading="lazy"
               decoding="async"
             />
@@ -283,7 +278,6 @@ export const ProblemSolutionSection = () => {
                 src={oneHubChat}
                 alt="Trip chat interface showing group messages and activity"
                 className="w-full h-auto rounded-xl shadow-xl border border-border/50"
-              />
               loading="lazy"
               decoding="async"
             />

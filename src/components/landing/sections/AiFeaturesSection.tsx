@@ -105,7 +105,6 @@ export const AiFeaturesSection = () => {
               src={aiConcierge}
               alt="AI Concierge providing personalized recommendations"
               className="w-full h-auto object-contain"
-            />
               loading="lazy"
               decoding="async"
             />
@@ -157,7 +156,6 @@ export const AiFeaturesSection = () => {
               src={placesMaps}
               alt="BaseCamps and Places exploration with maps"
               className="w-full h-auto object-contain"
-            />
               loading="lazy"
               decoding="async"
             />
