@@ -87,6 +87,7 @@ interface User {
     | 'press';
   organizationId?: string;
   permissions: string[];
+  /** @deprecated Use useNotificationPreferences hook for notification preference reads/writes. */
   notificationSettings: {
     messages: boolean;
     broadcasts: boolean;
@@ -114,6 +115,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error?: string }>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase error type is loosely typed
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ error?: any }>;
+  /** @deprecated Use useNotificationPreferences hook for notification preference reads/writes. */
   updateNotificationSettings: (updates: Partial<User['notificationSettings']>) => Promise<void>;
   switchRole: (role: string) => void;
 }

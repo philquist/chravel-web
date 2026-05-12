@@ -22,6 +22,7 @@ import { hapticService } from '@/services/hapticService';
 import { NativeList, NativeListSection, NativeListItem, NativeToggleItem } from './NativeList';
 import { NativeLargeTitle } from './NativeLargeTitle';
 import { getPlatform } from '@/integrations/revenuecat/revenuecatClient';
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 
 interface NativeSettingsProps {
   user?: {
@@ -51,11 +52,7 @@ export const NativeSettings = ({
   const [appVersion, setAppVersion] = useState<string>('1.0.0');
   const [buildNumber, setBuildNumber] = useState<string>('1');
 
-  // Notification settings
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [emailEnabled, setEmailEnabled] = useState(true);
-  const [chatNotifications, setChatNotifications] = useState(true);
-  const [calendarReminders, setCalendarReminders] = useState(true);
+  const { preferences, updatePreference } = useNotificationPreferences();
 
   // Appearance settings
   const { isDarkMode, toggleTheme } = useTheme();
@@ -141,28 +138,28 @@ export const NativeSettings = ({
             <NativeToggleItem
               icon={<Bell size={18} />}
               label="Push Notifications"
-              checked={pushEnabled}
-              onChange={setPushEnabled}
+              checked={preferences.push_enabled}
+              onChange={checked => void updatePreference('push_enabled', checked)}
             />
             <NativeToggleItem
               icon={<Mail size={18} />}
               label="Email Notifications"
-              checked={emailEnabled}
-              onChange={setEmailEnabled}
+              checked={preferences.email_enabled}
+              onChange={checked => void updatePreference('email_enabled', checked)}
             />
             <NativeToggleItem
               icon={<MessageCircle size={18} />}
               label="Chat Messages"
               sublabel="Get notified about new messages"
-              checked={chatNotifications}
-              onChange={setChatNotifications}
+              checked={preferences.messages}
+              onChange={checked => void updatePreference('messages', checked)}
             />
             <NativeToggleItem
               icon={<Bell size={18} />}
               label="Calendar Reminders"
               sublabel="Upcoming events and deadlines"
-              checked={calendarReminders}
-              onChange={setCalendarReminders}
+              checked={preferences.calendar_events}
+              onChange={checked => void updatePreference('calendar_events', checked)}
             />
           </NativeListSection>
 

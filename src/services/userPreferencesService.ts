@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { TripPreferences } from '@/types/consumer';
+import { NotificationPreferencesContract } from '@/types/notificationPreferences';
 
 export interface AppPreferences {
   hide_sample_content?: boolean;
@@ -22,21 +23,14 @@ const DEFAULT_PREFERENCES: AppPreferences = {
   },
 };
 
-export interface NotificationPreferences {
+export interface NotificationPreferences extends NotificationPreferencesContract {
   id?: string;
   user_id?: string;
-  push_enabled: boolean;
-  email_enabled: boolean;
-  sms_enabled: boolean;
   sms_phone_number?: string | null; // Phone number for SMS delivery
-  chat_messages: boolean;
+  chat_messages: boolean; // legacy alias of `messages`
   mentions_only: boolean;
-  broadcasts: boolean;
-  tasks: boolean;
-  payments: boolean;
-  calendar_events: boolean;
+  broadcasts: boolean; // legacy alias of `broadcasts_and_pins`
   calendar_reminders: boolean; // Alias for calendar_events for backward compatibility
-  polls: boolean;
   trip_invites: boolean;
   join_requests: boolean;
   basecamp_updates: boolean;
