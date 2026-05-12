@@ -16,12 +16,13 @@ import { useDemoMode } from './useDemoMode';
 import { useNotificationRealtimeStore } from '@/store/notificationRealtimeStore';
 import { formatDistanceToNow } from 'date-fns';
 import type { NotificationItem } from '@/store/notificationRealtimeStore';
+import { parseNotificationMetadata } from '@/lib/notifications/navigation';
 
 const NOTIFICATION_COLUMNS =
   'id, type, title, message, is_read, is_visible, metadata, trip_id, created_at';
 
 export function mapRowToNotification(row: Record<string, unknown>): NotificationItem {
-  const metadata = (row.metadata as Record<string, unknown>) || {};
+  const metadata = parseNotificationMetadata(row.metadata);
   return {
     id: row.id as string,
     type: (row.type || 'system') as NotificationItem['type'],
