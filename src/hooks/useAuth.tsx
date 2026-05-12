@@ -318,6 +318,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 push_enabled: false,
                 email_enabled: true,
                 sms_enabled: false,
+                messages: true,
+                broadcasts_and_pins: true,
                 chat_messages: true,
                 mentions_only: false,
                 broadcasts: true,
@@ -333,7 +335,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 quiet_start: '22:00',
                 quiet_end: '08:00',
                 timezone: 'America/New_York',
-              },
+              } as any,
             );
           } catch (err) {
             if (import.meta.env.DEV) {

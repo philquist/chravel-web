@@ -3,6 +3,7 @@ export type ChatViewFilter = 'all' | 'broadcasts' | 'pinned' | 'channels';
 type MessageClassificationShape = {
   isBroadcast?: boolean;
   isPinned?: boolean;
+  [key: string]: unknown;
 };
 
 export function isBroadcastMessage(message: MessageClassificationShape) {

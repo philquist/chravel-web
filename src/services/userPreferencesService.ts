@@ -84,6 +84,8 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   push_enabled: true,
   email_enabled: false,
   sms_enabled: false,
+  messages: false,
+  broadcasts_and_pins: true,
   chat_messages: false,
   mentions_only: true,
   broadcasts: true,
