@@ -230,7 +230,7 @@ export const CreateTripModal = ({ isOpen, onClose }: CreateTripModalProps) => {
         if (coverImage && !isDemoMode) {
           const result = await uploadCoverPhoto(newTrip.id, coverImage);
           if (!result.ok) {
-            if (import.meta.env.DEV) console.error('Cover image upload failed:', result.error);
+            if (import.meta.env.DEV) console.error('Cover image upload failed:', (result as any).error);
             toast.error('Trip created, but failed to upload cover image');
           }
         }
