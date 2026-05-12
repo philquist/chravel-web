@@ -15,7 +15,7 @@ import { useDemoMode } from '../../hooks/useDemoMode';
 import { AuthModal } from '../AuthModal';
 import { LogIn, CheckCircle } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Card, CardContent } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 interface PaymentsTabProps {
   tripId: string;
@@ -143,7 +143,7 @@ export const PaymentsTab = React.memo(({ tripId }: PaymentsTabProps) => {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Payment Status Messages */}
       {paymentSummary.isSettled && tripPayments.length > 0 && (
         <Card className="bg-gradient-to-br from-emerald-900/20 to-emerald-950/20 border-emerald-500/20">
@@ -156,94 +156,114 @@ export const PaymentsTab = React.memo(({ tripId }: PaymentsTabProps) => {
         </Card>
       )}
 
-      {/* Payment Creation */}
-      {demoLoading ? (
-        <div className="flex items-center justify-center py-6 opacity-80">
-          <div className="w-5 h-5 animate-spin gold-gradient-spinner" />
-        </div>
-      ) : !user && !demoActive ? (
-        <div className="bg-card rounded-lg border border-border p-4 text-center">
-          <LogIn className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-          <h3 className="text-base font-semibold mb-2">Sign in to create payment requests</h3>
-          <p className="text-sm text-muted-foreground mb-3">
-            You need to be signed in to create and manage payments for this trip.
-          </p>
-          <Button variant="default" onClick={() => setShowAuthModal(true)}>
-            Sign In
-          </Button>
-        </div>
-      ) : membersLoading ? (
-        <div className="flex items-center justify-center py-6 opacity-80">
-          <div className="w-5 h-5 animate-spin gold-gradient-spinner" />
-          <span className="ml-2 text-sm text-muted-foreground">Loading trip members...</span>
-        </div>
-      ) : hadMembersError ? (
-        <Card className="bg-gradient-to-br from-amber-900/20 to-amber-950/20 border-amber-500/30">
-          <CardContent className="p-6 text-center">
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Create payment
+        </h2>
+        {demoLoading ? (
+          <div className="flex items-center justify-center py-6 opacity-80">
+            <div className="w-5 h-5 animate-spin gold-gradient-spinner" />
+          </div>
+        ) : !user && !demoActive ? (
+          <div className="bg-card rounded-lg border border-border p-4 text-center">
+            <LogIn className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+            <h3 className="text-base font-semibold mb-2">Sign in to create payment requests</h3>
             <p className="text-sm text-muted-foreground mb-3">
-              Couldn&apos;t load trip members. This might be a connection issue.
+              You need to be signed in to create and manage payments for this trip.
             </p>
-            <Button variant="outline" onClick={() => refreshMembers()}>
-              Retry
+            <Button variant="default" onClick={() => setShowAuthModal(true)}>
+              Sign In
             </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <PaymentInput
-          onSubmit={handlePaymentSubmit}
-          tripMembers={tripMembers}
-          isVisible={true}
-          tripId={tripId}
-        />
-      )}
+          </div>
+        ) : membersLoading ? (
+          <div className="flex items-center justify-center py-6 opacity-80">
+            <div className="w-5 h-5 animate-spin gold-gradient-spinner" />
+            <span className="ml-2 text-sm text-muted-foreground">Loading trip members...</span>
+          </div>
+        ) : hadMembersError ? (
+          <Card className="bg-gradient-to-br from-amber-900/20 to-amber-950/20 border-amber-500/30">
+            <CardContent className="p-6 text-center">
+              <p className="text-sm text-muted-foreground mb-3">
+                Couldn&apos;t load trip members. This might be a connection issue.
+              </p>
+              <Button variant="outline" onClick={() => refreshMembers()}>
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <PaymentInput
+            onSubmit={handlePaymentSubmit}
+            tripMembers={tripMembers}
+            isVisible={true}
+            tripId={tripId}
+          />
+        )}
+      </section>
 
       {/* ⚡ Balance Summary — loads independently with its own skeleton */}
-      {balanceLoading ? (
-        <div className="space-y-2">
-          <div className="h-24 bg-muted/50 rounded-lg border border-border animate-pulse" />
-          <div className="h-16 bg-muted/50 rounded-lg border border-border animate-pulse" />
-        </div>
-      ) : (
-        <>
-          {/* Balance Summary Card */}
-          <BalanceSummary summary={balanceSummary} />
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Balances
+        </h2>
+        {balanceLoading ? (
+          <div className="space-y-2">
+            <div className="h-24 bg-muted/50 rounded-lg border border-border animate-pulse" />
+            <div className="h-16 bg-muted/50 rounded-lg border border-border animate-pulse" />
+          </div>
+        ) : (
+          <>
+            <BalanceSummary summary={balanceSummary} />
 
-          {/* Per-Person Balance Cards */}
-          {balanceSummary.balances.length > 0 ? (
-            <div className="space-y-2">
-              <h3 className="text-base font-semibold text-foreground mb-1">Balance Breakdown</h3>
-              {balanceSummary.balances.map(balance => (
-                <PersonBalanceCard key={balance.userId} balance={balance} tripId={tripId} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-4 bg-muted/50 rounded-lg border border-border">
-              <p className="text-sm text-muted-foreground">
-                All settled up! No outstanding payments.
-              </p>
-            </div>
-          )}
-        </>
-      )}
+            {/* Per-Person Balance Cards */}
+            {balanceSummary.balances.length > 0 ? (
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-foreground mb-1">Balance breakdown</h3>
+                {balanceSummary.balances.map(balance => (
+                  <PersonBalanceCard key={balance.userId} balance={balance} tripId={tripId} />
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardHeader className="px-4 pt-4 pb-2">
+                  <CardTitle className="text-base">Balance breakdown</CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 text-center text-muted-foreground">
+                  <CheckCircle className="w-8 h-8 mx-auto mb-2 opacity-60 text-emerald-500" />
+                  <p className="text-sm">All balances are settled.</p>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+      </section>
 
-      {/* Outstanding Payments - pass data as props */}
-      <OutstandingPayments
-        tripId={tripId}
-        tripMembers={tripMembers}
-        onPaymentUpdated={handlePaymentUpdated}
-        payments={tripPayments}
-        onUpdatePayment={updatePaymentMessage}
-        onDeletePayment={deletePaymentMessage}
-      />
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Outstanding
+        </h2>
+        <OutstandingPayments
+          tripId={tripId}
+          tripMembers={tripMembers}
+          onPaymentUpdated={handlePaymentUpdated}
+          payments={tripPayments}
+          onUpdatePayment={updatePaymentMessage}
+          onDeletePayment={deletePaymentMessage}
+        />
+      </section>
 
-      {/* Payment History - pass data as props */}
-      <PaymentHistory
-        tripId={tripId}
-        onPaymentUpdated={handlePaymentUpdated}
-        payments={tripPayments}
-        onUpdatePayment={updatePaymentMessage}
-        onDeletePayment={deletePaymentMessage}
-      />
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          History
+        </h2>
+        <PaymentHistory
+          tripId={tripId}
+          onPaymentUpdated={handlePaymentUpdated}
+          payments={tripPayments}
+          onUpdatePayment={updatePaymentMessage}
+          onDeletePayment={deletePaymentMessage}
+        />
+      </section>
 
       {/* Auth Modal */}
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />

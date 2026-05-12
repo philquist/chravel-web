@@ -110,7 +110,7 @@ export const TaskCreateForm = ({
     <div
       className={
         isInlineEmptyState
-          ? 'bg-glass-slate-card border border-glass-slate-border rounded-2xl p-6 shadow-enterprise-lg'
+          ? 'bg-glass-slate-card border border-glass-slate-border rounded-2xl p-6 shadow-enterprise-lg md:mx-auto md:max-w-2xl'
           : ''
       }
     >

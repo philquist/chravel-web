@@ -84,6 +84,7 @@ import { clearDataCaches } from '../utils/pwaCacheUtils';
 import { isInstalledApp } from '../utils/platformDetection';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { X } from 'lucide-react';
+import { getSettingsRouteIntent } from '../utils/settingsRouteParams';
 
 const AuthIndex = () => {
   usePerformanceMonitor('Index');
@@ -670,10 +671,9 @@ const AuthIndex = () => {
 
   // Open settings to saved recs if requested via query params
   useEffect(() => {
-    const sp = new URLSearchParams(location.search);
-    const open = sp.get('openSettings');
-    if (open === 'saved-recs') {
-      setSettingsInitialConsumerSection('saved-recs');
+    const intent = getSettingsRouteIntent(location.search);
+    if (intent.shouldOpen) {
+      if (intent.consumerSection) setSettingsInitialConsumerSection(intent.consumerSection);
       setIsSettingsOpen(true);
     }
   }, [location.search]);

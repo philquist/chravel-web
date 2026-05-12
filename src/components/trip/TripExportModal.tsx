@@ -122,7 +122,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm max-sm:pb-[env(safe-area-inset-bottom,0px)] sm:items-center sm:p-2">
       <div
         data-testid="trip-export-modal-panel"
-        className="flex max-h-[min(85dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1rem))] min-h-0 w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-gray-700 bg-gray-900 shadow-2xl sm:max-h-[min(85dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] sm:rounded-xl"
+        className="flex max-h-[min(85dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1rem))] min-h-0 w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-gray-700 bg-gray-900 shadow-2xl md:max-w-xl sm:max-h-[min(85dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] sm:rounded-xl"
       >
         {/* Header — safe top inset without stacking extra padding on top of large notches */}
         <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-700/50 px-3 pb-2.5 pt-[max(10px,calc(env(safe-area-inset-top,0px)+8px))]">
@@ -188,12 +188,12 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
             <>
               {/* Free export banner for free users */}
               {showFreeExportBanner && (
-                <div className="bg-gradient-to-r from-green-900/40 to-emerald-900/40 border border-green-500/30 rounded-lg py-1 px-2.5 mb-2">
+                <div className="bg-gradient-to-r from-green-900/40 to-emerald-900/40 border border-green-500/30 rounded-lg py-1.5 px-2.5 mb-3 md:mb-4">
                   <div className="flex items-center gap-2">
                     <Gift size={12} className="text-green-400" />
                     <div className="flex-1">
-                      <span className="text-green-300 text-[10px] font-medium">1 Free Export</span>
-                      <span className="text-green-400/70 text-[9px] ml-1">per trip</span>
+                      <span className="text-green-300 text-[11px] font-medium">1 Free Export</span>
+                      <span className="text-green-400/70 text-[10px] ml-1">per trip</span>
                     </div>
                     <Badge
                       variant="secondary"
@@ -207,7 +207,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
 
               {/* Unlimited badge for paid users */}
               {isPaidUser && (
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3 md:mb-4">
                   <Badge
                     variant="secondary"
                     className="bg-[#c49746]/20 text-[#feeaa5] text-[10px] border border-[#c49746]/30"
@@ -218,33 +218,31 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
                 </div>
               )}
 
-              <div className="mb-2">
-                <h3 className="text-white font-semibold text-xs mb-0.5">
+              <div className="mb-3 md:mb-4">
+                <h3 className="text-white font-semibold text-sm mb-1">
                   {isEvent ? 'Event' : 'Trip'}: {tripName}
                 </h3>
-                <p className="text-gray-400 text-[10px]">
-                  Select sections to include in your recap
-                </p>
+                <p className="text-gray-400 text-xs">Select sections to include in your recap</p>
               </div>
 
               {/* Section Selection */}
-              <div className="grid grid-cols-2 gap-1.5 mb-2">
+              <div className="grid grid-cols-2 gap-2 mb-3 md:mb-4">
                 {sections.map(section => {
                   const isSelected = selectedSections.includes(section.id);
                   return (
                     <label
                       key={section.id}
-                      className={`flex items-center gap-2 py-2 px-2.5 rounded-lg border transition-all h-10 cursor-pointer ${
+                      className={`group flex items-center gap-2 py-2 px-2.5 rounded-lg border transition-all min-h-[44px] cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-[#e8af48]/80 focus-within:ring-offset-2 focus-within:ring-offset-gray-900 ${
                         isSelected
-                          ? 'bg-[#c49746]/15 border-[#c49746]/60 hover:border-[#c49746]'
-                          : 'bg-gray-800/60 border-gray-700/50 hover:border-gray-600 hover:bg-gray-800'
+                          ? 'bg-[#c49746]/20 border-[#c49746]/70 hover:border-[#e8af48] hover:bg-[#c49746]/25'
+                          : 'bg-gray-800/60 border-gray-700/60 hover:border-gray-500 hover:bg-gray-800/90'
                       }`}
                     >
                       <div
                         className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
                           isSelected
                             ? 'bg-gradient-to-br from-[#e8af48] via-[#c49746] to-[#a07a32] shadow-[0_0_6px_rgba(196,151,70,0.4)]'
-                            : 'border border-gray-600 bg-gray-900'
+                            : 'border border-gray-600 bg-gray-900 group-hover:border-gray-500'
                         }`}
                       >
                         {isSelected && <Check size={10} className="text-black" strokeWidth={3} />}
@@ -254,9 +252,10 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
                         checked={isSelected}
                         onChange={() => toggleSection(section.id)}
                         className="sr-only"
+                        aria-label={`Include ${section.label}`}
                       />
                       <span
-                        className={`text-[11px] font-medium truncate ${isSelected ? 'text-white' : 'text-gray-300'}`}
+                        className={`text-xs font-medium truncate ${isSelected ? 'text-white' : 'text-gray-200 group-hover:text-white'}`}
                       >
                         {section.label}
                       </span>
@@ -266,14 +265,17 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
               </div>
 
               {error && (
-                <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-1.5 mb-2">
-                  <p className="text-red-200 text-[10px]">{error}</p>
+                <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-2 mb-3 md:mb-4">
+                  <p className="text-red-200 text-xs">{error}</p>
                 </div>
               )}
+              <div aria-live="assertive" aria-atomic="true" className="sr-only" role="status">
+                {error ? `Export error: ${error}` : ''}
+              </div>
 
               {/* Info Banner */}
-              <div className="bg-[#c49746]/10 border border-[#c49746]/25 rounded-lg p-1.5">
-                <p className="text-gray-300 text-[10px]">
+              <div className="bg-[#c49746]/10 border border-[#c49746]/25 rounded-lg p-2">
+                <p className="text-gray-300 text-xs">
                   <span className="text-[#c49746]">🔒</span> Emails and phone numbers hidden. Chat
                   and AI history never included.
                 </p>

@@ -106,10 +106,15 @@ export const EventLogDrawer: React.FC<EventLogDrawerProps> = ({ isOpen, onClose,
       <div className="bg-background border border-border rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <ScrollText className="w-5 h-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold text-foreground">Event Log</h2>
-            <span className="text-sm text-muted-foreground">({events.length} events)</span>
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground/90">
+              Trip Activity
+            </p>
+            <div className="flex items-center gap-2">
+              <ScrollText className="w-5 h-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold text-foreground">Event Log</h2>
+              <span className="text-sm text-muted-foreground">({events.length} events)</span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -137,7 +142,7 @@ export const EventLogDrawer: React.FC<EventLogDrawerProps> = ({ isOpen, onClose,
             <div className="text-center text-muted-foreground py-8">No system events found</div>
           ) : (
             events.map(event => (
-              <div key={event.id} className="border border-border rounded-xl p-3 bg-muted/30">
+              <div key={event.id} className="border border-border/80 rounded-xl p-3 bg-muted/20">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
                     <p className="text-sm text-foreground">{event.content}</p>

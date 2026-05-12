@@ -174,8 +174,8 @@ export const PaymentInput = ({ onSubmit, tripMembers, isVisible, tripId }: Payme
 
   return (
     <Card className="bg-glass-slate-card border border-glass-slate-border rounded-2xl shadow-enterprise-lg">
-      <CardContent className="p-6">
-        <div className="flex items-center gap-2 mb-6">
+      <CardContent className="px-4 pt-4 pb-4 md:px-6 md:pt-6 md:pb-6">
+        <div className="flex items-center gap-2 mb-5">
           <DollarSign size={20} className="text-emerald-400" />
           <span className="text-base font-semibold text-foreground">Payment Details</span>
         </div>

@@ -14,7 +14,7 @@ import {
 import { CardStatItem } from './ui/CardStatItem';
 import { CalendarGlyph } from './ui/CalendarGlyph';
 import { useShallow } from 'zustand/react/shallow';
-import { Button } from './ui/button';
+import { Button, buttonVariants } from './ui/button';
 import { ArchiveConfirmDialog } from './ArchiveConfirmDialog';
 import { DeleteTripConfirmDialog } from './DeleteTripConfirmDialog';
 import { InviteModal } from './InviteModal';
@@ -43,8 +43,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+import { Badge } from './ui/badge';
+import { cn } from '@/lib/utils';
 
 // Stable empty array reference - prevents infinite re-renders from Zustand selector
 const EMPTY_PARTICIPANTS: Array<{ id: number | string; name: string; avatar?: string }> = [];
@@ -278,6 +281,14 @@ export const ProTripCard = ({
   );
 
   // Share trip data structure
+
+  const cardShellClass =
+    'group bg-gradient-to-br backdrop-blur-xl border border-white/15 hover:border-white/30 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-black/30 relative';
+  const actionButtonClass = cn(
+    buttonVariants({ variant: 'ghost', size: 'sm' }),
+    'bg-black/30 hover:bg-black/40 text-white border border-white/20 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed md:min-h-[44px] md:text-sm text-xs px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
+  );
+
   const shareTrip = {
     id: trip.id,
     title: trip.title,
@@ -289,9 +300,7 @@ export const ProTripCard = ({
   };
 
   return (
-    <div
-      className={`group bg-gradient-to-br ${tripColor.cardGradient} backdrop-blur-xl border border-white/20 hover:border-white/40 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-lg relative`}
-    >
+    <div className={cn(cardShellClass, tripColor.cardGradient)}>
       {/* Hero Section - Dark overlay for text readability */}
       <div className="relative h-32 md:h-48 bg-white/30 dark:bg-black/40">
         {/* Cover photo overlay if available */}
@@ -306,20 +315,30 @@ export const ProTripCard = ({
         <div className="relative z-10 flex justify-between items-start h-full p-4 md:p-6">
           {/* Trip Info - Inside Hero */}
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col justify-end">
-            <h3 className="text-lg md:text-xl font-bold text-black dark:text-white transition-colors line-clamp-2 mb-2">
+            <div className="flex items-center gap-2 mb-2">
+              <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">Pro</Badge>
+            </div>
+            <h3
+              className="text-lg md:text-xl font-bold text-black dark:text-white transition-colors line-clamp-2 md:line-clamp-1 mb-2"
+              title={trip.title}
+            >
               {trip.title}
             </h3>
 
-            <div className="flex items-center gap-2 text-black/70 dark:text-white/80 mb-1 md:mb-2 text-sm md:text-base">
+            <div className="flex items-center gap-2 text-black/70 dark:text-white/80 mb-1 md:mb-2 text-sm md:text-base min-w-0">
               <MapPin size={14} className="gold-gradient-icon shrink-0" />
-              <span className="font-medium truncate">{trip.location}</span>
+              <span title={trip.location} className="font-medium truncate">
+                {trip.location}
+              </span>
             </div>
 
-            <div className="flex items-center gap-2 text-black/70 dark:text-white/80 text-sm md:text-base">
+            <div className="flex items-center gap-2 text-black/70 dark:text-white/80 text-sm md:text-base min-w-0">
               <span className="gold-gradient-icon inline-flex shrink-0">
                 <CalendarGlyph size={14} />
               </span>
-              <span className="font-medium truncate">{trip.dateRange}</span>
+              <span title={trip.dateRange} className="font-medium truncate">
+                {trip.dateRange}
+              </span>
             </div>
           </div>
 
@@ -342,6 +361,7 @@ export const ProTripCard = ({
                 <Archive className="mr-2 h-4 w-4" />
                 Archive Trip
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleHideTrip}
                 className="text-muted-foreground hover:text-foreground"
@@ -349,6 +369,7 @@ export const ProTripCard = ({
                 <EyeOff className="mr-2 h-4 w-4" />
                 Hide Trip
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => setShowDeleteDialog(true)}
                 className="text-destructive hover:text-destructive"
@@ -390,7 +411,7 @@ export const ProTripCard = ({
           <Button
             onClick={() => setShowExportModal(true)}
             variant="ghost"
-            className="bg-black/30 hover:bg-black/40 text-white py-2.5 md:py-3 px-2 md:px-3 rounded-lg md:rounded-xl transition-all duration-200 font-medium border border-white/20 hover:border-white/30 text-xs md:text-sm h-auto"
+            className={cn(actionButtonClass, 'h-auto')}
           >
             <FileDown size={14} className="mr-1.5" />
             Recap
@@ -398,7 +419,7 @@ export const ProTripCard = ({
           <Button
             onClick={() => setShowInviteModal(true)}
             variant="ghost"
-            className="bg-black/30 hover:bg-black/40 text-white py-2.5 md:py-3 px-2 md:px-3 rounded-lg md:rounded-xl transition-all duration-200 font-medium border border-white/20 hover:border-white/30 text-xs md:text-sm h-auto"
+            className={cn(actionButtonClass, 'h-auto')}
           >
             <UserPlus size={14} className="mr-1.5" />
             Invite
@@ -409,14 +430,14 @@ export const ProTripCard = ({
           <Button
             onClick={handleViewTrip}
             variant="ghost"
-            className="bg-black/30 hover:bg-black/40 text-white font-medium py-2.5 md:py-3 px-2 md:px-3 rounded-lg md:rounded-xl transition-all duration-200 text-xs md:text-sm h-auto border border-white/20 hover:border-white/30"
+            className={cn(actionButtonClass, 'h-auto')}
           >
             View
           </Button>
           <Button
             onClick={() => setShowShareModal(true)}
             variant="ghost"
-            className="bg-black/30 hover:bg-black/40 text-white py-2.5 md:py-3 px-2 md:px-3 rounded-lg md:rounded-xl transition-all duration-200 font-medium border border-white/20 hover:border-white/30 text-xs md:text-sm h-auto"
+            className={cn(actionButtonClass, 'h-auto')}
           >
             <Share2 size={14} className="mr-1.5" />
             Share

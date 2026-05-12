@@ -148,7 +148,15 @@ export const TripCard = ({
 
   const actionButtonClass = cn(
     buttonVariants({ variant: 'ghost', size: 'sm' }),
-    'bg-gray-800/50 text-white border border-gold-primary/30 hover:bg-gray-700/50 hover:border-gold-primary/50 disabled:opacity-50 disabled:cursor-not-allowed md:min-h-[44px] md:text-sm text-xs px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
+    'bg-gray-800/50 text-white border border-white/15 hover:bg-gray-700/50 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed md:min-h-[44px] md:text-sm text-xs px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
+  );
+  const secondaryActionButtonClass = cn(
+    actionButtonClass,
+    'flex items-center justify-center gap-1.5',
+  );
+  const secondaryActionButtonClass = cn(
+    actionButtonClass,
+    'flex items-center justify-center gap-1.5',
   );
 
   const handleArchiveTrip = async () => {
@@ -414,7 +422,7 @@ export const TripCard = ({
 
   return (
     <div
-      className="group bg-white/5 hover:bg-white/10 backdrop-blur-xl border border-white/10 hover:border-gold-primary/30 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-lg md:shadow-black/20"
+      className="group bg-white/5 hover:bg-white/10 backdrop-blur-xl border border-white/15 hover:border-white/30 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-black/30"
       onMouseEnter={handlePrefetch}
       onFocus={handlePrefetch}
       onTouchStart={handlePrefetch}
@@ -439,7 +447,7 @@ export const TripCard = ({
               <div className="flex-1">
                 <h3
                   title={trip.title}
-                  className="text-lg md:text-xl font-bold text-white transition-all duration-300 line-clamp-2 md:line-clamp-1"
+                  className="text-lg md:text-xl font-bold text-white transition-all duration-300 line-clamp-2 md:line-clamp-1 md:truncate"
                 >
                   {trip.title}
                 </h3>
@@ -486,21 +494,27 @@ export const TripCard = ({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2 text-white mb-1 md:mb-3 text-sm md:text-base">
+            <div className="flex min-w-0 items-center gap-2 text-white mb-1 md:mb-3 text-sm md:text-base">
               <MapPin size={14} className="md:hidden gold-gradient-icon" />
               <MapPin size={18} className="hidden md:block gold-gradient-icon" />
-              <span title={trip.location} className="font-medium md:truncate md:max-w-[220px]">
+              <span
+                title={trip.location}
+                className="min-w-0 font-medium max-w-full md:max-w-[220px] md:truncate"
+              >
                 {trip.location}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-white text-sm md:text-base">
+            <div className="flex min-w-0 items-center gap-2 text-white text-sm md:text-base">
               <span className="md:hidden inline-flex gold-gradient-icon">
                 <CalendarGlyph size={14} />
               </span>
               <span className="hidden md:inline-flex gold-gradient-icon">
                 <CalendarGlyph size={18} />
               </span>
-              <span title={trip.dateRange} className="font-medium md:truncate md:max-w-[220px]">
+              <span
+                title={trip.dateRange}
+                className="min-w-0 font-medium max-w-full md:max-w-[220px] md:truncate"
+              >
                 {trip.dateRange}
               </span>
             </div>
@@ -570,7 +584,7 @@ export const TripCard = ({
               setShowExportModal(true);
             }}
             disabled={pendingApproval}
-            className={`${actionButtonClass} flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={secondaryActionButtonClass}
           >
             <FileDown size={14} className="md:hidden" />
             <FileDown size={16} className="hidden md:block" />
@@ -583,7 +597,7 @@ export const TripCard = ({
               setShowInviteModal(true);
             }}
             disabled={pendingApproval}
-            className={`${actionButtonClass} flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={secondaryActionButtonClass}
           >
             <User size={14} className="md:hidden" />
             <User size={16} className="hidden md:block" />
@@ -607,7 +621,7 @@ export const TripCard = ({
               setShowShareModal(true);
             }}
             disabled={pendingApproval}
-            className={`${actionButtonClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={actionButtonClass}
           >
             Share
           </button>
