@@ -410,12 +410,12 @@ export class TripContextAggregator {
 
   private static async fetchTasks(tripId: string) {
     try {
-      // trip_tasks has title/description/due_at/completed — no assignee FK
-      // exists in the current schema. Assignee surfacing is captured as a
-      // follow-up (requires task_assignments join or a new column).
+      // trip_tasks columns now match the live schema. Assignee is sourced
+      // via task_assignments in a follow-up query if needed by the consumer;
+      // this aggregator returns just the task fields the concierge needs.
       const { data, error } = (await supabase
         .from('trip_tasks')
-        .select('id, title, description, due_at, completed')
+        .select('id, title, description, due_at, completed, priority, status')
         .eq('trip_id', tripId)
         .limit(200)) as {
         data: Array<{
@@ -424,6 +424,8 @@ export class TripContextAggregator {
           description: string | null;
           due_at: string | null;
           completed: boolean;
+          priority: string | null;
+          status: string | null;
         }> | null;
         error: { message: string; code: string } | null;
       };
@@ -595,13 +597,16 @@ export class TripContextAggregator {
     try {
       const { data, error } = (await supabase
         .from('trip_files')
-        .select('id, name, file_type, uploaded_by, created_at, profiles:uploaded_by(display_name)')
+        .select(
+          'id, name, file_type, file_url, uploaded_by, created_at, profiles:uploaded_by(display_name)',
+        )
         .eq('trip_id', tripId)
         .limit(200)) as {
         data: Array<{
           id: string;
           name: string;
           file_type: string;
+          file_url: string | null;
           uploaded_by: string;
           created_at: string;
           profiles: { display_name: string } | null;
@@ -616,7 +621,7 @@ export class TripContextAggregator {
           id: f.id,
           name: f.name,
           type: f.file_type,
-          url: undefined as string | undefined,
+          url: f.file_url ?? undefined,
           uploadedBy: f.profiles?.display_name || 'Unknown',
           uploadedAt: f.created_at,
         })) || []

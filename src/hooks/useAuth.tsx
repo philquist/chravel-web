@@ -236,7 +236,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data, error } = await supabase
       .from('profiles')
       .select(
-        'id, user_id, display_name, real_name, name_preference, first_name, last_name, avatar_url, bio, phone, show_email, show_phone, ' +
+        'id, user_id, display_name, real_name, name_preference, first_name, last_name, avatar_url, bio, phone, show_email, show_phone, job_title, show_job_title, ' +
           'notification_settings, timezone, app_role, role, subscription_status, subscription_product_id, ' +
           'subscription_end, free_pro_trips_used, free_pro_trip_limit, free_events_used, free_event_limit, ' +
           'created_at, updated_at',

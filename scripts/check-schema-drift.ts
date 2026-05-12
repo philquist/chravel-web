@@ -38,15 +38,10 @@ const ROOT = path.resolve(process.cwd());
 const SRC_DIR = path.join(ROOT, 'src');
 const TYPES_FILE = path.join(SRC_DIR, 'integrations', 'supabase', 'types.ts');
 
-// Tables that are referenced in code but knowingly not present in types.ts.
-// Adding a table here silences the unknown-table warning. These represent
-// real drift to investigate — keep this list short and tracked.
-const IGNORE_UNKNOWN_TABLES = new Set<string>([
-  // Tables only referenced from test mocks via `mockSupabase.from(...)` —
-  // they are not exercised against the real DB at runtime.
-  'trip_messages',
-  'trip_collaborators',
-]);
+// Tables knowingly referenced from code but not present in types.ts.
+// Empty by default — every public table the app touches should be modelled.
+// Add a name here only with a tracked migration follow-up.
+const IGNORE_UNKNOWN_TABLES = new Set<string>([]);
 
 // File globs to skip entirely.
 const SKIP_FILE_PATTERNS = [/\.test\.(ts|tsx)$/, /__tests__\//, /\.stories\.tsx$/];

@@ -202,10 +202,6 @@ export function useDashboardJoinRequests(isDemoMode = false) {
     try {
       setIsLoading(true);
 
-      // NOTE: trips.member_count is not a real column — it must be derived
-      // separately. Dropping it here so the query succeeds; consumers
-      // (usePendingRequestTripCards) already default missing values to 1.
-      // Follow-up: provide an RPC/view that returns member_count for trips.
       const { data: joinedData, error: joinedError } = await supabase
         .from('trip_join_requests')
         .select(
@@ -222,6 +218,7 @@ export function useDashboardJoinRequests(isDemoMode = false) {
             destination,
             start_date,
             end_date,
+            member_count,
             cover_image_url,
             trip_type
           )

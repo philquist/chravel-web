@@ -389,13 +389,11 @@ async function searchTasks(
 
   const safeQuery = escapeSqlLike(query);
 
-  // trip_tasks has no priority/status columns — only `completed`, `due_at`,
-  // etc. Dropping phantom fields so the query succeeds; metadata below is
-  // emptied accordingly. Follow-up: add priority/status if the product needs
-  // them (requires a migration).
   const taskQuery = supabase
     .from('trip_tasks')
-    .select('id, title, description, completed, due_at, created_at, trip_id, trips(name)')
+    .select(
+      'id, title, description, priority, status, completed, due_at, created_at, trip_id, trips(name)',
+    )
     .or(`title.ilike.%${safeQuery}%,description.ilike.%${safeQuery}%`)
     .order('created_at', { ascending: false });
 
@@ -422,6 +420,8 @@ async function searchTasks(
       matchScore: 0.86,
       deepLink: `/trip/${task.trip_id}#task-${task.id}`,
       metadata: {
+        priority: task.priority,
+        status: task.status,
         completed: task.completed,
         dueAt: task.due_at,
       },
