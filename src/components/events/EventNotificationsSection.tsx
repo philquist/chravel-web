@@ -74,6 +74,7 @@ export const EventNotificationsSection = () => {
   const { showDemoContent } = useDemoMode();
   const { tier, isSuperAdmin } = useConsumerSubscription();
   const [isLoading, setIsLoading] = useState(true);
+  const [hasHydratedPreferences, setHasHydratedPreferences] = useState(false);
   const [isUpdatingPush, setIsUpdatingPush] = useState(false);
 
   const [showSmsPhoneModal, setShowSmsPhoneModal] = useState(false);
@@ -83,15 +84,15 @@ export const EventNotificationsSection = () => {
   const [isSendingTestSms, setIsSendingTestSms] = useState(false);
   const [phoneError, setPhoneError] = useState('');
 
-  const [notificationSettings, setNotificationSettings] = useState<Record<string, boolean>>({
-    broadcasts: true,
-    calendar: true,
-    joinRequests: true,
-    tasks: true,
-    polls: true,
-    email: false,
-    push: true,
-    sms: false,
+  const [notificationSettings, setNotificationSettings] = useState<Record<string, boolean | null>>({
+    broadcasts: null,
+    calendar: null,
+    joinRequests: null,
+    tasks: null,
+    polls: null,
+    email: null,
+    push: null,
+    sms: null,
   });
 
   const smsDeliveryEligible =
@@ -156,6 +157,7 @@ export const EventNotificationsSection = () => {
           push: prefs.push_enabled ?? true,
           sms: prefs.sms_enabled ?? false,
         });
+        setHasHydratedPreferences(true);
         if (prefs.sms_phone_number) {
           setSmsPhoneNumber(prefs.sms_phone_number);
         }
@@ -199,7 +201,12 @@ export const EventNotificationsSection = () => {
   }, [notificationSettings.sms, showDemoContent, smsDeliveryEligible, user?.id]);
 
   const handleNotificationToggle = async (setting: string) => {
-    const newValue = !notificationSettings[setting];
+    if (!hasHydratedPreferences) return;
+
+    const currentValue = notificationSettings[setting];
+    if (typeof currentValue !== 'boolean') return;
+
+    const newValue = !currentValue;
 
     if (setting === 'sms' && !smsDeliveryEligible) {
       toast({
@@ -383,32 +390,24 @@ export const EventNotificationsSection = () => {
     }
   };
 
-  const renderToggle = (key: string, isEnabled: boolean, isDisabled?: boolean) => (
+  const renderToggle = (key: string, isEnabled: boolean | null, isDisabled?: boolean) => (
     <button
       onClick={() => handleNotificationToggle(key)}
-      disabled={isDisabled}
-      aria-checked={isEnabled}
+      disabled={isDisabled || !hasHydratedPreferences || isEnabled === null}
+      aria-checked={isEnabled === true}
       aria-label={`Toggle ${key} notifications`}
       role="switch"
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-        isEnabled ? 'bg-green-500' : 'bg-gray-600'
+        isEnabled === true ? 'bg-green-500' : 'bg-gray-600'
       }`}
     >
       <span
         className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${
-          isEnabled ? 'translate-x-5' : 'translate-x-0'
+          isEnabled === true ? 'translate-x-5' : 'translate-x-0'
         }`}
       />
     </button>
   );
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin gold-gradient-spinner" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-3">
@@ -419,6 +418,16 @@ export const EventNotificationsSection = () => {
       <p className="text-gray-300">
         Manage how you receive updates about events you attend or organize
       </p>
+      {!hasHydratedPreferences && (
+        <div
+          className="flex items-center gap-2 text-sm text-gray-400"
+          role="status"
+          aria-live="polite"
+        >
+          {isLoading && <div className="h-4 w-4 animate-spin gold-gradient-spinner" />}
+          <span>Loading your saved notification preferences…</span>
+        </div>
+      )}
 
       {/* Event Categories */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
