@@ -5,34 +5,7 @@
 
 import { create } from 'zustand';
 
-export interface NotificationItem {
-  id: string;
-  type:
-    | 'message'
-    | 'broadcast'
-    | 'calendar'
-    | 'poll'
-    | 'files'
-    | 'photos'
-    | 'chat'
-    | 'mention'
-    | 'task'
-    | 'payment'
-    | 'invite'
-    | 'join_request'
-    | 'join_approved'
-    | 'join_rejected'
-    | 'basecamp'
-    | 'system';
-  title: string;
-  description: string;
-  tripId: string;
-  tripName: string;
-  timestamp: string;
-  isRead: boolean;
-  isHighPriority?: boolean;
-  data?: Record<string, unknown>;
-}
+import type { NotificationPayload as NotificationItem } from '@/types/notifications';
 
 interface NotificationRealtimeState {
   notifications: NotificationItem[];
