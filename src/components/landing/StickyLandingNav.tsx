@@ -39,8 +39,8 @@ export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
   const [activeSection, setActiveSection] = useState('hero');
   const [isVisible, setIsVisible] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const { user } = useAuth();
-  const isSuperAdmin = user?.email && SUPER_ADMIN_EMAILS.includes(user.email);
+  const user = null;
+  const isSuperAdmin = false;
 
   useEffect(() => {
     if (scrollRoot === null) return;
