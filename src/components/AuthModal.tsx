@@ -534,6 +534,3 @@ export const AuthModal = ({
       document.body,
     );
 };
-    document.body,
-  );
-};
