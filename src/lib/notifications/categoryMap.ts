@@ -42,9 +42,9 @@ export interface NotificationCategoryDefinition {
   preferenceKey: NotificationPreferenceKey;
   backendNotificationTypes: string[];
   /** Alias of backendNotificationTypes for legacy callers/tests. */
-  backendTypes: string[];
+  backendTypes?: string[];
   /** Alias of key for legacy callers/tests. */
-  category: NotificationCategoryKey;
+  category?: NotificationCategoryKey;
   deepLinkTab?: NotificationDeepLinkTab;
   messagesScope?: 'all_chat' | 'mentions_only_fallback';
 }
