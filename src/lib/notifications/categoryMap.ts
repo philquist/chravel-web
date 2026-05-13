@@ -41,6 +41,10 @@ export interface NotificationCategoryDefinition {
   uiLabel: string;
   preferenceKey: NotificationPreferenceKey;
   backendNotificationTypes: string[];
+  /** Alias of backendNotificationTypes for legacy callers/tests. */
+  backendTypes: string[];
+  /** Alias of key for legacy callers/tests. */
+  category: NotificationCategoryKey;
   deepLinkTab?: NotificationDeepLinkTab;
   messagesScope?: 'all_chat' | 'mentions_only_fallback';
 }
