@@ -1,4 +1,4 @@
-import { isPinnedMessage } from './messageClassification';
+// local isPinnedMessage defined below
 
 export type PinnedChatMessage = {
   id: string;
