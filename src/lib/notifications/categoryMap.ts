@@ -41,6 +41,10 @@ export interface NotificationCategoryDefinition {
   uiLabel: string;
   preferenceKey: NotificationPreferenceKey;
   backendNotificationTypes: string[];
+  /** Alias of backendNotificationTypes for legacy callers/tests. */
+  backendTypes?: string[];
+  /** Alias of key for legacy callers/tests. */
+  category?: NotificationCategoryKey;
   deepLinkTab?: NotificationDeepLinkTab;
   messagesScope?: 'all_chat' | 'mentions_only_fallback';
 }
@@ -139,6 +143,12 @@ export const NOTIFICATION_CATEGORY_MAP: Record<
   },
 };
 
+// Hydrate legacy aliases (`backendTypes`, `category`) for callers/tests that use them.
+Object.values(NOTIFICATION_CATEGORY_MAP).forEach(def => {
+  def.backendTypes = def.backendNotificationTypes;
+  def.category = def.key;
+});
+
 const TYPE_TO_CATEGORY_ENTRIES = Object.values(NOTIFICATION_CATEGORY_MAP).flatMap(category =>
   category.backendNotificationTypes.map(type => [type.toLowerCase(), category.key] as const),
 );
@@ -152,3 +162,14 @@ export function resolveNotificationCategoryByType(
   const key = NOTIFICATION_TYPE_TO_CATEGORY_KEY[type.toLowerCase()];
   return key ? NOTIFICATION_CATEGORY_MAP[key] : null;
 }
+
+export function resolveNotificationCategory(type: string): NotificationCategoryKey | null {
+  return NOTIFICATION_TYPE_TO_CATEGORY_KEY[type.toLowerCase()] ?? null;
+}
+
+export function resolveNotificationTabFromType(
+  type: string,
+): NotificationDeepLinkTab | null {
+  return resolveNotificationCategoryByType(type)?.deepLinkTab ?? null;
+}
+

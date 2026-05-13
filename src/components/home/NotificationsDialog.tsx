@@ -103,7 +103,7 @@ function extractTripNameFromApprovalDescription(description: string): string | n
 
 function resolveNotificationTab(
   notification: Notification,
-  metadata: NotificationMetadata,
+  metadata: Record<string, unknown>,
 ): string | null {
   const notificationType = notification.type.toLowerCase();
   const metadataChannelType = getMetadataString(metadata, 'channel_type').toLowerCase();

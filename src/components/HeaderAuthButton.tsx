@@ -59,13 +59,7 @@ export const HeaderAuthButton = ({ showLoggedOut = true }: HeaderAuthButtonProps
   return (
     <>
       <Button
-        onClick={() => {
-          if (auth) {
-            setShowAuthModal(true);
-            return;
-          }
-          window.location.assign('/auth?mode=signin');
-        }}
+        onClick={() => setShowAuthModal(true)}
         variant="outline"
         size="sm"
         className="flex items-center justify-center gap-1.5 transition-all duration-200 rounded-lg
@@ -75,7 +69,7 @@ export const HeaderAuthButton = ({ showLoggedOut = true }: HeaderAuthButtonProps
         <LogIn className="h-3.5 w-3.5" />
         <span className="text-[11px] font-semibold">Log In</span>
       </Button>
-      {auth && <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />}
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </>
   );
 };

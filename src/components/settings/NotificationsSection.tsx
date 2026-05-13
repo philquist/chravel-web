@@ -7,14 +7,11 @@ export const NotificationsSection = () => {
   const { preferences, updatePreference, isLoading } = useNotificationPreferences();
   const { accentColors: _accentColors } = useTripVariant();
 
-  if (!user) return null;
-
   const handleNotificationToggle = (setting: string) => {
-    updateNotificationSettings({
-      [setting]: !(
-        user.notificationSettings[setting as keyof typeof user.notificationSettings] ?? false
-      ),
-    });
+    const current = (preferences as any)?.[setting] ?? false;
+    (updatePreference as any)(setting, !current);
+  };
+
   const labels: Record<string, string> = {
     messages: 'Messages',
     broadcasts_and_pins: 'Broadcasts & Pins',

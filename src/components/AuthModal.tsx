@@ -335,7 +335,7 @@ export const AuthModal = ({
   return createPortal(
     <div
       data-testid="auth-modal-backdrop"
-      className="fixed inset-0 z-[100] flex flex-col animate-fade-in"
+      className="dark-section fixed inset-0 z-[100] flex flex-col animate-fade-in"
     >
       <div className="absolute inset-0 bg-black/95 backdrop-blur-sm" aria-hidden="true" />
       <div className="relative flex min-h-0 flex-1 items-center justify-center p-4 sm:p-6">
