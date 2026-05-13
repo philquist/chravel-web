@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, X, MessageCircle, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -189,20 +190,38 @@ export const ChatSearchOverlay = ({
     return text.substring(0, maxLength) + '...';
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-2xl bg-neutral-900 rounded-2xl shadow-2xl border border-white/10 overflow-hidden animate-scale-in">
+  /**
+   * Portal to document.body so the overlay is not under TripTabs' overflow-y-auto.
+   * iOS WKWebView treats fixed descendants of scroll containers incorrectly (layout + focus).
+   */
+  const overlay = (
+    <div
+      className="fixed inset-0 z-[100] flex items-start justify-center px-4 bg-black/80 backdrop-blur-md animate-fade-in"
+      style={{
+        paddingTop: 'max(5rem, calc(env(safe-area-inset-top, 0px) + 1.5rem))',
+      }}
+    >
+      <div
+        className="w-full max-w-2xl bg-neutral-900 rounded-2xl shadow-2xl border border-white/10 overflow-hidden animate-scale-in"
+        onClick={e => e.stopPropagation()}
+        onPointerDown={e => e.stopPropagation()}
+      >
         {/* Search Input */}
         <div className="flex items-center gap-3 p-4 border-b border-white/10">
-          <Search className="w-5 h-5 text-white/50" />
-          <div className="relative flex-1">
+          <Search className="w-5 h-5 text-white/50 shrink-0" aria-hidden />
+          <div className="relative min-w-0 flex-1">
             <input
               ref={inputRef}
               type="text"
+              inputMode="search"
+              enterKeyHint="search"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="Search messages and broadcasts..."
-              className="w-full bg-transparent text-white placeholder:text-white/50 outline-none text-base pr-8 chat-search-input"
+              placeholder="Search messages"
+              className="w-full min-w-0 bg-transparent text-white placeholder:text-white/50 outline-none text-base pr-8 chat-search-input"
             />
             {query && (
               <button
@@ -231,7 +250,7 @@ export const ChatSearchOverlay = ({
 
           {!isSearching && totalResults === 0 && !query && (
             <div className="p-8 text-center text-white/50 space-y-2">
-              <p>Type to search messages and broadcasts</p>
+              <p>Search messages</p>
               <p className="text-xs text-white/40">Filters: from:Name · broadcast</p>
             </div>
           )}
@@ -323,4 +342,10 @@ export const ChatSearchOverlay = ({
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  return createPortal(overlay, document.body);
 };

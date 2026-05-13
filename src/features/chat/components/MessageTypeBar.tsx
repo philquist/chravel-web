@@ -262,7 +262,7 @@ export const MessageTypeBar = ({
               'text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap',
               SEGMENT_COLORS.search.inactive,
             )}
-            title="Search messages and broadcasts"
+            title="Search messages"
           >
             <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">Search</span>

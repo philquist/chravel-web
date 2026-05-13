@@ -54,7 +54,7 @@ describe('ChatSearchOverlay search behavior', () => {
     const onResultSelect = vi.fn();
     render(<ChatSearchOverlay tripId="trip-1" onClose={vi.fn()} onResultSelect={onResultSelect} />);
 
-    const searchInput = screen.getByPlaceholderText('Search messages and broadcasts...');
+    const searchInput = screen.getByPlaceholderText('Search messages');
     await user.type(searchInput, 'broadcast from:Coach practice');
 
     await waitFor(() => {
@@ -68,7 +68,7 @@ describe('ChatSearchOverlay search behavior', () => {
     expect(screen.getByText('Broadcast: Practice moved to field 2')).toBeInTheDocument();
 
     await user.click(screen.getByText('Broadcast: Practice moved to field 2'));
-    expect(onResultSelect).toHaveBeenCalledWith('bc-1', 'broadcast');
+    expect(onResultSelect).toHaveBeenCalledWith({ id: 'bc-1', type: 'broadcast' });
   });
 
   it('passes parsed day + sender filters and supports selecting a message result', async () => {
@@ -98,7 +98,7 @@ describe('ChatSearchOverlay search behavior', () => {
     const onResultSelect = vi.fn();
     render(<ChatSearchOverlay tripId="trip-2" onClose={vi.fn()} onResultSelect={onResultSelect} />);
 
-    const searchInput = screen.getByPlaceholderText('Search messages and broadcasts...');
+    const searchInput = screen.getByPlaceholderText('Search messages');
     await user.type(searchInput, 'from:Alex day:2026-04-11 meeting');
 
     await waitFor(() => {
@@ -107,6 +107,6 @@ describe('ChatSearchOverlay search behavior', () => {
     });
 
     await user.click(screen.getByText('Meeting moved to 3 PM'));
-    expect(onResultSelect).toHaveBeenCalledWith('msg-2', 'message');
+    expect(onResultSelect).toHaveBeenCalledWith({ id: 'msg-2', type: 'message' });
   });
 });
