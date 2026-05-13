@@ -8,10 +8,10 @@ describe('AI_VOICE_PROVIDER defaults', () => {
     vi.resetModules();
   });
 
-  it('defaults to livekit when env is unset', async () => {
+  it('defaults to openai when env is unset', async () => {
     vi.stubEnv('VITE_AI_VOICE_PROVIDER', undefined);
     const mod = await loadModule();
-    expect(mod.AI_VOICE_PROVIDER).toBe('livekit');
+    expect(mod.AI_VOICE_PROVIDER).toBe('openai');
   });
 
   it('accepts explicit openai override', async () => {

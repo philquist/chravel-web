@@ -93,3 +93,5 @@
 - 2026-05-12: Updated OpenAI Realtime voice defaults to Onyx (`OPENAI_REALTIME_VOICE` fallback and frontend session request default) per product direction; preserved explicit per-session override support.
 
 - 2026-05-13: Addressed PR #543 security/quality blockers: serialized OpenAI realtime data-channel event processing with synchronous transcript refs to prevent stale/partial turn completion, restored safe default provider fallback to LiveKit, and removed upstream OpenAI error body disclosure from create-openai-realtime-session responses (server-side structured logging only). Added provider-default regression tests.
+
+- 2026-05-13: Switched AI voice provider default back to OpenAI per product decision (LiveKit retained as explicit fallback via VITE_AI_VOICE_PROVIDER=livekit), and updated provider-default unit test/env docs to match.

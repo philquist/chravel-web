@@ -5,7 +5,7 @@
  * import.meta.env (Vite injects at build time; values can be overridden
  * in .env.local for local dev).
  *
- * Voice runtime: provider-selectable (LiveKit default, OpenAI optional). Vertex AI removed.
+ * Voice runtime: provider-selectable (OpenAI default, LiveKit fallback). Vertex AI removed.
  */
 
 type VoiceEnvKey =
@@ -55,7 +55,7 @@ export function getVoiceFlags(): {
 export type VoiceProvider = 'openai' | 'livekit' | 'off';
 
 export const AI_VOICE_PROVIDER = ((): VoiceProvider => {
-  const raw = getEnv('VITE_AI_VOICE_PROVIDER', 'livekit').toLowerCase();
-  if (raw === 'openai' || raw === 'off') return raw;
-  return 'livekit';
+  const raw = getEnv('VITE_AI_VOICE_PROVIDER', 'openai').toLowerCase();
+  if (raw === 'livekit' || raw === 'off') return raw;
+  return 'openai';
 })();
