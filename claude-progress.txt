@@ -87,3 +87,13 @@
 - 2026-05-09: Removed execute-concierge-tool service-role bearer bypass and replaced LiveKit path with short-lived signed agent assertions (`X-Agent-Assertion`) verified server-side (user_id/trip_id/allowed_tools/exp). livekit-token now mints assertion per room and agent forwards it when calling execute-concierge-tool, with tripId claim match + allowed-tools enforcement before execution.
 - 2026-05-10: Follow-up hardening on agent assertion rollout: removed stale `executeFunctionCall`/`userId` remnants from execute-concierge-tool and replaced wildcard assertion scope with explicit external-tool allowlist minted by livekit-token to keep signed claims least-privilege.
 - 2026-05-09: Added durable execute-concierge-tool idempotency for mutating tools by introducing concierge_tool_idempotency reserve/replay store keyed on (idempotency_key,user_id,trip_id,tool_name), wiring pre-execution reservation + duplicate replay short-circuit, and persisting completed result payload/reference for deterministic write dedupe across voice/text retries.
+
+- 2026-05-12: Completed AI Concierge voice architecture audit comparing LiveKit+Gemini vs OpenAI Realtime; documented current transport/tooling split, decision matrix, phased migration plan (D→C→E), rollback strategy, and external service checklist in docs/ai-concierge-voice-migration-audit-2026-05-12.md.
+
+- 2026-05-12: Implemented provider-flagged OpenAI Realtime voice path (default openai) with new Supabase edge function create-openai-realtime-session (auth + trip membership + ephemeral session), frontend WebRTC hook useOpenAIRealtimeVoice, and useConciergeVoice runtime selector while preserving LiveKit fallback.
+
+- 2026-05-12: Updated OpenAI Realtime voice defaults to Onyx (`OPENAI_REALTIME_VOICE` fallback and frontend session request default) per product direction; preserved explicit per-session override support.
+
+- 2026-05-13: Addressed PR #543 security/quality blockers: serialized OpenAI realtime data-channel event processing with synchronous transcript refs to prevent stale/partial turn completion, restored safe default provider fallback to LiveKit, and removed upstream OpenAI error body disclosure from create-openai-realtime-session responses (server-side structured logging only). Added provider-default regression tests.
+
+- 2026-05-13: Switched AI voice provider default back to OpenAI per product decision (LiveKit retained as explicit fallback via VITE_AI_VOICE_PROVIDER=livekit), and updated provider-default unit test/env docs to match.

@@ -4,11 +4,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useWebSpeechVoice } from '@/hooks/useWebSpeechVoice';
 import type { VoiceState } from '@/hooks/useWebSpeechVoice';
 import { useLiveKitVoice } from '@/hooks/useLiveKitVoice';
+import { useOpenAIRealtimeVoice } from '@/hooks/useOpenAIRealtimeVoice';
 import { useVoiceToolHandler } from '@/hooks/useVoiceToolHandler';
 import { supabase } from '@/integrations/supabase/client';
 import type { ToolCallResult } from '@/types/voice';
 import type { ChatMessage } from '@/features/concierge/types';
 import { extractRichMetadata, DUPLEX_VOICE_ENABLED } from '@/features/concierge/utils/chatHelpers';
+import { AI_VOICE_PROVIDER } from '@/config/voiceFeatureFlags';
 import { getConciergeInvalidationKeys, isConciergeWriteAction } from '@/lib/conciergeInvalidation';
 
 interface Params {
@@ -53,7 +55,7 @@ export function useConciergeVoice({
     useWebSpeechVoice(handleDictationResult);
   const isDictationActive = dictationState !== 'idle' && dictationState !== 'error';
 
-  const { handleToolCall: _handleToolCall } = useVoiceToolHandler({ tripId, userId: userId ?? '' });
+  const { handleToolCall } = useVoiceToolHandler({ tripId, userId: userId ?? '' });
 
   const handleLiveTurnComplete = useCallback(
     async (
@@ -201,6 +203,24 @@ export function useConciergeVoice({
     toast.error('Voice error', { description: msg });
   }, []);
 
+  const liveKitVoice = useLiveKitVoice({
+    tripId,
+    onTurnComplete: handleLiveTurnComplete,
+    onRichCard: handleLiveRichCard,
+    onError: handleLiveError,
+    onPartialTranscript: handleLivePartialTranscript,
+  });
+
+  const openAIVoice = useOpenAIRealtimeVoice({
+    tripId,
+    onTurnComplete: handleLiveTurnComplete,
+    onError: handleLiveError,
+    onPartialTranscript: handleLivePartialTranscript,
+    onToolCall: handleToolCall,
+  });
+
+  const voiceRuntime = AI_VOICE_PROVIDER === 'livekit' ? liveKitVoice : openAIVoice;
+
   const {
     state: liveState,
     error: liveError,
@@ -212,13 +232,7 @@ export function useConciergeVoice({
     endSession: endLiveSession,
     circuitBreakerOpen: liveCircuitBreakerOpen,
     resetCircuitBreaker: liveResetCircuitBreaker,
-  } = useLiveKitVoice({
-    tripId,
-    onTurnComplete: handleLiveTurnComplete,
-    onRichCard: handleLiveRichCard,
-    onError: handleLiveError,
-    onPartialTranscript: handleLivePartialTranscript,
-  });
+  } = voiceRuntime;
 
   const convoVoiceState: VoiceState = dictationState;
   const isLiveSessionActive = DUPLEX_VOICE_ENABLED && liveState !== 'idle' && liveState !== 'error';
