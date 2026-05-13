@@ -353,7 +353,8 @@ export const ConsumerPrivacySection = () => {
             <div>
               <div className="text-white font-medium">Share Phone Number with Trip Members</div>
               <div className="text-sm text-gray-400">
-                Allow trip members to see your phone number for direct contact
+                When on, your number appears only in the member contact sheet (open Trip Members,
+                then tap your row)—not inline in chat or member lists.
               </div>
             </div>
             <button

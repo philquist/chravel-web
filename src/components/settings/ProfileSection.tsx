@@ -174,7 +174,9 @@ export const ProfileSection = ({ userOrganization }: ProfileSectionProps) => {
             <div>
               <div className="text-white font-medium">Show Phone in Trips</div>
               <div className="text-sm text-gray-400">
-                Allow trip members to see your phone number
+                Allow trip members to see your phone number. It never appears inline in chat or next
+                to your name; when enabled, it shows in the contact sheet after someone taps your
+                row in Trip Members.
               </div>
             </div>
             <button

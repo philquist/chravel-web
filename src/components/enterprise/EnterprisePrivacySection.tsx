@@ -175,7 +175,9 @@ export const EnterprisePrivacySection = () => {
             <div>
               <div className="text-white font-medium">Share Phone Number</div>
               <div className="text-sm text-gray-400">
-                Allow organization members to see your phone number
+                Not shown on the org roster. When enabled, the same trip privacy rules apply: trip
+                teammates can see it in the member contact sheet (Trip Members, then tap your
+                row)—not inline in chat.
               </div>
             </div>
             <button
