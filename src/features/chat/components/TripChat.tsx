@@ -36,7 +36,6 @@ import { useChatReactions } from '../hooks/useChatReactions';
 import { MessageTypeBar } from './MessageTypeBar';
 import { ChatSearchOverlay } from './ChatSearchOverlay';
 import { useEffectiveSystemMessagePreferences } from '@/hooks/useSystemMessagePreferences';
-import { useTripType } from '@/hooks/useTripType';
 import { ThreadView } from './ThreadView';
 import { FeatureErrorBoundary } from '@/components/FeatureErrorBoundary';
 import { useTripPrivacyConfig, getEffectivePrivacyMode } from '@/hooks/useTripPrivacyConfig';
@@ -444,13 +443,8 @@ export const TripChat = React.memo(
       [demoMode.isDemoMode, togglePin],
     );
 
-    // System message preferences — only meaningful for consumer trips. Use the
-    // DB-backed tier detector so this works for real (UUID) trips, not just
-    // seeded mock IDs.
-    const { isConsumer } = useTripType(resolvedTripId);
-    const { data: systemMessagePrefs } = useEffectiveSystemMessagePreferences(
-      isConsumer ? resolvedTripId : '',
-    );
+    // System message preferences apply to all trip types that use Stream trip chat.
+    const { data: systemMessagePrefs } = useEffectiveSystemMessagePreferences(resolvedTripId);
 
     const {
       inputMessage,
@@ -986,7 +980,7 @@ export const TripChat = React.memo(
             onEdit={demoMode.isDemoMode ? undefined : handleMessageEdit}
             onDelete={demoMode.isDemoMode ? undefined : handleMessageDelete}
             onRetry={handleRetryFailedMessage}
-            systemMessagePrefs={isConsumer ? systemMessagePrefs : undefined}
+            systemMessagePrefs={systemMessagePrefs}
             tripMembers={tripMembers}
             readStatuses={message.readStatuses || readStatusesByMessage[message.id] || []}
             showSenderInfo={showSenderInfo}
@@ -1020,7 +1014,6 @@ export const TripChat = React.memo(
         handleMessageEdit,
         handleMessageDelete,
         handleRetryFailedMessage,
-        isConsumer,
         systemMessagePrefs,
         tripMembers,
         readStatusesByMessage,

@@ -78,14 +78,21 @@ describe('systemMessageService — Stream emission', () => {
     expect(options).toEqual({ skip_push: true });
   });
 
-  it('skips emission for non-consumer trips (pro/event)', async () => {
+  it('emits to Stream for pro trips (same contract as consumer)', async () => {
     setupProTrip();
-    setupConnectedClient();
+    const { channelMock } = setupConnectedClient();
 
     const ok = await systemMessageService.taskCreated(REAL_TRIP, 'Bob', 'task-1', 'Pack');
 
-    expect(ok).toBe(false);
-    expect(sendMessageMock).not.toHaveBeenCalled();
+    expect(ok).toBe(true);
+    expect(channelMock).toHaveBeenCalledWith(CHANNEL_TYPE_TRIP, tripChannelId(REAL_TRIP));
+    expect(sendMessageMock).toHaveBeenCalledTimes(1);
+    const [payload] = sendMessageMock.mock.calls[0];
+    expect(payload).toMatchObject({
+      message_type: 'system',
+      system_event_type: 'task_created',
+      silent: true,
+    });
   });
 
   it('returns false (no throw) when Stream client is not connected', async () => {

@@ -6,10 +6,10 @@
 // generate a push notification for them. Push notifications continue to flow
 // through `send_notification()` independently — the UI promise is upheld.
 //
-// Trip-type gating: this service only emits for consumer trips (per
-// `trips.trip_type`). Pro/Event trips intentionally skip — large rosters
-// would generate spam. The membership DB trigger has the same gate; this
-// keeps client-side emission consistent.
+// Trip-type gating: emits for consumer, pro, and event trips (all use Stream
+// trip chat). Legacy DB triggers may still write `trip_chat_messages` for
+// consumer-only; the UI reads Stream, so client-side emission must cover
+// every trip type that shows trip chat.
 
 import { supabase } from '@/integrations/supabase/client';
 import { isConsumerTrip as isMockConsumerTrip } from '@/utils/tripTierDetector';
@@ -46,7 +46,12 @@ class SystemMessageService {
       .eq('id', tripId)
       .maybeSingle();
 
-    const value = (data?.trip_type as string | null | undefined) ?? null;
+    if (!data) {
+      return null;
+    }
+    const raw = data.trip_type as string | null | undefined;
+    const value =
+      raw === null || raw === undefined || String(raw).trim() === '' ? 'consumer' : String(raw);
     this.tripTypeCache.set(tripId, {
       value,
       expiresAt: Date.now() + this.TRIP_TYPE_CACHE_TTL_MS,
@@ -54,9 +59,14 @@ class SystemMessageService {
     return value;
   }
 
+  private isTripTypeEligibleForInlineActivity(tripType: string | null): boolean {
+    if (!tripType) return false;
+    return tripType === 'consumer' || tripType === 'pro' || tripType === 'event';
+  }
+
   /**
    * Create a system message in the trip chat (Stream).
-   * Only emits for consumer trips; silently no-ops for pro/event/unknown.
+   * Emits for consumer, pro, and event trips; no-ops when trip is missing or unknown type.
    *
    * The message is sent with `silent: true` so Stream skips push delivery —
    * push notifications for activity continue to be driven by the
@@ -69,7 +79,7 @@ class SystemMessageService {
     payload?: SystemMessagePayload,
   ): Promise<boolean> {
     const tripType = await this.getTripType(tripId);
-    if (tripType !== 'consumer') {
+    if (!this.isTripTypeEligibleForInlineActivity(tripType)) {
       return false;
     }
 
@@ -113,7 +123,7 @@ class SystemMessageService {
     mediaType: 'photo' | 'file',
   ): Promise<void> {
     const tripType = await this.getTripType(tripId);
-    if (tripType !== 'consumer') {
+    if (!this.isTripTypeEligibleForInlineActivity(tripType)) {
       return;
     }
 

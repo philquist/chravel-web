@@ -2,8 +2,15 @@ import type { QueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { tripKeys } from '@/lib/queryKeys';
+import { syncTripMemberToStreamAndEmitMemberJoined } from '@/lib/streamTripMemberInlineActivity';
 
-type RpcResult = { success: boolean; message: string; cleaned_up?: boolean } | null;
+type RpcResult = {
+  success: boolean;
+  message: string;
+  cleaned_up?: boolean;
+  trip_id?: string;
+  user_id?: string;
+} | null;
 
 function invalidateTripJoinCaches(
   queryClient: QueryClient,
@@ -43,6 +50,40 @@ export async function approveJoinRequestById(
       return;
     }
     throw new Error(result.message || 'Failed to approve request');
+  }
+
+  const resolvedTripId = result?.trip_id ?? tripId;
+  const joiningUserId = result?.user_id;
+
+  if (resolvedTripId && joiningUserId) {
+    const { data: profile } = await supabase
+      .from('profiles_public')
+      .select('resolved_display_name, display_name, first_name, last_name')
+      .eq('user_id', joiningUserId)
+      .maybeSingle();
+
+    let memberDisplayName: string | null = null;
+    if (profile) {
+      memberDisplayName =
+        profile.resolved_display_name ||
+        profile.display_name ||
+        [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim() ||
+        null;
+    }
+    if (!memberDisplayName) {
+      memberDisplayName = 'Someone';
+    }
+
+    try {
+      await syncTripMemberToStreamAndEmitMemberJoined({
+        tripId: resolvedTripId,
+        joiningUserId,
+        memberDisplayName,
+        syncFailureContext: 'approve-join-request',
+      });
+    } catch {
+      // Stream sync / inline message are best-effort; membership in Postgres already succeeded.
+    }
   }
 
   toast.success('✅ Request approved');
