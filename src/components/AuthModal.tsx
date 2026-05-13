@@ -396,9 +396,9 @@ export const AuthModal = ({
                     setMode('signin');
                     setError('');
                   }}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all bg-gradient-to-r from-glass-orange to-glass-yellow text-black ${
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all bg-gradient-to-r from-gold-primary to-gold-light text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light ${
                     mode === 'signin'
-                      ? 'ring-2 ring-glass-yellow shadow-lg'
+                      ? 'ring-2 ring-gold-light shadow-lg shadow-gold-glow'
                       : 'opacity-70 hover:opacity-100'
                   }`}
                 >
@@ -409,9 +409,9 @@ export const AuthModal = ({
                     setMode('signup');
                     setError('');
                   }}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all bg-gradient-to-r from-glass-orange to-glass-yellow text-black ${
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all bg-gradient-to-r from-gold-primary to-gold-light text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light ${
                     mode === 'signup'
-                      ? 'ring-2 ring-glass-yellow shadow-lg'
+                      ? 'ring-2 ring-gold-light shadow-lg shadow-gold-glow'
                       : 'opacity-70 hover:opacity-100'
                   }`}
                 >
