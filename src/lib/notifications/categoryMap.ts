@@ -143,6 +143,12 @@ export const NOTIFICATION_CATEGORY_MAP: Record<
   },
 };
 
+// Hydrate legacy aliases (`backendTypes`, `category`) for callers/tests that use them.
+Object.values(NOTIFICATION_CATEGORY_MAP).forEach(def => {
+  def.backendTypes = def.backendNotificationTypes;
+  def.category = def.key;
+});
+
 const TYPE_TO_CATEGORY_ENTRIES = Object.values(NOTIFICATION_CATEGORY_MAP).flatMap(category =>
   category.backendNotificationTypes.map(type => [type.toLowerCase(), category.key] as const),
 );
