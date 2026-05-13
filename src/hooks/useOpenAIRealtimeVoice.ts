@@ -1,4 +1,9 @@
-import { supabase } from '@/integrations/supabase/client';
+import {
+  supabase,
+  SUPABASE_PROJECT_URL,
+  SUPABASE_PUBLIC_API_KEY,
+} from '@/integrations/supabase/client';
+import { resolveOpenAiRealtimeSdpPostUrl } from '@/lib/openaiRealtimeWebRtc';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   GeminiLiveState,
@@ -79,7 +84,7 @@ export function useOpenAIRealtimeVoice(
 ): UseOpenAIRealtimeVoiceReturn {
   const {
     tripId,
-    voice = 'onyx',
+    voice = 'alloy',
     onTurnComplete,
     onPartialTranscript,
     onError,
@@ -221,23 +226,47 @@ export function useOpenAIRealtimeVoice(
       substep: 'Creating session',
     }));
 
+    const {
+      data: { session: authSession },
+    } = await supabase.auth.getSession();
+    const accessToken = authSession?.access_token;
+    if (!accessToken) {
+      throw new Error('Sign in required to start voice');
+    }
+
     const tokenResp = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-openai-realtime-session`,
+      `${SUPABASE_PROJECT_URL}/functions/v1/create-openai-realtime-session`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`,
+          Authorization: `Bearer ${accessToken}`,
+          apikey: SUPABASE_PUBLIC_API_KEY,
         },
         body: JSON.stringify({ tripId, voice }),
       },
     );
 
-    if (!tokenResp.ok) throw new Error('Failed to initialize voice session');
-    const sessionData = await tokenResp.json();
-    const ephemeralKey = sessionData?.client_secret?.value;
-    const model = sessionData?.model;
-    if (!ephemeralKey || !model) throw new Error('Invalid voice session response');
+    const sessionRaw = await tokenResp.text();
+    let sessionData: Record<string, unknown> = {};
+    try {
+      sessionData = JSON.parse(sessionRaw) as Record<string, unknown>;
+    } catch {
+      sessionData = {};
+    }
+
+    if (!tokenResp.ok) {
+      const errMsg =
+        typeof sessionData.error === 'string' && sessionData.error.trim()
+          ? sessionData.error.trim()
+          : 'Failed to initialize voice session';
+      throw new Error(errMsg);
+    }
+
+    const ephemeralKey =
+      (sessionData.client_secret as { value?: string } | undefined)?.value ??
+      (typeof sessionData.value === 'string' ? sessionData.value : undefined);
+    if (!ephemeralKey) throw new Error('Invalid voice session response');
 
     const pc = new RTCPeerConnection();
     pcRef.current = pc;
@@ -269,8 +298,8 @@ export function useOpenAIRealtimeVoice(
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    const baseUrl = sessionData?.realtime_url || 'https://api.openai.com/v1/realtime';
-    const sdpResp = await fetch(`${baseUrl}?model=${encodeURIComponent(model)}`, {
+    const sdpPostUrl = resolveOpenAiRealtimeSdpPostUrl(sessionData);
+    const sdpResp = await fetch(sdpPostUrl, {
       method: 'POST',
       body: offer.sdp,
       headers: {
@@ -279,7 +308,10 @@ export function useOpenAIRealtimeVoice(
       },
     });
 
-    if (!sdpResp.ok) throw new Error('Failed to negotiate realtime connection');
+    if (!sdpResp.ok) {
+      await sdpResp.text().catch(() => '');
+      throw new Error(`Voice connection failed (${sdpResp.status})`);
+    }
     const answerSdp = await sdpResp.text();
     await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
     setDiagnostics(prev => ({ ...prev, connectionStatus: 'open', substep: null }));

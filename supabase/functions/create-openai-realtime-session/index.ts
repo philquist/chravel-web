@@ -8,6 +8,11 @@ import { VOICE_FUNCTION_DECLARATIONS, VOICE_ADDENDUM } from '../_shared/voiceToo
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
+async function sha256Hex(input: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+}
+
 serve(async req => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -56,7 +61,7 @@ serve(async req => {
 
   const body = await req.json().catch(() => ({}));
   const tripId = typeof body?.tripId === 'string' ? body.tripId.trim() : '';
-  const fallbackVoice = (Deno.env.get('OPENAI_REALTIME_VOICE') || 'onyx').trim();
+  const fallbackVoice = (Deno.env.get('OPENAI_REALTIME_VOICE') || 'alloy').trim();
   const voice = typeof body?.voice === 'string' ? body.voice.trim() : fallbackVoice;
 
   if (!tripId) {
@@ -84,11 +89,14 @@ serve(async req => {
 
   const prompt = `You are the Chravel AI Concierge for trip ${tripId}. ${VOICE_ADDENDUM}`;
 
+  const safetyId = await sha256Hex(user.id);
+
   const resp = await fetch('https://api.openai.com/v1/realtime/sessions', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${OPENAI_API_KEY}`,
       'Content-Type': 'application/json',
+      'OpenAI-Safety-Identifier': safetyId,
     },
     body: JSON.stringify({
       model,
