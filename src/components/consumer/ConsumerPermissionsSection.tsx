@@ -7,11 +7,13 @@ import { ToastAction } from '@/components/ui/toast';
 import {
   getPermissionStatus,
   openAppSettings,
+  openNotificationSettingsIfAvailable,
   requestPermission,
   type PermissionId,
   type PermissionState,
   type PermissionStatus,
 } from '@/lib/webPermissions';
+import { isInstalledApp } from '@/utils/platformDetection';
 
 function formatState(state: PermissionState): string {
   switch (state) {
@@ -130,6 +132,24 @@ export const ConsumerPermissionsSection = () => {
     void refresh();
   }, [refresh]);
 
+  const handleOpenSettings = useCallback(async () => {
+    const opened = await openAppSettings();
+    if (!opened) {
+      toast({
+        title: 'Unable to open Settings',
+        description:
+          'Open the Settings app on your device, find Chravel, and adjust permissions there.',
+      });
+    }
+  }, [toast]);
+
+  const handleOpenNotificationSettings = useCallback(async () => {
+    const opened = await openNotificationSettingsIfAvailable();
+    if (!opened) {
+      await handleOpenSettings();
+    }
+  }, [handleOpenSettings]);
+
   const handleRequest = useCallback(
     async (id: PermissionId) => {
       setBusyId(id);
@@ -148,15 +168,43 @@ export const ConsumerPermissionsSection = () => {
         if (result === 'denied') {
           toast({
             title: 'Permission denied',
-            description: 'You can enable it in iOS Settings.',
+            description: isInstalledApp()
+              ? 'Enable this permission in your device Settings for Chravel.'
+              : 'You can enable it in your browser or device settings.',
             variant: 'destructive',
+            action: isInstalledApp() ? (
+              <ToastAction
+                altText="Open Settings"
+                onClick={() =>
+                  void (id === 'notifications'
+                    ? handleOpenNotificationSettings()
+                    : handleOpenSettings())
+                }
+              >
+                Open Settings
+              </ToastAction>
+            ) : undefined,
           });
           return;
         }
 
         toast({
           title: 'Not enabled',
-          description: 'If you changed your mind, try again or enable it in iOS Settings.',
+          description: isInstalledApp()
+            ? 'If you changed your mind, try again or enable it in Settings for Chravel.'
+            : 'If you changed your mind, try again or enable it in your browser settings.',
+          action: isInstalledApp() ? (
+            <ToastAction
+              altText="Open Settings"
+              onClick={() =>
+                void (id === 'notifications'
+                  ? handleOpenNotificationSettings()
+                  : handleOpenSettings())
+              }
+            >
+              Open Settings
+            </ToastAction>
+          ) : undefined,
         });
       } catch (error) {
         toast({
@@ -168,18 +216,8 @@ export const ConsumerPermissionsSection = () => {
         setBusyId(null);
       }
     },
-    [refresh, toast],
+    [refresh, toast, handleOpenSettings, handleOpenNotificationSettings],
   );
-
-  const handleOpenSettings = useCallback(async () => {
-    const opened = await openAppSettings();
-    if (!opened) {
-      toast({
-        title: 'Unable to open Settings',
-        description: 'This is only available inside the iOS app.',
-      });
-    }
-  }, [toast]);
 
   const handleToggleChange = useCallback(
     async (id: PermissionId, checked: boolean) => {
@@ -197,7 +235,7 @@ export const ConsumerPermissionsSection = () => {
       toast({
         title: 'Revoke in Settings',
         description:
-          'To turn off this permission, open iOS Settings → Chravel and toggle it off there.',
+          'To turn off this permission, open your device Settings, choose Chravel, and toggle it off there.',
         action: canOpenSettings ? (
           <ToastAction altText="Open Settings" onClick={() => void handleOpenSettings()}>
             Open Settings
