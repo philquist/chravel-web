@@ -286,7 +286,8 @@ export const ProTripCard = ({
     'group bg-gradient-to-br backdrop-blur-xl border border-white/15 hover:border-white/30 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-black/30 relative';
   const actionButtonClass = cn(
     buttonVariants({ variant: 'ghost', size: 'sm' }),
-    'bg-black/30 hover:bg-black/40 text-white border border-white/20 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed md:min-h-[44px] md:text-sm text-xs px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
+    // Ghost applies hover:text-accent-foreground (black); keep CTA labels white when pressed/hovered.
+    'bg-black/30 hover:bg-black/40 text-white border border-white/20 hover:border-white/30 hover:text-white active:text-white focus-visible:text-white disabled:opacity-50 disabled:cursor-not-allowed md:min-h-[44px] md:text-sm text-xs px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
   );
 
   const shareTrip = {

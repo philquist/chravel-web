@@ -217,7 +217,8 @@ export const EventCard = ({
 
   const actionButtonClass = cn(
     buttonVariants({ variant: 'ghost', size: 'sm' }),
-    'bg-black/30 hover:bg-black/40 text-white border border-white/20 hover:border-white/30 md:min-h-[44px] md:text-sm text-xs px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
+    // Match TripCard/ProTripCard: ghost hover text would be accent-foreground (black) on glass CTAs.
+    'bg-black/30 hover:bg-black/40 text-white border border-white/20 hover:border-white/30 hover:text-white active:text-white focus-visible:text-white md:min-h-[44px] md:text-sm text-xs px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
   );
 
   // Build share trip data for ShareTripModal
