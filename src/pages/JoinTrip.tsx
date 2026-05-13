@@ -4,10 +4,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/client';
 import { useAuth } from '../hooks/useAuth';
 import { AuthModal } from '@/components/AuthModal';
+import type { User } from '@supabase/supabase-js';
 import {
   reportStreamMembershipSyncFailure,
   syncAddMemberToTripChannels,
 } from '@/services/stream/streamMembershipCoordinator';
+import { syncTripMemberToStreamAndEmitMemberJoined } from '@/lib/streamTripMemberInlineActivity';
 import { toast } from 'sonner';
 import {
   Users,
@@ -55,6 +57,21 @@ interface InvitePreviewData {
 }
 
 const INVITE_CODE_STORAGE_KEY = 'chravel_pending_invite_code';
+
+function resolveAuthUserDisplayName(user: User): string {
+  const meta = user.user_metadata as Record<string, unknown> | undefined;
+  const fromMeta = (key: string): string | undefined => {
+    const v = meta?.[key];
+    return typeof v === 'string' && v.trim().length > 0 ? v.trim() : undefined;
+  };
+  return (
+    fromMeta('full_name') ||
+    fromMeta('name') ||
+    fromMeta('display_name') ||
+    (user.email?.split('@')[0] ?? '').trim() ||
+    'Someone'
+  );
+}
 
 /**
  * Generate a contextual urgency line from trip start date.
@@ -419,13 +436,6 @@ const JoinTrip = () => {
       // Post-join cleanup: invalidate queries and clear stored invite code
       const tripId = data.trip_id || inviteData.invite.trip_id;
 
-      // Sync membership to Stream channels (fire-and-forget, non-fatal)
-      if (tripId && user?.id) {
-        syncAddMemberToTripChannels(tripId, user.id).catch(error => {
-          reportStreamMembershipSyncFailure('add-trip-member', { tripId, userId: user.id }, error);
-        });
-      }
-
       clearInviteCode();
       void invalidatePendingRequestState(queryClient, { tripId });
 
@@ -442,6 +452,32 @@ const JoinTrip = () => {
           navigate('/', { replace: true });
         }, 2000);
         return;
+      }
+
+      if (tripId && user?.id) {
+        if (data.already_member) {
+          void syncAddMemberToTripChannels(tripId, user.id).catch(error => {
+            reportStreamMembershipSyncFailure(
+              'add-trip-member',
+              { tripId, userId: user.id },
+              error,
+            );
+          });
+        } else {
+          const memberDisplayName = resolveAuthUserDisplayName(user);
+          void syncTripMemberToStreamAndEmitMemberJoined({
+            tripId,
+            joiningUserId: user.id,
+            memberDisplayName,
+            syncFailureContext: 'join-trip-invite',
+          }).catch(error => {
+            reportStreamMembershipSyncFailure(
+              'join-trip-inline-activity',
+              { tripId, userId: user.id },
+              error,
+            );
+          });
+        }
       }
 
       if (data.already_member) {
