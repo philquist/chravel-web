@@ -306,6 +306,12 @@ export function useOpenAIRealtimeVoice(
       try {
         await startSession();
       } catch (e) {
+        clearSession();
+        userTranscriptRef.current = '';
+        assistantTranscriptRef.current = '';
+        pendingToolResultsRef.current = [];
+        setUserTranscript('');
+        setAssistantTranscript('');
         const msg = e instanceof Error ? e.message : 'Failed to start voice session';
         setError(msg);
         setState('error');
