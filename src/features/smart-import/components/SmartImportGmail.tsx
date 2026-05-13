@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { fetchGmailAccounts, GmailAccount } from '../api/gmailAuth';
+import { fetchGmailAccounts, GmailAccount, extractFunctionErrorMessage } from '../api/gmailAuth';
 import { supabase } from '@/integrations/supabase/client';
 import type { SmartImportCandidate, ImportPhase } from '../types';
 import { IMPORT_PHASE_LABELS } from '../types';
@@ -143,7 +143,13 @@ export const SmartImportGmail: React.FC<SmartImportGmailProps> = ({
         body: { tripId, accountId: selectedAccountId },
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        const message = await extractFunctionErrorMessage(
+          error,
+          'Gmail import failed. Check your connection and try again.',
+        );
+        throw new Error(message);
+      }
 
       // Detect token expired error returned as a 401 payload
       if (data?.error && /token expired|reconnect/i.test(data.error)) {

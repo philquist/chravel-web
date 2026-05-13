@@ -20,6 +20,7 @@ import {
   Sparkles,
   Globe,
   Link,
+  Mail,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { findDuplicateEvents } from '@/utils/calendarImport';
@@ -38,6 +39,15 @@ import { tripKeys } from '@/lib/queryKeys';
 import { useSmartImportDropzone } from '@/hooks/useSmartImportDropzone';
 import { useModalFileDropGuard } from '@/hooks/useModalFileDropGuard';
 import { validateImportUrl } from '@/features/calendar/utils/importUrlValidation';
+import { SmartImportGmail } from '@/features/smart-import/components/SmartImportGmail';
+import { SmartImportReview } from '@/features/smart-import/components/SmartImportReview';
+import type { SmartImportCandidate } from '@/features/smart-import/types';
+import { gmailAcceptedCandidatesToSmartParseResult } from '@/features/calendar/utils/gmailReservationsToCalendarParseResult';
+import { normalizeCalendarCategory } from '@/constants/calendarCategories';
+import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
+import { hasPaidAccess } from '@/utils/paidAccess';
+import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
+import { useNavigate } from 'react-router-dom';
 
 interface CalendarImportModalProps {
   isOpen: boolean;
@@ -53,7 +63,7 @@ interface CalendarImportModalProps {
   onStartBackgroundImport?: (url: string) => void;
 }
 
-type ImportState = 'idle' | 'parsing' | 'preview' | 'importing' | 'complete';
+type ImportState = 'idle' | 'parsing' | 'preview' | 'importing' | 'complete' | 'review_gmail';
 
 const FORMAT_BADGES = [
   { label: 'ICS', icon: Calendar },
@@ -62,6 +72,7 @@ const FORMAT_BADGES = [
   { label: 'PDF', icon: FileText },
   { label: 'Image', icon: Image },
   { label: 'URL', icon: Globe },
+  { label: 'Gmail', icon: Mail },
 ];
 
 const IMPORT_CONTROL_CLASS =
@@ -85,8 +96,16 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
   const [showPasteInput, setShowPasteInput] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [urlInput, setUrlInput] = useState('');
-  const [parsingSource, setParsingSource] = useState<'file' | 'text' | 'url'>('file');
+  const [parsingSource, setParsingSource] = useState<'file' | 'text' | 'url' | 'gmail'>('file');
+  const [gmailCandidates, setGmailCandidates] = useState<SmartImportCandidate[]>([]);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
+  const canUseGmailSmartImport = hasPaidAccess({
+    tier,
+    status: subscription?.status,
+    isSuperAdmin,
+  });
   const { onDragOverCapture, onDropCapture } = useModalFileDropGuard({ enabled: isOpen });
 
   const processParseResult = useCallback(
@@ -128,7 +147,7 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
 
   const { getRootProps, getInputProps, isDragActive } = useSmartImportDropzone({
     onFileSelected: processFile,
-    disabled: state === 'parsing' || state === 'importing',
+    disabled: state === 'parsing' || state === 'importing' || state === 'review_gmail',
   });
 
   const resetState = useCallback(() => {
@@ -140,6 +159,7 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
     setPasteText('');
     setUrlInput('');
     setParsingSource('file');
+    setGmailCandidates([]);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -194,10 +214,11 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
 
     setState('importing');
 
-    // Build array of non-duplicate events upfront
+    // Build array of non-duplicate events upfront (preserve original indices for Gmail metadata)
     const eventsToInsert = parseResult.events
-      .filter((_, i) => !duplicateIndices.has(i))
-      .map(event => {
+      .map((event, index) => ({ event, index }))
+      .filter(({ index }) => !duplicateIndices.has(index))
+      .map(({ event, index }) => {
         let endTime: string | undefined;
         if (event.endTime && event.endTime.getTime() !== event.startTime.getTime()) {
           endTime = event.endTime.toISOString();
@@ -207,6 +228,10 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
           endTime = endOfDay.toISOString();
         }
 
+        const rawCategory = parseResult.eventMeta?.[index]?.eventCategory;
+        const eventCategory = rawCategory ? normalizeCalendarCategory(rawCategory) : 'other';
+        const isGmail = parseResult.sourceFormat === 'gmail';
+
         return {
           trip_id: tripId,
           title: event.title,
@@ -214,12 +239,13 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
           start_time: event.startTime.toISOString(),
           end_time: endTime,
           location: event.location,
-          event_category: 'other' as const,
+          event_category: eventCategory,
           include_in_itinerary: true,
           source_type: 'manual',
           source_data: {
             imported_from: parseResult.sourceFormat,
             original_uid: event.uid,
+            ...(isGmail ? { from_gmail_smart_import: true as const } : {}),
           },
         };
       });
@@ -386,6 +412,52 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
                 </div>
               </div>
 
+              <div
+                className="rounded-xl border border-border/60 bg-muted/20 px-3 py-2"
+                onClick={e => e.stopPropagation()}
+                onKeyDown={e => e.stopPropagation()}
+              >
+                <p className="text-xs text-muted-foreground mb-2 text-center flex items-center justify-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 shrink-0" aria-hidden />
+                  or scan Gmail for reservations
+                </p>
+                {canUseGmailSmartImport ? (
+                  <SmartImportGmail
+                    tripId={tripId}
+                    onImportStarted={() => {
+                      setParsingSource('gmail');
+                      setState('parsing');
+                    }}
+                    onImportComplete={candidates => {
+                      setGmailCandidates(candidates);
+                      setState('review_gmail');
+                    }}
+                    onImportError={() => setState('idle')}
+                  />
+                ) : (
+                  <div className="text-center text-sm text-muted-foreground px-2 pb-2 space-y-2">
+                    <p>Gmail scanning is available on Explorer and above.</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="min-h-[44px]"
+                      type="button"
+                      onClick={() => {
+                        const paywall = getFeaturePaywallConfig('smart_import_calendar');
+                        navigate(
+                          `${paywall.destination.pathname}${paywall.destination.search}`,
+                          paywall.destination.state
+                            ? { state: paywall.destination.state }
+                            : undefined,
+                        );
+                      }}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                )}
+              </div>
+
               {/* Paste schedule toggle */}
               <div className="flex items-center gap-3 px-1">
                 <Switch
@@ -428,14 +500,43 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
             <div className="flex flex-col items-center justify-center py-12">
               <div className="animate-spin h-10 w-10 gold-gradient-spinner mb-4" />
               <p className="text-muted-foreground">
-                {parsingSource === 'url'
-                  ? 'Scanning website for schedule...'
-                  : parsingSource === 'text'
-                    ? 'AI is extracting events from text...'
-                    : parseResult?.sourceFormat === 'pdf' || parseResult?.sourceFormat === 'image'
-                      ? 'AI is extracting events...'
-                      : 'Parsing calendar file...'}
+                {parsingSource === 'gmail'
+                  ? 'Scanning Gmail for travel confirmations...'
+                  : parsingSource === 'url'
+                    ? 'Scanning website for schedule...'
+                    : parsingSource === 'text'
+                      ? 'AI is extracting events from text...'
+                      : parseResult?.sourceFormat === 'pdf' || parseResult?.sourceFormat === 'image'
+                        ? 'AI is extracting events...'
+                        : 'Parsing calendar file...'}
               </p>
+            </div>
+          )}
+
+          {state === 'review_gmail' && (
+            <div className="px-1 pb-2">
+              <SmartImportReview
+                candidates={gmailCandidates}
+                tripId={tripId}
+                onAccept={async accepted => {
+                  const parsed = gmailAcceptedCandidatesToSmartParseResult(accepted);
+                  if (!parsed.isValid || parsed.events.length === 0) {
+                    toast.error('No calendar-ready events', {
+                      description:
+                        parsed.errors[0] ??
+                        'Selected items did not include usable date/time fields.',
+                    });
+                    setGmailCandidates([]);
+                    setState('idle');
+                    return;
+                  }
+                  processParseResult(parsed);
+                }}
+                onCancel={() => {
+                  setGmailCandidates([]);
+                  setState('idle');
+                }}
+              />
             </div>
           )}
 

@@ -15,7 +15,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { getSmartImportErrorMessage } from '@/utils/smartImportPaywall';
 import ExcelJS from 'exceljs';
 
-export type ImportSourceFormat = 'ics' | 'csv' | 'excel' | 'pdf' | 'image' | 'text' | 'url';
+export type ImportSourceFormat =
+  | 'ics'
+  | 'csv'
+  | 'excel'
+  | 'pdf'
+  | 'image'
+  | 'text'
+  | 'url'
+  | 'gmail';
 
 export interface SmartParseResult extends ICSParseResult {
   /** Which parser handled this file */
@@ -24,6 +32,8 @@ export interface SmartParseResult extends ICSParseResult {
   confidenceScores?: number[];
   /** Metadata from URL scrape (total found vs filtered) */
   urlMeta?: { eventsFound: number; eventsFiltered: number };
+  /** Optional per-event metadata (same length as `events` when set), e.g. Gmail-derived categories */
+  eventMeta?: Array<{ eventCategory?: string } | undefined>;
 }
 
 // ─── Column Detection Heuristics ─────────────────────────────────────────────
@@ -626,6 +636,8 @@ export function getFormatLabel(format: ImportSourceFormat): string {
       return 'Pasted Text';
     case 'url':
       return 'Website URL';
+    case 'gmail':
+      return 'Gmail (Smart Import)';
     default:
       return 'Unknown';
   }
