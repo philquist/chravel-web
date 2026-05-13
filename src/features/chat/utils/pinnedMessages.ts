@@ -8,8 +8,17 @@ export type PinnedChatMessage = {
   pinnedAt?: string;
 };
 
-export function isPinnedMessage(message: { isPinned?: boolean; [key: string]: unknown }) {
-  return message.isPinned === true;
+export function isPinnedMessage(message: {
+  isPinned?: boolean;
+  pinned?: boolean;
+  pinnedAt?: string | null;
+  pinned_at?: string | null;
+}) {
+  if (message.isPinned === true || message.pinned === true) return true;
+
+  if (message.isPinned === false || message.pinned === false) return false;
+
+  return Boolean(message.pinnedAt || message.pinned_at);
 }
 
 /**
