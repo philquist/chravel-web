@@ -210,7 +210,6 @@ export function useDashboardJoinRequests(isDemoMode = false) {
           trip_id,
           user_id,
           requested_at,
-          created_at,
           requester_name,
           requester_email,
           trips (

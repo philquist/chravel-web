@@ -12,8 +12,10 @@ vi.mock('@/services/userPreferencesService', () => ({
   },
 }));
 
+const authState = { user: { id: 'user-1', email: 't@example.com' } };
+
 vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => ({ user: { id: 'user-1', email: 't@example.com' } }),
+  useAuth: () => authState,
 }));
 
 vi.mock('@/hooks/use-toast', () => ({
@@ -54,18 +56,17 @@ describe('EventNotificationsSection', () => {
 
     render(<EventNotificationsSection />);
 
-    expect(document.querySelector('.gold-gradient-spinner')).toBeInTheDocument();
+    expect(screen.getByText('Loading your saved notification preferences…')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: /toggle broadcasts notifications/i })).toBeDisabled();
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(15_000);
     });
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('heading', { level: 3, name: 'Event Notifications' }),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Loading your saved notification preferences…')).toBeInTheDocument();
     });
-    expect(document.querySelector('.gold-gradient-spinner')).not.toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: /toggle broadcasts notifications/i })).toBeDisabled();
   });
 
   it('renders preferences after a successful fetch', async () => {
@@ -98,5 +99,46 @@ describe('EventNotificationsSection', () => {
     });
 
     expect(getNotificationPreferences).toHaveBeenCalledWith('user-1');
+  });
+
+  it('hydrates persisted values and overwrites bootstrap values deterministically across refresh/login', async () => {
+    getNotificationPreferences
+      .mockResolvedValueOnce({
+        push_enabled: false,
+        email_enabled: true,
+        sms_enabled: false,
+        broadcasts: false,
+        calendar_events: false,
+        join_requests: true,
+        tasks: true,
+        polls: true,
+      })
+      .mockResolvedValueOnce({
+        push_enabled: true,
+        email_enabled: false,
+        sms_enabled: true,
+        broadcasts: true,
+        calendar_events: true,
+        join_requests: false,
+        tasks: false,
+        polls: false,
+      });
+
+    const { rerender } = render(<EventNotificationsSection />);
+
+    const pushToggle = await screen.findByRole('switch', { name: /toggle push notifications/i });
+    expect(pushToggle).toHaveAttribute('aria-checked', 'false');
+
+    authState.user = { id: 'user-2', email: 'next@example.com' };
+    rerender(<EventNotificationsSection />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('switch', { name: /toggle push notifications/i })).toHaveAttribute(
+        'aria-checked',
+        'true',
+      );
+    });
+    expect(getNotificationPreferences).toHaveBeenNthCalledWith(1, 'user-1');
+    expect(getNotificationPreferences).toHaveBeenNthCalledWith(2, 'user-2');
   });
 });

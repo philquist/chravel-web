@@ -151,14 +151,27 @@ export const NotificationPreferences = () => {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <Label htmlFor="invites">Trip invitations</Label>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="messages">Messages</Label>
             </div>
             <Switch
-              id="invites"
-              checked={prefs.trip_invites}
-              onCheckedChange={v => updatePreference('trip_invites', v)}
-              aria-label="Toggle trip invitation notifications"
+              id="messages"
+              checked={prefs.messages}
+              onCheckedChange={v => void updatePreference('messages', v)}
+              aria-label="Toggle message notifications"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="polls">Polls</Label>
+            </div>
+            <Switch
+              id="polls"
+              checked={prefs.polls}
+              onCheckedChange={v => void updatePreference('polls', v)}
+              aria-label="Toggle poll notifications"
             />
           </div>
         </div>

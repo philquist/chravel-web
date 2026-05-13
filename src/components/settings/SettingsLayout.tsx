@@ -93,7 +93,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
         </div>
 
         <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
-          <div className="p-3 md:p-4 min-w-0 pb-[max(1.25rem,calc(env(safe-area-inset-bottom,0px)+1rem))]">
+          <div className="p-3 md:p-4 min-w-0 pb-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1rem))]">
             {children}
           </div>
         </div>
@@ -132,7 +132,9 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
             {currentSection?.label ?? title}
           </h3>
         </div>
-        <div className="min-w-0 space-y-4 px-6 py-5 pb-20">{children}</div>
+        <div className="min-w-0 space-y-4 px-6 py-5 pb-[max(5rem,calc(env(safe-area-inset-bottom,0px)+2.5rem))]">
+          {children}
+        </div>
       </main>
     </div>
   );

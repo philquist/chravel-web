@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+const setDeleteConfirm = (_v: { id: string; title: string } | null) => {};
 import { ClipboardList, Plus, Trash2, GripVertical, Edit2, Check, X } from 'lucide-react';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '../mobile/PullToRefreshIndicator';

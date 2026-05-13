@@ -22,6 +22,7 @@ import { useNotificationRealtime } from '@/hooks/useNotificationRealtime';
 import { mockNotifications } from '@/mockData/notifications';
 import { approveJoinRequestById, rejectJoinRequestById } from '@/lib/joinRequestMutations';
 import { cn } from '@/lib/utils';
+import { resolveNotificationCategoryByType } from '@/lib/notifications/categoryMap';
 import { useDemoTripMembersStore } from '@/store/demoTripMembersStore';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
@@ -36,7 +37,10 @@ import {
 } from '@/components/ui/dialog';
 
 import type { NotificationPayload as Notification } from '@/types/notifications';
-import { parseNotificationMetadata, resolveNotificationTab } from '@/lib/notifications/navigation';
+import {
+  parseNotificationMetadata,
+  resolveNotificationNavigation,
+} from '@/lib/notifications/navigation';
 
 interface NotificationsDialogProps {
   open: boolean;
@@ -97,6 +101,29 @@ function extractTripNameFromApprovalDescription(description: string): string | n
   return match?.[1]?.trim() || null;
 }
 
+function resolveNotificationTab(
+  notification: Notification,
+  metadata: NotificationMetadata,
+): string | null {
+  const notificationType = notification.type.toLowerCase();
+  const metadataChannelType = getMetadataString(metadata, 'channel_type').toLowerCase();
+  const metadataTab = getMetadataString(metadata, 'tab').toLowerCase();
+
+  if (notificationType === 'mention') {
+    return 'chat';
+  }
+
+  if (metadataTab) {
+    return metadataTab;
+  }
+
+  if (metadataChannelType === 'chat' || metadataChannelType === 'messages') {
+    return 'chat';
+  }
+
+  return resolveNotificationCategoryByType(notificationType)?.deepLinkTab ?? null;
+}
+
 function buildNavigationTarget(
   notification: Notification,
   resolvedTripId: string,
@@ -112,7 +139,8 @@ function buildNavigationTarget(
     baseRoute = `/event/${resolvedTripId}`;
   }
 
-  const tab = resolveNotificationTab(notification, metadata);
+  const navigation = resolveNotificationNavigation(notification, metadata);
+  const { tab } = navigation;
   const isJoinApproved = isJoinRequestApprovedNotification(notification);
   const path = !isJoinApproved && tab ? `${baseRoute}?tab=${tab}` : baseRoute;
 
@@ -130,7 +158,7 @@ function buildNavigationTarget(
     getMetadataString(metadata, 'channel_type');
   const openThreadId = getMetadataString(metadata, 'thread_id');
 
-  const shouldHandshakeChat = tab === 'chat' || notification.type.toLowerCase() === 'mention';
+  const shouldHandshakeChat = navigation.shouldHandshakeChat;
 
   if (!shouldHandshakeChat) {
     return { path };
