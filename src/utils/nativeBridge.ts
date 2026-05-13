@@ -8,6 +8,10 @@
  *     the first interactive surface is mounted.
  *   - Message names ('ready', 'chravel-web' source) are part of the contract — do
  *     not rename without updating chravel-mobile in lockstep.
+ *   - Optional Settings: `window.ChravelNative.openAppSettings()` and/or
+ *     `openNotificationSettings()` — used by Permissions Center when the OS has
+ *     denied a capability (see `src/lib/webPermissions.ts`). Implement in the shell
+ *     when `App.openUrl` / Capacitor is not available.
  *   - Optional OAuth: `window.ChravelNative.openOAuthUrl(url)` — native should open
  *     the provider URL in an auth session (e.g. Expo `WebBrowser.openAuthSessionAsync`),
  *     then navigate the **main** WebView to `https://chravel.app/auth-callback?...` /
