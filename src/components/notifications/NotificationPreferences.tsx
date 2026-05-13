@@ -98,15 +98,38 @@ export const NotificationPreferences = () => {
         <h4 className="font-semibold text-lg">What to notify me about</h4>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Megaphone className="h-4 w-4 text-muted-foreground" />
-              <Label htmlFor="broadcasts">Broadcast messages</Label>
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2">
+                <Megaphone className="h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="broadcasts">Broadcast and pinned messages</Label>
+              </div>
+              <p className="text-xs text-muted-foreground pl-6">
+                Organizer broadcasts and pin alerts (not every chat message)
+              </p>
             </div>
             <Switch
               id="broadcasts"
               checked={prefs.broadcasts_and_pins}
               onCheckedChange={v => void updatePreference('broadcasts_and_pins', v)}
-              aria-label="Toggle broadcast message notifications"
+              aria-label="Toggle broadcast and pinned message notifications"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="messages">Trip chat</Label>
+              </div>
+              <p className="text-xs text-muted-foreground pl-6">
+                Push for every new message when enabled (off by default)
+              </p>
+            </div>
+            <Switch
+              id="messages"
+              checked={prefs.messages}
+              onCheckedChange={v => void updatePreference('messages', v)}
+              aria-label="Toggle trip chat message notifications"
             />
           </div>
 
@@ -146,19 +169,6 @@ export const NotificationPreferences = () => {
               checked={prefs.calendar_events}
               onCheckedChange={v => void updatePreference('calendar_events', v)}
               aria-label="Toggle calendar event reminder notifications"
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              <Label htmlFor="messages">Messages</Label>
-            </div>
-            <Switch
-              id="messages"
-              checked={prefs.messages}
-              onCheckedChange={v => void updatePreference('messages', v)}
-              aria-label="Toggle message notifications"
             />
           </div>
 

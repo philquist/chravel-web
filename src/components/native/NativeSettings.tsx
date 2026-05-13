@@ -15,8 +15,10 @@ import {
   Shield,
   Mail,
   MessageCircle,
+  Radio,
   Star,
   Info,
+  Calendar,
 } from 'lucide-react';
 import { hapticService } from '@/services/hapticService';
 import { NativeList, NativeListSection, NativeListItem, NativeToggleItem } from './NativeList';
@@ -133,7 +135,7 @@ export const NativeSettings = ({
           {/* Notifications Section */}
           <NativeListSection
             header="Notifications"
-            footer="Control how Chravel sends you updates about your trips."
+            footer="Turn off trip chat if you only want organizer broadcasts and pins. Push delivery uses your device token from chravel-mobile on iOS/Android."
           >
             <NativeToggleItem
               icon={<Bell size={18} />}
@@ -148,14 +150,21 @@ export const NativeSettings = ({
               onChange={checked => void updatePreference('email_enabled', checked)}
             />
             <NativeToggleItem
+              icon={<Radio size={18} />}
+              label="Broadcast and pinned messages"
+              sublabel="Trip-wide announcements and pin alerts"
+              checked={preferences.broadcasts_and_pins}
+              onChange={checked => void updatePreference('broadcasts_and_pins', checked)}
+            />
+            <NativeToggleItem
               icon={<MessageCircle size={18} />}
-              label="Chat Messages"
-              sublabel="Get notified about new messages"
+              label="Trip chat"
+              sublabel="Every new chat message across your trips (like iMessage)"
               checked={preferences.messages}
               onChange={checked => void updatePreference('messages', checked)}
             />
             <NativeToggleItem
-              icon={<Bell size={18} />}
+              icon={<Calendar size={18} />}
               label="Calendar Reminders"
               sublabel="Upcoming events and deadlines"
               checked={preferences.calendar_events}
