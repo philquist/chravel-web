@@ -1402,7 +1402,7 @@ const UnauthIndex = ({
   authLoading: boolean;
   isInstalled: boolean;
 }) => {
-  const navigate = useNavigate();
+  const [authMode, setAuthMode] = useState<'signin' | 'signup' | null>(null);
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -1418,7 +1418,12 @@ const UnauthIndex = ({
   return (
     <div className="min-h-screen min-h-mobile-screen bg-background font-outfit">
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
-        <FullPageLanding onSignUp={() => navigate('/auth?mode=signup&returnTo=%2F')} />
+        <FullPageLanding onSignUp={() => setAuthMode('signup')} />
+        {authMode && (
+          <Suspense fallback={null}>
+            <AuthModal isOpen initialMode={authMode} onClose={() => setAuthMode(null)} />
+          </Suspense>
+        )}
       </Suspense>
     </div>
   );

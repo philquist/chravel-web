@@ -1,4 +1,9 @@
-import { supabase } from '@/integrations/supabase/client';
+import {
+  supabase,
+  SUPABASE_PROJECT_URL,
+  SUPABASE_PUBLIC_API_KEY,
+} from '@/integrations/supabase/client';
+import { resolveOpenAiRealtimeSdpPostUrl } from '@/lib/openaiRealtimeWebRtc';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   GeminiLiveState,
@@ -276,8 +281,8 @@ export function useOpenAIRealtimeVoice(
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    const baseUrl = sessionData?.realtime_url || 'https://api.openai.com/v1/realtime';
-    const sdpResp = await fetch(`${baseUrl}?model=${encodeURIComponent(model)}`, {
+    const sdpPostUrl = resolveOpenAiRealtimeSdpPostUrl(sessionData);
+    const sdpResp = await fetch(sdpPostUrl, {
       method: 'POST',
       body: offer.sdp,
       headers: {
@@ -286,7 +291,10 @@ export function useOpenAIRealtimeVoice(
       },
     });
 
-    if (!sdpResp.ok) throw new Error('Failed to negotiate realtime connection');
+    if (!sdpResp.ok) {
+      await sdpResp.text().catch(() => '');
+      throw new Error(`Voice connection failed (${sdpResp.status})`);
+    }
     const answerSdp = await sdpResp.text();
     await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
     setDiagnostics(prev => ({ ...prev, connectionStatus: 'open', substep: null }));

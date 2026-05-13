@@ -25,7 +25,7 @@ describe('ChatSearchOverlay thread jump behavior', () => {
 
     render(<ChatSearchOverlay tripId="trip-1" onClose={vi.fn()} onResultSelect={onResultSelect} />);
 
-    fireEvent.change(screen.getByPlaceholderText(/search messages and broadcasts/i), {
+    fireEvent.change(screen.getByPlaceholderText(/search messages/i), {
       target: { value: 'thread' },
     });
 

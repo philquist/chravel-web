@@ -534,24 +534,32 @@ export const MobileGroupCalendar = ({
                     return (
                       <button
                         key={`compact-day-${index}`}
+                        type="button"
                         onClick={() => handleDateSelect(date)}
-                        className={`
-                          rounded flex items-center justify-center text-xs relative
-                          transition-all duration-150 active:scale-95
-                          ${expandDayCells ? 'h-full min-h-[1.875rem] w-full' : 'h-7'}
-                          ${isCurrentMonth ? 'text-gray-300' : 'text-gray-600'}
-                          ${
-                            isSelected
-                              ? 'bg-gold-primary text-black font-medium'
-                              : isToday
-                                ? 'bg-gold-primary/20 text-gold-light'
-                                : 'hover:bg-white/10'
-                          }
-                        `}
+                        className={[
+                          'relative flex items-center justify-center',
+                          'transition-all duration-150 active:scale-95',
+                          expandDayCells ? 'h-full min-h-[1.875rem] w-full' : 'h-7 w-full',
+                          !isSelected ? 'rounded-lg hover:bg-white/10' : '',
+                        ].join(' ')}
                       >
-                        {format(date, 'd')}
+                        <span
+                          className={[
+                            'flex shrink-0 items-center justify-center rounded-full text-xs font-medium',
+                            expandDayCells ? 'size-8' : 'size-7',
+                            isSelected
+                              ? 'ring-2 ring-gold-primary text-gold-light'
+                              : !isCurrentMonth
+                                ? 'text-gray-600'
+                                : isToday
+                                  ? 'bg-gold-primary/20 text-gold-light'
+                                  : 'text-gray-300',
+                          ].join(' ')}
+                        >
+                          {format(date, 'd')}
+                        </span>
                         {hasEvents && !isSelected && (
-                          <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-gold-primary" />
+                          <span className="pointer-events-none absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-gold-primary" />
                         )}
                       </button>
                     );
