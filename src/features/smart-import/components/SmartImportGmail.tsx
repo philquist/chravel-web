@@ -107,6 +107,12 @@ export const SmartImportGmail: React.FC<SmartImportGmailProps> = ({
   const [tokenExpired, setTokenExpired] = useState(false);
   const [importPhase, setImportPhase] = useState<ImportPhase>('idle');
 
+  const isAccountStale = (tokenExpiresAt: string | null): boolean => {
+    if (!tokenExpiresAt) return false;
+    const expiry = new Date(tokenExpiresAt);
+    return expiry <= new Date(Date.now() + 24 * 60 * 60 * 1000);
+  };
+
   useEffect(() => {
     loadAccounts();
   }, []);
@@ -117,7 +123,8 @@ export const SmartImportGmail: React.FC<SmartImportGmailProps> = ({
       const data = await fetchGmailAccounts();
       setAccounts(data);
       if (data.length > 0) {
-        setSelectedAccountId(data[0].id);
+        const firstActive = data.find(account => !isAccountStale(account.token_expires_at));
+        setSelectedAccountId((firstActive || data[0]).id);
       }
     } catch (error) {
       if (import.meta.env.DEV) {
@@ -129,8 +136,17 @@ export const SmartImportGmail: React.FC<SmartImportGmailProps> = ({
     }
   };
 
+  const selectedAccount = accounts.find(account => account.id === selectedAccountId) || null;
+  const selectedAccountIsStale = selectedAccount
+    ? isAccountStale(selectedAccount.token_expires_at)
+    : false;
+
   const handleImport = async () => {
     if (!selectedAccountId) return;
+    if (selectedAccountIsStale) {
+      setTokenExpired(true);
+      return;
+    }
 
     setImporting(true);
     setTokenExpired(false);
@@ -249,6 +265,11 @@ export const SmartImportGmail: React.FC<SmartImportGmailProps> = ({
             We'll securely scan your inbox for recent travel reservations matching this trip's
             dates.
           </p>
+          {selectedAccountIsStale && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Selected account needs reconnect before import.
+            </p>
+          )}
         </div>
       </div>
 
@@ -279,6 +300,7 @@ export const SmartImportGmail: React.FC<SmartImportGmailProps> = ({
               {accounts.map(account => (
                 <SelectItem key={account.id} value={account.id}>
                   {account.email}
+                  {isAccountStale(account.token_expires_at) ? ' (Reconnect)' : ''}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -286,7 +308,7 @@ export const SmartImportGmail: React.FC<SmartImportGmailProps> = ({
         </div>
         <Button
           onClick={handleImport}
-          disabled={!selectedAccountId || importing}
+          disabled={!selectedAccountId || importing || selectedAccountIsStale}
           className="bg-blue-600 hover:bg-blue-700 h-11 min-h-[44px]"
           aria-label={importing ? 'Scanning inbox' : 'Scan inbox for travel reservations'}
         >

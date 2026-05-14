@@ -421,7 +421,7 @@ serve(async req => {
 
     const { data: account, error: accountError } = await adminClient
       .from('gmail_accounts')
-      .select('email, access_token, refresh_token, token_expires_at')
+      .select('email, access_token, refresh_token, token_expires_at, is_active')
       .eq('id', accountId)
       .eq('user_id', user.id)
       .single();
@@ -431,6 +431,16 @@ serve(async req => {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    if (account.is_active === false) {
+      return new Response(
+        JSON.stringify({ error: 'Gmail account is inactive. Reconnect Gmail.' }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     let accessToken = await decryptToken(account.access_token, GMAIL_TOKEN_ENCRYPTION_KEY);
