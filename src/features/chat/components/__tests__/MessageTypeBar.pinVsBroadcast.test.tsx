@@ -9,6 +9,13 @@ describe('MessageTypeBar pinned vs broadcasts hinting', () => {
     onSearchClick: vi.fn(),
   } as const;
 
+  it('exposes search as an icon-only control with an accessible name', () => {
+    render(<MessageTypeBar activeFilter="all" {...baseProps} />);
+
+    expect(screen.getByRole('button', { name: 'Search messages' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^search$/i })).not.toBeInTheDocument();
+  });
+
   it('shows explicit broadcasts hint when broadcasts tab is active', () => {
     render(<MessageTypeBar activeFilter="broadcasts" {...baseProps} />);
 

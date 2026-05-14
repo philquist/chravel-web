@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { MessageCircle, Megaphone, Hash, Search, ChevronDown, Pin } from 'lucide-react';
+import { MessageCircle, Hash, Search, ChevronDown, Pin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TripChannel } from '@/types/roleChannels';
@@ -85,25 +85,29 @@ export const MessageTypeBar = ({
         ? 'Pinned = important messages from any type (including broadcasts).'
         : null;
 
+  const channelsLabel = activeChannel
+    ? `#${formatChannelLabel(activeChannel.channelName)}`
+    : 'Channels';
+
   return (
-    <div className="sticky top-0 z-10 backdrop-blur-lg px-1 sm:px-2 py-1 rounded-t-2xl overflow-x-auto scrollbar-hide">
-      {/* Centered Segmented Control Container */}
-      <div className="flex items-center justify-center min-w-max sm:min-w-0">
+    <div className="sticky top-0 z-10 w-full backdrop-blur-lg rounded-t-2xl">
+      {/* Left-aligned row scrolls horizontally on narrow viewports so the first tab is never clipped */}
+      <div className="flex min-w-0 items-center justify-start overflow-x-auto scrollbar-hide scroll-pl-2 scroll-pr-2 px-2 py-1">
         <div
           ref={pillBarRef}
-          className="inline-flex items-center flex-nowrap bg-neutral-900/70 backdrop-blur-md border border-white/10 rounded-xl p-0.5 shadow-lg"
+          className="inline-flex flex-shrink-0 items-center flex-nowrap rounded-xl border border-white/10 bg-neutral-900/70 p-0.5 shadow-lg backdrop-blur-md"
         >
           {/* Messages Segment */}
           <button
             onClick={() => onFilterChange('all')}
             className={cn(
-              'relative flex min-h-11 items-center gap-0 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl shrink-0',
-              'text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap',
+              'relative flex min-h-9 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
+              'text-[11px] sm:text-xs font-medium transition-all duration-200 whitespace-nowrap',
               activeFilter === 'all' ? SEGMENT_COLORS.all.active : SEGMENT_COLORS.all.inactive,
             )}
             aria-pressed={activeFilter === 'all'}
           >
-            <MessageCircle className="hidden sm:block w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <MessageCircle className="hidden sm:block h-3 w-3 sm:h-3.5 sm:w-3.5" />
             <span>Messages</span>
             {unreadCount > 0 && activeFilter !== 'all' && (
               <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gold-primary text-black font-semibold">
@@ -116,8 +120,8 @@ export const MessageTypeBar = ({
           <button
             onClick={() => onFilterChange('broadcasts')}
             className={cn(
-              'relative flex min-h-11 items-center gap-0 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl shrink-0',
-              'text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap',
+              'relative flex min-h-9 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
+              'text-[11px] sm:text-xs font-medium transition-all duration-200 whitespace-nowrap',
               activeFilter === 'broadcasts'
                 ? SEGMENT_COLORS.broadcasts.active
                 : SEGMENT_COLORS.broadcasts.inactive,
@@ -125,7 +129,6 @@ export const MessageTypeBar = ({
             aria-pressed={activeFilter === 'broadcasts'}
             title="Announcement feed (includes pinned + unpinned broadcasts)"
           >
-            <Megaphone className="hidden sm:block w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Broadcasts</span>
             {broadcastBadgeCount > 0 && activeFilter !== 'broadcasts' && (
               <span
@@ -143,8 +146,8 @@ export const MessageTypeBar = ({
           <button
             onClick={() => onFilterChange('pinned')}
             className={cn(
-              'relative flex min-h-11 items-center gap-0 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl shrink-0',
-              'text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap',
+              'relative flex min-h-9 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
+              'text-[11px] sm:text-xs font-medium transition-all duration-200 whitespace-nowrap',
               activeFilter === 'pinned'
                 ? SEGMENT_COLORS.pinned.active
                 : SEGMENT_COLORS.pinned.inactive,
@@ -152,7 +155,7 @@ export const MessageTypeBar = ({
             aria-pressed={activeFilter === 'pinned'}
             title="Pinned essentials from any message type"
           >
-            <Pin className="hidden sm:block w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <Pin className="hidden sm:block h-3 w-3 sm:h-3.5 sm:w-3.5" />
             <span>Pinned</span>
             {pinnedCount > 0 && activeFilter !== 'pinned' && (
               <span
@@ -178,8 +181,8 @@ export const MessageTypeBar = ({
                   }}
                   disabled={!hasChannels}
                   className={cn(
-                    'relative flex min-h-11 items-center gap-0 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl shrink-0',
-                    'text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap',
+                    'relative flex min-h-9 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
+                    'text-[11px] sm:text-xs font-medium transition-all duration-200 whitespace-nowrap',
                     !hasChannels && 'opacity-40 cursor-not-allowed',
                     activeFilter === 'channels' && hasChannels
                       ? SEGMENT_COLORS.channels.active
@@ -189,11 +192,10 @@ export const MessageTypeBar = ({
                   aria-pressed={activeFilter === 'channels'}
                   title={!hasChannels ? 'No role-based channels for this trip' : undefined}
                 >
-                  <Hash className="hidden sm:block w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span>
-                    {activeChannel ? formatChannelLabel(activeChannel.channelName) : 'Channels'}
-                  </span>
-                  {activeChannel && hasChannels && <ChevronDown className="w-3 h-3 opacity-70" />}
+                  <span>{channelsLabel}</span>
+                  {activeChannel && hasChannels && (
+                    <ChevronDown className="h-2.5 w-2.5 opacity-70 sm:h-3 sm:w-3" />
+                  )}
                 </button>
               </PopoverTrigger>
 
@@ -256,16 +258,17 @@ export const MessageTypeBar = ({
 
           {/* Search Pill */}
           <button
+            type="button"
             onClick={onSearchClick}
             className={cn(
-              'relative flex min-h-11 items-center gap-0 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl shrink-0',
-              'text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap',
+              'relative flex min-h-9 min-w-9 items-center justify-center px-1.5 py-1 sm:min-h-10 sm:min-w-10 sm:px-2 rounded-lg sm:rounded-xl shrink-0',
+              'text-[11px] sm:text-xs font-medium transition-all duration-200',
               SEGMENT_COLORS.search.inactive,
             )}
+            aria-label="Search messages"
             title="Search messages"
           >
-            <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Search</span>
+            <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
         </div>
       </div>

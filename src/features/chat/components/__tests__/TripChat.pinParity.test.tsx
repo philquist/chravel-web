@@ -199,7 +199,8 @@ vi.mock('../MessageItem', () => ({
 describe('TripChat pin parity across trip/pro/event contexts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockMessageFilter = 'all';
+    // Pinned summary banner only renders when the pinned filter is active (matches TripChat).
+    mockMessageFilter = 'pinned';
     mockMessages = [
       {
         id: 'msg-1',
