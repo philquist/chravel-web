@@ -988,6 +988,7 @@ export const TripChat = React.memo(
         <div data-message-id={message.id}>
           <MessageItem
             message={message}
+            replies={(message as any).replies}
             reactions={message.reactions || {}}
             onReaction={handleReaction}
             onReply={handleOpenThread}
