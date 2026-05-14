@@ -141,7 +141,6 @@ vi.mock('../ChatInput', () => ({ ChatInput: () => <div data-testid="chat-input" 
 vi.mock('../InlineReplyComponent', () => ({ InlineReplyComponent: () => null }));
 vi.mock('../TypingIndicator', () => ({ TypingIndicator: () => null }));
 vi.mock('../ChatSearchOverlay', () => ({ ChatSearchOverlay: () => null }));
-vi.mock('../ThreadView', () => ({ ThreadView: () => null }));
 vi.mock('@/components/mobile/PullToRefreshIndicator', () => ({
   PullToRefreshIndicator: () => null,
 }));

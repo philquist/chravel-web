@@ -147,7 +147,6 @@ vi.mock('../InlineReplyComponent', () => ({ InlineReplyComponent: () => null }))
 vi.mock('../TypingIndicator', () => ({ TypingIndicator: () => null }));
 vi.mock('../MessageTypeBar', () => ({ MessageTypeBar: () => null }));
 vi.mock('../ChatSearchOverlay', () => ({ ChatSearchOverlay: () => null }));
-vi.mock('../ThreadView', () => ({ ThreadView: () => null }));
 vi.mock('@/components/mobile/PullToRefreshIndicator', () => ({
   PullToRefreshIndicator: () => null,
 }));
