@@ -1199,18 +1199,7 @@ export const TripChat = React.memo(
           </div>
         )}
 
-        {/* Thread View Drawer/Modal */}
-        {activeThreadMessage && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm md:items-center">
-            <div className="w-full max-w-lg h-[70vh] md:h-[60vh] m-4 md:m-0">
-              <ThreadView
-                parentMessage={activeThreadMessage}
-                onClose={() => setActiveThreadMessage(null)}
-                tripMembers={tripMembers}
-              />
-            </div>
-          </div>
-        )}
+        {/* Threads render inline beneath their parent — no modal/drawer. */}
       </div>
     );
   },
