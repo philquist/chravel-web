@@ -464,7 +464,7 @@ const JoinTrip = () => {
             );
           });
         } else {
-          const memberDisplayName = resolveAuthUserDisplayName(user);
+          const memberDisplayName = resolveAuthUserDisplayName(user as unknown as User);
           void syncTripMemberToStreamAndEmitMemberJoined({
             tripId,
             joiningUserId: user.id,
