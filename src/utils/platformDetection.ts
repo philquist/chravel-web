@@ -67,6 +67,10 @@ export function isLikelyIosWkWebViewUserAgent(userAgent: string): boolean {
 export function isNativeWebView(): boolean {
   if (typeof window === 'undefined') return false;
   if (isCapacitorNativeShell()) return true;
+  // chravel-mobile (Expo) TestFlight shell: UA often includes "Safari" for compatibility,
+  // which makes the WKWebView heuristic below false. Still must use installed-app OAuth
+  // (skipBrowserRedirect + openInstalledAuthBrowser / ChravelNative.openOAuthUrl).
+  if (isChravelNativeShell()) return true;
   // Explicit query param from chravel-mobile Expo WebView
   const params = new URLSearchParams(window.location.search);
   if (params.get('app_context') === 'native') return true;
