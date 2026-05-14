@@ -245,13 +245,14 @@ export const MessageActions: React.FC<MessageActionsComponentProps> = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
           {/* Actions available for all messages */}
-          <DropdownMenuItem onClick={() => onReply?.(messageId)}>
+          <DropdownMenuItem
+            onClick={() => {
+              onReply?.(messageId);
+              onOpenThread?.(messageId);
+            }}
+          >
             <MessageSquareReply className="mr-2 h-4 w-4" />
-            Reply in thread
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onOpenThread?.(messageId)}>
-            <MessageSquareReply className="mr-2 h-4 w-4" />
-            View thread
+            Reply
           </DropdownMenuItem>
           {canManagePins && (
             <DropdownMenuItem onClick={handleTogglePin} disabled={isSubmitting}>

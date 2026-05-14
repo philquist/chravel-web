@@ -11,8 +11,8 @@ vi.mock('sonner', () => ({
   },
 }));
 
-describe('MessageActions thread semantics', () => {
-  it('renders disambiguated thread actions and preserves callbacks', async () => {
+describe('MessageActions reply semantics', () => {
+  it('renders a single Reply action that triggers the inline reply target', async () => {
     const onReply = vi.fn();
     const onOpenThread = vi.fn();
 
@@ -29,12 +29,10 @@ describe('MessageActions thread semantics', () => {
     );
 
     await user.click(screen.getByRole('button'));
-
-    await user.click(screen.getByText('Reply in thread'));
-    await user.click(screen.getByRole('button'));
-    await user.click(screen.getByText('Open thread'));
+    await user.click(screen.getByText('Reply'));
 
     expect(onReply).toHaveBeenCalledWith('msg-1');
+    // onOpenThread is still wired to keep telemetry/scroll behavior alive
     expect(onOpenThread).toHaveBeenCalledWith('msg-1');
   });
 });

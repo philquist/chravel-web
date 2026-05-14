@@ -36,7 +36,6 @@ import { useChatReactions } from '../hooks/useChatReactions';
 import { MessageTypeBar } from './MessageTypeBar';
 import { ChatSearchOverlay } from './ChatSearchOverlay';
 import { useEffectiveSystemMessagePreferences } from '@/hooks/useSystemMessagePreferences';
-import { ThreadView } from './ThreadView';
 import { FeatureErrorBoundary } from '@/components/FeatureErrorBoundary';
 import { useTripPrivacyConfig, getEffectivePrivacyMode } from '@/hooks/useTripPrivacyConfig';
 import { useTripChatMode } from '@/hooks/useTripChatMode';
@@ -127,14 +126,6 @@ export const TripChat = React.memo(
 
     const [showSearchOverlay, setShowSearchOverlay] = useState(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
-    const [activeThreadMessage, setActiveThreadMessage] = useState<{
-      id: string;
-      content: string;
-      authorName: string;
-      authorAvatar?: string;
-      createdAt: string;
-      tripId: string;
-    } | null>(null);
     const [failedMessages, setFailedMessages] = useState<
       Array<{
         id: string;
@@ -692,6 +683,8 @@ export const TripChat = React.memo(
       setReply(messageId, content, authorName);
     };
 
+    // Inline replies: "open thread" now scrolls to the parent message in the
+    // main timeline (replies render nested under it). No modal/drawer.
     const handleActivateThread = useCallback(
       (
         messageId: string,
@@ -703,42 +696,29 @@ export const TripChat = React.memo(
       ) => {
         const telemetrySource = source === 'notification_deeplink' ? 'notification' : source;
 
-        const streamMessage = liveMessages.find(m => m.id === messageId);
-        if (streamMessage) {
-          const streamUser = (streamMessage as any).user;
-          setActiveThreadMessage({
-            id: streamMessage.id,
-            content: (streamMessage as any).text || '',
-            authorName: streamUser?.name || (streamMessage as any).author_name || 'User',
-            authorAvatar: streamUser?.image,
-            createdAt: (streamMessage as any).created_at || new Date().toISOString(),
-            tripId: resolvedTripId,
+        if (!demoMode.isDemoMode && liveMessages.find(m => m.id === messageId)) {
+          messageEvents.threadOpened({
+            trip_id: resolvedTripId,
+            parent_message_id: messageId,
+            source: telemetrySource,
           });
-          if (!demoMode.isDemoMode) {
-            messageEvents.threadOpened({
-              trip_id: resolvedTripId,
-              parent_message_id: messageId,
-              source: telemetrySource,
-            });
-          }
-          return;
         }
 
-        const demoMessage = demoMessages.find(m => m.id === messageId);
-        if (!demoMessage) return;
-        setActiveThreadMessage({
-          id: demoMessage.id,
-          content: demoMessage.text || '',
-          authorName: demoMessage.sender?.name || 'User',
-          authorAvatar: demoMessage.sender?.avatar,
-          createdAt: demoMessage.createdAt,
-          tripId: resolvedTripId,
-        });
+        // Defer to next tick so any filter changes (e.g. switching to "all") have applied.
+        window.setTimeout(() => {
+          const el = document.querySelector(`[data-message-id="${messageId}"]`);
+          if (el instanceof HTMLElement) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('search-highlight-flash');
+            window.setTimeout(() => el.classList.remove('search-highlight-flash'), 1000);
+          }
+        }, 50);
       },
-      [demoMode.isDemoMode, liveMessages, demoMessages, resolvedTripId],
+      [demoMode.isDemoMode, liveMessages, resolvedTripId],
     );
 
-    // After a successful thread reply send, open the parent thread (Stream + demo).
+    // After a successful thread reply send, scroll the parent (and its now-nested
+    // reply) into view. The reply itself appears inline via realtime/local state.
     useEffect(() => {
       const parentId = threadReplySuccess?.parentMessageId;
       if (!parentId) return;
@@ -876,6 +856,41 @@ export const TripChat = React.memo(
       [messagesWithFailed, linkPreviewFallbacks],
     );
 
+    // iMessage-style nested replies: group child replies under their parent.
+    // A message is a "reply" if it carries a replyTo.id pointing to another loaded message.
+    // Top-level list = messages without a replyTo OR whose parent isn't in the loaded window
+    // (orphans surface at top-level so users still see them).
+    const messagesWithThreads = useMemo(() => {
+      const loadedIds = new Set(messagesWithPreviewFallbacks.map((m: any) => m.id));
+      const repliesByParent = new Map<string, any[]>();
+
+      for (const msg of messagesWithPreviewFallbacks as any[]) {
+        const parentId: string | undefined = msg?.replyTo?.id;
+        if (parentId && loadedIds.has(parentId)) {
+          const list = repliesByParent.get(parentId) ?? [];
+          list.push(msg);
+          repliesByParent.set(parentId, list);
+        }
+      }
+
+      return (messagesWithPreviewFallbacks as any[])
+        .filter(msg => {
+          const parentId: string | undefined = msg?.replyTo?.id;
+          return !parentId || !loadedIds.has(parentId);
+        })
+        .map(msg => {
+          const replies = repliesByParent.get(msg.id);
+          if (!replies || replies.length === 0) return msg;
+          // Sort replies oldest → newest by createdAt for natural reading order.
+          const sorted = [...replies].sort((a, b) => {
+            const at = new Date(a.createdAt || 0).getTime();
+            const bt = new Date(b.createdAt || 0).getTime();
+            return at - bt;
+          });
+          return { ...msg, replies: sorted };
+        });
+    }, [messagesWithPreviewFallbacks]);
+
     const pinnedMessages = useMemo(
       () => derivePinnedMessages(liveFormattedMessages as any),
       [liveFormattedMessages],
@@ -973,6 +988,7 @@ export const TripChat = React.memo(
         <div data-message-id={message.id}>
           <MessageItem
             message={message}
+            replies={(message as any).replies}
             reactions={message.reactions || {}}
             onReaction={handleReaction}
             onReply={handleOpenThread}
@@ -1140,7 +1156,7 @@ export const TripChat = React.memo(
                     )}
                     <FeatureErrorBoundary featureName="Chat Timeline Enhancements" fallback={null}>
                       <VirtualizedMessageContainer
-                        messages={messagesWithPreviewFallbacks as any}
+                        messages={messagesWithThreads as any}
                         renderMessage={renderMessage}
                         onLoadMore={demoMode.isDemoMode ? () => {} : loadMoreMessages}
                         hasMore={demoMode.isDemoMode ? false : hasMore}
@@ -1219,18 +1235,7 @@ export const TripChat = React.memo(
           </div>
         )}
 
-        {/* Thread View Drawer/Modal */}
-        {activeThreadMessage && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm md:items-center">
-            <div className="w-full max-w-lg h-[70vh] md:h-[60vh] m-4 md:m-0">
-              <ThreadView
-                parentMessage={activeThreadMessage}
-                onClose={() => setActiveThreadMessage(null)}
-                tripMembers={tripMembers}
-              />
-            </div>
-          </div>
-        )}
+        {/* Threads render inline beneath their parent — no modal/drawer. */}
       </div>
     );
   },

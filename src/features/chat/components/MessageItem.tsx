@@ -15,6 +15,10 @@ interface MessageItemProps {
     threadPreviewSnippet?: string;
     hasUnreadThreadReplies?: boolean;
   };
+  /** Inline nested replies (iMessage-style). Rendered indented under this message. */
+  replies?: Array<MessageItemProps['message']>;
+  /** Recursion depth — replies are flat (depth=1). Prevents infinite nesting. */
+  depth?: number;
   reactions?: Record<string, { count: number; userReacted: boolean; users?: string[] }>;
   onReaction: (messageId: string, reactionType: string) => void;
   onReply?: (messageId: string) => void;
@@ -59,6 +63,8 @@ interface MessageItemProps {
 export const MessageItem = memo(
   ({
     message,
+    replies,
+    depth = 0,
     reactions,
     onReaction,
     onReply,
@@ -134,8 +140,11 @@ export const MessageItem = memo(
       return <SystemMessageBubble body={message.text} timestamp={message.createdAt} />;
     }
 
+    const hasReplies = !!replies && replies.length > 0;
+    const isReply = depth > 0;
+
     return (
-      <div>
+      <div className={isReply ? 'mt-1' : ''}>
         <MessageBubble
           id={message.id}
           text={message.text}
@@ -148,8 +157,10 @@ export const MessageItem = memo(
           isEdited={(message as any).isEdited || false}
           reactions={reactions}
           onReaction={onReaction}
-          replyCount={message.replyCount || 0}
-          threadPreviewSnippet={message.threadPreviewSnippet}
+          // When replies render inline below, suppress the legacy "N replies" pill —
+          // the nested stack itself is the affordance. Keep counter for orphan parents.
+          replyCount={hasReplies ? 0 : message.replyCount || 0}
+          threadPreviewSnippet={hasReplies ? undefined : message.threadPreviewSnippet}
           hasUnreadThreadReplies={message.hasUnreadThreadReplies}
           onReply={onReply}
           onOpenThread={onOpenThread}
@@ -178,8 +189,9 @@ export const MessageItem = memo(
           tripMembers={tripMembers}
           readStatuses={readStatuses}
           currentUserId={user?.id || ''}
-          // Pass the resolved replyTo context if available
-          replyTo={message.replyTo}
+          // Suppress the inline "replying to" preview when this message is itself
+          // rendered as a nested reply — its position under the parent makes it obvious.
+          replyTo={isReply ? undefined : message.replyTo}
           reactionUserNamesById={reactionUserNamesById}
           isAdmin={isAdmin}
           canDeleteOwnMessage={canDeleteOwnMessage}
@@ -196,6 +208,45 @@ export const MessageItem = memo(
           canModerate={canModerate}
           onModerationAction={onModerationAction}
         />
+
+        {/* Inline nested replies (one level deep, iMessage-style) */}
+        {hasReplies && depth === 0 && (
+          <div className="ml-8 md:ml-10 mt-1 space-y-1 border-l border-border/40 pl-3">
+            {replies!.map(reply => (
+              <div key={reply.id} data-message-id={reply.id}>
+                <MessageItem
+                  message={reply}
+                  depth={1}
+                  reactions={(reply as any).reactions || {}}
+                  onReaction={onReaction}
+                  onReply={onReply}
+                  onOpenThread={onOpenThread}
+                  showSenderInfo
+                  onRetry={onRetry}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  transportMode={transportMode}
+                  systemMessagePrefs={systemMessagePrefs}
+                  tripMembers={tripMembers}
+                  readStatuses={(reply as any).readStatuses}
+                  reactionUserNamesById={reactionUserNamesById}
+                  isAdmin={isAdmin}
+                  canDeleteOwnMessage={canDeleteOwnMessage}
+                  canDeleteAnyMessage={canDeleteAnyMessage}
+                  canUpdateOwnMessage={canUpdateOwnMessage}
+                  canManagePins={canManagePins}
+                  onTogglePin={onTogglePin}
+                  onBlockUser={onBlockUser}
+                  onReportContent={onReportContent}
+                  isBlockingUser={isBlockingUser}
+                  isReportingContent={isReportingContent}
+                  canModerate={canModerate}
+                  onModerationAction={onModerationAction}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   },
