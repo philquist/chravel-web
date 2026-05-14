@@ -29,6 +29,7 @@ import {
   type NotificationContentType,
   type TripContext,
 } from '../_shared/notificationContentBuilder.ts';
+import { resolveEmailProviderSecrets } from '../_shared/emailDelivery.ts';
 
 type DeliveryChannel = 'push' | 'email' | 'sms';
 
@@ -80,6 +81,8 @@ interface SmsOptInRow {
 
 const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY');
 const sendGridFromEmail = Deno.env.get('SENDGRID_FROM_EMAIL') || 'support@chravelapp.com';
+const resendApiKey = Deno.env.get('RESEND_API_KEY');
+const resendFromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'support@chravelapp.com';
 const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
 const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
 const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
@@ -345,26 +348,52 @@ async function sendEmail(
   providerMessageId?: string;
   error?: string;
 }> {
-  if (!sendGridApiKey) {
-    return { ok: false, error: 'SendGrid API key is not configured' };
+  const provider = resolveEmailProviderSecrets({
+    RESEND_API_KEY: resendApiKey,
+    SENDGRID_API_KEY: sendGridApiKey,
+  });
+  if (!provider) {
+    return {
+      ok: false,
+      error: 'No email provider configured (RESEND_API_KEY or SENDGRID_API_KEY)',
+    };
+  }
+
+  if (provider.provider === 'resend') {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${provider.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: resendFromEmail,
+        to: [to],
+        subject,
+        html: content,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) {
+      const body = await response.text();
+      return { ok: false, error: `Resend error ${response.status}: ${body.substring(0, 200)}` };
+    }
+    const json = await response.json().catch(() => null);
+    return { ok: true, providerMessageId: json?.id };
   }
 
   const emailPayload = {
     personalizations: [{ to: [{ email: to }], subject }],
-    from: {
-      email: sendGridFromEmail,
-      name: 'ChravelApp',
-    },
+    from: { email: sendGridFromEmail, name: 'ChravelApp' },
     content: [
       { type: 'text/html', value: content },
       { type: 'text/plain', value: content.replace(/<[^>]+>/g, '') },
     ],
   };
-
   const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${sendGridApiKey}`,
+      Authorization: `Bearer ${provider.apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(emailPayload),
