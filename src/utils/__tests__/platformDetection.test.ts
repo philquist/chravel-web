@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   isCapacitorNativeShell,
+  isChravelNativeShell,
   isInstalledApp,
   isLikelyMobileDevice,
   isNativeWebView,
@@ -34,6 +35,7 @@ describe('platformDetection', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     delete (window as unknown as { Capacitor?: unknown }).Capacitor;
+    delete (window as unknown as { ChravelNative?: unknown }).ChravelNative;
     Object.defineProperty(window, 'location', {
       value: originalLocation,
       configurable: true,
@@ -70,6 +72,33 @@ describe('platformDetection', () => {
     setMatchMedia(false);
     setLocationSearch('?app_context=native');
 
+    expect(isNativeWebView()).toBe(true);
+    expect(isInstalledApp()).toBe(true);
+  });
+
+  it('treats ChravelNative Expo shell as installed when UA includes Safari (iOS WebView default)', () => {
+    setUserAgent(
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1 ChravelNative/1',
+    );
+    setMatchMedia(false);
+    setLocationSearch('');
+
+    expect(isChravelNativeShell()).toBe(true);
+    expect(isNativeWebView()).toBe(true);
+    expect(isInstalledApp()).toBe(true);
+  });
+
+  it('treats ChravelNative window flag as installed even when UA looks like mobile Safari', () => {
+    setUserAgent(
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+    );
+    setMatchMedia(false);
+    setLocationSearch('');
+    (window as unknown as { ChravelNative: { isNative: boolean } }).ChravelNative = {
+      isNative: true,
+    };
+
+    expect(isChravelNativeShell()).toBe(true);
     expect(isNativeWebView()).toBe(true);
     expect(isInstalledApp()).toBe(true);
   });
