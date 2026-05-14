@@ -856,6 +856,41 @@ export const TripChat = React.memo(
       [messagesWithFailed, linkPreviewFallbacks],
     );
 
+    // iMessage-style nested replies: group child replies under their parent.
+    // A message is a "reply" if it carries a replyTo.id pointing to another loaded message.
+    // Top-level list = messages without a replyTo OR whose parent isn't in the loaded window
+    // (orphans surface at top-level so users still see them).
+    const messagesWithThreads = useMemo(() => {
+      const loadedIds = new Set(messagesWithPreviewFallbacks.map((m: any) => m.id));
+      const repliesByParent = new Map<string, any[]>();
+
+      for (const msg of messagesWithPreviewFallbacks as any[]) {
+        const parentId: string | undefined = msg?.replyTo?.id;
+        if (parentId && loadedIds.has(parentId)) {
+          const list = repliesByParent.get(parentId) ?? [];
+          list.push(msg);
+          repliesByParent.set(parentId, list);
+        }
+      }
+
+      return (messagesWithPreviewFallbacks as any[])
+        .filter(msg => {
+          const parentId: string | undefined = msg?.replyTo?.id;
+          return !parentId || !loadedIds.has(parentId);
+        })
+        .map(msg => {
+          const replies = repliesByParent.get(msg.id);
+          if (!replies || replies.length === 0) return msg;
+          // Sort replies oldest → newest by createdAt for natural reading order.
+          const sorted = [...replies].sort((a, b) => {
+            const at = new Date(a.createdAt || 0).getTime();
+            const bt = new Date(b.createdAt || 0).getTime();
+            return at - bt;
+          });
+          return { ...msg, replies: sorted };
+        });
+    }, [messagesWithPreviewFallbacks]);
+
     const pinnedMessages = useMemo(
       () => derivePinnedMessages(liveFormattedMessages as any),
       [liveFormattedMessages],
