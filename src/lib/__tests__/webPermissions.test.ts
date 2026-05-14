@@ -24,7 +24,7 @@ describe('webPermissions', () => {
     beforeEach(() => {
       (globalThis as unknown as { Notification: typeof Notification }).Notification =
         class MockNotification {
-          static permission: NotificationPermission = 'prompt';
+          static permission: NotificationPermission = 'default';
           static requestPermission = vi.fn(async (): Promise<NotificationPermission> => 'denied');
         } as unknown as typeof Notification;
     });
