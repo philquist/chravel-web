@@ -10,6 +10,8 @@ type RpcResult = {
   cleaned_up?: boolean;
   trip_id?: string;
   user_id?: string;
+  /** Present after migration `20260514194530_approve_join_request_member_inserted_flag` */
+  member_inserted?: boolean;
 } | null;
 
 function invalidateTripJoinCaches(
@@ -74,12 +76,15 @@ export async function approveJoinRequestById(
       memberDisplayName = 'Someone';
     }
 
+    const emitMemberJoinedMessage = result?.member_inserted !== false;
+
     try {
       await syncTripMemberToStreamAndEmitMemberJoined({
         tripId: resolvedTripId,
         joiningUserId,
         memberDisplayName,
         syncFailureContext: 'approve-join-request',
+        emitMemberJoinedMessage,
       });
     } catch {
       // Stream sync / inline message are best-effort; membership in Postgres already succeeded.

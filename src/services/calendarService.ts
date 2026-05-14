@@ -1,4 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
+import { syncTripMemberToStreamChannelsOnly } from '@/lib/streamTripMemberInlineActivity';
+import { reportStreamMembershipSyncFailure } from '@/services/stream/streamMembershipCoordinator';
 import type { Json } from '@/integrations/supabase/types';
 import type { CalendarEvent, TripEvent, CreateEventData } from '@/types/calendar';
 import { demoModeService } from './demoModeService';
@@ -61,6 +63,17 @@ export const calendarService = {
           }
           return false;
         }
+        void syncTripMemberToStreamChannelsOnly({
+          tripId,
+          userId,
+          syncFailureContext: 'calendarService.ensureTripMembership',
+        }).catch(streamError => {
+          reportStreamMembershipSyncFailure(
+            'calendarService.ensureTripMembership',
+            { tripId, userId },
+            streamError,
+          );
+        });
         return true;
       }
 

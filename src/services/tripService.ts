@@ -1,5 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getCachedAuthUser } from '@/lib/authCache';
+import { syncTripMemberToStreamChannelsOnly } from '@/lib/streamTripMemberInlineActivity';
+import { reportStreamMembershipSyncFailure } from '@/services/stream/streamMembershipCoordinator';
 import { demoModeService } from './demoModeService';
 import { tripsData } from '@/data/tripsData';
 import { adaptTripsDataToTripSchema } from '@/utils/schemaAdapters';
@@ -738,6 +740,20 @@ export const tripService = {
         user_id: userId,
         role: role,
       });
+
+      if (!error) {
+        void syncTripMemberToStreamChannelsOnly({
+          tripId,
+          userId,
+          syncFailureContext: 'tripService.addTripMember',
+        }).catch(streamError => {
+          reportStreamMembershipSyncFailure(
+            'tripService.addTripMember',
+            { tripId, userId },
+            streamError,
+          );
+        });
+      }
 
       return !error;
     } catch (error) {
