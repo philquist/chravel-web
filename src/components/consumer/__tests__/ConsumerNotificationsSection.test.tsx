@@ -53,6 +53,10 @@ describe('ConsumerNotificationsSection loading hydration', () => {
 
     render(<ConsumerNotificationsSection />);
 
+    expect(screen.getByTestId('trip-notification-preference-rows')).toBeInTheDocument();
+    expect(screen.getByText('Broadcast and pinned messages')).toBeInTheDocument();
+    expect(screen.getByText('Trip chat')).toBeInTheDocument();
+
     const broadcastsToggle = screen.getAllByRole('switch')[0];
     expect(broadcastsToggle).toBeDisabled();
     expect(screen.getByText(/loading saved preferences/i)).toBeInTheDocument();

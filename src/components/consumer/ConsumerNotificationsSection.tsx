@@ -1,20 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Bell,
-  Mail,
-  Smartphone,
-  Radio,
-  MessageCircle,
-  Calendar,
-  DollarSign,
-  CheckSquare,
-  BarChart2,
-  UserPlus,
-  MapPin,
-  X,
-  Phone,
-  Lock,
-} from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Bell, Mail, Smartphone, X, Phone, Lock } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import {
   userPreferencesService,
@@ -28,73 +13,7 @@ import { Button } from '../ui/button';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationPreviewPanel } from '@/components/dev/NotificationPreviewPanel';
-
-interface NotificationCategory {
-  key: string;
-  dbKey: keyof NotificationPreferences;
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-}
-
-const NOTIFICATION_CATEGORIES: NotificationCategory[] = [
-  {
-    key: 'broadcasts',
-    dbKey: 'broadcasts',
-    label: 'Broadcast and pinned messages',
-    description: 'Organizer broadcasts and when a message is pinned in chat',
-    icon: <Radio size={16} className="text-red-400" />,
-  },
-  {
-    key: 'chat',
-    dbKey: 'chat_messages',
-    label: 'Trip chat',
-    description: 'Push for every new message in your trips (optional; off by default)',
-    icon: <MessageCircle size={16} className="text-blue-400" />,
-  },
-  {
-    key: 'calendar',
-    dbKey: 'calendar_events',
-    label: 'Calendar Events',
-    description: 'Get notified when events are added or updated',
-    icon: <Calendar size={16} className="text-purple-400" />,
-  },
-  {
-    key: 'payments',
-    dbKey: 'payments',
-    label: 'Payments',
-    description: 'Get notified about payment requests and settlements',
-    icon: <DollarSign size={16} className="text-green-400" />,
-  },
-  {
-    key: 'tasks',
-    dbKey: 'tasks',
-    label: 'Tasks',
-    description: 'Get notified when tasks are assigned or completed',
-    icon: <CheckSquare size={16} className="text-yellow-400" />,
-  },
-  {
-    key: 'polls',
-    dbKey: 'polls',
-    label: 'Polls',
-    description: 'Get notified when new polls are created',
-    icon: <BarChart2 size={16} className="text-cyan-400" />,
-  },
-  {
-    key: 'joinRequests',
-    dbKey: 'join_requests',
-    label: 'Join Requests',
-    description: 'Get notified when someone requests to join your trip',
-    icon: <UserPlus size={16} className="text-orange-400" />,
-  },
-  {
-    key: 'basecampUpdates',
-    dbKey: 'basecamp_updates',
-    label: 'Basecamp Updates',
-    description: 'Get notified when trip basecamp location changes',
-    icon: <MapPin size={16} className="text-pink-400" />,
-  },
-];
+import { getTripNotificationPreferenceCategories } from '@/components/settings/tripNotificationPreferenceCategories';
 
 export const ConsumerNotificationsSection = () => {
   const { user } = useAuth();
@@ -142,6 +61,11 @@ export const ConsumerNotificationsSection = () => {
 
   const smsDeliveryEligible =
     isSuperAdmin || tier === 'explorer' || tier === 'frequent-chraveler' || tier.startsWith('pro-');
+
+  const notificationCategories = useMemo(
+    () => getTripNotificationPreferenceCategories({ includeTripInvites: false }),
+    [],
+  );
 
   const fetchLastSmsStatus = useCallback(async () => {
     if (!user?.id) return;
@@ -506,12 +430,16 @@ export const ConsumerNotificationsSection = () => {
       {/* App Notification Categories */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
         <h4 className="text-base font-semibold text-white mb-3">App Notifications</h4>
-        <p className="text-sm text-gray-400 mb-4">
+        <p className="text-sm text-gray-400 mb-2">
           Choose which types of notifications you want to receive
         </p>
+        <p className="text-xs text-gray-500 mb-4">
+          Broadcasts and pins use the first toggle. Trip chat is separate so you can follow every
+          message or keep chat silent.
+        </p>
 
-        <div className="space-y-3">
-          {NOTIFICATION_CATEGORIES.map(category => (
+        <div className="space-y-3" data-testid="trip-notification-preference-rows">
+          {notificationCategories.map(category => (
             <div
               key={category.key}
               className="flex items-center justify-between p-3 bg-white/5 rounded-lg"
