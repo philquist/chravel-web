@@ -109,8 +109,8 @@ describe('AuthModal', () => {
         expect(screen.getByText('Welcome Back')).toBeInTheDocument();
       });
 
-      // Switch to signup mode
-      const signUpTab = screen.getByRole('button', { name: /^sign up$/i });
+      // Switch to signup mode (mode switcher uses tab semantics)
+      const signUpTab = screen.getByRole('tab', { name: /^sign up$/i });
       fireEvent.click(signUpTab);
 
       // Should show Create Account header (use heading role to be more specific)
