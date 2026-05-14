@@ -13,6 +13,19 @@ async function sha256Hex(input: string): Promise<string> {
   return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
 }
 
+function getRealtimeModelCandidates(): string[] {
+  const explicitModel = (Deno.env.get('OPENAI_REALTIME_MODEL') || '').trim();
+  if (explicitModel) return [explicitModel];
+
+  const envCandidates = (Deno.env.get('OPENAI_REALTIME_MODEL_CANDIDATES') || '')
+    .split(',')
+    .map(candidate => candidate.trim())
+    .filter(Boolean);
+
+  const defaultCandidates = ['gpt-realtime-2', 'gpt-realtime', 'gpt-4o-realtime-preview'];
+  return [...new Set([...envCandidates, ...defaultCandidates])];
+}
+
 serve(async req => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -85,51 +98,58 @@ serve(async req => {
     });
   }
 
-  const model = (Deno.env.get('OPENAI_REALTIME_MODEL') || 'gpt-realtime-2').trim();
+  const modelsToTry = getRealtimeModelCandidates();
 
   const prompt = `You are the Chravel AI Concierge for trip ${tripId}. ${VOICE_ADDENDUM}`;
 
   const safetyId = await sha256Hex(user.id);
 
-  const resp = await fetch('https://api.openai.com/v1/realtime/sessions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Safety-Identifier': safetyId,
-    },
-    body: JSON.stringify({
-      model,
-      voice,
-      modalities: ['audio', 'text'],
-      instructions: prompt,
-      tool_choice: 'auto',
-      tools: VOICE_FUNCTION_DECLARATIONS.map(t => ({
-        type: 'function',
-        name: t.name,
-        description: t.description,
-        parameters: t.parameters,
-      })),
-    }),
-  });
+  for (let attempt = 0; attempt < modelsToTry.length; attempt += 1) {
+    const model = modelsToTry[attempt];
+    const resp = await fetch('https://api.openai.com/v1/realtime/sessions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Safety-Identifier': safetyId,
+      },
+      body: JSON.stringify({
+        model,
+        voice,
+        modalities: ['audio', 'text'],
+        instructions: prompt,
+        tool_choice: 'auto',
+        tools: VOICE_FUNCTION_DECLARATIONS.map(t => ({
+          type: 'function',
+          name: t.name,
+          description: t.description,
+          parameters: t.parameters,
+        })),
+      }),
+    });
 
-  const payload = await resp.text();
-  if (!resp.ok) {
+    const payload = await resp.text();
+    if (resp.ok) {
+      return new Response(payload, {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     console.error('[create-openai-realtime-session] openai session create failed', {
+      attempt: attempt + 1,
+      totalAttempts: modelsToTry.length,
+      model,
       status: resp.status,
       statusText: resp.statusText,
       body: payload,
       tripId,
       userId: user.id,
     });
-    return new Response(JSON.stringify({ error: 'Failed to create realtime session' }), {
-      status: 502,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   }
 
-  return new Response(payload, {
-    status: 200,
+  return new Response(JSON.stringify({ error: 'Failed to create realtime session' }), {
+    status: 502,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 });
