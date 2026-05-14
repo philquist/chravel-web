@@ -23,7 +23,7 @@ vi.mock('@/hooks/useAuth', () => ({
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     rpc: (...args: unknown[]) => rpcMock(...args),
-    from: (...args: unknown[]) => fromMock(...args),
+    from: (table: string) => fromMock(table),
   },
 }));
 
