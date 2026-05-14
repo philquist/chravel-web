@@ -43,6 +43,10 @@ const PREFERENCE_CLASSES = new Set<QueryClass>([
   'booking_reservation',
   'place_navigation',
   'trip_summary',
+  'hotel_search', // Budget, accessibility, vibe critical for hotel selection
+  'flight_search', // Budget matters for flight search
+  'basecamp_action', // Accessibility/vibe for accommodation selection
+  'agenda_action', // timePreference affects scheduling recommendations
 ]);
 
 /** Classes that need calendar context in the prompt */
@@ -133,22 +137,35 @@ function preferencesLayer(tripContext: ComprehensiveTripContext): string {
   const prefs = tripContext.userPreferences;
   if (!prefs) return '';
 
-  const parts: string[] = ['\nUSER PREFERENCES:'];
+  const prefLines: string[] = [];
   if (prefs.dietary?.length)
-    parts.push(`DIETARY: ${prefs.dietary.map(sanitizeForPrompt).join(', ')}`);
-  if (prefs.vibe?.length) parts.push(`VIBE: ${prefs.vibe.map(sanitizeForPrompt).join(', ')}`);
+    prefLines.push(`DIETARY: ${prefs.dietary.map(sanitizeForPrompt).join(', ')}`);
+  if (prefs.vibe?.length) prefLines.push(`VIBE: ${prefs.vibe.map(sanitizeForPrompt).join(', ')}`);
   if (prefs.accessibility?.length)
-    parts.push(`ACCESSIBILITY: ${prefs.accessibility.map(sanitizeForPrompt).join(', ')}`);
+    prefLines.push(`ACCESSIBILITY: ${prefs.accessibility.map(sanitizeForPrompt).join(', ')}`);
   if (prefs.business?.length)
-    parts.push(`BUSINESS: ${prefs.business.map(sanitizeForPrompt).join(', ')}`);
+    prefLines.push(`BUSINESS: ${prefs.business.map(sanitizeForPrompt).join(', ')}`);
   if (prefs.entertainment?.length)
-    parts.push(`ENTERTAINMENT: ${prefs.entertainment.map(sanitizeForPrompt).join(', ')}`);
-  if (prefs.budget) parts.push(`BUDGET: ${sanitizeForPrompt(prefs.budget)}`);
-  if (prefs.timePreference) parts.push(`TIME: ${sanitizeForPrompt(prefs.timePreference)}`);
-  if (prefs.travelStyle) parts.push(`TRAVEL STYLE: ${sanitizeForPrompt(prefs.travelStyle)}`);
+    prefLines.push(`ENTERTAINMENT: ${prefs.entertainment.map(sanitizeForPrompt).join(', ')}`);
+  if (prefs.budget) prefLines.push(`BUDGET: ${sanitizeForPrompt(prefs.budget)} (do not exceed)`);
+  if (prefs.timePreference && prefs.timePreference !== 'flexible')
+    prefLines.push(`SCHEDULE: ${sanitizeForPrompt(prefs.timePreference)}`);
+  if (prefs.travelStyle) prefLines.push(`LIFESTYLE: ${sanitizeForPrompt(prefs.travelStyle)}`);
 
-  // Only return if we actually added preference data
-  return parts.length > 1 ? parts.join('\n') : '';
+  if (prefLines.length === 0) return '';
+
+  const parts: string[] = [
+    '\n**USER PREFERENCES (APPLY AS FILTERS):**',
+    'When making recommendations:',
+    '- EXCLUDE options conflicting with dietary requirements',
+    '- PRIORITIZE options matching vibe/accessibility preferences',
+    '- RESPECT budget constraints (do not exceed max)',
+    '- Consider time preferences for scheduling',
+    '',
+    ...prefLines,
+  ];
+
+  return parts.join('\n');
 }
 
 function calendarSnippetLayer(tripContext: ComprehensiveTripContext): string {
