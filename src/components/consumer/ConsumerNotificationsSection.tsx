@@ -4,6 +4,7 @@ import {
   Mail,
   Smartphone,
   Radio,
+  MessageCircle,
   Calendar,
   DollarSign,
   CheckSquare,
@@ -40,9 +41,16 @@ const NOTIFICATION_CATEGORIES: NotificationCategory[] = [
   {
     key: 'broadcasts',
     dbKey: 'broadcasts',
-    label: 'Broadcasts',
-    description: 'Receive important announcements from trip organizers',
+    label: 'Broadcast and pinned messages',
+    description: 'Organizer broadcasts and when a message is pinned in chat',
     icon: <Radio size={16} className="text-red-400" />,
+  },
+  {
+    key: 'chat',
+    dbKey: 'chat_messages',
+    label: 'Trip chat',
+    description: 'Push for every new message in your trips (optional; off by default)',
+    icon: <MessageCircle size={16} className="text-blue-400" />,
   },
   {
     key: 'calendar',
@@ -114,6 +122,7 @@ export const ConsumerNotificationsSection = () => {
   // State for notification settings - matching database columns
   const [notificationSettings, setNotificationSettings] = useState<Record<string, boolean>>({
     broadcasts: true,
+    chat: false,
     calendar: true,
     payments: true,
     tasks: true,
@@ -196,6 +205,7 @@ export const ConsumerNotificationsSection = () => {
         const prefs = await userPreferencesService.getNotificationPreferences(user.id);
         setNotificationSettings({
           broadcasts: prefs.broadcasts ?? true,
+          chat: prefs.chat_messages ?? false,
           calendar: prefs.calendar_events ?? true,
           payments: prefs.payments ?? true,
           tasks: prefs.tasks ?? true,
@@ -266,6 +276,7 @@ export const ConsumerNotificationsSection = () => {
     // Map local state keys to database column names
     const keyMap: Record<string, keyof NotificationPreferences> = {
       broadcasts: 'broadcasts',
+      chat: 'chat_messages',
       calendar: 'calendar_events',
       payments: 'payments',
       tasks: 'tasks',
