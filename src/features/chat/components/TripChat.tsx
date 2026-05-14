@@ -1155,7 +1155,7 @@ export const TripChat = React.memo(
                     )}
                     <FeatureErrorBoundary featureName="Chat Timeline Enhancements" fallback={null}>
                       <VirtualizedMessageContainer
-                        messages={messagesWithPreviewFallbacks as any}
+                        messages={messagesWithThreads as any}
                         renderMessage={renderMessage}
                         onLoadMore={demoMode.isDemoMode ? () => {} : loadMoreMessages}
                         hasMore={demoMode.isDemoMode ? false : hasMore}
