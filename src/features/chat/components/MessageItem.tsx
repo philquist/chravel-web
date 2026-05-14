@@ -63,6 +63,8 @@ interface MessageItemProps {
 export const MessageItem = memo(
   ({
     message,
+    replies,
+    depth = 0,
     reactions,
     onReaction,
     onReply,
