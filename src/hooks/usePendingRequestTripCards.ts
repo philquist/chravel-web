@@ -142,7 +142,7 @@ export function usePendingRequestTripCards(isDemoMode = false) {
 
       const { data: pendingRequests, error: pendingRequestsError } = await supabase
         .from('trip_join_requests')
-        .select('id, trip_id, created_at')
+        .select('id, trip_id, requested_at')
         .eq('user_id', user.id)
         .eq('status', 'pending');
 
