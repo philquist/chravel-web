@@ -83,7 +83,9 @@ export function resolveNotificationNavigation(
     metadata.tab ??
     (metadata.channel_type === 'chat' || metadata.channel_type === 'messages'
       ? 'chat'
-      : (NOTIFICATION_TAB_BY_TYPE[notification.type] ?? null));
+      : (NOTIFICATION_TAB_BY_TYPE[notification.type] ??
+        resolveNotificationTabFromType(notification.type) ??
+        null));
 
   return {
     tab,

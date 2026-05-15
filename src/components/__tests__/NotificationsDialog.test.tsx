@@ -79,6 +79,7 @@ function renderDialog(open: boolean) {
 describe('NotificationsDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.removeItem('chravel:joinRequestNotificationResolutions');
     mockNotifications = [];
     mockUnreadCount = 0;
     mockMaybeSingle.mockResolvedValue({ data: null });
@@ -147,7 +148,7 @@ describe('NotificationsDialog', () => {
     expect(screen.queryByLabelText('Accept join request')).not.toBeInTheDocument();
   });
 
-  it('accepts join request from notification actions and clears the notification', async () => {
+  it('accepts join request from notification actions, marks read, and shows resolved labels', async () => {
     mockNotifications = [
       {
         id: 'n-1',
@@ -165,7 +166,6 @@ describe('NotificationsDialog', () => {
         },
       },
     ];
-    mockDeleteNotification.mockResolvedValue(undefined);
 
     renderDialog(true);
     fireEvent.click(screen.getByLabelText('Accept join request'));
@@ -175,7 +175,67 @@ describe('NotificationsDialog', () => {
         requestId: 'req-uuid-1',
         tripId: 'trip-1',
       });
-      expect(mockDeleteNotification).toHaveBeenCalledWith('n-1');
+      expect(mockMarkAsRead).toHaveBeenCalledWith('n-1');
+      expect(screen.getByText('Accepted')).toBeInTheDocument();
+      expect(screen.getByText('Deny')).toBeInTheDocument();
+    });
+    expect(mockDeleteNotification).not.toHaveBeenCalled();
+  });
+
+  it('rejects join request and shows Denied state without deleting the row', async () => {
+    mockNotifications = [
+      {
+        id: 'n-reject',
+        type: 'join_request',
+        title: 'Bob wants to join Trip',
+        description: 'Tap to approve or reject',
+        tripId: 'trip-1',
+        tripName: 'Coachella',
+        timestamp: '4 days ago',
+        isRead: false,
+        data: {
+          trip_id: 'trip-1',
+          request_id: 'req-reject-1',
+          trip_type: 'consumer',
+        },
+      },
+    ];
+
+    renderDialog(true);
+    fireEvent.click(screen.getByLabelText('Deny join request'));
+
+    await waitFor(() => {
+      expect(joinRequestMutations.rejectJoinRequestById).toHaveBeenCalledWith(expect.any(Object), {
+        requestId: 'req-reject-1',
+        tripId: 'trip-1',
+      });
+      expect(mockMarkAsRead).toHaveBeenCalledWith('n-reject');
+      expect(screen.getByText('Denied')).toBeInTheDocument();
+      expect(screen.getByText('Accept')).toBeInTheDocument();
+    });
+    expect(mockDeleteNotification).not.toHaveBeenCalled();
+  });
+
+  it('clears a single notification from the dismiss control', async () => {
+    mockNotifications = [
+      {
+        id: 'n-clear',
+        type: 'calendar',
+        title: 'Event reminder',
+        description: 'Soon',
+        tripId: 'trip-1',
+        tripName: 'Coachella',
+        timestamp: '1h ago',
+        isRead: false,
+        data: { trip_id: 'trip-1', trip_type: 'consumer' },
+      },
+    ];
+
+    renderDialog(true);
+    fireEvent.click(screen.getByLabelText('Clear notification'));
+
+    await waitFor(() => {
+      expect(mockDeleteNotification).toHaveBeenCalledWith('n-clear');
     });
   });
 

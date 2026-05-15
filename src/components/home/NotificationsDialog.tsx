@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Bell,
   MessageCircle,
@@ -82,6 +82,46 @@ function isJoinRequestApprovedNotification(notification: Notification): boolean 
 function getJoinRequestIdFromMetadata(metadata: Record<string, unknown>): string {
   const raw = metadata.request_id ?? metadata.join_request_id;
   return typeof raw === 'string' && raw.trim() !== '' ? raw : '';
+}
+
+const JOIN_REQUEST_RESOLUTION_STORAGE_KEY = 'chravel:joinRequestNotificationResolutions';
+
+type JoinRequestUiResolution = 'accepted' | 'rejected';
+
+function readStoredJoinResolutions(): Record<string, JoinRequestUiResolution> {
+  if (typeof sessionStorage === 'undefined') {
+    return {};
+  }
+  try {
+    const raw = sessionStorage.getItem(JOIN_REQUEST_RESOLUTION_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') {
+      return {};
+    }
+    const out: Record<string, JoinRequestUiResolution> = {};
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+      if (v === 'accepted' || v === 'rejected') {
+        out[k] = v;
+      }
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function writeStoredJoinResolutions(next: Record<string, JoinRequestUiResolution>): void {
+  if (typeof sessionStorage === 'undefined') {
+    return;
+  }
+  try {
+    sessionStorage.setItem(JOIN_REQUEST_RESOLUTION_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // ignore quota / private mode
+  }
 }
 
 /** In-app join request awaiting organizer action (has request id); excludes approved notices. */
@@ -215,12 +255,54 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [joinActionLoadingId, setJoinActionLoadingId] = useState<string | null>(null);
-  const [demoHiddenJoinNotificationIds, setDemoHiddenJoinNotificationIds] = useState<Set<string>>(
+  const [demoDismissedNotificationIds, setDemoDismissedNotificationIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const [demoJoinResolutions, setDemoJoinResolutions] = useState<
+    Record<string, JoinRequestUiResolution>
+  >(() => ({}));
+  const [joinRequestResolutions, setJoinRequestResolutions] = useState<
+    Record<string, JoinRequestUiResolution>
+  >(() => readStoredJoinResolutions());
+
+  useEffect(() => {
+    setJoinRequestResolutions(readStoredJoinResolutions());
+  }, [open]);
 
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, deleteNotification } =
     useNotificationRealtime();
+
+  const persistJoinResolution = useCallback(
+    (notificationId: string, resolution: JoinRequestUiResolution) => {
+      setJoinRequestResolutions(prev => {
+        const next = { ...prev, [notificationId]: resolution };
+        writeStoredJoinResolutions(next);
+        return next;
+      });
+      setDemoJoinResolutions(prev => ({ ...prev, [notificationId]: resolution }));
+    },
+    [],
+  );
+
+  const clearJoinResolutionForId = useCallback((notificationId: string) => {
+    setJoinRequestResolutions(prev => {
+      if (!(notificationId in prev)) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[notificationId];
+      writeStoredJoinResolutions(next);
+      return next;
+    });
+    setDemoJoinResolutions(prev => {
+      if (!(notificationId in prev)) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[notificationId];
+      return next;
+    });
+  }, []);
 
   const resolveTripRouteContext = async (
     notification: Notification,
@@ -344,7 +426,7 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
             });
           }
           toast.success('✅ Request approved - member added to trip!');
-          setDemoHiddenJoinNotificationIds(prev => new Set(prev).add(notification.id));
+          persistJoinResolution(notification.id, 'accepted');
           return;
         }
 
@@ -353,14 +435,15 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
         }
 
         await approveJoinRequestById(queryClient, { requestId, tripId: tripId || undefined });
-        await deleteNotification(notification.id);
+        await markAsRead(notification.id);
+        persistJoinResolution(notification.id, 'accepted');
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Failed to approve request');
       } finally {
         setJoinActionLoadingId(null);
       }
     },
-    [joinActionLoadingId, isDemoMode, user, queryClient, deleteNotification],
+    [joinActionLoadingId, isDemoMode, user, queryClient, markAsRead, persistJoinResolution],
   );
 
   const handleJoinRequestReject = useCallback(
@@ -378,7 +461,7 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
       try {
         if (isDemoMode) {
           toast.success('Request rejected');
-          setDemoHiddenJoinNotificationIds(prev => new Set(prev).add(notification.id));
+          persistJoinResolution(notification.id, 'rejected');
           return;
         }
 
@@ -387,14 +470,35 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
         }
 
         await rejectJoinRequestById(queryClient, { requestId, tripId: tripId || undefined });
-        await deleteNotification(notification.id);
+        await markAsRead(notification.id);
+        persistJoinResolution(notification.id, 'rejected');
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Failed to reject request');
       } finally {
         setJoinActionLoadingId(null);
       }
     },
-    [joinActionLoadingId, isDemoMode, user, queryClient, deleteNotification],
+    [joinActionLoadingId, isDemoMode, user, queryClient, markAsRead, persistJoinResolution],
+  );
+
+  const handleDismissSingleNotification = useCallback(
+    async (notification: Notification, e: React.MouseEvent) => {
+      e.stopPropagation();
+      clearJoinResolutionForId(notification.id);
+      if (isDemoMode) {
+        setDemoDismissedNotificationIds(prev => new Set(prev).add(notification.id));
+        return;
+      }
+      if (!user) {
+        return;
+      }
+      try {
+        await deleteNotification(notification.id);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to clear notification');
+      }
+    },
+    [isDemoMode, user, deleteNotification, clearJoinResolutionForId],
   );
 
   const handleMarkAllAsRead = async () => {
@@ -405,6 +509,8 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
 
   const handleClearAll = async () => {
     if (!isDemoMode && user) {
+      setJoinRequestResolutions({});
+      writeStoredJoinResolutions({});
       await clearAll(notifications);
     }
   };
@@ -429,8 +535,8 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
     if (!isDemoMode) {
       return mapped;
     }
-    return mapped.filter(n => !demoHiddenJoinNotificationIds.has(n.id));
-  }, [isDemoMode, notifications, demoHiddenJoinNotificationIds]);
+    return mapped.filter(n => !demoDismissedNotificationIds.has(n.id));
+  }, [isDemoMode, notifications, demoDismissedNotificationIds]);
 
   const displayUnreadCount = isDemoMode
     ? displayNotifications.filter(n => !n.isRead).length
@@ -482,85 +588,132 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
               <p>No notifications yet</p>
             </div>
           ) : (
-            displayNotifications.map(notification => (
-              <div
-                key={notification.id}
-                onClick={() => handleNotificationClick(notification)}
-                className={cn(
-                  'p-4 border-b border-border/50 hover:bg-accent/10 cursor-pointer transition-colors',
-                  !notification.isRead && 'bg-accent/5',
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="mt-1">
-                    {getNotificationIcon(notification.type, notification.isHighPriority)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p
-                        className={cn(
-                          'text-sm font-medium',
-                          !notification.isRead ? 'text-foreground' : 'text-muted-foreground',
+            displayNotifications.map(notification => {
+              const joinResolution = isDemoMode
+                ? demoJoinResolutions[notification.id]
+                : joinRequestResolutions[notification.id];
+              const showPendingJoinActions = isPendingJoinRequestWithActions(notification);
+
+              return (
+                <div
+                  key={notification.id}
+                  onClick={() => handleNotificationClick(notification)}
+                  className={cn(
+                    'p-4 border-b border-border/50 hover:bg-accent/10 cursor-pointer transition-colors',
+                    !notification.isRead && 'bg-accent/5',
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1">
+                      {getNotificationIcon(notification.type, notification.isHighPriority)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p
+                          className={cn(
+                            'text-sm font-medium',
+                            !notification.isRead ? 'text-foreground' : 'text-muted-foreground',
+                          )}
+                        >
+                          {notification.title}
+                        </p>
+                        {notification.isHighPriority && (
+                          <div className="w-2 h-2 bg-destructive rounded-full"></div>
                         )}
-                      >
-                        {notification.title}
-                      </p>
-                      {notification.isHighPriority && (
-                        <div className="w-2 h-2 bg-destructive rounded-full"></div>
-                      )}
-                      {!notification.isRead && (
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-1 truncate">
-                      {notification.description}
-                    </p>
-                    {isJoinRequestApprovedNotification(notification) && (
-                      <p className="text-[11px] text-primary/85 mb-1">Tap to open trip</p>
-                    )}
-                    {isPendingJoinRequestWithActions(notification) && (
-                      <div
-                        className="flex flex-wrap items-center gap-2 mt-2"
-                        onClick={e => e.stopPropagation()}
-                        onKeyDown={e => e.stopPropagation()}
-                        role="group"
-                        aria-label="Join request actions"
-                      >
-                        <button
-                          type="button"
-                          disabled={joinActionLoadingId !== null}
-                          onClick={e => {
-                            void handleJoinRequestAccept(notification, e);
-                          }}
-                          className="inline-flex items-center gap-1 rounded-md bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-medium px-2.5 py-1.5 min-h-[44px] sm:min-h-0 disabled:opacity-50"
-                          aria-label="Accept join request"
-                        >
-                          <Check size={14} className="shrink-0" aria-hidden />
-                          Accept
-                        </button>
-                        <button
-                          type="button"
-                          disabled={joinActionLoadingId !== null}
-                          onClick={e => {
-                            void handleJoinRequestReject(notification, e);
-                          }}
-                          className="inline-flex items-center gap-1 rounded-md bg-destructive/90 hover:bg-destructive text-destructive-foreground text-xs font-medium px-2.5 py-1.5 min-h-[44px] sm:min-h-0 disabled:opacity-50"
-                          aria-label="Deny join request"
-                        >
-                          <X size={14} className="shrink-0" aria-hidden />
-                          Deny
-                        </button>
+                        {!notification.isRead && (
+                          <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        )}
                       </div>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted-foreground/70">{notification.tripName}</p>
-                      <p className="text-xs text-muted-foreground/70">{notification.timestamp}</p>
+                      <p className="text-xs text-muted-foreground mb-1 truncate">
+                        {notification.description}
+                      </p>
+                      {isJoinRequestApprovedNotification(notification) && (
+                        <p className="text-[11px] text-primary/85 mb-1">Tap to open trip</p>
+                      )}
+                      {showPendingJoinActions && joinResolution && (
+                        <div
+                          className="flex flex-wrap items-center gap-2 mt-2"
+                          onClick={e => e.stopPropagation()}
+                          onKeyDown={e => e.stopPropagation()}
+                          role="group"
+                          aria-label="Join request resolved"
+                        >
+                          <div
+                            className={cn(
+                              'inline-flex items-center gap-1 rounded-md border border-border/60 bg-muted text-muted-foreground text-xs font-medium px-2.5 py-1.5 min-h-[44px] sm:min-h-0 select-none',
+                              joinResolution === 'accepted' && 'ring-1 ring-border/80',
+                            )}
+                          >
+                            <Check size={14} className="shrink-0 opacity-70" aria-hidden />
+                            {joinResolution === 'accepted' ? 'Accepted' : 'Accept'}
+                          </div>
+                          <div
+                            className={cn(
+                              'inline-flex items-center gap-1 rounded-md border border-border/60 bg-muted text-muted-foreground text-xs font-medium px-2.5 py-1.5 min-h-[44px] sm:min-h-0 select-none',
+                              joinResolution === 'rejected' && 'ring-1 ring-border/80',
+                            )}
+                          >
+                            <X size={14} className="shrink-0 opacity-70" aria-hidden />
+                            {joinResolution === 'rejected' ? 'Denied' : 'Deny'}
+                          </div>
+                        </div>
+                      )}
+                      {showPendingJoinActions && !joinResolution && (
+                        <div
+                          className="flex flex-wrap items-center gap-2 mt-2"
+                          onClick={e => e.stopPropagation()}
+                          onKeyDown={e => e.stopPropagation()}
+                          role="group"
+                          aria-label="Join request actions"
+                        >
+                          <button
+                            type="button"
+                            disabled={joinActionLoadingId !== null}
+                            onClick={e => {
+                              void handleJoinRequestAccept(notification, e);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-md bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-medium px-2.5 py-1.5 min-h-[44px] sm:min-h-0 disabled:opacity-50"
+                            aria-label="Accept join request"
+                          >
+                            <Check size={14} className="shrink-0" aria-hidden />
+                            Accept
+                          </button>
+                          <button
+                            type="button"
+                            disabled={joinActionLoadingId !== null}
+                            onClick={e => {
+                              void handleJoinRequestReject(notification, e);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-md bg-destructive/90 hover:bg-destructive text-destructive-foreground text-xs font-medium px-2.5 py-1.5 min-h-[44px] sm:min-h-0 disabled:opacity-50"
+                            aria-label="Deny join request"
+                          >
+                            <X size={14} className="shrink-0" aria-hidden />
+                            Deny
+                          </button>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground/70">{notification.tripName}</p>
+                        <p className="text-xs text-muted-foreground/70">{notification.timestamp}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-0.5 shrink-0 mt-0.5">
+                      <button
+                        type="button"
+                        className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        aria-label="Clear notification"
+                        onClick={e => {
+                          void handleDismissSingleNotification(notification, e);
+                        }}
+                      >
+                        <X size={15} className="shrink-0" strokeWidth={2.5} aria-hidden />
+                      </button>
+                      <ChevronRight size={16} className="text-muted-foreground/60" aria-hidden />
                     </div>
                   </div>
-                  <ChevronRight size={16} className="mt-1 text-muted-foreground/60" />
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </DialogContent>
