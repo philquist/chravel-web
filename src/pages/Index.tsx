@@ -1207,6 +1207,13 @@ const AuthIndex = () => {
 
         {/* Desktop navigation - hidden on mobile, use NativeTabBar instead */}
         <div className="hidden lg:grid w-full grid-cols-1 xl:grid-cols-2 items-stretch gap-4 xl:gap-5 2xl:gap-6 mb-3 sm:mb-6">
+          <TripViewToggle
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            showRecsTab={isDemoMode}
+            recsTabDisabled={false}
+            className="w-full h-12 sm:h-16"
+          />
           <TripActionBar
             onSettings={() => {
               setSettingsInitialType('consumer');
@@ -1220,13 +1227,6 @@ const AuthIndex = () => {
             onNotifications={() => {}}
             isNotificationsOpen={isNotificationsOpen}
             setIsNotificationsOpen={setIsNotificationsOpen}
-            className="w-full h-12 sm:h-16"
-          />
-          <TripViewToggle
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            showRecsTab={isDemoMode}
-            recsTabDisabled={false}
             className="w-full h-12 sm:h-16"
           />
         </div>
