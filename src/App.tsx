@@ -559,6 +559,16 @@ const App = () => {
                         }
                       />
                       <Route
+                        path="/admin/seo"
+                        element={
+                          <LazyRoute>
+                            <InternalAdminRoute>
+                              <SeoDashboard />
+                            </InternalAdminRoute>
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
                         path="/organizations"
                         element={
                           <LazyRoute>
