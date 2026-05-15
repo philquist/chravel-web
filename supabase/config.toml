@@ -147,3 +147,6 @@ verify_jwt = true
 
 [functions.create-openai-realtime-session]
 verify_jwt = false
+
+[functions.seo-dashboard]
+verify_jwt = true
