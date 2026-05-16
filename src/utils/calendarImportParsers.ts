@@ -435,37 +435,67 @@ function mapAIEventsToICS(aiEvents: AIExtractedEvent[]): {
   return { events, confidenceScores };
 }
 
-export async function parseWithAI(file: File): Promise<SmartParseResult> {
+export async function parseWithAI(file: File, tripId?: string): Promise<SmartParseResult> {
   const sourceFormat: ImportSourceFormat = file.type === 'application/pdf' ? 'pdf' : 'image';
   let filePath: string | null = null;
 
   try {
-    const fileExt = file.name.split('.').pop() ?? 'bin';
-    filePath = `calendar-imports/${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
+    let fileUrl: string | null = null;
 
-    const { error: uploadError } = await supabase.storage
-      .from('trip-media')
-      .upload(filePath, file, {
-        contentType: file.type,
-        upsert: false,
-      });
+    if (tripId) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('tripId', tripId);
 
-    if (uploadError) {
-      return {
-        events: [],
-        errors: [`Failed to upload file: ${uploadError.message}`],
-        isValid: false,
-        sourceFormat,
-      };
+      const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
+        'file-upload',
+        {
+          body: formData,
+        },
+      );
+
+      if (uploadError || !uploadData?.downloadUrl) {
+        return {
+          events: [],
+          errors: [
+            `Failed to upload file: ${uploadError?.message || 'Upload did not return a usable file URL'}`,
+          ],
+          isValid: false,
+          sourceFormat,
+        };
+      }
+
+      fileUrl = uploadData.downloadUrl as string;
+    } else {
+      const fileExt = file.name.split('.').pop() ?? 'bin';
+      filePath = `calendar-imports/${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('trip-media')
+        .upload(filePath, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        return {
+          events: [],
+          errors: [`Failed to upload file: ${uploadError.message}`],
+          isValid: false,
+          sourceFormat,
+        };
+      }
+
+      const { data: urlData } = supabase.storage.from('trip-media').getPublicUrl(filePath);
+      fileUrl = urlData.publicUrl;
     }
-
-    const { data: urlData } = supabase.storage.from('trip-media').getPublicUrl(filePath);
 
     const { data, error } = await supabase.functions.invoke('enhanced-ai-parser', {
       body: {
-        fileUrl: urlData.publicUrl,
+        fileUrl,
         fileType: file.type,
         extractionType: 'calendar',
+        tripId,
         messageText: `Extract ALL scheduled events from this ${sourceFormat === 'pdf' ? 'PDF document' : 'image'}. Include shows, concerts, performances, festivals, meetings, and any time-bound events.`,
       },
     });
@@ -594,7 +624,10 @@ function getFileFormat(file: File): ImportSourceFormat {
   return 'text';
 }
 
-export async function parseCalendarFile(file: File): Promise<SmartParseResult> {
+export async function parseCalendarFile(
+  file: File,
+  options?: { tripId?: string },
+): Promise<SmartParseResult> {
   const format = getFileFormat(file);
 
   switch (format) {
@@ -608,7 +641,7 @@ export async function parseCalendarFile(file: File): Promise<SmartParseResult> {
       return parseExcelCalendar(file);
     case 'pdf':
     case 'image':
-      return parseWithAI(file);
+      return parseWithAI(file, options?.tripId);
     default:
       return {
         events: [],

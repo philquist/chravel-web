@@ -139,7 +139,13 @@ export const CalendarEventModal = ({
 
   // Reset conflict state when time fields change
   const updateFormAndResetConflicts = (updates: Partial<typeof formData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
+    setFormData(prev => {
+      const next = { ...prev, ...updates };
+      if ('time' in updates && !updates.time) {
+        next.endTime = undefined;
+      }
+      return next;
+    });
     if ('time' in updates || 'endTime' in updates || 'date' in updates || 'is_all_day' in updates) {
       setConflicts([]);
       skipConflictCheckRef.current = false;
@@ -148,7 +154,7 @@ export const CalendarEventModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || (!formData.is_all_day && !formData.time)) return;
+    if (!formData.title || !formData.date) return;
 
     // End time validation
     if (endTimeInvalid) {
@@ -168,11 +174,15 @@ export const CalendarEventModal = ({
         endOfDay.setHours(23, 59, 59, 999);
         endTime = endOfDay.toISOString();
       } else {
-        const [hours, minutes] = formData.time.split(':');
         startTime = new Date(formData.date);
-        startTime.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+        startTime.setHours(0, 0, 0, 0);
 
-        if (formData.endTime) {
+        if (formData.time) {
+          const [hours, minutes] = formData.time.split(':');
+          startTime.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+        }
+
+        if (formData.endTime && formData.time) {
           const [endHours, endMins] = formData.endTime.split(':');
           const endDateTime = new Date(formData.date);
           endDateTime.setHours(parseInt(endHours, 10), parseInt(endMins, 10), 0, 0);
@@ -345,13 +355,12 @@ export const CalendarEventModal = ({
 
             {!formData.is_all_day && (
               <div>
-                <Label htmlFor="time">Time *</Label>
+                <Label htmlFor="time">Time (optional)</Label>
                 <Input
                   id="time"
                   type="time"
                   value={formData.time}
                   onChange={e => updateFormAndResetConflicts({ time: e.target.value })}
-                  required
                 />
               </div>
             )}

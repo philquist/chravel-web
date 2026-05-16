@@ -65,7 +65,7 @@ export const SmartImport = ({
 
       try {
         if (isCalendarTarget) {
-          const result = await parseCalendarFile(file);
+          const result = await parseCalendarFile(file, { tripId });
           if (!result.isValid || result.events.length === 0) {
             throw new Error(result.errors[0] || 'No valid schedule events found in the file');
           }
@@ -122,7 +122,7 @@ export const SmartImport = ({
         setIsProcessing(false);
       }
     },
-    [isCalendarTarget, parseConfig, targetCollection, onDataImported, toast],
+    [isCalendarTarget, parseConfig, targetCollection, onDataImported, toast, tripId],
   );
 
   const handleUrlImport = useCallback(async () => {

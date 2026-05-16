@@ -139,10 +139,10 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
     async (file: File) => {
       setParsingSource('file');
       setState('parsing');
-      const result = await parseCalendarFile(file);
+      const result = await parseCalendarFile(file, { tripId });
       processParseResult(result);
     },
-    [processParseResult],
+    [processParseResult, tripId],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useSmartImportDropzone({
@@ -318,7 +318,7 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent
-        className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
+        className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col"
         onDragOverCapture={onDragOverCapture}
         onDropCapture={onDropCapture}
       >
@@ -329,7 +329,7 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pr-1">
           {/* ── Idle State ── */}
           {state === 'idle' && (
             <div className="space-y-4">
@@ -413,7 +413,7 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
               </div>
 
               <div
-                className="rounded-xl border border-border/60 bg-muted/20 px-3 py-2"
+                className="rounded-xl border border-border/60 bg-muted/20 px-3 py-3 mb-1"
                 onClick={e => e.stopPropagation()}
                 onKeyDown={e => e.stopPropagation()}
               >
