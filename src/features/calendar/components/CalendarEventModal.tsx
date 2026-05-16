@@ -139,7 +139,13 @@ export const CalendarEventModal = ({
 
   // Reset conflict state when time fields change
   const updateFormAndResetConflicts = (updates: Partial<typeof formData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
+    setFormData(prev => {
+      const next = { ...prev, ...updates };
+      if ('time' in updates && !updates.time) {
+        next.endTime = undefined;
+      }
+      return next;
+    });
     if ('time' in updates || 'endTime' in updates || 'date' in updates || 'is_all_day' in updates) {
       setConflicts([]);
       skipConflictCheckRef.current = false;
