@@ -94,7 +94,10 @@ serve(async req => {
     }
 
     if (!response.ok) {
-      const isFallbackable = response.status >= 500;
+      // Treat all upstream failures as fallbackable — the client should degrade
+      // gracefully (show plain URL) rather than throw. 403/404 commonly occur from
+      // bot-blocking sites or malformed user-pasted URLs (trailing punctuation).
+      const isFallbackable = true;
       console.error(`[fetch-og-metadata] HTTP ${response.status}: ${response.statusText}`);
       return new Response(
         JSON.stringify({
