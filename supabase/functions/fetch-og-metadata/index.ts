@@ -25,6 +25,57 @@ interface OGMetadata {
   error?: string;
 }
 
+// Exported for testing. Handles common paste artifacts: markdown link syntax,
+// surrounding quotes/brackets, HTML entities, and trailing punctuation.
+const HTML_ENTITIES: Record<string, string> = {
+  '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'",
+  '&apos;': "'", '&nbsp;': ' ',
+};
+const decodeHtmlEntities = (s: string): string =>
+  s
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&(?:amp|lt|gt|quot|apos|nbsp|#39);/g, m => HTML_ENTITIES[m] ?? m);
+
+export const sanitizeUrl = (raw: string): string => {
+  let u = raw.trim();
+
+  const mdMatch = u.match(/^\[[^\]]*\]\((.+)\)$/);
+  if (mdMatch) u = mdMatch[1].trim();
+
+  const angleMatch = u.match(/^<(.+)>$/);
+  if (angleMatch) u = angleMatch[1].trim();
+
+  const pairs: Array<[string, string]> = [
+    ['"', '"'], ["'", "'"], ['`', '`'],
+    ['“', '”'], ['‘', '’'], ['«', '»'],
+    ['(', ')'], ['[', ']'], ['{', '}'],
+  ];
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const [open, close] of pairs) {
+      if (u.startsWith(open) && u.endsWith(close) && u.length > open.length + close.length) {
+        u = u.slice(open.length, -close.length).trim();
+        changed = true;
+      }
+    }
+  }
+
+  u = decodeHtmlEntities(u);
+  u = u.replace(/[.,!?;:]+$/g, '');
+
+  while (/[)\]}]$/.test(u)) {
+    const close = u.slice(-1);
+    const open = close === ')' ? '(' : close === ']' ? '[' : '{';
+    const opens = (u.match(new RegExp(`\\${open}`, 'g')) || []).length;
+    const closes = (u.match(new RegExp(`\\${close}`, 'g')) || []).length;
+    if (closes > opens) u = u.slice(0, -1);
+    else break;
+  }
+  return u.replace(/[.,!?;:]+$/g, '');
+};
+
 serve(async req => {
   const corsHeaders = getCorsHeaders(req);
 
