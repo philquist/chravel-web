@@ -39,41 +39,44 @@ const decodeHtmlEntities = (s: string): string =>
 
 export const sanitizeUrl = (raw: string): string => {
   let u = raw.trim();
-
-  const mdMatch = u.match(/^\[[^\]]*\]\((.+)\)$/);
-  if (mdMatch) u = mdMatch[1].trim();
-
-  const angleMatch = u.match(/^<(.+)>$/);
-  if (angleMatch) u = angleMatch[1].trim();
-
   const pairs: Array<[string, string]> = [
     ['"', '"'], ["'", "'"], ['`', '`'],
     ['“', '”'], ['‘', '’'], ['«', '»'],
     ['(', ')'], ['[', ']'], ['{', '}'],
   ];
-  let changed = true;
-  while (changed) {
-    changed = false;
+
+  // Loop until stable (max 8 iterations) so combined wrappers like
+  // `"[Foo](https://x)."` are fully unwrapped regardless of order.
+  for (let i = 0; i < 8; i++) {
+    const before = u;
+
+    const mdMatch = u.match(/^\[[^\]]*\]\((.+)\)$/);
+    if (mdMatch) u = mdMatch[1].trim();
+
+    const angleMatch = u.match(/^<(.+)>$/);
+    if (angleMatch) u = angleMatch[1].trim();
+
     for (const [open, close] of pairs) {
       if (u.startsWith(open) && u.endsWith(close) && u.length > open.length + close.length) {
         u = u.slice(open.length, -close.length).trim();
-        changed = true;
       }
     }
-  }
 
-  u = decodeHtmlEntities(u);
-  u = u.replace(/[.,!?;:]+$/g, '');
+    u = decodeHtmlEntities(u);
+    u = u.replace(/[.,!?;:]+$/g, '');
 
-  while (/[)\]}]$/.test(u)) {
-    const close = u.slice(-1);
-    const open = close === ')' ? '(' : close === ']' ? '[' : '{';
-    const opens = (u.match(new RegExp(`\\${open}`, 'g')) || []).length;
-    const closes = (u.match(new RegExp(`\\${close}`, 'g')) || []).length;
-    if (closes > opens) u = u.slice(0, -1);
-    else break;
+    while (/[)\]}]$/.test(u)) {
+      const close = u.slice(-1);
+      const open = close === ')' ? '(' : close === ']' ? '[' : '{';
+      const opens = (u.match(new RegExp(`\\${open}`, 'g')) || []).length;
+      const closes = (u.match(new RegExp(`\\${close}`, 'g')) || []).length;
+      if (closes > opens) u = u.slice(0, -1);
+      else break;
+    }
+
+    if (u === before) break;
   }
-  return u.replace(/[.,!?;:]+$/g, '');
+  return u;
 };
 
 serve(async req => {
