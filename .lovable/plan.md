@@ -1,56 +1,36 @@
-## Root cause
+## Goal
+Make `fetch-og-metadata` robust against URLs pasted with HTML entities, surrounding quotes, or markdown link syntax — before SSRF validation runs.
 
-`src/main.tsx` decides at boot which React tree to mount:
+## Change
+Extend the existing `sanitizeUrl` helper in `supabase/functions/fetch-og-metadata/index.ts` (currently lines 45–60) so it normalizes the URL in this order:
 
-- **Anonymous visitors to `/`** → `<MarketingApp />` (lightweight: only `FullPageLanding` + `AuthModal`)
-- **Everyone else** → `<App />` (full router, dashboard, all routes)
+1. **Trim whitespace.**
+2. **Unwrap markdown link syntax** — if the input matches `[text](url)` or `<url>`, extract the inner URL.
+3. **Strip surrounding quotes/brackets** — leading/trailing `"`, `'`, `` ` ``, `«»`, `'…'`, `"…"`, `(`, `[`, `{`.
+4. **Decode HTML entities** — `&amp;` → `&`, `&#38;` → `&`, `&#x26;` → `&`, plus `&lt; &gt; &quot; &#39; &nbsp;`. Use a small entity map + numeric (`&#nnn;` / `&#xhh;`) decoder. No new deps.
+5. **Strip trailing punctuation** (existing logic): `.,!?;:`.
+6. **Strip unmatched trailing closing brackets** (existing logic): `)`, `]`, `}`.
+7. Final trailing-punctuation pass (existing).
 
-The decision happens **once at module load** via `isAnonymousRootRoute()`, which checks `localStorage` for Supabase auth markers (`sb-`, `supabase.auth.token`, etc.).
+The sanitized URL is then passed to `validateExternalUrlBeforeFetch` exactly as today — no changes to the SSRF/validation pipeline, redirect handling, or response shape.
 
-When you sign in from the marketing page:
-1. `AuthModal` calls `supabase.auth.signInWithPassword(...)` — succeeds silently.
-2. `AuthProvider` updates `user` in context → `AuthModal` closes (its `useEffect` on `user`).
-3. **But the running React tree is still `<MarketingApp>`**, which has no route for the dashboard. It just keeps rendering `FullPageLanding`.
-4. `HeaderAuthButton` (inside `StickyLandingNav`) sees the new `user` and flips its CTA to the "Account" avatar — which is exactly what you saw in your screenshot. That's why it *looks* like you're logged in on the marketing page: you *are*, but the shell can't render the dashboard.
-
-A full page reload would fix it because on the next boot, `isAnonymousRootRoute()` sees the Supabase auth marker in localStorage and mounts `<App />`. There is currently no code that triggers that reload (and no in-place swap from MarketingApp to App).
-
-## Fix
-
-In `src/MarketingApp.tsx`, after auth state becomes authenticated, hard-navigate so `main.tsx` boots the full `<App />` shell.
-
-```text
-src/MarketingApp.tsx
-├── inside <AuthProvider>, add a small <PostAuthBoot/> child component:
-│     - useAuth() → if user && !isLoading, window.location.assign('/')
-│       (full reload, not navigate(), so main.tsx re-runs isAnonymousRootRoute)
-└── render <PostAuthBoot /> alongside FullPageLanding + AuthModal
-```
-
-Why `window.location.assign('/')` and not `navigate('/')`:
-- React Router navigation stays inside the already-mounted MarketingApp tree → still no dashboard.
-- A real navigation re-runs `main.tsx`, which now detects the auth marker and mounts `<App />`.
-
-## Why not change `main.tsx` instead
-
-`main.tsx` already does the right check at boot. Adding reactive swap logic there would require restructuring (it currently calls `createRoot(...).render(...)` exactly once). The smaller, safer fix is at the `MarketingApp` boundary, which is the only place this can go wrong.
-
-## Out of scope
-
-- Refactoring the marketing-vs-app split itself.
-- Changing `AuthModal` close behavior.
-- Touching `Index.tsx` (the logic there is correct; it just never gets a chance to render in this scenario).
+## Technical details
+- Keep everything inline in `index.ts` (no shared module changes) to keep the diff surgical.
+- Order matters: unwrap markdown/quotes **before** entity decode (entities may live inside the URL), and entity decode **before** punctuation stripping (a decoded `&` could expose new trailing chars... but `&` isn't in the punctuation set, so safe).
+- Idempotent: running `sanitizeUrl` twice yields the same result.
+- No behavior change for already-clean URLs.
 
 ## Verification
+- Add a Deno test file `supabase/functions/fetch-og-metadata/sanitize_test.ts` covering:
+  - `"https://example.com"` (quoted)
+  - `[Tour](https://viator.com/x)` (markdown)
+  - `<https://example.com>` (angle-wrapped)
+  - `https://example.com/?a=1&amp;b=2` (entity)
+  - `https://example.com/path).` (existing trailing-punct case still works)
+  - Clean URL passthrough
+- Run via `supabase--test_edge_functions` for the `fetch-og-metadata` function.
+- Deploy via `supabase--deploy_edge_functions`.
 
-1. Sign out, hard-reload `/` → marketing landing renders.
-2. Click "Log In" → enter credentials → submit.
-3. Expected: brief blank/spinner, then the dashboard (`<App />` boot) renders at `/`.
-4. Sign out from dashboard → back to marketing landing.
-5. Refresh `/auth` directly while logged out → AuthPage works as before (unaffected by this change — that path doesn't go through MarketingApp).
-
-## Files touched
-
-- `src/MarketingApp.tsx` (add `<PostAuthBoot />`, ~10 lines)
-
-Regression risk: **LOW**. Single conditional `window.location.assign('/')` gated on authenticated user inside a tree that otherwise has nothing to show them.
+## Out of scope
+- Client-side `urlUtils.ts` / `stripTrailingPunctuation` — server is the security boundary, fix lives there.
+- Changes to SSRF validation, redirect logic, or response contract.
