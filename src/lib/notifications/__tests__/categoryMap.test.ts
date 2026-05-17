@@ -10,10 +10,12 @@ describe('notification category map', () => {
     const seen = new Map<NotificationType, string>();
 
     Object.values(NOTIFICATION_CATEGORY_MAP).forEach(definition => {
-      ((definition as any).backendTypes ?? definition.backendNotificationTypes).forEach((type: NotificationType) => {
-        expect(seen.has(type)).toBe(false);
-        seen.set(type, ((definition as any).category ?? definition.key) as string);
-      });
+      ((definition as any).backendTypes ?? definition.backendNotificationTypes).forEach(
+        (type: NotificationType) => {
+          expect(seen.has(type)).toBe(false);
+          seen.set(type, ((definition as any).category ?? definition.key) as string);
+        },
+      );
     });
 
     seen.forEach((category, type) => {

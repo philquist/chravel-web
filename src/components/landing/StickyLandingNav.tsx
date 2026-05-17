@@ -74,9 +74,7 @@ export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
     // Track active section via IntersectionObserver — replaces per-scroll
     // getBoundingClientRect() loop that forced layout every frame.
     const scope: ParentNode = useWindow ? document : root;
-    const sectionEls = Array.from(
-      scope.querySelectorAll<HTMLElement>('[id^="section-"]'),
-    );
+    const sectionEls = Array.from(scope.querySelectorAll<HTMLElement>('[id^="section-"]'));
     const visibility = new Map<string, number>();
     const io = new IntersectionObserver(
       entries => {
@@ -132,9 +130,7 @@ export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
 
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
-        <div className="text-xl font-bold text-gradient-gold">
-          ChravelApp
-        </div>
+        <div className="text-xl font-bold text-gradient-gold">ChravelApp</div>
 
         {/* For Teams Link (Desktop) */}
         <div className="hidden lg:flex items-center">

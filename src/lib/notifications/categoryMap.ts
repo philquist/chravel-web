@@ -167,9 +167,6 @@ export function resolveNotificationCategory(type: string): NotificationCategoryK
   return NOTIFICATION_TYPE_TO_CATEGORY_KEY[type.toLowerCase()] ?? null;
 }
 
-export function resolveNotificationTabFromType(
-  type: string,
-): NotificationDeepLinkTab | null {
+export function resolveNotificationTabFromType(type: string): NotificationDeepLinkTab | null {
   return resolveNotificationCategoryByType(type)?.deepLinkTab ?? null;
 }
-

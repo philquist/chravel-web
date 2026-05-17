@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { MessageCircle, Hash, Search, ChevronDown, Pin } from 'lucide-react';
+import { MessageCircle, Hash, Search, ChevronDown, Pin, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TripChannel } from '@/types/roleChannels';
@@ -22,7 +22,9 @@ const SEGMENT_COLORS = {
   },
   pinned: {
     active: 'bg-amber-500 text-black shadow-md',
-    inactive: 'text-amber-300 hover:text-black hover:bg-amber-400',
+    // Inactive must stay readable on the bar's neutral background in both light and dark modes.
+    // amber-300 washed out on the light-mode bar (low contrast on light page bg).
+    inactive: 'text-amber-700 dark:text-amber-300 hover:text-black hover:bg-amber-400',
     badge: 'bg-amber-500 text-black',
   },
   search: {
@@ -91,8 +93,8 @@ export const MessageTypeBar = ({
 
   return (
     <div className="sticky top-0 z-10 w-full backdrop-blur-lg rounded-t-2xl">
-      {/* Left-aligned row scrolls horizontally on narrow viewports so the first tab is never clipped */}
-      <div className="flex min-w-0 items-center justify-start overflow-x-auto scrollbar-hide scroll-pl-2 scroll-pr-2 px-2 py-1">
+      {/* Centered pill cluster; overflow-x-auto is a safety net for very narrow viewports */}
+      <div className="flex min-w-0 items-center justify-center overflow-x-auto scrollbar-hide scroll-pl-2 scroll-pr-2 px-2 py-1">
         <div
           ref={pillBarRef}
           className="inline-flex flex-shrink-0 items-center flex-nowrap rounded-xl border border-white/10 bg-neutral-900/70 p-0.5 shadow-lg backdrop-blur-md"
@@ -129,6 +131,7 @@ export const MessageTypeBar = ({
             aria-pressed={activeFilter === 'broadcasts'}
             title="Announcement feed (includes pinned + unpinned broadcasts)"
           >
+            <Megaphone className="hidden sm:block h-3 w-3 sm:h-3.5 sm:w-3.5" />
             <span>Broadcasts</span>
             {broadcastBadgeCount > 0 && activeFilter !== 'broadcasts' && (
               <span
@@ -256,20 +259,37 @@ export const MessageTypeBar = ({
             </Popover>
           )}
 
-          {/* Search Pill */}
-          <button
-            type="button"
-            onClick={onSearchClick}
-            className={cn(
-              'relative flex min-h-9 min-w-9 items-center justify-center px-1.5 py-1 sm:min-h-10 sm:min-w-10 sm:px-2 rounded-lg sm:rounded-xl shrink-0',
-              'text-[11px] sm:text-xs font-medium transition-all duration-200',
-              SEGMENT_COLORS.search.inactive,
-            )}
-            aria-label="Search messages"
-            title="Search messages"
-          >
-            <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </button>
+          {/* Search Pill — icon-only in pro trips (Channels takes the labeled 4th slot), labeled in regular trips */}
+          {isPro ? (
+            <button
+              type="button"
+              onClick={onSearchClick}
+              className={cn(
+                'relative flex min-h-9 min-w-9 items-center justify-center px-1.5 py-1 sm:min-h-10 sm:min-w-10 sm:px-2 rounded-lg sm:rounded-xl shrink-0',
+                'text-[11px] sm:text-xs font-medium transition-all duration-200',
+                SEGMENT_COLORS.search.inactive,
+              )}
+              aria-label="Search messages"
+              title="Search messages"
+            >
+              <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onSearchClick}
+              className={cn(
+                'relative flex min-h-9 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
+                'text-[11px] sm:text-xs font-medium transition-all duration-200 whitespace-nowrap',
+                SEGMENT_COLORS.search.inactive,
+              )}
+              aria-label="Search messages"
+              title="Search messages"
+            >
+              <Search className="hidden sm:block h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <span>Search</span>
+            </button>
+          )}
         </div>
       </div>
 

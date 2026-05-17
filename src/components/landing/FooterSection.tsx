@@ -17,9 +17,7 @@ export const FooterSection = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 tablet:grid-cols-4 gap-y-8 gap-x-4 tablet:gap-12">
           {/* Company Info */}
           <div className="space-y-4 col-span-1 sm:col-span-2 tablet:col-span-1">
-            <div className="text-2xl font-bold text-gradient-gold">
-              ChravelApp
-            </div>
+            <div className="text-2xl font-bold text-gradient-gold">ChravelApp</div>
             <p className="text-sm text-foreground max-w-xs">
               The AI-powered social storage platform for group plans, messages, and memories.
             </p>
@@ -112,7 +110,9 @@ export const FooterSection = () => {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-border flex flex-col tablet:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-foreground">© {currentYear} Chravel Inc. All rights reserved.</p>
+          <p className="text-sm text-foreground">
+            © {currentYear} Chravel Inc. All rights reserved.
+          </p>
 
           {/* Social Links Placeholder */}
           <div className="flex gap-4">
