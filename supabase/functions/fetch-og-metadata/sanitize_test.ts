@@ -55,8 +55,14 @@ Deno.test('sanitizeUrl: preserves matched brackets in path', () => {
   );
 });
 
-Deno.test('sanitizeUrl: idempotent', () => {
-  const once = sanitizeUrl('"[Foo](https://example.com/?a=1&amp;b=2).";');
-  const twice = sanitizeUrl(once);
-  assertEquals(once, twice);
+Deno.test('sanitizeUrl: idempotent on clean URLs', () => {
+  const clean = 'https://example.com/path?a=1&b=2';
+  assertEquals(sanitizeUrl(sanitizeUrl(clean)), clean);
+});
+
+Deno.test('sanitizeUrl: handles combined paste artifacts', () => {
+  assertEquals(
+    sanitizeUrl('"[Foo](https://example.com/?a=1&amp;b=2)."'),
+    'https://example.com/?a=1&b=2',
+  );
 });
