@@ -467,6 +467,21 @@ async function streamGeminiToSSE(
             lodgingName: firstLodging?.title || undefined,
           }),
         );
+      } else if (r.name === 'emitSmartImportPreview') {
+        // Always terminate checking_duplicates status even on tool failure/timeout.
+        // Without this, the client can stay stuck on "Checking for duplicate events...".
+        const rawError =
+          typeof r.response?.error === 'string'
+            ? r.response.error
+            : 'Duplicate check failed — you can retry or continue.';
+        controller.enqueue(
+          sseEvent({
+            type: 'smart_import_status',
+            status: 'failed',
+            message: rawError,
+          }),
+        );
+        controller.enqueue(sseEvent({ type: 'function_call', name: r.name, result: r.response }));
       } else if (
         r.name === 'emitBulkDeletePreview' &&
         r.response?.success &&

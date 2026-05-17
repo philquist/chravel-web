@@ -124,7 +124,12 @@ export interface StreamBulkDeletePreviewEvent {
   totalEvents: number;
 }
 
-export type SmartImportStatus = 'parsing' | 'extracting' | 'checking_duplicates' | 'ready';
+export type SmartImportStatus =
+  | 'parsing'
+  | 'extracting'
+  | 'checking_duplicates'
+  | 'ready'
+  | 'failed';
 
 export interface StreamSmartImportStatusEvent {
   type: 'smart_import_status';

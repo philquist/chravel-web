@@ -310,9 +310,25 @@ export const ChatMessages = ({
               <div
                 className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
               >
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#c49746]/20 bg-[#c49746]/5 max-w-sm">
-                  <div className="w-4 h-4 gold-gradient-spinner animate-spin shrink-0" />
-                  <span className="text-xs text-[#c49746]">{rich.smartImportStatus.message}</span>
+                <div
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl max-w-sm ${
+                    rich.smartImportStatus.status === 'failed'
+                      ? 'border border-red-500/30 bg-red-500/10'
+                      : 'border border-[#c49746]/20 bg-[#c49746]/5'
+                  }`}
+                >
+                  {rich.smartImportStatus.status === 'failed' ? (
+                    <div className="w-4 h-4 rounded-full bg-red-500/80 shrink-0" />
+                  ) : (
+                    <div className="w-4 h-4 gold-gradient-spinner animate-spin shrink-0" />
+                  )}
+                  <span
+                    className={`text-xs ${
+                      rich.smartImportStatus.status === 'failed' ? 'text-red-200' : 'text-[#c49746]'
+                    }`}
+                  >
+                    {rich.smartImportStatus.message}
+                  </span>
                 </div>
               </div>
             )}
