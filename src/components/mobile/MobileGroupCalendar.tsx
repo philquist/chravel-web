@@ -94,7 +94,7 @@ export const MobileGroupCalendar = ({
   // Internal view mode state when no external handler provided
   const [internalViewMode, setInternalViewMode] = useState<CalendarViewMode>('list');
   const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
-  const canUseSmartImport = useDeferredPaidAccess({
+  useDeferredPaidAccess({
     tier,
     status: subscription?.status,
     isSuperAdmin,
