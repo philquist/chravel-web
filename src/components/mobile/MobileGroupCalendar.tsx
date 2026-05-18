@@ -37,7 +37,6 @@ import { useBackgroundImport } from '@/features/calendar/hooks/useBackgroundImpo
 import { toast } from 'sonner';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { hasPaidAccess } from '@/utils/paidAccess';
-import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useTripMembersQuery } from '@/hooks/useTripMembersQuery';
 import type { TripEvent } from '@/services/calendarService';
@@ -94,12 +93,6 @@ export const MobileGroupCalendar = ({
   // Internal view mode state when no external handler provided
   const [internalViewMode, setInternalViewMode] = useState<CalendarViewMode>('list');
   const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
-  useDeferredPaidAccess({
-    tier,
-    status: subscription?.status,
-    isSuperAdmin,
-    active: true,
-  });
   const { canPerformAction, isLoading: permissionsLoading } = useRolePermissions(tripId);
   const { tripMembers } = useTripMembersQuery(tripId);
 
