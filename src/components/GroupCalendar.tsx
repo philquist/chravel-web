@@ -92,7 +92,7 @@ export const GroupCalendar = React.memo(({ tripId }: GroupCalendarProps) => {
     [startBackgroundImport, handleBackgroundImportComplete],
   );
 
-  const handleImport = useCallback(async () => {
+  const handleImport = async () => {
     // Allow action optimistically while permissions are still loading
     if (!permissionsLoading && !canPerformAction('calendar', 'can_edit_events')) {
       toast({
@@ -132,15 +132,7 @@ export const GroupCalendar = React.memo(({ tripId }: GroupCalendarProps) => {
       return;
     }
     setShowImportModal(true);
-  }, [
-    canPerformAction,
-    navigate,
-    permissionsLoading,
-    toast,
-    tier,
-    subscription?.status,
-    isSuperAdmin,
-  ]);
+  };
 
   const handleImportComplete = useCallback(async () => {
     // Wait for queries to settle before attempting a refetch
