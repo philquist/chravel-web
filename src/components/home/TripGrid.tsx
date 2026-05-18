@@ -1,11 +1,10 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { TripCard } from '../TripCard';
 import { EventCard } from '../EventCard';
 import { MobileEventCard } from '../MobileEventCard';
 import { RecommendationCard } from '../RecommendationCard';
 import { LocationSearchBar } from './LocationSearchBar';
 import { ArchivedTripCard } from './ArchivedTripCard';
-import { UpgradeModal } from '../UpgradeModal';
 import { SwipeableRowProvider } from '../../contexts/SwipeableRowContext';
 import { SwipeableTripCardWrapper, SwipeableProTripCardWrapper } from './SwipeableTripCardWrapper';
 import { useIsMobile } from '../../hooks/use-mobile';
@@ -29,6 +28,10 @@ import { SortableTripGrid } from '../dashboard/SortableTripGrid';
 import { Button } from '../ui/button';
 import type { PendingRequestTripCard } from '@/hooks/usePendingRequestTripCards';
 import { useLocation } from 'react-router-dom';
+
+const UpgradeModal = lazy(() =>
+  import('../UpgradeModal').then(module => ({ default: module.UpgradeModal })),
+);
 
 interface Trip {
   id: number | string;
@@ -696,7 +699,9 @@ export const TripGrid = React.memo(
             ) : null}
           </div>
 
-          <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+          <Suspense fallback={null}>
+            <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+          </Suspense>
         </div>
       </SwipeableRowProvider>
     );

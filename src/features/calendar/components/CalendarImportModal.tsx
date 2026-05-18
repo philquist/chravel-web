@@ -46,6 +46,7 @@ import { gmailAcceptedCandidatesToSmartParseResult } from '@/features/calendar/u
 import { normalizeCalendarCategory } from '@/constants/calendarCategories';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { hasPaidAccess } from '@/utils/paidAccess';
+import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
 import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
 import { useNavigate } from 'react-router-dom';
 
@@ -101,10 +102,11 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
-  const canUseGmailSmartImport = hasPaidAccess({
+  const canUseGmailSmartImport = useDeferredPaidAccess({
     tier,
     status: subscription?.status,
     isSuperAdmin,
+    active: isOpen,
   });
   const { onDragOverCapture, onDropCapture } = useModalFileDropGuard({ enabled: isOpen });
 

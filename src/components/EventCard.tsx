@@ -37,7 +37,6 @@ import { getProTripColor } from '../utils/proTripColors';
 import { getDemoTripCoverFallback } from '@/data/demoTripCoverFallbacks';
 import { buildCoverBackgroundImage } from '@/utils/coverImageStyle';
 import { getExportData } from '../services/tripExportDataService';
-import { generateClientPDF } from '../utils/exportPdfClient';
 import { orderExportSections } from '../utils/exportSectionOrder';
 import { ExportSection } from '../types/tripExport';
 import {
@@ -114,6 +113,8 @@ export const EventCard = ({
       const exportData = await getExportData(event.id.toString(), orderedSections);
 
       signal.throwIfAborted();
+
+      const { generateClientPDF } = await import('../utils/exportPdfClient');
 
       const blob = await generateClientPDF(
         {

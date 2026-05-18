@@ -19,6 +19,7 @@ import { useDemoMode } from '@/hooks/useDemoMode';
 import { useBackgroundImport } from '@/features/calendar/hooks/useBackgroundImport';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { hasPaidAccess } from '@/utils/paidAccess';
+import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
 import type { CalendarEvent } from '@/types/calendar';
 import { CalendarErrorState } from '@/features/calendar/components/CalendarErrorState';
 import { ExportDialog } from '@/features/calendar/components/ExportDialog';
@@ -65,7 +66,12 @@ export const GroupCalendar = React.memo(({ tripId }: GroupCalendarProps) => {
   const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
   // Demo mode available for future conditional rendering
   const { isDemoMode: _isDemoMode } = useDemoMode();
-  const canUseSmartImport = hasPaidAccess({ tier, status: subscription?.status, isSuperAdmin });
+  const canUseSmartImport = useDeferredPaidAccess({
+    tier,
+    status: subscription?.status,
+    isSuperAdmin,
+    active: true,
+  });
 
   // Background URL import
   const {

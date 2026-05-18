@@ -35,7 +35,6 @@ import { useAuth } from '../hooks/useAuth';
 import { useDemoMode } from '../hooks/useDemoMode';
 import { getProTripColor } from '../utils/proTripColors';
 import { getExportData } from '../services/tripExportDataService';
-import { generateClientPDF } from '../utils/exportPdfClient';
 import { orderExportSections } from '../utils/exportSectionOrder';
 import { ExportSection } from '../types/tripExport';
 import { getDemoTripCoverFallback } from '@/data/demoTripCoverFallbacks';
@@ -89,6 +88,8 @@ export const MobileEventCard = ({
       const exportData = await getExportData(event.id.toString(), orderedSections);
 
       signal.throwIfAborted();
+
+      const { generateClientPDF } = await import('../utils/exportPdfClient');
 
       const blob = await generateClientPDF(
         {

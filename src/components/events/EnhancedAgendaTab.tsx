@@ -35,6 +35,7 @@ import { EventAgendaItem, AgendaFile } from '@/types/events';
 import { formatSessionDateTime } from '@/lib/formatSessionDateTime';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { hasPaidAccess } from '@/utils/paidAccess';
+import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { getMediaCategory } from '@/utils/mediaUtils';
 import {
@@ -233,7 +234,12 @@ export const EnhancedAgendaTab = ({
 
   const isOrganizer = userRole === 'organizer';
   const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
-  const hasPaidSmartImport = hasPaidAccess({ tier, status: subscription?.status, isSuperAdmin });
+  const hasPaidSmartImport = useDeferredPaidAccess({
+    tier,
+    status: subscription?.status,
+    isSuperAdmin,
+    active: true,
+  });
   const smartImportPaywall = getFeaturePaywallConfig('smart_import_event_agenda');
 
   return (

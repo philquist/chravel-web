@@ -62,7 +62,9 @@ function fingerprintMessages(
  */
 export function useLinkPreviews(
   messages: Array<{ id: string; text: string; linkPreview?: unknown }>,
+  options?: { enabled?: boolean },
 ): Record<string, LinkPreview> {
+  const enabled = options?.enabled ?? true;
   const [previews, setPreviews] = useState<Record<string, LinkPreview>>({});
   const previewsRef = useRef<Record<string, LinkPreview>>({});
   previewsRef.current = previews;
@@ -78,6 +80,7 @@ export function useLinkPreviews(
   const messagesFingerprint = fingerprintMessages(messages);
 
   useEffect(() => {
+    if (!enabled) return;
     if (messages.length === 0) return;
 
     finishedMessageIdsRef.current = new Set();
@@ -188,7 +191,7 @@ export function useLinkPreviews(
     };
     // Intentionally omit `messages` — array identity churns every render; fingerprint captures content.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messagesFingerprint]);
+  }, [enabled, messagesFingerprint]);
 
   return previews;
 }
