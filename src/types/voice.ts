@@ -1,9 +1,4 @@
-/**
- * Shared voice types — used by useLiveKitVoice, VoiceLiveInline,
- * useVoiceToolHandler, and AIConciergeChat.
- *
- * Extracted from useGeminiLive.ts so the types survive Vertex AI cleanup.
- */
+/** Shared voice types used by realtime voice runtime modules. */
 
 export type GeminiLiveState =
   | 'idle'
