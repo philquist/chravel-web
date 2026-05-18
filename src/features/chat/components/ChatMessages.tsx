@@ -29,6 +29,7 @@ import type {
 } from '@/services/conciergeGateway';
 import type { TTSPlaybackState } from '@/hooks/useConciergeReadAloud';
 import { useLinkPreviews } from '../hooks/useLinkPreviews';
+import { useLinkPreviewActivation } from '../hooks/useLinkPreviewActivation';
 
 /** Extended message shape that may carry rich function-call data from the concierge. */
 interface RichChatMessage extends ChatMessage {
@@ -156,6 +157,8 @@ export const ChatMessages = ({
     setPendingDeleteId(null);
   }, []);
 
+  const linkPreviewEnabled = useLinkPreviewActivation(messages.length > 0);
+
   const linkPreviewFallbacks = useLinkPreviews(
     messages.map(message => {
       const candidate = message as { id: string; content?: string; link_preview?: unknown };
@@ -165,6 +168,7 @@ export const ChatMessages = ({
         linkPreview: candidate.link_preview,
       };
     }),
+    { enabled: linkPreviewEnabled },
   );
 
   if (messages.length === 0) {

@@ -33,6 +33,7 @@ import { formatSessionDateTime } from '@/lib/formatSessionDateTime';
 import { EVENT_PARITY_COL_START, EVENT_PARITY_ROW_CLASS } from '@/lib/tabParity';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { hasPaidAccess } from '@/utils/paidAccess';
+import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { getMediaCategory } from '@/utils/mediaUtils';
 
@@ -255,7 +256,12 @@ export const AgendaModal = ({
   };
 
   const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
-  const hasPaidSmartImport = hasPaidAccess({ tier, status: subscription?.status, isSuperAdmin });
+  const hasPaidSmartImport = useDeferredPaidAccess({
+    tier,
+    status: subscription?.status,
+    isSuperAdmin,
+    active: true,
+  });
 
   const showAdminActions = (canCreateSessions || canUpload) && !isAddingSession;
   const showActionRow = Boolean(onClose) || showAdminActions;

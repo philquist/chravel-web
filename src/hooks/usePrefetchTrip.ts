@@ -12,6 +12,33 @@ import { useAuth } from './useAuth';
 import { tripKeys, QUERY_CACHE_CONFIG } from '@/lib/queryKeys';
 import { preloadTabChunk, preloadTabChunks } from '@/lib/tabChunkPreloader';
 
+const scheduleIdlePrefetch = (task: () => void, timeoutMs = 2000): void => {
+  if (typeof window === 'undefined') {
+    setTimeout(task, 0);
+    return;
+  }
+
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(() => task(), { timeout: timeoutMs });
+    return;
+  }
+
+  setTimeout(task, 250);
+};
+
+const shouldDeferHeavyPrefetch = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  const connection = (
+    navigator as Navigator & {
+      connection?: { effectiveType?: string; saveData?: boolean };
+    }
+  ).connection;
+
+  if (!connection) return false;
+  if (connection.saveData) return true;
+  return connection.effectiveType === '2g' || connection.effectiveType === 'slow-2g';
+};
+
 /**
  * Enhanced hook for prefetching trip data on hover/focus
  *
@@ -206,40 +233,36 @@ export const usePrefetchTrip = () => {
    */
   const prefetchPriorityTabs = useCallback(
     (tripId: string) => {
-      // Phase 1: Preload ALL tab JS chunks immediately.
-      // import() requests are low-priority and don't block the main thread.
-      preloadTabChunks([
-        'chat',
-        'calendar',
-        'tasks',
-        'polls',
-        'media',
-        'places',
-        'payments',
-        'concierge',
-      ]);
+      const deferHeavyPrefetch = shouldDeferHeavyPrefetch();
+
+      // Phase 1: preload only the highest-likelihood tabs immediately.
+      preloadTabChunks(['chat', 'calendar', 'tasks', 'payments']);
+
+      // Phase 1b: defer heavy/rare tab chunks to idle time.
+      scheduleIdlePrefetch(() => {
+        preloadTabChunks(['polls', 'places', 'media', 'concierge']);
+      });
 
       if (isDemoMode) return;
 
-      // Phase 2: Stagger data prefetches (tighter timing than before).
-      // Immediate: Chat (default tab)
+      // Phase 2: immediate data prefetch for likely first interactions.
       prefetchTab(tripId, 'chat');
+      setTimeout(() => prefetchTab(tripId, 'calendar'), 125);
 
-      // After 100ms: Calendar (second most used)
-      setTimeout(() => prefetchTab(tripId, 'calendar'), 100);
+      // Keep tasks eager only on normal networks.
+      if (!deferHeavyPrefetch) {
+        setTimeout(() => prefetchTab(tripId, 'tasks'), 300);
+      }
 
-      // After 250ms: Tasks (lightweight)
-      setTimeout(() => prefetchTab(tripId, 'tasks'), 250);
+      // Payments are useful but non-blocking for most sessions.
+      scheduleIdlePrefetch(() => prefetchTab(tripId, 'payments'), 2500);
 
-      // After 400ms: Payments
-      setTimeout(() => prefetchTab(tripId, 'payments'), 400);
-
-      // After 600ms: Polls + Places + Media
-      setTimeout(() => {
+      // Heavier/less-frequent tabs defer to idle to avoid startup contention.
+      scheduleIdlePrefetch(() => {
         prefetchTab(tripId, 'polls');
         prefetchTab(tripId, 'places');
         prefetchTab(tripId, 'media');
-      }, 600);
+      }, 3000);
     },
     [isDemoMode, prefetchTab],
   );

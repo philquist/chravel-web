@@ -19,10 +19,10 @@ import { useDemoMode } from '@/hooks/useDemoMode';
 import { useBackgroundImport } from '@/features/calendar/hooks/useBackgroundImport';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { hasPaidAccess } from '@/utils/paidAccess';
+import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
 import type { CalendarEvent } from '@/types/calendar';
 import { CalendarErrorState } from '@/features/calendar/components/CalendarErrorState';
 import { ExportDialog } from '@/features/calendar/components/ExportDialog';
-import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
 import { CalendarLoadingState } from '@/features/calendar/components/CalendarLoadingState';
 import { CalendarEmptyState } from '@/features/calendar/components/CalendarEmptyState';
 
@@ -65,7 +65,12 @@ export const GroupCalendar = React.memo(({ tripId }: GroupCalendarProps) => {
   const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
   // Demo mode available for future conditional rendering
   const { isDemoMode: _isDemoMode } = useDemoMode();
-  const canUseSmartImport = hasPaidAccess({ tier, status: subscription?.status, isSuperAdmin });
+  const canUseSmartImport = useDeferredPaidAccess({
+    tier,
+    status: subscription?.status,
+    isSuperAdmin,
+    active: true,
+  });
 
   // Background URL import
   const {
@@ -94,7 +99,7 @@ export const GroupCalendar = React.memo(({ tripId }: GroupCalendarProps) => {
     [startBackgroundImport, handleBackgroundImportComplete],
   );
 
-  const handleImport = useCallback(() => {
+  const handleImport = useCallback(async () => {
     // Allow action optimistically while permissions are still loading
     if (!permissionsLoading && !canPerformAction('calendar', 'can_edit_events')) {
       toast({
@@ -105,7 +110,14 @@ export const GroupCalendar = React.memo(({ tripId }: GroupCalendarProps) => {
       return;
     }
 
-    if (!canUseSmartImport) {
+    const hasImmediatePaidAccess = hasPaidAccess({
+      tier,
+      status: subscription?.status,
+      isSuperAdmin,
+    });
+
+    if (!hasImmediatePaidAccess) {
+      const { getFeaturePaywallConfig } = await import('@/components/subscription/featurePaywall');
       const paywall = getFeaturePaywallConfig('smart_import_calendar');
       toast({
         title: 'Upgrade required',

@@ -14,7 +14,6 @@ import { invalidateAuthCache } from '@/lib/authCache';
 import { queryClient } from '@/lib/queryClient';
 import { SUPER_ADMIN_EMAILS } from '@/constants/admins';
 import { useDemoModeStore } from '@/store/demoModeStore';
-import { useNotificationRealtimeStore } from '@/store/notificationRealtimeStore';
 import { conciergeCacheService } from '@/services/conciergeCacheService';
 import { isSessionTokenValid } from '@/utils/tokenValidation';
 import { isInstalledApp } from '@/utils/platformDetection';
@@ -772,7 +771,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         queryClient.clear();
         void supabase.removeAllChannels();
         conciergeCacheService.clearAllCaches();
-        useNotificationRealtimeStore.getState().clearAll();
+        void clearNotificationRealtimeStore();
         // App-preview: keep demo user when logged out.
         setUser(shouldUseDemoUserRef.current ? demoUser : null);
         setIsLoading(false);
@@ -1084,6 +1083,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const clearNotificationRealtimeStore = useCallback(async () => {
+    const { useNotificationRealtimeStore } = await import('@/store/notificationRealtimeStore');
+    useNotificationRealtimeStore.getState().clearAll();
+  }, []);
+
   const signOut = async (): Promise<void> => {
     // Clear demo mode if active
     const demoModeStore = useDemoModeStore.getState();
@@ -1103,25 +1107,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Clear AI concierge localStorage caches (PII — trip planning conversations)
     conciergeCacheService.clearAllCaches();
 
-    // Reset notification store (unread count, notification list)
-    useNotificationRealtimeStore.getState().clearAll();
-
     // Reset onboarding store (dynamic import to avoid circular deps)
     import('@/store/onboardingStore').then(({ useOnboardingStore }) => {
       useOnboardingStore.getState().resetOnboarding();
     });
 
     // Clear notification state to prevent stale badges/data across sessions.
-    // Safety analysis:
-    // - clearAll() only resets client-side Zustand store (sets notifications=[], unreadCount=0).
-    //   No server calls, no RLS implications, no auth-dependent operations.
-    // - RLS on notifications table enforces user_id = auth.uid() — no cross-user access possible.
-    // - useNotificationRealtime already clears on user=null (line 174-179), but this provides
-    //   defense-in-depth for cases where the effect cleanup runs after the redirect.
-    // - No race condition risk: clearAll() is synchronous on the Zustand store.
-    import('@/store/notificationRealtimeStore').then(({ useNotificationRealtimeStore }) => {
-      useNotificationRealtimeStore.getState().clearAll();
-    });
+    // clearAll() is client-only state reset and safe to run before/after sign-out.
+    await clearNotificationRealtimeStore();
 
     // Sign out from Supabase (no-op if not authenticated)
     logAuthEvent('logout');
