@@ -127,30 +127,6 @@ const FEATURE_FLAG_VARS: EnvVarSpec[] = [
     canStubForTestFlight: true,
     stubValue: 'false',
   },
-  {
-    name: 'VITE_VOICE_LIVE_ENABLED',
-    required: false,
-    description: 'Enable Gemini Live voice (false in prod until confirmed)',
-    provider: 'Internal flag',
-    canStubForTestFlight: true,
-    stubValue: 'false',
-  },
-  {
-    name: 'VITE_VOICE_DIAGNOSTICS_ENABLED',
-    required: false,
-    description: 'Voice diagnostics (connection codes, audio params)',
-    provider: 'Internal flag',
-    canStubForTestFlight: true,
-    stubValue: 'false',
-  },
-  {
-    name: 'VITE_VOICE_USE_WEBSOCKET_ONLY',
-    required: false,
-    description: 'Enforce WebSocket for voice (reject SSE/HTTP)',
-    provider: 'Internal flag',
-    canStubForTestFlight: true,
-    stubValue: 'true',
-  },
 ];
 
 const ANALYTICS_VARS: EnvVarSpec[] = [
