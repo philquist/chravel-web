@@ -14,15 +14,62 @@ import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationPreviewPanel } from '@/components/dev/NotificationPreviewPanel';
 import { getTripNotificationPreferenceCategories } from '@/components/settings/tripNotificationPreferenceCategories';
+import { ChatActivitySettings } from '@/components/settings/ChatActivitySettings';
+import { useGlobalSystemMessagePreferences } from '@/hooks/useSystemMessagePreferences';
+import { SystemMessageCategoryPrefs } from '@/utils/systemMessageCategory';
 
 export const ConsumerNotificationsSection = () => {
   const { user } = useAuth();
+  const { preferences, updatePreferences, isUpdating } = useGlobalSystemMessagePreferences();
   const { toast } = useToast();
   const { isNative: isNativePush, registerForPush, unregisterFromPush } = useNativePush();
   const { showDemoContent } = useDemoMode();
   const { tier, isSuperAdmin } = useConsumerSubscription();
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(true);
   const [isUpdatingPush, setIsUpdatingPush] = useState(false);
+
+  const [demoPreferences, setDemoPreferences] = useState({
+    showSystemMessages: true,
+    categories: {
+      member: true,
+      basecamp: true,
+      uploads: true,
+      polls: true,
+      calendar: true,
+      tasks: false,
+      payments: false,
+    } as SystemMessageCategoryPrefs,
+  });
+
+  const handleShowSystemMessagesChange = useCallback(
+    (value: boolean) => {
+      if (showDemoContent) {
+        setDemoPreferences(prev => ({ ...prev, showSystemMessages: value }));
+        return;
+      }
+      updatePreferences({ showSystemMessages: value, categories: preferences.categories });
+    },
+    [preferences.categories, showDemoContent, updatePreferences],
+  );
+
+  const handleCategoryChange = useCallback(
+    (category: keyof SystemMessageCategoryPrefs, value: boolean) => {
+      if (showDemoContent) {
+        setDemoPreferences(prev => ({
+          ...prev,
+          categories: { ...prev.categories, [category]: value },
+        }));
+        return;
+      }
+      updatePreferences({
+        showSystemMessages: preferences.showSystemMessages,
+        categories: { ...preferences.categories, [category]: value },
+      });
+    },
+    [preferences.categories, preferences.showSystemMessages, showDemoContent, updatePreferences],
+  );
+
+  const activeSystemMessagePreferences = showDemoContent ? demoPreferences : preferences;
 
   // SMS phone number modal state
   const [showSmsPhoneModal, setShowSmsPhoneModal] = useState(false);
@@ -594,6 +641,18 @@ export const ConsumerNotificationsSection = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Chat Activity */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+        <h4 className="text-base font-semibold text-white mb-3">Chat Activity</h4>
+        <ChatActivitySettings
+          showSystemMessages={activeSystemMessagePreferences.showSystemMessages}
+          categories={activeSystemMessagePreferences.categories}
+          onShowSystemMessagesChange={handleShowSystemMessagesChange}
+          onCategoryChange={handleCategoryChange}
+          disabled={isUpdating && !showDemoContent}
+        />
       </div>
 
       {/* Dev-only Notification Preview */}

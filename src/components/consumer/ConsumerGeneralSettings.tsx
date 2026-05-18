@@ -1,8 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Sun, Moon } from 'lucide-react';
-import { ChatActivitySettings } from '@/components/settings/ChatActivitySettings';
-import { useGlobalSystemMessagePreferences } from '@/hooks/useSystemMessagePreferences';
-import { SystemMessageCategoryPrefs } from '@/utils/systemMessageCategory';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -48,7 +45,6 @@ function saveAppPreferences(prefs: AppPreferences): void {
 }
 
 export const ConsumerGeneralSettings = () => {
-  const { preferences, updatePreferences, isUpdating } = useGlobalSystemMessagePreferences();
   const { user, signOut } = useAuth();
   const { showDemoContent } = useDemoMode();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -120,125 +116,13 @@ export const ConsumerGeneralSettings = () => {
     }
   }, []);
 
-  // Local demo state for preferences when in demo mode
-  const [demoPreferences, setDemoPreferences] = useState({
-    showSystemMessages: true,
-    categories: {
-      member: true,
-      basecamp: true,
-      uploads: true,
-      polls: true,
-      calendar: true,
-      tasks: false,
-      payments: false,
-    } as SystemMessageCategoryPrefs,
-  });
-
-  const handleDeleteAccount = useCallback(async () => {
-    if (!user || confirmText !== 'DELETE') return;
-
-    setIsDeleting(true);
-    setReAuthError('');
-
-    // Re-authenticate to confirm the user's identity before account deletion
-    if (user.email && reAuthPassword) {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: reAuthPassword,
-      });
-
-      if (signInError) {
-        setReAuthError('Incorrect password. Please try again.');
-        setIsDeleting(false);
-        return;
-      }
-    } else if (!reAuthPassword) {
-      setReAuthError('Please enter your password to confirm deletion.');
-      setIsDeleting(false);
-      return;
-    }
-
-    try {
-      const { error } = await supabase.rpc('request_account_deletion' as never);
-
-      if (error) {
-        // RPC not available — submit request without claiming deletion completed
-        toast({
-          title: 'Deletion Request Submitted',
-          description:
-            'Your request has been received. Your account will be deleted within 30 days per our privacy policy. Contact privacy@chravelapp.com with questions.',
-        });
-        await signOut();
-        return;
-      }
-
-      // RPC succeeded — deletion is SCHEDULED, not immediate
-      logAuthEvent('account_deletion_requested');
-      setDeletionScheduledFor(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString());
-      toast({
-        title: 'Deletion Scheduled',
-        description:
-          'Your account will be deleted in 30 days. You can cancel this in Settings before then.',
-      });
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: 'Failed to request deletion. Please contact support at privacy@chravelapp.com',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
-      setConfirmText('');
-      setReAuthPassword('');
-      setReAuthError('');
-    }
-  }, [user, confirmText, reAuthPassword, signOut]);
-
-  const handleShowSystemMessagesChange = (value: boolean) => {
-    if (showDemoContent) {
-      setDemoPreferences(prev => ({ ...prev, showSystemMessages: value }));
-      return;
-    }
-    updatePreferences({ showSystemMessages: value, categories: preferences.categories });
-  };
-
-  const handleCategoryChange = (category: keyof SystemMessageCategoryPrefs, value: boolean) => {
-    if (showDemoContent) {
-      setDemoPreferences(prev => ({
-        ...prev,
-        categories: { ...prev.categories, [category]: value },
-      }));
-      return;
-    }
-    updatePreferences({
-      showSystemMessages: preferences.showSystemMessages,
-      categories: { ...preferences.categories, [category]: value },
-    });
-  };
-
-  // Use demo preferences when in demo mode, otherwise use real preferences
-  const activePreferences = showDemoContent ? demoPreferences : preferences;
-
   return (
     <div className="space-y-3">
       <h3 className="text-2xl font-bold text-white">General Settings</h3>
 
-      {/* Chat Activity Section */}
+      {/* Appearance */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-        <h4 className="text-base font-semibold text-white mb-3">Chat Activity</h4>
-        <ChatActivitySettings
-          showSystemMessages={activePreferences.showSystemMessages}
-          categories={activePreferences.categories}
-          onShowSystemMessagesChange={handleShowSystemMessagesChange}
-          onCategoryChange={handleCategoryChange}
-          disabled={isUpdating && !showDemoContent}
-        />
-      </div>
-
-      {/* App Preferences */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-        <h4 className="text-base font-semibold text-white mb-3">App Preferences</h4>
+        <h4 className="text-base font-semibold text-white mb-3">Appearance</h4>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -256,6 +140,13 @@ export const ConsumerGeneralSettings = () => {
             </div>
             <Switch checked={!isDarkMode} onCheckedChange={checked => toggleTheme(!checked)} />
           </div>
+        </div>
+      </div>
+
+      {/* App Preferences */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+        <h4 className="text-base font-semibold text-white mb-3">App Preferences</h4>
+        <div className="space-y-3">
           <div>
             <label className="block text-sm text-gray-300 mb-2">Language</label>
             <select
