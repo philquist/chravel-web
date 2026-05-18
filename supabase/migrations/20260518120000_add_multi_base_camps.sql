@@ -36,8 +36,8 @@ CREATE POLICY "Trip members can view trip base camps"
 DROP POLICY IF EXISTS "Trip editors can mutate trip base camps" ON public.trip_base_camps;
 CREATE POLICY "Trip editors can mutate trip base camps"
   ON public.trip_base_camps FOR ALL
-  USING (public.can_edit_trip((SELECT auth.uid()), trip_id))
-  WITH CHECK (public.can_edit_trip((SELECT auth.uid()), trip_id));
+  USING (public.can_manage_trip_content((SELECT auth.uid()), trip_id))
+  WITH CHECK (public.can_manage_trip_content((SELECT auth.uid()), trip_id));
 
 CREATE TABLE IF NOT EXISTS public.trip_personal_base_camps (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -100,7 +100,7 @@ CREATE TRIGGER trigger_touch_trip_personal_base_camps_updated_at
 INSERT INTO public.trip_base_camps (
   trip_id, created_by, label, place_name, address, lat, lng, order_index
 )
-SELECT t.id, t.user_id, t.basecamp_name, t.basecamp_name, t.basecamp_address, t.basecamp_latitude, t.basecamp_longitude, 0
+SELECT t.id, t.created_by, t.basecamp_name, t.basecamp_name, t.basecamp_address, t.basecamp_latitude, t.basecamp_longitude, 0
 FROM public.trips t
 WHERE t.basecamp_address IS NOT NULL
   AND NOT EXISTS (
