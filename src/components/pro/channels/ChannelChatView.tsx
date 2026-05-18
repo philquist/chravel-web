@@ -8,6 +8,7 @@ import { MessageItem } from '@/features/chat/components/MessageItem';
 import { ChatInput } from '@/features/chat/components/ChatInput';
 import { InlineReplyComponent } from '@/features/chat/components/InlineReplyComponent';
 import { useLinkPreviews } from '@/features/chat/hooks/useLinkPreviews';
+import { useLinkPreviewActivation } from '@/features/chat/hooks/useLinkPreviewActivation';
 import { useAuth } from '@/hooks/useAuth';
 import { getMockAvatar } from '@/utils/mockAvatars';
 import { useRoleAssignments } from '@/hooks/useRoleAssignments';
@@ -327,7 +328,8 @@ export const ChannelChatView = ({
   }, [transportMessages]);
 
   // Client-side link preview enrichment for channel messages
-  const linkPreviews = useLinkPreviews(formattedMessages);
+  const linkPreviewEnabled = useLinkPreviewActivation(formattedMessages.length > 0);
+  const linkPreviews = useLinkPreviews(formattedMessages, { enabled: linkPreviewEnabled });
 
   // Merge link previews into formatted messages
   const messagesWithPreviews = useMemo(() => {

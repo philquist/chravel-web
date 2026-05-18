@@ -2,6 +2,7 @@ import React from 'react';
 import { BroadcastItem } from './BroadcastItem';
 import { Radio } from 'lucide-react';
 import { useLinkPreviews } from '@/features/chat/hooks/useLinkPreviews';
+import { useLinkPreviewActivation } from '@/features/chat/hooks/useLinkPreviewActivation';
 
 interface BroadcastData {
   id: string;
@@ -34,12 +35,14 @@ export const BroadcastList = ({
   onDelete,
   onEdit,
 }: BroadcastListProps) => {
+  const linkPreviewEnabled = useLinkPreviewActivation(broadcasts.length > 0);
   const linkPreviews = useLinkPreviews(
     broadcasts.map(broadcast => ({
       id: broadcast.id,
       text: broadcast.message,
       linkPreview: undefined,
     })),
+    { enabled: linkPreviewEnabled },
   );
   if (broadcasts.length === 0) {
     return (

@@ -35,6 +35,7 @@ import { EventAgendaItem, AgendaFile } from '@/types/events';
 import { formatSessionDateTime } from '@/lib/formatSessionDateTime';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { hasPaidAccess } from '@/utils/paidAccess';
+import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { getMediaCategory } from '@/utils/mediaUtils';
 import {
@@ -48,7 +49,6 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog';
 import { toast } from 'sonner';
-import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
 
 interface EnhancedAgendaTabProps {
   eventId: string;
@@ -233,8 +233,12 @@ export const EnhancedAgendaTab = ({
 
   const isOrganizer = userRole === 'organizer';
   const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
-  const hasPaidSmartImport = hasPaidAccess({ tier, status: subscription?.status, isSuperAdmin });
-  const smartImportPaywall = getFeaturePaywallConfig('smart_import_event_agenda');
+  const hasPaidSmartImport = useDeferredPaidAccess({
+    tier,
+    status: subscription?.status,
+    isSuperAdmin,
+    active: true,
+  });
 
   return (
     <div className="relative p-4 md:p-6 space-y-4 md:space-y-6">

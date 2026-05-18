@@ -32,6 +32,7 @@ import type { AgendaFile } from '../../types/events';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { hasPaidAccess } from '@/utils/paidAccess';
+import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
 import type { Speaker, EventAgendaItem } from '../../types/events';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import {
@@ -49,7 +50,6 @@ import { toast } from 'sonner';
 import { EVENT_PARITY_COL_START, EVENT_PARITY_ROW_CLASS } from '@/lib/tabParity';
 import { ActionPill } from '../ui/ActionPill';
 import { EVENT_TAB_PANEL_CLASS } from './EventTabPrimitives';
-import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
 
 interface LineupPermissions {
   canView: boolean;
@@ -108,8 +108,12 @@ export const LineupTab = ({
   const canEdit = isDemoMode || permissions.canEdit;
   const canDelete = isDemoMode || permissions.canDelete;
   const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
-  const hasPaidSmartImport = hasPaidAccess({ tier, status: subscription?.status, isSuperAdmin });
-  const smartImportPaywall = getFeaturePaywallConfig('smart_import_event_lineup');
+  const hasPaidSmartImport = useDeferredPaidAccess({
+    tier,
+    status: subscription?.status,
+    isSuperAdmin,
+    active: true,
+  });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMember, setSelectedMember] = useState<Speaker | null>(null);

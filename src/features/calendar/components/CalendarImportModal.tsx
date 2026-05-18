@@ -46,7 +46,7 @@ import { gmailAcceptedCandidatesToSmartParseResult } from '@/features/calendar/u
 import { normalizeCalendarCategory } from '@/constants/calendarCategories';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { hasPaidAccess } from '@/utils/paidAccess';
-import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
+import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
 import { useNavigate } from 'react-router-dom';
 
 interface CalendarImportModalProps {
@@ -101,10 +101,11 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
-  const canUseGmailSmartImport = hasPaidAccess({
+  const canUseGmailSmartImport = useDeferredPaidAccess({
     tier,
     status: subscription?.status,
     isSuperAdmin,
+    active: isOpen,
   });
   const { onDragOverCapture, onDropCapture } = useModalFileDropGuard({ enabled: isOpen });
 
@@ -442,7 +443,9 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
                       size="sm"
                       className="min-h-[44px]"
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
+                        const { getFeaturePaywallConfig } =
+                          await import('@/components/subscription/featurePaywall');
                         const paywall = getFeaturePaywallConfig('smart_import_calendar');
                         navigate(
                           `${paywall.destination.pathname}${paywall.destination.search}`,

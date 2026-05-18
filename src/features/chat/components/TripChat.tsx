@@ -40,6 +40,7 @@ import { FeatureErrorBoundary } from '@/components/FeatureErrorBoundary';
 import { useTripPrivacyConfig, getEffectivePrivacyMode } from '@/hooks/useTripPrivacyConfig';
 import { useTripChatMode } from '@/hooks/useTripChatMode';
 import { useLinkPreviews } from '../hooks/useLinkPreviews';
+import { useLinkPreviewActivation } from '../hooks/useLinkPreviewActivation';
 import { useBlockedUsers, useReportContent } from '@/hooks/useUserSafety';
 import { getStreamClient } from '@/services/stream/streamClient';
 import { derivePinnedMessages } from '../utils/pinnedMessages';
@@ -839,12 +840,15 @@ export const TripChat = React.memo(
       return [...visibleMessages, ...failedFormatted];
     }, [visibleMessages, failedMessages, user?.id, user?.avatar]);
 
+    const linkPreviewEnabled = useLinkPreviewActivation(!showSearchOverlay && !shouldSkipLiveChat);
+
     const linkPreviewFallbacks = useLinkPreviews(
       messagesWithFailed.map(message => ({
         id: message.id,
         text: message.text || '',
         linkPreview: (message as any).linkPreview,
       })),
+      { enabled: linkPreviewEnabled },
     );
 
     const messagesWithPreviewFallbacks = useMemo(
