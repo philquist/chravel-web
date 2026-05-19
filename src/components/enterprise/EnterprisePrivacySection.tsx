@@ -9,7 +9,6 @@ export const EnterprisePrivacySection = () => {
   const [settings, setSettings] = useState({
     useRealName: false,
     showJobTitle: false,
-    sharePhoneNumber: false,
   });
   const [jobTitle, setJobTitle] = useState('');
 
@@ -18,7 +17,6 @@ export const EnterprisePrivacySection = () => {
       setSettings({
         useRealName: user.namePreference === 'real',
         showJobTitle: user.showJobTitle ?? false,
-        sharePhoneNumber: user.showPhone ?? false,
       });
       setJobTitle(user.jobTitle ?? '');
     }
@@ -39,8 +37,6 @@ export const EnterprisePrivacySection = () => {
           updates.name_preference = newValue ? 'real' : 'display';
         } else if (setting === 'showJobTitle') {
           updates.show_job_title = newValue;
-        } else if (setting === 'sharePhoneNumber') {
-          updates.show_phone = newValue;
         }
 
         const { error } = await updateProfile(updates as Parameters<typeof updateProfile>[0]);
@@ -163,39 +159,6 @@ export const EnterprisePrivacySection = () => {
             <p className="text-xs text-gray-500 mt-1">
               Shown in organization directory when &quot;Show Job Title&quot; is on
             </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Contact Information Privacy */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-        <h4 className="text-base font-semibold text-white mb-3">Contact Information</h4>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-            <div>
-              <div className="text-white font-medium">Share Phone Number</div>
-              <div className="text-sm text-gray-400">
-                Not shown on the org roster. When enabled, the same trip privacy rules apply: trip
-                teammates can see it in the member contact sheet (Trip Members, then tap your
-                row)—not inline in chat.
-              </div>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={settings.sharePhoneNumber}
-              aria-label="Share Phone Number"
-              onClick={() => handleToggle('sharePhoneNumber')}
-              className={`relative w-12 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-glass-orange focus:ring-offset-2 focus:ring-offset-transparent ${
-                settings.sharePhoneNumber ? 'bg-glass-orange' : 'bg-white/20'
-              }`}
-            >
-              <div
-                className={`absolute w-5 h-5 bg-white rounded-full top-0.5 transition-transform ${
-                  settings.sharePhoneNumber ? 'translate-x-6' : 'translate-x-0.5'
-                }`}
-              />
-            </button>
           </div>
         </div>
       </div>
