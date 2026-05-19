@@ -28,6 +28,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
 import { Card, CardContent } from '../ui/card';
 import { useEventAgenda } from '@/hooks/useEventAgenda';
 import { useEventAgendaFiles } from '@/hooks/useEventAgendaFiles';

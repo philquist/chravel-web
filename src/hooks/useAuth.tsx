@@ -771,7 +771,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         queryClient.clear();
         void supabase.removeAllChannels();
         conciergeCacheService.clearAllCaches();
-        useNotificationRealtimeStore.getState().clearAll();
+        void clearNotificationRealtimeStore();
         // App-preview: keep demo user when logged out.
         setUser(shouldUseDemoUserRef.current ? demoUser : null);
         setIsLoading(false);

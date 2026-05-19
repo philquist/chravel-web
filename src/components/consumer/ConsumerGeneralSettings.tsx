@@ -116,6 +116,53 @@ export const ConsumerGeneralSettings = () => {
     }
   }, []);
 
+  const handleDeleteAccount = useCallback(async () => {
+    if (confirmText !== 'DELETE' || !reAuthPassword) return;
+    setIsDeleting(true);
+    setReAuthError('');
+    try {
+      // Re-authenticate before scheduling deletion
+      if (user?.email) {
+        const { error: authErr } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: reAuthPassword,
+        });
+        if (authErr) {
+          setReAuthError('Incorrect password. Please try again.');
+          setIsDeleting(false);
+          return;
+        }
+      }
+      const { data, error } = await supabase.rpc('request_account_deletion' as never);
+      if (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to schedule deletion. Please contact privacy@chravelapp.com',
+          variant: 'destructive',
+        });
+        return;
+      }
+      const scheduledFor = (data as { scheduled_for?: string } | null)?.scheduled_for;
+      if (scheduledFor) setDeletionScheduledFor(scheduledFor);
+      logAuthEvent('account_deletion_scheduled' as never);
+      toast({
+        title: 'Deletion scheduled',
+        description: 'Your account will be deleted in 30 days. You can cancel anytime.',
+      });
+      setShowDeleteDialog(false);
+      setConfirmText('');
+      setReAuthPassword('');
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to schedule deletion. Please contact privacy@chravelapp.com',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [confirmText, reAuthPassword, user?.email]);
+
   return (
     <div className="space-y-3">
       <h3 className="text-2xl font-bold text-white">General Settings</h3>
