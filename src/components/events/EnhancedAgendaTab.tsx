@@ -28,6 +28,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
 import { Card, CardContent } from '../ui/card';
 import { useEventAgenda } from '@/hooks/useEventAgenda';
 import { useEventAgendaFiles } from '@/hooks/useEventAgendaFiles';
@@ -239,8 +240,7 @@ export const EnhancedAgendaTab = ({
     isSuperAdmin,
     active: true,
   });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const smartImportPaywall = (require('@/components/subscription/featurePaywall') as any).getFeaturePaywallConfig('smart_import_event_agenda');
+  const smartImportPaywall = getFeaturePaywallConfig('smart_import_event_agenda');
 
   return (
     <div className="relative p-4 md:p-6 space-y-4 md:space-y-6">

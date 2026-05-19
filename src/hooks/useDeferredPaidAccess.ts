@@ -40,9 +40,9 @@ export function useDeferredPaidAccess({
 
     let idleTimer: number | null = null;
     if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(enable, { timeout: 1200 });
+      (window as Window).requestIdleCallback(enable, { timeout: 1200 });
     } else {
-      idleTimer = window.setTimeout(enable, 400);
+      idleTimer = (window as Window).setTimeout(enable, 400) as unknown as number;
     }
 
     return () => {
