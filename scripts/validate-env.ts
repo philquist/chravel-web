@@ -127,30 +127,6 @@ const FEATURE_FLAG_VARS: EnvVarSpec[] = [
     canStubForTestFlight: true,
     stubValue: 'false',
   },
-  {
-    name: 'VITE_VOICE_LIVE_ENABLED',
-    required: false,
-    description: 'Enable Gemini Live voice (false in prod until confirmed)',
-    provider: 'Internal flag',
-    canStubForTestFlight: true,
-    stubValue: 'false',
-  },
-  {
-    name: 'VITE_VOICE_DIAGNOSTICS_ENABLED',
-    required: false,
-    description: 'Voice diagnostics (connection codes, audio params)',
-    provider: 'Internal flag',
-    canStubForTestFlight: true,
-    stubValue: 'false',
-  },
-  {
-    name: 'VITE_VOICE_USE_WEBSOCKET_ONLY',
-    required: false,
-    description: 'Enforce WebSocket for voice (reject SSE/HTTP)',
-    provider: 'Internal flag',
-    canStubForTestFlight: true,
-    stubValue: 'true',
-  },
 ];
 
 const ANALYTICS_VARS: EnvVarSpec[] = [
@@ -273,30 +249,6 @@ const ADDITIONAL_VARS: EnvVarSpec[] = [
     provider: 'Build system',
     canStubForTestFlight: true,
     stubValue: '1.0.0',
-  },
-  {
-    name: 'VITE_VOICE_DEBUG',
-    required: false,
-    description: 'Enable voice debugging console output',
-    provider: 'Internal flag',
-    canStubForTestFlight: true,
-    stubValue: 'false',
-  },
-  {
-    name: 'VITE_VOICE_AFFECTIVE_DIALOG',
-    required: false,
-    description: 'Enable emotional tone in voice responses',
-    provider: 'Internal flag',
-    canStubForTestFlight: true,
-    stubValue: 'true',
-  },
-  {
-    name: 'VITE_VOICE_PROACTIVE_AUDIO',
-    required: false,
-    description: 'Enable model-initiated speech',
-    provider: 'Internal flag',
-    canStubForTestFlight: true,
-    stubValue: 'true',
   },
 ];
 

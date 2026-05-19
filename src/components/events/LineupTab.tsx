@@ -28,12 +28,12 @@ import { useDemoMode } from '../../hooks/useDemoMode';
 import { useEventLineup } from '@/hooks/useEventLineup';
 import { useEventLineupFiles } from '@/hooks/useEventLineupFiles';
 import { LineupImportModal } from './LineupImportModal';
+import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
 import type { AgendaFile } from '../../types/events';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { hasPaidAccess } from '@/utils/paidAccess';
 import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
-import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
 import type { Speaker, EventAgendaItem } from '../../types/events';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import {

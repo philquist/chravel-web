@@ -1,6 +1,7 @@
 import { verifyCapabilityToken } from './capabilityTokens.ts';
 import { executeFunctionCall } from '../functionExecutor.ts';
 import { normalizeToolResult } from '../concierge/toolResultContracts.ts';
+import { enforceToolSchema, redactSensitiveFields } from './aiSecurityBoundary.ts';
 
 export async function executeToolSecurely(
   supabase: any,
@@ -21,7 +22,7 @@ export async function executeToolSecurely(
 
   // 3. Enforce argument constraints (trip_id immutability, IDs belong to trip, etc.)
   // Force the trip_id and user_id to match the capability token, ignoring whatever the model provided.
-  const enforcedArgs = { ...args };
+  const enforcedArgs = enforceToolSchema(toolName, { ...args });
 
   if (enforcedArgs.trip_id && enforcedArgs.trip_id !== cap.trip_id) {
     console.warn(
@@ -41,7 +42,7 @@ export async function executeToolSecurely(
   );
 
   // 5. Normalize + sanitize output before it is shown to users or fed back to the model.
-  return sanitizeToolOutput(toolName, normalizeToolResult(toolName, result));
+  return sanitizeToolOutput(toolName, normalizeToolResult(toolName, redactSensitiveFields(result)));
 }
 
 function sanitizeToolOutput(toolName: string, result: any): any {

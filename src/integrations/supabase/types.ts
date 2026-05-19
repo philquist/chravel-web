@@ -2824,6 +2824,69 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_base_camps: {
+        Row: {
+          address: string
+          city: string | null
+          country: string | null
+          created_at: string
+          created_by: string
+          end_date: string | null
+          google_place_id: string | null
+          id: string
+          label: string | null
+          lat: number | null
+          lng: number | null
+          notes: string | null
+          order_index: number
+          place_name: string | null
+          region: string | null
+          start_date: string | null
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by: string
+          end_date?: string | null
+          google_place_id?: string | null
+          id?: string
+          label?: string | null
+          lat?: number | null
+          lng?: number | null
+          notes?: string | null
+          order_index?: number
+          place_name?: string | null
+          region?: string | null
+          start_date?: string | null
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string
+          end_date?: string | null
+          google_place_id?: string | null
+          id?: string
+          label?: string | null
+          lat?: number | null
+          lng?: number | null
+          notes?: string | null
+          order_index?: number
+          place_name?: string | null
+          region?: string | null
+          start_date?: string | null
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trip_channels: {
         Row: {
           archived_at: string | null
@@ -3503,6 +3566,69 @@ export type Database = {
           tool_call_id?: string | null
           tool_name?: string
           trip_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trip_personal_base_camps: {
+        Row: {
+          address: string
+          city: string | null
+          country: string | null
+          created_at: string
+          end_date: string | null
+          google_place_id: string | null
+          id: string
+          label: string | null
+          lat: number | null
+          lng: number | null
+          notes: string | null
+          order_index: number
+          place_name: string | null
+          region: string | null
+          start_date: string | null
+          trip_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          end_date?: string | null
+          google_place_id?: string | null
+          id?: string
+          label?: string | null
+          lat?: number | null
+          lng?: number | null
+          notes?: string | null
+          order_index?: number
+          place_name?: string | null
+          region?: string | null
+          start_date?: string | null
+          trip_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          end_date?: string | null
+          google_place_id?: string | null
+          id?: string
+          label?: string | null
+          lat?: number | null
+          lng?: number | null
+          notes?: string | null
+          order_index?: number
+          place_name?: string | null
+          region?: string | null
+          start_date?: string | null
+          trip_id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

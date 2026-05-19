@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Search, ImagePlus, Sparkles, PhoneOff } from 'lucide-react';
+import { Search, ImagePlus } from 'lucide-react';
 import { ConciergeSearchModal } from './ai/ConciergeSearchModal';
 import { useBasecamp } from '../contexts/BasecampContext';
 import { ChatMessages } from '@/features/chat/components/ChatMessages';
@@ -9,7 +9,6 @@ import { useConciergeUsage } from '../hooks/useConciergeUsage';
 import { useAuth } from '@/hooks/useAuth';
 import { useAIConciergePreferences } from '../hooks/useAIConciergePreferences';
 import { toast } from 'sonner';
-import { VoiceLiveInline } from '@/features/chat/components/VoiceLiveInline';
 import { CTA_BUTTON, CTA_ICON_SIZE } from '@/lib/ctaButtonStyles';
 import { useSaveToTripPlaces } from '@/hooks/useSaveToTripPlaces';
 import { useConciergeReadAloud } from '@/hooks/useConciergeReadAloud';
@@ -20,7 +19,6 @@ import {
   ALLOWED_DOCUMENT_TYPES,
   ALLOWED_IMAGE_TYPES as _ALLOWED_IMAGE_TYPES,
   ALL_ACCEPTED_TYPES,
-  DUPLEX_VOICE_ENABLED,
   MAX_DOCUMENT_SIZE_BYTES as _MAX_DOCUMENT_SIZE_BYTES,
   MAX_IMAGE_SIZE_BYTES as _MAX_IMAGE_SIZE_BYTES,
   UPLOAD_ENABLED,
@@ -129,36 +127,9 @@ export const AIConciergeChat = ({
     queryClient: conciergeQueryClient,
   });
 
-  const {
-    convoVoiceState,
-    handleConvoToggle,
-    handleLiveToggle,
-    handleEndLiveSession,
-    isLiveSessionActive,
-    liveTogglePending,
-    streamingVoiceMessage,
-    streamingUserMessage,
-    liveState,
-    liveUserTranscript,
-    liveAssistantTranscript,
-    liveError,
-    liveConversationHistory,
-    liveDiagnostics,
-    liveCircuitBreakerOpen,
-    liveResetCircuitBreaker,
-    startLiveSession,
-  } = useConciergeVoice({
-    tripId,
-    userId: user?.id,
-    isDemoMode,
-    isLimitedPlan,
-    incrementUsageOnSuccess,
-    setMessages,
+  const { convoVoiceState, handleConvoToggle } = useConciergeVoice({
     setInputMessage,
-    buildLimitReachedMessage,
   });
-
-  const showLiveOverlay = isLiveSessionActive || liveTogglePending;
 
   const handleTTSPlay = useCallback(
     (messageId: string) => {
@@ -204,7 +175,7 @@ export const AIConciergeChat = ({
     Promise.resolve(),
   );
 
-  // Auto-scroll to bottom when new messages, typing indicator, or streaming voice
+  // Auto-scroll to bottom when new messages or typing indicator
   // Uses RAF batching + bottom-proximity stickiness to prevent iOS vibration bug
   useEffect(() => {
     let rafId: number | null = null;
@@ -239,7 +210,7 @@ export const AIConciergeChat = ({
       });
     };
 
-    if (messages.length > 0 || isTyping || streamingVoiceMessage || streamingUserMessage) {
+    if (messages.length > 0 || isTyping) {
       scrollToBottom();
     }
 
@@ -253,8 +224,6 @@ export const AIConciergeChat = ({
     messages.length,
     isTyping,
     // messages removed - redundant with messages.length, was causing double-firing and scroll jitter
-    streamingVoiceMessage,
-    streamingUserMessage,
   ]);
 
   const { handleSendMessage } = useConciergeStreaming({
@@ -308,7 +277,7 @@ export const AIConciergeChat = ({
           >
             Concierge AI | Chravel Agent
           </h3>
-          {/* Row 2: Search | Live | Upload — evenly spaced */}
+          {/* Row 2: Search | Upload — evenly spaced */}
           <div className="flex items-center justify-between mt-2">
             <button
               type="button"
@@ -318,33 +287,6 @@ export const AIConciergeChat = ({
             >
               <Search size={CTA_ICON_SIZE} className="text-white" />
             </button>
-            {DUPLEX_VOICE_ENABLED && (
-              <button
-                type="button"
-                onClick={handleLiveToggle}
-                className={`relative min-h-[44px] min-w-[44px] h-8 px-3 rounded-full flex items-center justify-center gap-1 transition-all duration-200 select-none touch-manipulation cta-gold-ring ${
-                  showLiveOverlay
-                    ? 'bg-gradient-to-br from-[#533517] to-[#c49746] text-white shadow-md shadow-[#c49746]/25 border-transparent'
-                    : 'bg-gray-800/80 text-white hover:bg-gray-700/80'
-                }`}
-                aria-label={
-                  showLiveOverlay ? 'Stop live voice session' : 'Start live voice session'
-                }
-                role="switch"
-                aria-checked={showLiveOverlay}
-              >
-                {showLiveOverlay && (
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -inset-0.5 rounded-full bg-gradient-to-r from-[#c49746]/30 to-[#feeaa5]/20 blur-sm"
-                  />
-                )}
-                <span className="relative z-10 flex items-center gap-1">
-                  <Sparkles size={14} aria-hidden="true" />
-                  <span className="text-xs font-medium leading-none">Live</span>
-                </span>
-              </button>
-            )}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -404,8 +346,8 @@ export const AIConciergeChat = ({
           </div>
         )}
 
-        {/* Empty State - Compact for Mobile (hidden during live voice session) */}
-        {messages.length === 0 && !isHistoryLoading && !showLiveOverlay && (
+        {/* Empty State - Compact for Mobile */}
+        {messages.length === 0 && !isHistoryLoading && (
           <div className="text-center py-6 px-4 flex-shrink-0">
             <div className="text-sm text-gray-300 space-y-1 max-w-md mx-auto">
               <p className="text-xs sm:text-sm mb-1.5">Try asking:</p>
@@ -427,78 +369,53 @@ export const AIConciergeChat = ({
           </div>
         )}
 
-        {/* Chat area — shows inline live UI when active, otherwise normal messages */}
-        {showLiveOverlay ? (
-          <VoiceLiveInline
-            liveState={liveState}
-            userTranscript={liveUserTranscript}
-            assistantTranscript={liveAssistantTranscript}
-            diagnostics={liveDiagnostics}
-            error={liveError}
-            circuitBreakerOpen={liveCircuitBreakerOpen}
-            conversationEmpty={liveConversationHistory.length === 0}
-            onRetry={() => void startLiveSession()}
-            onResetCircuitBreaker={liveResetCircuitBreaker}
-          />
-        ) : (
-          <div
-            ref={chatScrollRef}
-            className="flex-1 overflow-y-auto p-4 chat-scroll-container native-scroll min-h-0"
-          >
-            {/* "Picked up where you left off" divider — shown once when server history hydrates */}
-            {historyLoadedFromServer && messages.length > 0 && (
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-xs text-gray-700 whitespace-nowrap">
-                  ↩ Picked up where you left off
-                </span>
-                <div className="flex-1 h-px bg-white/10" />
-              </div>
-            )}
-            {/* Merge transient streaming bubbles into the message list so both the
-                 user's live STT and the assistant's live TTS are visible in the
-                 chat while Gemini Live is active.  Order: persisted messages →
-                 user interim bubble (while listening) → assistant streaming bubble
-                 (while playing).  handleLiveTurnComplete clears both transient
-                 entries and appends the finalised messages, so there is no
-                 duplication or flash. */}
-            {(messages.length > 0 || !!streamingVoiceMessage || !!streamingUserMessage) && (
-              <ChatMessages
-                messages={[
-                  ...messages,
-                  ...(streamingUserMessage ? [streamingUserMessage] : []),
-                  ...(streamingVoiceMessage ? [streamingVoiceMessage] : []),
-                ]}
-                isTyping={isTyping}
-                showMapWidgets={true}
-                onDeleteMessage={handleDeleteMessage}
-                onTabChange={onTabChange}
-                onSavePlace={savePlace}
-                onSaveFlight={saveFlight}
-                onSaveHotel={saveHotel}
-                isUrlSaved={isUrlSaved}
-                isSaving={isSaving}
-                onEditReservation={(prefill: string) => {
-                  setInputMessage(prefill);
-                }}
-                onSmartImportConfirm={handleSmartImportConfirm}
-                onSmartImportDismiss={handleSmartImportDismiss}
-                onBulkDeleteConfirm={handleBulkDeleteConfirm}
-                onBulkDeleteDismiss={handleBulkDeleteDismiss}
-                onConfirmPendingAction={confirmAction}
-                onRejectPendingAction={rejectAction}
-                isConfirmingPendingAction={isConfirmingPendingAction}
-                isRejectingPendingAction={isRejectingPendingAction}
-                smartImportStates={smartImportStates}
-                bulkDeleteStates={bulkDeleteStates}
-                ttsPlaybackState={ttsPlaybackState}
-                ttsPlayingMessageId={ttsPlayingMessageId}
-                onTTSPlay={handleTTSPlay}
-                onTTSStop={ttsStop}
-              />
-            )}
-          </div>
-        )}
+        {/* Chat area */}
+        <div
+          ref={chatScrollRef}
+          className="flex-1 overflow-y-auto p-4 chat-scroll-container native-scroll min-h-0"
+        >
+          {/* "Picked up where you left off" divider — shown once when server history hydrates */}
+          {historyLoadedFromServer && messages.length > 0 && (
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-xs text-gray-700 whitespace-nowrap">
+                ↩ Picked up where you left off
+              </span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+          )}
+          {messages.length > 0 && (
+            <ChatMessages
+              messages={messages}
+              isTyping={isTyping}
+              showMapWidgets={true}
+              onDeleteMessage={handleDeleteMessage}
+              onTabChange={onTabChange}
+              onSavePlace={savePlace}
+              onSaveFlight={saveFlight}
+              onSaveHotel={saveHotel}
+              isUrlSaved={isUrlSaved}
+              isSaving={isSaving}
+              onEditReservation={(prefill: string) => {
+                setInputMessage(prefill);
+              }}
+              onSmartImportConfirm={handleSmartImportConfirm}
+              onSmartImportDismiss={handleSmartImportDismiss}
+              onBulkDeleteConfirm={handleBulkDeleteConfirm}
+              onBulkDeleteDismiss={handleBulkDeleteDismiss}
+              onConfirmPendingAction={confirmAction}
+              onRejectPendingAction={rejectAction}
+              isConfirmingPendingAction={isConfirmingPendingAction}
+              isRejectingPendingAction={isRejectingPendingAction}
+              smartImportStates={smartImportStates}
+              bulkDeleteStates={bulkDeleteStates}
+              ttsPlaybackState={ttsPlaybackState}
+              ttsPlayingMessageId={ttsPlayingMessageId}
+              onTTSPlay={handleTTSPlay}
+              onTTSStop={ttsStop}
+            />
+          )}
+        </div>
 
         {/* Input area — sticky bottom with inline voice banner above input */}
         <div
@@ -522,19 +439,6 @@ export const AIConciergeChat = ({
                 </select>
               </div>
             )}
-          {/* End session button — aligned above dictation button on same vertical axis */}
-          {showLiveOverlay && (
-            <div className="mb-2 w-11">
-              <button
-                type="button"
-                onClick={() => void handleEndLiveSession()}
-                className="size-11 min-w-[44px] rounded-full bg-red-600 hover:bg-red-500 active:scale-95 transition-all duration-150 flex items-center justify-center shadow-lg shadow-red-900/40 touch-manipulation"
-                aria-label="End voice session"
-              >
-                <PhoneOff size={18} className="text-white" aria-hidden="true" />
-              </button>
-            </div>
-          )}
           <AiChatInput
             inputMessage={inputMessage}
             onInputChange={setInputMessage}

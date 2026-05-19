@@ -28,6 +28,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
 import { Card, CardContent } from '../ui/card';
 import { useEventAgenda } from '@/hooks/useEventAgenda';
 import { useEventAgendaFiles } from '@/hooks/useEventAgendaFiles';
@@ -36,7 +37,6 @@ import { formatSessionDateTime } from '@/lib/formatSessionDateTime';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { hasPaidAccess } from '@/utils/paidAccess';
 import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
-import { getFeaturePaywallConfig } from '@/components/subscription/featurePaywall';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { getMediaCategory } from '@/utils/mediaUtils';
 import {

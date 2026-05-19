@@ -37,6 +37,7 @@ import { useBackgroundImport } from '@/features/calendar/hooks/useBackgroundImpo
 import { toast } from 'sonner';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { hasPaidAccess } from '@/utils/paidAccess';
+import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useTripMembersQuery } from '@/hooks/useTripMembersQuery';
 import type { TripEvent } from '@/services/calendarService';
@@ -93,6 +94,12 @@ export const MobileGroupCalendar = ({
   // Internal view mode state when no external handler provided
   const [internalViewMode, setInternalViewMode] = useState<CalendarViewMode>('list');
   const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
+  const canUseSmartImport = useDeferredPaidAccess({
+    tier,
+    status: subscription?.status,
+    isSuperAdmin,
+    active: true,
+  });
   const { canPerformAction, isLoading: permissionsLoading } = useRolePermissions(tripId);
   const { tripMembers } = useTripMembersQuery(tripId);
 
@@ -130,13 +137,7 @@ export const MobileGroupCalendar = ({
   const handleImport = async () => {
     await hapticService.medium();
 
-    const hasImmediatePaidAccess = hasPaidAccess({
-      tier,
-      status: subscription?.status,
-      isSuperAdmin,
-    });
-
-    if (!hasImmediatePaidAccess) {
+    if (!canUseSmartImport) {
       const { getFeaturePaywallConfig } = await import('@/components/subscription/featurePaywall');
       const paywall = getFeaturePaywallConfig('smart_import_calendar');
       toast.error(`${paywall.featureBenefitCopy} Recommended plan: ${paywall.recommendedPlan}.`, {
