@@ -29,6 +29,8 @@ export const BasecampSelector = ({
   const [confirmationNumber, setConfirmationNumber] = useState(
     currentBasecamp?.confirmationNumber || '',
   );
+  const [startDate, setStartDate] = useState(currentBasecamp?.startDate || '');
+  const [endDate, setEndDate] = useState(currentBasecamp?.endDate || '');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,6 +75,8 @@ export const BasecampSelector = ({
         // No coordinates - basecamp is just a text reference now
         coordinates: undefined,
         confirmationNumber: confirmationNumber.trim() || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
       };
 
       // Wrap the save operation in a timeout internally using Promise.race,
@@ -173,6 +177,28 @@ export const BasecampSelector = ({
               />
             </div>
           )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-semibold text-white mb-2">Start date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-white mb-2">End date</label>
+              <input
+                type="date"
+                min={startDate || undefined}
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+              />
+            </div>
+          </div>
 
           <div>
             <label className="block text-sm font-semibold text-white mb-2">Type</label>

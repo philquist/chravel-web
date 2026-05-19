@@ -1,18 +1,32 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { MapPin, ArrowUpDown, X, Navigation, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BasecampLocation } from '@/types/basecamp';
 import { PersonalBasecamp } from '@/services/basecampService';
+import {
+  useCurrentPersonalBaseCamp,
+  useCurrentTripBaseCamp,
+  usePersonalBaseCamps,
+  useTripBaseCamps,
+} from '@/hooks/useMultiBaseCamps';
+import { formatBaseCampLabel } from '@/utils/baseCamps';
 
 interface DirectionsEmbedProps {
+  tripId: string;
   tripBasecamp?: BasecampLocation | null;
   personalBasecamp?: PersonalBasecamp | null;
 }
 
 export const DirectionsEmbed: React.FC<DirectionsEmbedProps> = ({
+  tripId,
   tripBasecamp,
   personalBasecamp,
 }) => {
+  const { data: tripCamps = [] } = useTripBaseCamps(tripId);
+  const { data: personalCamps = [] } = usePersonalBaseCamps(tripId);
+  const { currentBaseCamp: currentTripBaseCamp } = useCurrentTripBaseCamp(tripId);
+  const { currentBaseCamp: currentPersonalBaseCamp } = useCurrentPersonalBaseCamp(tripId);
+
   const [fromText, setFromText] = useState('');
   const [toText, setToText] = useState('');
   const [directionsUrl, setDirectionsUrl] = useState<string | null>(null);
@@ -20,130 +34,111 @@ export const DirectionsEmbed: React.FC<DirectionsEmbedProps> = ({
   const [iframeLoading, setIframeLoading] = useState(false);
   const [iframeError, setIframeError] = useState(false);
 
-  // Quick-fill handlers
-  const fillFromTripBasecamp = (field: 'from' | 'to') => {
-    if (tripBasecamp?.address) {
-      if (field === 'from') {
-        setFromText(tripBasecamp.address);
-      } else {
-        setToText(tripBasecamp.address);
-      }
-    }
-  };
+  const defaultFrom = useMemo(() => {
+    return (
+      currentPersonalBaseCamp?.address ||
+      currentTripBaseCamp?.address ||
+      personalBasecamp?.address ||
+      tripBasecamp?.address ||
+      ''
+    );
+  }, [
+    currentPersonalBaseCamp?.address,
+    currentTripBaseCamp?.address,
+    personalBasecamp?.address,
+    tripBasecamp?.address,
+  ]);
 
-  const fillFromPersonalBasecamp = (field: 'from' | 'to') => {
-    if (personalBasecamp?.address) {
-      if (field === 'from') {
-        setFromText(personalBasecamp.address);
-      } else {
-        setToText(personalBasecamp.address);
-      }
-    }
-  };
+  React.useEffect(() => {
+    if (!fromText && defaultFrom) setFromText(defaultFrom);
+  }, [defaultFrom, fromText]);
 
-  // Swap From and To
   const handleSwap = () => {
     const temp = fromText;
     setFromText(toText);
     setToText(temp);
   };
 
-  // Generate Google Maps directions URL
   const handleGetDirections = () => {
     if (!fromText.trim() || !toText.trim()) return;
-
     const saddr = encodeURIComponent(fromText.trim());
     const daddr = encodeURIComponent(toText.trim());
     const url = `https://www.google.com/maps?output=embed&saddr=${saddr}&daddr=${daddr}`;
-
     setDirectionsUrl(url);
     setShowDirections(true);
     setIframeLoading(true);
     setIframeError(false);
   };
 
-  // Close directions and return to input form
-  const handleClose = () => {
-    setShowDirections(false);
-    setDirectionsUrl(null);
-  };
+  const canGetDirections = !!fromText.trim() && !!toText.trim();
 
-  const canGetDirections = fromText.trim() && toText.trim();
+  const quickPicks = [
+    ...tripCamps.map(c => ({
+      key: `trip-${c.id}`,
+      label: `Trip: ${formatBaseCampLabel(c)}`,
+      address: c.address,
+    })),
+    ...personalCamps.map(c => ({
+      key: `personal-${c.id}`,
+      label: `Personal: ${formatBaseCampLabel(c)}`,
+      address: c.address,
+    })),
+  ];
 
-  // Open directions in Google Maps app/website (for mobile)
-  const handleOpenInMaps = () => {
-    if (!fromText.trim() || !toText.trim()) return;
-    const saddr = encodeURIComponent(fromText.trim());
-    const daddr = encodeURIComponent(toText.trim());
-    window.open(
-      `https://www.google.com/maps/dir/?api=1&origin=${saddr}&destination=${daddr}`,
-      '_blank',
-    );
-  };
+  if (showDirections && directionsUrl) return <div />;
 
-  // Directions view
-  if (showDirections && directionsUrl) {
-    return (
-      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl border border-white/10 overflow-hidden">
-        {/* Header with close button */}
-        <div className="flex items-center justify-between p-3 border-b border-white/10">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <Navigation size={18} className="text-primary flex-shrink-0" />
-            <span className="text-white font-medium text-sm truncate">
-              {fromText} → {toText}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={handleOpenInMaps}
-              className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 transition-colors mr-2 min-h-[44px] px-2 flex items-center"
-              aria-label="Open directions in Google Maps"
-            >
-              Open in Maps
-            </button>
-            <button
-              onClick={handleClose}
-              className="text-gray-400 hover:text-white transition-colors p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Close directions"
-            >
-              <X size={18} />
-            </button>
-          </div>
-        </div>
-
-        {/* Directions Embed */}
-        <div className="h-[350px] relative">
-          {iframeLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-10">
-              <div className="flex flex-col items-center gap-2">
-                <div className="h-6 w-6 animate-spin gold-gradient-spinner" />
-                <p className="text-sm text-gray-300">Loading directions...</p>
-              </div>
-            </div>
-          )}
+  return (
+    <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-4 border border-white/10">
+      <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+        <Navigation size={18} className="text-primary" />
+        Get Directions
+      </h3>
+      <div className="mb-3">
+        <label className="text-sm text-gray-300 font-medium">From</label>
+        <input
+          value={fromText}
+          onChange={e => setFromText(e.target.value)}
+          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-sm"
+        />
+      </div>
+      <div className="mb-3">
+        <label className="text-sm text-gray-300 font-medium">To</label>
+        <input
+          value={toText}
+          onChange={e => setToText(e.target.value)}
+          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-sm"
+        />
+      </div>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {quickPicks.slice(0, 8).map(p => (
+          <button
+            key={p.key}
+            type="button"
+            onClick={() => setFromText(p.address)}
+            className="text-xs px-2 py-1 rounded border border-white/20 text-primary"
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button onClick={handleSwap} variant="outline" className="min-h-[44px]">
+          <ArrowUpDown size={16} />
+        </Button>
+        <Button disabled={!canGetDirections} onClick={handleGetDirections} className="min-h-[44px]">
+          Directions
+        </Button>
+      </div>
+      {showDirections && (
+        <div className="mt-3 h-[300px] relative">
+          {iframeLoading && <div className="absolute inset-0">Loading...</div>}
           {iframeError ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3">
-              <AlertCircle size={32} className="text-red-400" />
-              <p className="text-sm text-gray-400">Could not load directions embed</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleOpenInMaps}
-                className="min-h-[44px]"
-              >
-                Open in Google Maps instead
-              </Button>
-            </div>
+            <AlertCircle />
           ) : (
             <iframe
-              src={directionsUrl}
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
+              src={directionsUrl!}
               title="Google Maps Directions"
+              className="w-full h-full"
               onLoad={() => setIframeLoading(false)}
               onError={() => {
                 setIframeLoading(false);
@@ -152,134 +147,7 @@ export const DirectionsEmbed: React.FC<DirectionsEmbedProps> = ({
             />
           )}
         </div>
-      </div>
-    );
-  }
-
-  // Input form view
-  return (
-    <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-4 border border-white/10">
-      <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-        <Navigation size={18} className="text-primary" />
-        Get Directions
-      </h3>
-
-      {/* From Field */}
-      <div className="mb-3">
-        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-          <label className="text-sm text-gray-300 font-medium">From</label>
-          {tripBasecamp?.address && (
-            <button
-              type="button"
-              onClick={() => fillFromTripBasecamp('from')}
-              className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
-            >
-              Trip Base Camp
-            </button>
-          )}
-          {personalBasecamp?.address && (
-            <button
-              type="button"
-              onClick={() => fillFromPersonalBasecamp('from')}
-              className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
-            >
-              Personal Base Camp
-            </button>
-          )}
-        </div>
-        <div className="relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <MapPin size={16} />
-          </div>
-          <input
-            type="text"
-            value={fromText}
-            onChange={e => setFromText(e.target.value)}
-            placeholder="Enter any location, venue, or address..."
-            className="w-full bg-white/10 border border-white/20 rounded-lg pl-9 pr-9 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-colors text-sm"
-          />
-          {fromText && (
-            <button
-              type="button"
-              onClick={() => setFromText('')}
-              className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Clear from location"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Swap Button */}
-      <div className="flex justify-center my-2">
-        <button
-          type="button"
-          onClick={handleSwap}
-          className="text-gray-400 hover:text-white transition-colors p-3 min-w-[44px] min-h-[44px] rounded-lg hover:bg-white/10 flex items-center justify-center"
-          aria-label="Swap from and to locations"
-        >
-          <ArrowUpDown size={18} />
-        </button>
-      </div>
-
-      {/* To Field */}
-      <div className="mb-4">
-        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-          <label className="text-sm text-gray-300 font-medium">To</label>
-          {tripBasecamp?.address && (
-            <button
-              type="button"
-              onClick={() => fillFromTripBasecamp('to')}
-              className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
-            >
-              Trip Base Camp
-            </button>
-          )}
-          {personalBasecamp?.address && (
-            <button
-              type="button"
-              onClick={() => fillFromPersonalBasecamp('to')}
-              className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
-            >
-              Personal Base Camp
-            </button>
-          )}
-        </div>
-        <div className="relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <MapPin size={16} />
-          </div>
-          <input
-            type="text"
-            value={toText}
-            onChange={e => setToText(e.target.value)}
-            placeholder="Enter destination..."
-            className="w-full bg-white/10 border border-white/20 rounded-lg pl-9 pr-9 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-colors text-sm"
-          />
-          {toText && (
-            <button
-              type="button"
-              onClick={() => setToText('')}
-              className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Clear destination"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Get Directions Button */}
-      <Button
-        onClick={handleGetDirections}
-        disabled={!canGetDirections}
-        className="w-full bg-gray-800/80 text-white cta-gold-ring hover:opacity-90 hover:scale-[1.01] active:scale-[0.99] transition-all border-0"
-        size="sm"
-      >
-        <Navigation size={16} />
-        Get Directions
-      </Button>
+      )}
     </div>
   );
 };

@@ -4,6 +4,8 @@ export interface BasecampLocation {
   name?: string;
   type: 'hotel' | 'short-term' | 'other';
   confirmationNumber?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface PlaceWithDistance {

@@ -7,8 +7,8 @@ import {
   Building2,
   Home,
   HelpCircle,
-  AlertTriangle,
-  RefreshCw,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { BasecampLocation } from '@/types/basecamp';
 import { BasecampSelector } from '../BasecampSelector';
@@ -21,6 +21,12 @@ import { useUpdateTripBasecamp, useClearTripBasecamp } from '@/hooks/useTripBase
 import { personalBasecampKeys } from '@/hooks/usePersonalBasecamp';
 import { toast } from 'sonner';
 import { DirectionsEmbed } from './DirectionsEmbed';
+import {
+  useCreatePersonalBaseCamp,
+  useCreateTripBaseCamp,
+  usePersonalBaseCamps,
+  useTripBaseCamps,
+} from '@/hooks/useMultiBaseCamps';
 import { useQueryClient } from '@tanstack/react-query';
 
 const LOG_PREFIX = '[BasecampsPanel]';
@@ -69,6 +75,10 @@ export const BasecampsPanel: React.FC<BasecampsPanelProps> = ({
   // ─── Trip basecamp mutations (self-contained, like personal basecamp) ───
   const updateTripBasecampMutation = useUpdateTripBasecamp(tripId);
   const clearTripBasecampMutation = useClearTripBasecamp(tripId);
+  const createTripBaseCamp = useCreateTripBaseCamp(tripId);
+  const createPersonalBaseCamp = useCreatePersonalBaseCamp(tripId);
+  const { data: tripBaseCampLogs = [] } = useTripBaseCamps(tripId);
+  const { data: personalBaseCampLogs = [] } = usePersonalBaseCamps(tripId);
 
   const [internalPersonalBasecamp, setInternalPersonalBasecamp] = useState<PersonalBasecamp | null>(
     null,
@@ -76,6 +86,8 @@ export const BasecampsPanel: React.FC<BasecampsPanelProps> = ({
   const [showTripSelector, setShowTripSelector] = useState(false);
   const [showPersonalSelector, setShowPersonalSelector] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showAllTripBaseCamps, setShowAllTripBaseCamps] = useState(false);
+  const [showAllPersonalBaseCamps, setShowAllPersonalBaseCamps] = useState(false);
 
   // Use external state if provided, otherwise use internal state
   const personalBasecamp =
@@ -152,6 +164,13 @@ export const BasecampsPanel: React.FC<BasecampsPanelProps> = ({
         longitude: newBasecamp.coordinates?.lng,
       });
 
+      await createTripBaseCamp.mutateAsync({
+        address: newBasecamp.address,
+        label: newBasecamp.name,
+        start_date: newBasecamp.startDate,
+        end_date: newBasecamp.endDate,
+      });
+
       devLog(LOG_PREFIX, 'Trip basecamp saved via mutation');
       setShowTripSelector(false);
 
@@ -178,6 +197,12 @@ export const BasecampsPanel: React.FC<BasecampsPanelProps> = ({
           address: newBasecamp.address,
           latitude: newBasecamp.coordinates?.lat,
           longitude: newBasecamp.coordinates?.lng,
+        });
+        await createPersonalBaseCamp.mutateAsync({
+          address: location.address,
+          label: location.name,
+          start_date: location.startDate,
+          end_date: location.endDate,
         });
 
         if (result.success) {
@@ -323,6 +348,17 @@ export const BasecampsPanel: React.FC<BasecampsPanelProps> = ({
     }
   };
 
+  const formatDateRange = (start?: string | null, end?: string | null) => {
+    if (!start && !end) return 'Dates not set';
+    if (start && end) return `${start} → ${end}`;
+    return start ? `Starts ${start}` : `Until ${end}`;
+  };
+
+  const additionalTripBaseCamps = tripBaseCampLogs.filter(c => c.address !== tripBasecamp?.address);
+  const additionalPersonalBaseCamps = personalBaseCampLogs.filter(
+    c => c.address !== personalBasecamp?.address,
+  );
+
   const toBasecampLocation = (pb: PersonalBasecamp): BasecampLocation => ({
     address: pb.address || '',
     name: pb.name,
@@ -370,6 +406,39 @@ export const BasecampsPanel: React.FC<BasecampsPanelProps> = ({
                     </div>
                   </div>
                 </div>
+
+                {additionalTripBaseCamps.length > 0 && (
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAllTripBaseCamps(v => !v)}
+                      className="text-xs text-gold-primary inline-flex items-center gap-1 min-h-[44px]"
+                    >
+                      {showAllTripBaseCamps ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      {showAllTripBaseCamps
+                        ? 'Hide'
+                        : `View ${additionalTripBaseCamps.length} more`}{' '}
+                      base camps
+                    </button>
+                    {showAllTripBaseCamps && (
+                      <div className="mt-2 space-y-2">
+                        {additionalTripBaseCamps.map(c => (
+                          <div
+                            key={c.id}
+                            className="bg-glass-slate-bg/40 rounded-lg p-2 border border-glass-slate-border/40"
+                          >
+                            <p className="text-sm text-foreground">
+                              {c.label || c.place_name || c.address}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDateRange(c.start_date, c.end_date)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -455,6 +524,43 @@ export const BasecampsPanel: React.FC<BasecampsPanelProps> = ({
                     </div>
                   </div>
                 </div>
+
+                {additionalPersonalBaseCamps.length > 0 && (
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAllPersonalBaseCamps(v => !v)}
+                      className="text-xs text-emerald-300 inline-flex items-center gap-1 min-h-[44px]"
+                    >
+                      {showAllPersonalBaseCamps ? (
+                        <ChevronUp size={14} />
+                      ) : (
+                        <ChevronDown size={14} />
+                      )}
+                      {showAllPersonalBaseCamps
+                        ? 'Hide'
+                        : `View ${additionalPersonalBaseCamps.length} more`}{' '}
+                      personal stays
+                    </button>
+                    {showAllPersonalBaseCamps && (
+                      <div className="mt-2 space-y-2">
+                        {additionalPersonalBaseCamps.map(c => (
+                          <div
+                            key={c.id}
+                            className="bg-glass-slate-bg/40 rounded-lg p-2 border border-glass-slate-border/40"
+                          >
+                            <p className="text-sm text-foreground">
+                              {c.label || c.place_name || c.address}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDateRange(c.start_date, c.end_date)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -487,7 +593,11 @@ export const BasecampsPanel: React.FC<BasecampsPanelProps> = ({
 
       {/* Directions Embed - Below basecamp cards */}
       <div className="mt-2 lg:mt-4">
-        <DirectionsEmbed tripBasecamp={tripBasecamp} personalBasecamp={personalBasecamp} />
+        <DirectionsEmbed
+          tripId={tripId}
+          tripBasecamp={tripBasecamp}
+          personalBasecamp={personalBasecamp}
+        />
       </div>
 
       {/* Basecamp Selectors */}
