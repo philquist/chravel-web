@@ -29,7 +29,7 @@ export const resolveCurrentBaseCamp = (
   camps: BaseCampLike[],
   date = new Date(),
   timezone?: string,
-): BaseCampRecord | null => {
+): BaseCampLike | null => {
   if (!camps.length) return null;
   const today = toDateOnly(date, timezone);
   const ordered = [...camps].sort(
