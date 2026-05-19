@@ -133,7 +133,7 @@ export const GroupCalendar = React.memo(({ tripId }: GroupCalendarProps) => {
       return;
     }
     setShowImportModal(true);
-  }, [canPerformAction, canUseSmartImport, navigate, permissionsLoading, toast]);
+  };
 
   const handleImportComplete = useCallback(async () => {
     // Wait for queries to settle before attempting a refetch

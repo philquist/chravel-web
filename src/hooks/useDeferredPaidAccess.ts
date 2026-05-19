@@ -39,10 +39,11 @@ export function useDeferredPaidAccess({
     });
 
     let idleTimer: number | null = null;
+    let idleHandle: number | null = null;
     if ('requestIdleCallback' in window) {
-      (window as Window).requestIdleCallback(enable, { timeout: 1200 });
+      idleHandle = window.requestIdleCallback(enable, { timeout: 1200 });
     } else {
-      idleTimer = (window as Window).setTimeout(enable, 400) as unknown as number;
+      idleTimer = window.setTimeout(enable, 400);
     }
 
     return () => {
@@ -52,6 +53,9 @@ export function useDeferredPaidAccess({
       });
       if (idleTimer !== null) {
         window.clearTimeout(idleTimer);
+      }
+      if (idleHandle !== null && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleHandle);
       }
     };
   }, [active, enabled]);
