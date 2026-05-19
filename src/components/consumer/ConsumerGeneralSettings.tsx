@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { SmartImportSettings } from '@/features/smart-import/components/SmartImportSettings';
 
 const APP_PREFS_KEY = 'chravel_app_preferences';
 
