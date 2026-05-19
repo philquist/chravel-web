@@ -43,7 +43,7 @@ export function useDeferredPaidAccess({
     if ('requestIdleCallback' in window) {
       idleHandle = window.requestIdleCallback(enable, { timeout: 1200 });
     } else {
-      idleTimer = window.setTimeout(enable, 400);
+      idleTimer = (window as any).setTimeout(enable, 400);
     }
 
     return () => {
