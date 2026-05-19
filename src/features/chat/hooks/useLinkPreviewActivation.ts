@@ -32,7 +32,7 @@ export function useLinkPreviewActivation(active = true): boolean {
     if ('requestIdleCallback' in window) {
       idleHandle = window.requestIdleCallback(enable, { timeout: 1200 });
     } else {
-      idleTimer = window.setTimeout(enable, 400);
+      idleTimer = (window as any).setTimeout(enable, 400);
     }
 
     return () => {
