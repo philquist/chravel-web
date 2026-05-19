@@ -345,33 +345,6 @@ export const ConsumerPrivacySection = () => {
         </div>
       </div>
 
-      {/* Contact Information Privacy */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-        <h4 className="text-base font-semibold text-white mb-3">Contact Information</h4>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-            <div>
-              <div className="text-white font-medium">Share Phone Number with Trip Members</div>
-              <div className="text-sm text-gray-400">
-                When on, your number appears only in the member contact sheet (open Trip Members,
-                then tap your row)—not inline in chat or member lists.
-              </div>
-            </div>
-            <button
-              onClick={() => handleToggle('sharePhoneNumber')}
-              className={`relative w-12 h-6 rounded-full transition-colors ${
-                settings.sharePhoneNumber ? 'bg-glass-orange' : 'bg-gray-600'
-              }`}
-            >
-              <div
-                className={`absolute w-5 h-5 bg-white rounded-full top-0.5 transition-transform ${
-                  settings.sharePhoneNumber ? 'translate-x-6' : 'translate-x-0.5'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* Account Security */}
       <AccountSecuritySection userEmail={user?.email} showDemoContent={showDemoContent} />
