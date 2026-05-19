@@ -198,12 +198,6 @@ export const BasecampsPanel: React.FC<BasecampsPanelProps> = ({
           latitude: newBasecamp.coordinates?.lat,
           longitude: newBasecamp.coordinates?.lng,
         });
-        await createPersonalBaseCamp.mutateAsync({
-          address: location.address,
-          label: location.name,
-          start_date: location.startDate,
-          end_date: location.endDate,
-        });
 
         if (result.success) {
           devLog(LOG_PREFIX, 'Trip basecamp saved via direct service fallback');
