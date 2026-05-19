@@ -220,7 +220,6 @@ export const ConsumerPrivacySection = () => {
   const [settings, setSettings] = useState({
     useRealName: false,
     useDisplayNameOnly: true,
-    sharePhoneNumber: false,
   });
 
   // Load settings from profile - name_preference drives Use Real Name / Use Display Name Only
@@ -229,7 +228,6 @@ export const ConsumerPrivacySection = () => {
       const useReal = user.namePreference === 'real';
       setSettings(prev => ({
         ...prev,
-        sharePhoneNumber: user.showPhone || false,
         useRealName: useReal,
         useDisplayNameOnly: !useReal,
       }));
@@ -268,15 +266,11 @@ export const ConsumerPrivacySection = () => {
     // Persist to database
     if (user?.id) {
       try {
-        const updates: { name_preference?: 'real' | 'display'; show_phone?: boolean } = {};
+        const updates: { name_preference?: 'real' | 'display' } = {};
 
         if (setting === 'useRealName' || setting === 'useDisplayNameOnly') {
           updates.name_preference = updatedSettings.useRealName ? 'real' : 'display';
         }
-        if (setting === 'sharePhoneNumber') {
-          updates.show_phone = newValue;
-        }
-
         const { error } = await updateProfile(updates);
 
         if (error) throw error;
@@ -344,7 +338,6 @@ export const ConsumerPrivacySection = () => {
           </div>
         </div>
       </div>
-
 
       {/* Account Security */}
       <AccountSecuritySection userEmail={user?.email} showDemoContent={showDemoContent} />
