@@ -73,34 +73,9 @@ async function fetchWithRetry(url: string, init: RequestInit, retries = 2): Prom
   throw lastError ?? new Error('Fetch failed after retries');
 }
 
-async function refreshAccessToken(
-  refreshToken: string,
-): Promise<{ accessToken: string; expiresIn: number | null }> {
-  const response = await fetchWithRetry(
-    'https://oauth2.googleapis.com/token',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: GOOGLE_CLIENT_ID,
-        client_secret: GOOGLE_CLIENT_SECRET,
-        refresh_token: refreshToken,
-        grant_type: 'refresh_token',
-      }),
-    },
-    2,
-  );
+// Token refresh + 401-recovery is centralized in _shared/gmailTokenManager.ts.
 
-  if (!response.ok) {
-    throw new Error(`Token refresh failed: ${await response.text()}`);
-  }
 
-  const data = await response.json();
-  return {
-    accessToken: data.access_token,
-    expiresIn: typeof data.expires_in === 'number' ? data.expires_in : null,
-  };
-}
 
 function decodeBase64Url(data: string): string {
   const base64 = data.replace(/-/g, '+').replace(/_/g, '/');
