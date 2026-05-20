@@ -57,46 +57,19 @@ export function resolveGmailOAuthRedirectUri(): string | null {
 }
 
 export const fetchGmailAccounts = async (): Promise<GmailAccount[]> => {
-  try {
-    // Query the safe view — token columns are not exposed to the frontend
-    // token_expires_at and last_synced_at are timing hints, not credentials
-    // RLS on gmail_accounts_safe is row-scoped (auth.uid() = user_id) — no cross-user data
-    // These columns are added to the safe view by migration 20260403000000_gmail_accounts_safe_with_status
-    // Cast needed: gmail_accounts_safe view may not be in generated Supabase types
-    const { data, error } = await (supabase.from as unknown as (table: string) => any)(
-      'gmail_accounts_safe',
-    )
-      .select('id, email, created_at, token_expires_at, last_synced_at, is_active')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
+  // Query the safe view — token columns are not exposed to the frontend.
+  // token_expires_at and last_synced_at are timing hints, not credentials.
+  // RLS on gmail_accounts_safe is row-scoped (auth.uid() = user_id).
+  // Cast needed: gmail_accounts_safe view may not be in generated Supabase types.
+  const { data, error } = await (supabase.from as unknown as (table: string) => any)(
+    'gmail_accounts_safe',
+  )
+    .select('id, email, created_at, token_expires_at, last_synced_at, is_active')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
 
-    if (error) {
-      // Graceful degradation if migration hasn't been applied yet
-      if (
-        error.message?.includes('schema cache') ||
-        error.code === '42P01' ||
-        error.message?.includes('gmail_accounts')
-      ) {
-        if (import.meta.env.DEV) {
-          console.warn(
-            '[gmailAuth] gmail_accounts_safe view not found — smart_import migration may not be applied yet',
-          );
-        }
-        return [];
-      }
-      throw new Error(error.message);
-    }
-
-    return (data || []) as unknown as GmailAccount[];
-  } catch (err) {
-    if (
-      err instanceof Error &&
-      (err.message?.includes('schema cache') || err.message?.includes('gmail_accounts'))
-    ) {
-      return [];
-    }
-    throw err;
-  }
+  if (error) throw new Error(error.message);
+  return (data || []) as unknown as GmailAccount[];
 };
 
 export const connectGmailAccount = async (): Promise<string> => {

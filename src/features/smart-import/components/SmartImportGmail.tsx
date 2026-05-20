@@ -167,11 +167,11 @@ export const SmartImportGmail: React.FC<SmartImportGmailProps> = ({
         throw new Error(message);
       }
 
-      // Detect token expired error returned as a 401 payload
-      if (data?.error && /token expired|reconnect/i.test(data.error)) {
+      // Structured reconnect signal from the worker (set on revoked/expired tokens).
+      if (data?.code === 'GMAIL_RECONNECT_REQUIRED') {
         setImportPhase('failed');
         setTokenExpired(true);
-        onImportError?.(new Error(data.error));
+        onImportError?.(new Error(data.error || 'Reconnect Gmail'));
         return;
       }
 
@@ -188,8 +188,9 @@ export const SmartImportGmail: React.FC<SmartImportGmailProps> = ({
     } catch (error: unknown) {
       setImportPhase('failed');
       const errMsg = error instanceof Error ? error.message : 'Unknown error';
-      const isTokenError = /token expired|reconnect|unauthorized/i.test(errMsg);
-      if (isTokenError) {
+      // Network/edge errors lose the structured code, so fall back to a narrow regex check.
+      const isReconnect = /GMAIL_RECONNECT_REQUIRED|reconnect gmail/i.test(errMsg);
+      if (isReconnect) {
         setTokenExpired(true);
       } else {
         toast.error('Failed to import from Gmail', { description: errMsg });
