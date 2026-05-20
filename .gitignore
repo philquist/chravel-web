@@ -36,6 +36,11 @@ dist-ssr
 .claude/worktrees/
 .claude/command-log.txt
 
+# Hallmark skill — runtime install via `npx skills add nutlope/hallmark`.
+# 27 MB of reference markdown; reproducible on demand; not vendored in-repo.
+.agents/skills/hallmark/
+.claude/skills/hallmark
+
 # Optimizer runtime data
 optimizer/.data/
 reports/optimizer/
