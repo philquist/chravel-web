@@ -1,5 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bell, Camera, ChevronDown, ChevronUp, Copy, ExternalLink, MapPin, Mic, RefreshCcw, Settings as SettingsIcon } from 'lucide-react';
+import {
+  Bell,
+  Camera,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  ExternalLink,
+  MapPin,
+  Mic,
+  RefreshCcw,
+  Settings as SettingsIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
@@ -33,10 +44,10 @@ function getBrowserInstructions(browser: BrowserKind, permission: PermissionId):
     permission === 'notifications'
       ? 'Notifications'
       : permission === 'location'
-      ? 'Location'
-      : permission === 'camera'
-      ? 'Camera'
-      : 'Microphone';
+        ? 'Location'
+        : permission === 'camera'
+          ? 'Camera'
+          : 'Microphone';
   switch (browser) {
     case 'chrome':
     case 'edge':
@@ -417,11 +428,12 @@ export const ConsumerPermissionsSection = () => {
                       className="border-white/10 bg-white/5 hover:bg-white/10"
                     >
                       How to enable
-                      {!installed && (helpOpen ? (
-                        <ChevronUp className="ml-1 h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="ml-1 h-4 w-4" />
-                      ))}
+                      {!installed &&
+                        (helpOpen ? (
+                          <ChevronUp className="ml-1 h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="ml-1 h-4 w-4" />
+                        ))}
                     </Button>
                   )}
                   {isNotApplicable && <Switch checked={false} disabled aria-label="Unavailable" />}

@@ -24,7 +24,6 @@ import { ConsumerAIConciergeSection } from './consumer/ConsumerAIConciergeSectio
 import { useDemoMode } from '../hooks/useDemoMode';
 import { SettingsLayout, type SettingsSection } from './settings/SettingsLayout';
 
-
 interface ConsumerSettingsProps {
   currentUserId: string;
   initialSection?: string;
