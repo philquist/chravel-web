@@ -253,7 +253,7 @@ export const ConsumerPrivacySection = () => {
         useRealName: !newValue,
       };
     } else {
-      updatedSettings[setting] = newValue;
+      (updatedSettings as Record<string, boolean>)[setting as string] = newValue;
     }
 
     setSettings(updatedSettings);
