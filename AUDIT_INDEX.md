@@ -19,7 +19,7 @@
 | undated | RECOMMENDATIONS_AUDIT.md | Recommendations/ads feature productionization | Hybrid mock/real | 650 |
 | 2026-03-18 | AUDIT_CONCIERGE_ARCHITECTURE_2026_03_18.md | AI Concierge prompt + tool + context forensic audit | 10 refactor priorities | ~450 |
 | 2026-03 | YC_APPLICATION_SHOWCASE.md | AI agent orchestration — 311K LOC showcase | Narrative | 557 |
-| 2026-05-20 | docs/audits/HALLMARK_HOMEPAGE_AUDIT_2026-05-20.md | Marketing homepage — Hallmark anti-slop audit (code + URL-blocked) | 18 critical · 13 major · 5 minor | ~210 |
+| 2026-05-20 | docs/audits/HALLMARK_HOMEPAGE_AUDIT_2026-05-20.md | Marketing homepage — Hallmark anti-slop audit (code + URL-blocked) | 19 critical · 13 major · 5 minor | ~220 |
 
 ---
 

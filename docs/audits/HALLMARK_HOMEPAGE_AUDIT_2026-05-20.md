@@ -18,7 +18,7 @@ Four verbs invoked inside an AI coding session: `generate` (default), `study`, `
 
 | Pass | Target | Result |
 |---|---|---|
-| URL mode | `https://chravel.app` and `https://www.chravel.app` | **Blocked — HTTP 403** (likely Vercel bot-shield rejecting the agent's WebFetch user-agent). Per Hallmark's `study.md § Junk-or-blocked detection` protocol, URL-mode falls back. Findings below are from code only. |
+| URL mode | `https://chravel.app`, `https://www.chravel.app`, `https://chravelapp.com`, `https://www.chravelapp.com` | **All four blocked — HTTP 403** (Vercel WAF rejecting the WebFetch user-agent uniformly across hostnames). Per Hallmark's `study.md § Junk-or-blocked detection` protocol, URL-mode falls back. Findings below are from code only. To run URL-mode, use a browser-driven tool (Playwright MCP) or Hallmark's image-mode against a manual screenshot. |
 | Code mode | `src/components/landing/` (FullPageLanding + 7 sections + StickyLandingNav + FooterSection), `src/components/conversion/ReplacesGrid.tsx`, `index.html`, `tailwind.config.ts` | Complete. |
 
 The pricing section content (`src/components/conversion/PricingSection.tsx`) is wrapped by `PricingLandingSection.tsx` but its body was not deeply audited in this pass — a separate `hallmark audit src/components/conversion/PricingSection.tsx` run is recommended.
@@ -73,6 +73,10 @@ Format per Hallmark's `verbs/audit.md`:
 **[critical] Two gradient headlines in the same viewport** — `src/components/landing/sections/HeroSection.tsx:71–82` (brand "ChravelApp" wordmark) AND `:122–135` (secondary tagline "Less Chaos, More Coordination") use the **identical** `linear-gradient(135deg, #7ba4d9 0%, #c49746 35%, #e8af48 50%, #c49746 65%, #7ba4d9 100%)`.
   The wordmark gradient is owner-confirmed and stays. The duplication on the secondary tagline is what tips this from "branded" to "AI-defaulted." Two gradient-clip headlines in one viewport is a doubled tell.
   → Drop the gradient on the secondary tagline; use solid `text-gold-primary`. Reserves the gradient for the brand mark and restores its specialness.
+
+**[critical] Canonical-domain mismatch in SEO and share metadata** — `src/lib/seo.ts:1` exports `SITE_URL = 'https://chravel.app'`; `index.html:79–80` hosts `og:image` and `twitter:image` under the same `chravel.app` host. Owner-confirmed canonical (2026-05-20) is `chravelapp.com`.
+  Every share preview and every link tag derived from `SITE_URL` resolves to a non-canonical hostname. If `chravel.app` ever changes or 404s the asset, every social card breaks. This is a deliverability finding, not a taste one — promote ahead of the visual fixes.
+  → Update `src/lib/seo.ts:1` to `'https://chravelapp.com'`. Re-host the OG asset on `chravelapp.com` and update `index.html:79–80`. Sweep sitemap/robots/canonical generators for the same string. If `chravel.app` is retained as a marketing redirect, configure a 301 at the edge.
 
 **[critical] Wrap-to-two-lines clickable text** — `src/components/landing/StickyLandingNav.tsx:12–23` (10 nav items + active-section label + "For Teams" link + log-in button in one row at `lg:` 1024px; CTA-overlap warning in `HeroSection.tsx:17–19` confirms the 768–1023px gap).
   Slop-test gate 59. Nav already overflows at borderline widths; the in-code comment names the bug.
@@ -159,7 +163,9 @@ Format per Hallmark's `verbs/audit.md`:
 
 ## Summary
 
-**18 critical + 13 major + 5 minor = 36 findings · 1 owner-confirmed deviation**
+**19 critical + 13 major + 5 minor = 37 findings · 1 owner-confirmed deviation**
+
+> Updated 2026-05-20: re-ran URL-mode against the owner-confirmed canonical `https://chravelapp.com` and `https://www.chravelapp.com` — both also returned HTTP 403 (Vercel WAF block applies uniformly to all four hostnames). The retry surfaced a **new critical finding: canonical-domain mismatch** between `src/lib/seo.ts` / `index.html` (declare `chravel.app`) and the owner-confirmed canonical (`chravelapp.com`). Promoted to the top of the critical cluster — fix this before any visual cleanup.
 
 **Verdict — reads as AI-generated.** The page is shipping the SaaS-template fingerprint: centred-everything heros, 3-column feature grids, card-in-card nesting, viewport-snapped sections, sticky N1-style nav, four-column AI footer, glassmorphism without purpose, animate-on-scroll on every block, and one viewport with two gradient-clip headlines. The premium black/gold palette is the strongest signal the page has going for it, and the token drift (raw hex values throughout the section files, gold duplicated in `FullPageLanding.tsx`) is actively eroding even that.
 
