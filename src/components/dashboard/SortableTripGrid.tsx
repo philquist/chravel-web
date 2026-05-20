@@ -91,6 +91,13 @@ export function SortableTripGrid<T>({
     setActiveDragItem(null);
   }, []);
 
+  // Defensive: if reorder mode exits via a path that bypasses dnd-kit's drag-end/cancel
+  // (tab change, tap-outside, Escape, visibility change), clear any stale drag refs so the
+  // sync-from-props effect can resume on next render.
+  useEffect(() => {
+    if (!reorderMode) clearDragUi();
+  }, [reorderMode, clearDragUi]);
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;

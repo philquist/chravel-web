@@ -27,6 +27,7 @@ import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { SortableTripGrid } from '../dashboard/SortableTripGrid';
 import { Button } from '../ui/button';
 import type { PendingRequestTripCard } from '@/hooks/usePendingRequestTripCards';
+import type { TabId } from '@/components/native';
 import { useLocation } from 'react-router-dom';
 
 const UpgradeModal = lazy(() =>
@@ -67,6 +68,8 @@ type TripGridBaseProps = {
 type TripGridProps = TripGridBaseProps & {
   activeFilter?: string;
   pendingRequestCards?: PendingRequestTripCard[];
+  /** Active mobile tab; switching tabs must exit reorder mode. */
+  activeTab?: TabId;
 };
 
 export const TripGrid = React.memo(
@@ -81,6 +84,7 @@ export const TripGrid = React.memo(
     pendingRequestCards,
     onCancelDashboardRequest,
     onTripStateChange,
+    activeTab,
   }: TripGridProps) => {
     const isMobile = useIsMobile();
     const [manualLocation, setManualLocation] = useState<string>('');
@@ -110,11 +114,15 @@ export const TripGrid = React.memo(
     const exitReorderMode = useCallback(() => {
       setReorderMode(null);
     }, []);
+    const gridWrapperRef = useRef<HTMLDivElement | null>(null);
 
     // Never keep reorder mode active across navigation/tab/view context changes.
+    // `activeTab` matters because mobile tabs are state-based modals — `location.pathname`
+    // does not change when the user taps Alerts / Profile, so without it the reset
+    // would never fire and reorder mode would stick across tab switches.
     useEffect(() => {
       exitReorderMode();
-    }, [location.pathname, location.search, viewMode, activeFilter, exitReorderMode]);
+    }, [location.pathname, location.search, viewMode, activeFilter, activeTab, exitReorderMode]);
 
     // iOS/webview backgrounding can interrupt touch events. Force reset on visibility loss.
     useEffect(() => {
@@ -126,6 +134,29 @@ export const TripGrid = React.memo(
       document.addEventListener('visibilitychange', handleVisibilityChange);
       return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [exitReorderMode]);
+
+    // Tap-outside and Escape exit reorder mode. dnd-kit owns pointer capture during a
+    // drag, so the document-level listener only fires for taps the sensor didn't claim.
+    useEffect(() => {
+      if (!reorderMode) return;
+      const handlePointerDown = (e: PointerEvent) => {
+        const wrapper = gridWrapperRef.current;
+        if (wrapper && !wrapper.contains(e.target as Node)) {
+          exitReorderMode();
+        }
+      };
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          exitReorderMode();
+        }
+      };
+      document.addEventListener('pointerdown', handlePointerDown);
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('pointerdown', handlePointerDown);
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }, [reorderMode, exitReorderMode]);
 
     // Stable identity fns for dnd-kit — inline lambdas change every render and retrigger order sync.
     const getMyTripId = useCallback((trip: Trip) => trip.id.toString(), []);
@@ -528,7 +559,7 @@ export const TripGrid = React.memo(
     // Render content grid (using filtered data)
     return (
       <SwipeableRowProvider>
-        <div className="space-y-6 w-full">
+        <div ref={gridWrapperRef} className="space-y-6 w-full">
           {/* Location alert for travel recs */}
           {viewMode === 'travelRecs' && activeLocation && (
             <Alert className="border-info/50 bg-info/10 mb-6">
@@ -539,6 +570,17 @@ export const TripGrid = React.memo(
                   : `Showing recommendations for ${activeLocation} (manually selected)`}
               </AlertDescription>
             </Alert>
+          )}
+
+          {/* Top-of-list reorder banner — always visible while reorder mode is on,
+              even if the list scrolls past the bottom Done button. */}
+          {reorderMode !== null && (
+            <div className="flex items-center justify-between rounded-lg border border-border/60 bg-card/60 px-4 py-2.5">
+              <span className="text-sm font-medium text-muted-foreground">Drag to reorder</span>
+              <Button size="sm" onClick={exitReorderMode}>
+                Done
+              </Button>
+            </div>
           )}
 
           <div

@@ -858,6 +858,7 @@ const AuthIndex = () => {
                     : {})}
                   onCancelDashboardRequest={cancelPendingRequest}
                   onTripStateChange={handleTripStateChange}
+                  activeTab={activeTab}
                 />
               </div>
             </div>
@@ -1046,6 +1047,7 @@ const AuthIndex = () => {
                   : {})}
                 onCancelDashboardRequest={cancelPendingRequest}
                 onTripStateChange={handleTripStateChange}
+                activeTab={activeTab}
               />
             </div>
           </div>
@@ -1289,6 +1291,7 @@ const AuthIndex = () => {
               : {})}
             onCancelDashboardRequest={cancelPendingRequest}
             onTripStateChange={handleTripStateChange}
+            activeTab={activeTab}
           />
         </div>
       </div>
