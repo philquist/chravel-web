@@ -26,10 +26,14 @@ type DashboardType = 'my_trips' | 'pro' | 'events';
 
 /** Cancel an in-flight dnd-kit drag when reorder mode exits (tab switch, Escape, etc.). */
 function ReorderModeDragCancelListener({ reorderMode }: { reorderMode: boolean }) {
-  const { active, dispatch } = useDndContext();
+  // dnd-kit doesn't expose a public dispatch; reach into the internal context shape.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ctx = useDndContext() as any;
+  const active = ctx?.active;
+  const dispatch = ctx?.dispatch;
 
   useEffect(() => {
-    if (reorderMode || active == null) return;
+    if (reorderMode || active == null || typeof dispatch !== 'function') return;
     dispatch({ type: 'dragCancel' });
   }, [reorderMode, active, dispatch]);
 
