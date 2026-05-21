@@ -43,7 +43,8 @@
     "qa:guardrails": "npm run qa:tier0 && npm run qa:skip-policy && npm run qa:e2e-docs && npm run qa:voice-model-guard",
     "qa:voice-model-guard": "node scripts/qa/voice-model-guard.cjs",
     "qa:chat-production-readiness": "node scripts/qa/run-chat-production-readiness-gate.cjs",
-    "ops:check-stream-parity": "node scripts/check-stream-config-parity.cjs"
+    "ops:check-stream-parity": "node scripts/check-stream-config-parity.cjs",
+    "qa:basecamps-casing": "node scripts/qa/check-basecamps-import-casing.cjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
