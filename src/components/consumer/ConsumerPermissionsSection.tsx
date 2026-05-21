@@ -351,6 +351,9 @@ export const ConsumerPermissionsSection = () => {
           const isDenied = state === 'denied';
           const isPrompt = state === 'prompt' || state === 'unknown';
           const isNotApplicable = state === 'not_applicable' || state === 'unavailable';
+          /** No in-app control when the Notifications API is missing (e.g. some iOS WebViews) — omit the dead switch. */
+          const hideNotificationsNonActionableToggle =
+            card.id === 'notifications' && isNotApplicable;
           const isBusy = busyId === card.id;
           const helpOpen = expandedHelp === card.id;
           const instructions = getBrowserInstructions(browser, card.id);
@@ -436,7 +439,9 @@ export const ConsumerPermissionsSection = () => {
                         ))}
                     </Button>
                   )}
-                  {isNotApplicable && <Switch checked={false} disabled aria-label="Unavailable" />}
+                  {isNotApplicable && !hideNotificationsNonActionableToggle && (
+                    <Switch checked={false} disabled aria-label="Unavailable" />
+                  )}
                 </div>
               </div>
 
