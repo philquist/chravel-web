@@ -8,6 +8,20 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
+type CapacitorBrowserPlugin = {
+  open: (options: { url: string; presentationStyle?: 'popover' | 'fullscreen' }) => Promise<void>;
+};
+
+function getCapacitorBrowser(): CapacitorBrowserPlugin | null {
+  if (typeof window === 'undefined') return null;
+  const plugin = (
+    window as unknown as {
+      Capacitor?: { Plugins?: { Browser?: CapacitorBrowserPlugin } };
+    }
+  ).Capacitor?.Plugins?.Browser;
+  return plugin && typeof plugin.open === 'function' ? plugin : null;
+}
+
 export interface DataExportResult {
   success: boolean;
   message: string;
@@ -100,7 +114,13 @@ export function useDataExport() {
   }, [user]);
 
   const downloadExport = useCallback((downloadUrl: string, filename: string) => {
-    // Create a temporary link to trigger download
+    const browser = getCapacitorBrowser();
+    if (browser) {
+      void browser.open({ url: downloadUrl, presentationStyle: 'popover' });
+      return;
+    }
+
+    // Web: anchor download (cross-origin URLs may ignore `download` and navigate instead)
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = filename;

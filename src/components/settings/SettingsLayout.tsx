@@ -49,7 +49,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
         <div className="flex-shrink-0 p-3 md:p-4 border-b border-white/20">
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="w-full flex items-center justify-between p-3 bg-black/50 border border-white/15 rounded-xl text-white min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-primary/70"
+            className="w-full flex items-center justify-between p-3 bg-zinc-950 border border-white/15 rounded-xl text-white min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-primary/70"
           >
             <div className="flex items-center gap-3">
               {currentSection && <currentSection.icon size={20} />}
