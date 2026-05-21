@@ -1,4 +1,5 @@
 import { AirlineProgram, HotelProgram, RentalCarProgram } from '../types/pro';
+import { supabase } from '../integrations/supabase/client';
 
 export type LoyaltyProgramType = 'airline' | 'hotel' | 'rental';
 
@@ -15,13 +16,19 @@ export interface LoyaltyProgram {
   updated_at?: string;
 }
 
-// In-memory storage for loyalty programs (table doesn't exist in Supabase yet)
-const loyaltyProgramsStorage = new Map<string, LoyaltyProgram[]>();
-
 export const loyaltyProgramService = {
   async getUserPrograms(userId: string): Promise<LoyaltyProgram[]> {
-    // Use in-memory storage since table doesn't exist yet
-    return loyaltyProgramsStorage.get(userId) || [];
+    const { data, error } = await supabase
+      .from('user_loyalty_programs')
+      .select(
+        'id, user_id, program_type, company_name, program_name, membership_number, tier, is_preferred, created_at, updated_at',
+      )
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data ?? []) as LoyaltyProgram[];
   },
 
   async getProgramsByType(userId: string, type: LoyaltyProgramType): Promise<LoyaltyProgram[]> {
@@ -33,43 +40,39 @@ export const loyaltyProgramService = {
     userId: string,
     program: Omit<LoyaltyProgram, 'id' | 'user_id' | 'created_at' | 'updated_at'>,
   ): Promise<LoyaltyProgram | null> {
-    const newProgram: LoyaltyProgram = {
-      id: `lp-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-      user_id: userId,
-      ...program,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    const { data, error } = await supabase
+      .from('user_loyalty_programs')
+      .insert({ ...program, user_id: userId })
+      .select(
+        'id, user_id, program_type, company_name, program_name, membership_number, tier, is_preferred, created_at, updated_at',
+      )
+      .single();
 
-    const userPrograms = loyaltyProgramsStorage.get(userId) || [];
-    userPrograms.push(newProgram);
-    loyaltyProgramsStorage.set(userId, userPrograms);
+    if (error) throw error;
 
-    return newProgram;
+    return data as LoyaltyProgram;
   },
 
   async updateProgram(programId: string, updates: Partial<LoyaltyProgram>): Promise<boolean> {
-    for (const [userId, programs] of loyaltyProgramsStorage.entries()) {
-      const index = programs.findIndex(p => p.id === programId);
-      if (index !== -1) {
-        programs[index] = { ...programs[index], ...updates, updated_at: new Date().toISOString() };
-        loyaltyProgramsStorage.set(userId, programs);
-        return true;
-      }
-    }
-    return false;
+    const { error } = await supabase
+      .from('user_loyalty_programs')
+      .update({
+        company_name: updates.company_name,
+        program_name: updates.program_name,
+        membership_number: updates.membership_number,
+        tier: updates.tier,
+        is_preferred: updates.is_preferred,
+      })
+      .eq('id', programId);
+
+    if (error) throw error;
+    return true;
   },
 
   async deleteProgram(programId: string): Promise<boolean> {
-    for (const [userId, programs] of loyaltyProgramsStorage.entries()) {
-      const index = programs.findIndex(p => p.id === programId);
-      if (index !== -1) {
-        programs.splice(index, 1);
-        loyaltyProgramsStorage.set(userId, programs);
-        return true;
-      }
-    }
-    return false;
+    const { error } = await supabase.from('user_loyalty_programs').delete().eq('id', programId);
+    if (error) throw error;
+    return true;
   },
 
   // Helper functions to convert to legacy types
