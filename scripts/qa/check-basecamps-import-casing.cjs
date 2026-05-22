@@ -35,7 +35,7 @@ function walk(dir) {
   }
 }
 
-(function walkAll(dir){
+(function walkAll(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entry.name.startsWith('.')) continue;
     const full = path.join(dir, entry.name);

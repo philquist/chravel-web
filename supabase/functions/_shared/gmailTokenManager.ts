@@ -17,7 +17,9 @@ export class GmailReconnectRequiredError extends Error {
 
 type AdminClient = {
   from: (table: string) => {
-    update: (values: Record<string, unknown>) => { eq: (col: string, val: unknown) => Promise<unknown> };
+    update: (values: Record<string, unknown>) => {
+      eq: (col: string, val: unknown) => Promise<unknown>;
+    };
     insert: (values: Record<string, unknown>) => Promise<unknown>;
   };
 };
@@ -76,7 +78,8 @@ export async function getValidGmailAccessToken(
   userId: string,
   account: GmailAccountRow,
 ): Promise<string> {
-  if (!account.access_token) throw new GmailReconnectRequiredError('No Gmail access token on file.');
+  if (!account.access_token)
+    throw new GmailReconnectRequiredError('No Gmail access token on file.');
 
   let accessToken = await decryptToken(account.access_token, encryptionKey);
   const refreshToken = account.refresh_token

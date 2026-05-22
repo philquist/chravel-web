@@ -5,7 +5,6 @@ import {
   BarChart3,
   Check,
   X,
-  Bell,
   DollarSign,
   Copy,
   Settings2,
@@ -26,8 +25,6 @@ const TOOL_CONFIG: Record<string, { icon: React.ElementType; label: string; colo
   createTask: { icon: CheckSquare, label: 'Task', color: 'text-green-400' },
   createPoll: { icon: BarChart3, label: 'Poll', color: 'text-blue-400' },
   addToCalendar: { icon: CalendarPlus, label: 'Calendar Event', color: 'text-purple-400' },
-  addReminder: { icon: Bell, label: 'Reminder', color: 'text-yellow-400' },
-  setTripBudget: { icon: DollarSign, label: 'Trip Budget', color: 'text-green-400' },
   duplicateCalendarEvent: { icon: Copy, label: 'Duplicate Event', color: 'text-purple-400' },
   bulkMarkTasksDone: { icon: CheckSquare, label: 'Bulk Complete Tasks', color: 'text-green-400' },
   cloneActivity: { icon: Copy, label: 'Clone Activity', color: 'text-purple-400' },
@@ -44,13 +41,6 @@ function getActionTitle(action: PendingAction): string {
       return (payload.question as string) || 'Untitled poll';
     case 'addToCalendar':
       return (payload.title as string) || 'Untitled event';
-    case 'addReminder':
-      return (payload.message as string) || 'Reminder';
-    case 'setTripBudget': {
-      const amt = payload.total_budget as number | undefined;
-      const cur = (payload.currency as string) || 'USD';
-      return amt != null ? `Budget: ${amt} ${cur}` : 'Set trip budget';
-    }
     case 'duplicateCalendarEvent':
       return (payload.source_title as string) || 'Duplicate event';
     case 'bulkMarkTasksDone': {
@@ -102,23 +92,6 @@ function getActionDetail(action: PendingAction): string | null {
       }
       if (payload.location) parts.push(payload.location as string);
       return parts.join(' · ') || null;
-    }
-    case 'addReminder': {
-      const remindAt = payload.remind_at as string | undefined;
-      if (!remindAt) return null;
-      try {
-        return `Remind at ${new Date(remindAt).toLocaleString()}`;
-      } catch {
-        return remindAt;
-      }
-    }
-    case 'setTripBudget': {
-      const cats = payload.category_budgets as Record<string, number> | undefined;
-      if (!cats || Object.keys(cats).length === 0) return null;
-      return Object.entries(cats)
-        .slice(0, 3)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join(', ');
     }
     case 'duplicateCalendarEvent': {
       const newStart = payload.new_start_time as string | undefined;

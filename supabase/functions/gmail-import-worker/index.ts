@@ -75,8 +75,6 @@ async function fetchWithRetry(url: string, init: RequestInit, retries = 2): Prom
 
 // Token refresh + 401-recovery is centralized in _shared/gmailTokenManager.ts.
 
-
-
 function decodeBase64Url(data: string): string {
   const base64 = data.replace(/-/g, '+').replace(/_/g, '/');
   const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
@@ -442,7 +440,6 @@ serve(async req => {
       }
       throw err;
     }
-
 
     const { data: trip, error: tripError } = await supabaseClient
       .from('trips')

@@ -3,6 +3,7 @@ import {
   SUPABASE_PROJECT_URL,
   SUPABASE_PUBLIC_ANON_KEY,
 } from '@/integrations/supabase/client';
+import { sanitizeDeepLink } from '@/lib/sanitizeDeepLink';
 
 export const CONCIERGE_FUNCTION_NAME = 'lovable-concierge';
 export const DEMO_CONCIERGE_FUNCTION_NAME = 'demo-concierge';
@@ -362,10 +363,22 @@ export function invokeConciergeStream(
                 callbacks.onActivity?.();
                 callbacks.onReservationDraft?.(event.draft);
                 break;
-              case 'trip_cards':
+              case 'trip_cards': {
                 callbacks.onActivity?.();
-                callbacks.onTripCards?.(event.cards, event.message ?? null);
+                const sanitizedCards = event.cards.map(card => {
+                  const links = card.deep_links;
+                  if (!links) return card;
+                  return {
+                    ...card,
+                    deep_links: {
+                      primary: sanitizeDeepLink(links.primary) ?? undefined,
+                      secondary: sanitizeDeepLink(links.secondary) ?? undefined,
+                    },
+                  };
+                });
+                callbacks.onTripCards?.(sanitizedCards, event.message ?? null);
                 break;
+              }
               case 'smart_import_preview':
                 callbacks.onActivity?.();
                 callbacks.onSmartImportPreview?.(event as StreamSmartImportPreviewEvent);

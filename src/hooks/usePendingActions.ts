@@ -168,14 +168,6 @@ export function usePendingActions(tripId: string) {
           break;
         }
 
-        case 'addReminder':
-        case 'setTripBudget': {
-          // The pending action row IS the record — no dedicated table exists yet.
-          // Marking confirmed (done below) signals user approval.
-          // TODO: future migration should introduce trip_reminders / trip_budgets tables.
-          break;
-        }
-
         case 'duplicateCalendarEvent': {
           // Payload contains pre-computed new start/end times stored by functionExecutor.
           const { error } = await (supabase as any).from('trip_events').insert({
@@ -271,6 +263,55 @@ export function usePendingActions(tripId: string) {
           break;
         }
 
+        case 'createBroadcast': {
+          // Server-side executor fast-paths this write and marks the row confirmed.
+          // We only reach here when the fast-path was skipped (manual confirm, or
+          // service-role call without userId). RLS on `broadcasts` enforces
+          // membership; the DB trigger notify_on_broadcast() fans out notifications
+          // with fanout_event_key dedup.
+          const validPriorities = new Set(['normal', 'urgent']);
+          const rawPriority = String((payload.priority as string) || 'normal');
+          const safePriority = validPriorities.has(rawPriority) ? rawPriority : 'normal';
+          const { error } = await (supabase as any).from('broadcasts').insert({
+            trip_id: action.trip_id,
+            created_by: (payload.created_by as string) || user.id,
+            message: payload.message as string,
+            priority: safePriority,
+            is_sent: true,
+          });
+          if (error) throw error;
+          break;
+        }
+
+        case 'createNotification': {
+          const recipients = (payload.target_user_ids as string[]) || [];
+          if (recipients.length === 0) {
+            throw new Error('No recipients in payload');
+          }
+          const rows = recipients.map((uid: string) => ({
+            user_id: uid,
+            trip_id: action.trip_id,
+            title: payload.title as string,
+            message: payload.message as string,
+            type: (payload.type as string) || 'concierge',
+            metadata: { source: 'ai_concierge', created_by: user.id },
+          }));
+          const { error } = await (supabase as any).from('notifications').insert(rows);
+          if (error) throw error;
+          break;
+        }
+
+        case 'settleExpense': {
+          const splitId = payload.split_id as string;
+          if (!splitId) throw new Error('No split_id in payload');
+          const { error } = await (supabase as any)
+            .from('payment_splits')
+            .update({ is_settled: true })
+            .eq('id', splitId);
+          if (error) throw error;
+          break;
+        }
+
         default:
           throw new Error(`Unknown tool: ${action.tool_name}`);
       }
@@ -298,15 +339,14 @@ export function usePendingActions(tripId: string) {
         createTask: 'Task',
         createPoll: 'Poll',
         addToCalendar: 'Calendar event',
-        // addReminder / setTripBudget: data lives in the pending action row (no dedicated
-        // DB table yet). Label as "noted" to avoid implying full persistence.
-        addReminder: 'Reminder noted',
-        setTripBudget: 'Budget noted',
         duplicateCalendarEvent: 'Event duplicated',
         bulkMarkTasksDone: 'Tasks marked complete',
         cloneActivity: 'Activity cloned',
         addExpense: 'Expense added',
         updateTripDetails: 'Trip details updated',
+        createBroadcast: 'Broadcast sent',
+        createNotification: 'Notification sent',
+        settleExpense: 'Expense settled',
       };
       const label = toolLabelMap[action.tool_name] || 'Action confirmed';
       const isVerb = [
@@ -314,9 +354,10 @@ export function usePendingActions(tripId: string) {
         'Tasks marked complete',
         'Activity cloned',
         'Expense added',
-        'Reminder noted',
-        'Budget noted',
         'Trip details updated',
+        'Broadcast sent',
+        'Notification sent',
+        'Expense settled',
       ].includes(label);
       toast.success(isVerb ? label : `${label} created`);
 
@@ -344,6 +385,16 @@ export function usePendingActions(tripId: string) {
         case 'updateTripDetails':
           queryClient.invalidateQueries({ queryKey: tripKeys.detail(tripId), exact: false });
           queryClient.invalidateQueries({ queryKey: tripKeys.all, exact: false });
+          break;
+        case 'createBroadcast':
+          queryClient.invalidateQueries({ queryKey: ['broadcasts', tripId], exact: false });
+          queryClient.invalidateQueries({ queryKey: ['notifications'], exact: false });
+          break;
+        case 'createNotification':
+          queryClient.invalidateQueries({ queryKey: ['notifications'], exact: false });
+          break;
+        case 'settleExpense':
+          queryClient.invalidateQueries({ queryKey: tripKeys.payments(tripId), exact: false });
           break;
         default:
           break;

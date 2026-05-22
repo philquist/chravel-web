@@ -1893,7 +1893,31 @@ async function _executeImpl(
       const validPriorities = new Set(['normal', 'urgent']);
       const safePriority = validPriorities.has(String(priority)) ? String(priority) : 'normal';
 
-      const { data, error } = await supabase
+      // Broadcasts pin a message to every member and trigger notification fanout
+      // (notify_on_broadcast -> fanout_event_key dedup). Route through the
+      // pending-actions buffer so the action is audited and a dropped fast-path
+      // leaves a recoverable confirm card -- mirrors addExpense.
+      const { data: pending, error: pendingError } = await supabase
+        .from('trip_pending_actions')
+        .insert({
+          trip_id: tripId,
+          user_id: userId,
+          tool_name: 'createBroadcast',
+          payload: {
+            message: broadcastMessage,
+            priority: safePriority,
+            created_by: userId,
+            trip_id: tripId,
+          },
+          source_type: 'ai_concierge',
+        })
+        .select('id')
+        .single();
+      if (pendingError) throw pendingError;
+
+      let promoted = false;
+      let broadcast: any = null;
+      const { data: row, error: insertErr } = await supabase
         .from('broadcasts')
         .insert({
           trip_id: tripId,
@@ -1904,12 +1928,24 @@ async function _executeImpl(
         })
         .select()
         .single();
-      if (error) throw error;
+      if (!insertErr && row) {
+        broadcast = row;
+        promoted = true;
+        await markPendingConfirmed(supabase, pending.id, userId);
+      } else if (insertErr) {
+        console.warn('[Tool] createBroadcast fast-path failed, falling back:', insertErr.message);
+      }
+
       return {
         success: true,
-        broadcast: data,
+        pending: !promoted,
+        promoted,
+        pendingActionId: pending.id,
+        broadcast,
         actionType: 'create_broadcast',
-        message: `Broadcast sent: "${broadcastMessage.substring(0, 80)}"${safePriority === 'urgent' ? ' (URGENT)' : ''}`,
+        message: promoted
+          ? `Broadcast sent: "${broadcastMessage.substring(0, 80)}"${safePriority === 'urgent' ? ' (URGENT)' : ''}`
+          : `I'd like to send a ${safePriority === 'urgent' ? 'URGENT ' : ''}broadcast: "${broadcastMessage.substring(0, 80)}". Please confirm in the trip chat.`,
       };
     }
 
@@ -1922,8 +1958,9 @@ async function _executeImpl(
       if (!notifTitle || !notifMessage) {
         return { error: 'Both title and message are required' };
       }
+      if (!userId) return { error: 'Authentication required to send notifications' };
 
-      // If no target users specified, notify all trip members
+      // Resolve recipient list up-front so we can store it in the pending payload.
       let userIds: string[] = [];
       if (Array.isArray(targetUserIds) && targetUserIds.length > 0) {
         userIds = targetUserIds.map(String);
@@ -1939,23 +1976,60 @@ async function _executeImpl(
         return { error: 'No target users found' };
       }
 
+      const safeType = String(type || 'concierge');
+
+      // Audit + recoverable confirm row -- same shape as addExpense / createBroadcast.
+      const { data: pending, error: pendingError } = await supabase
+        .from('trip_pending_actions')
+        .insert({
+          trip_id: tripId,
+          user_id: userId,
+          tool_name: 'createNotification',
+          payload: {
+            title: notifTitle,
+            message: notifMessage,
+            type: safeType,
+            target_user_ids: userIds,
+            created_by: userId,
+            trip_id: tripId,
+          },
+          source_type: 'ai_concierge',
+        })
+        .select('id')
+        .single();
+      if (pendingError) throw pendingError;
+
       const notifications = userIds.map((uid: string) => ({
         user_id: uid,
         trip_id: tripId,
         title: notifTitle,
         message: notifMessage,
-        type: type || 'concierge',
+        type: safeType,
         metadata: { source: 'ai_concierge', created_by: userId },
       }));
 
-      const { error } = await supabase.from('notifications').insert(notifications);
-      if (error) throw error;
+      let promoted = false;
+      const { error: insertErr } = await supabase.from('notifications').insert(notifications);
+      if (!insertErr) {
+        promoted = true;
+        await markPendingConfirmed(supabase, pending.id, userId);
+      } else {
+        console.warn(
+          '[Tool] createNotification fast-path failed, falling back:',
+          insertErr.message,
+        );
+      }
 
       return {
         success: true,
-        actionType: 'create_notification',
+        pending: !promoted,
+        promoted,
+        pendingActionId: pending.id,
         recipientCount: userIds.length,
-        message: `Notification sent to ${userIds.length} member(s): "${notifTitle}"`,
+        actionType: 'create_notification',
+        message: promoted
+          ? `Notification sent to ${userIds.length} member(s): "${notifTitle}"`
+          : `I'd like to notify ${userIds.length} member(s): "${notifTitle}". Please confirm in the trip chat.`,
       };
     }
 
@@ -2444,20 +2518,58 @@ async function _executeImpl(
         return { error: 'Payment not found in this trip' };
       }
 
+      const safeMethod = String(method || 'marked_settled');
+
+      // Settling money is irreversible. Audit + recoverable confirm row -- if the
+      // update fails the user still has a pending card. Mirrors addExpense.
+      const { data: pending, error: pendingError } = await supabase
+        .from('trip_pending_actions')
+        .insert({
+          trip_id: tripId,
+          user_id: userId,
+          tool_name: 'settleExpense',
+          payload: {
+            split_id: String(splitId),
+            payment_message_id: split.payment_message_id,
+            debtor_user_id: split.debtor_user_id,
+            amount_owed: split.amount_owed,
+            method: safeMethod,
+            created_by: userId,
+            trip_id: tripId,
+          },
+          source_type: 'ai_concierge',
+        })
+        .select('id')
+        .single();
+      if (pendingError) throw pendingError;
+
+      let promoted = false;
+      let updated: any = null;
       const { data, error } = await supabase
         .from('payment_splits')
         .update({ is_settled: true })
         .eq('id', splitId)
         .select()
         .single();
-      if (error) throw error;
+      if (!error && data) {
+        updated = data;
+        promoted = true;
+        await markPendingConfirmed(supabase, pending.id, userId);
+      } else if (error) {
+        console.warn('[Tool] settleExpense fast-path failed, falling back:', error.message);
+      }
 
       return {
         success: true,
-        split: data,
-        method: method || 'marked_settled',
+        pending: !promoted,
+        promoted,
+        pendingActionId: pending.id,
+        split: updated,
+        method: safeMethod,
         actionType: 'settle_expense',
-        message: `Marked expense of $${split.amount_owed} as settled`,
+        message: promoted
+          ? `Marked expense of $${split.amount_owed} as settled`
+          : `I'd like to mark this $${split.amount_owed} expense as settled. Please confirm in the trip chat.`,
       };
     }
 
@@ -2769,41 +2881,6 @@ async function _executeImpl(
       };
     }
 
-    case 'addReminder': {
-      const { message, remindAt, entityType, entityId, idempotency_key } = args;
-      if (!message) return { error: 'message is required' };
-      if (!remindAt) return { error: 'remindAt is required' };
-
-      const { data: pending, error: pendingError } = await supabase
-        .from('trip_pending_actions')
-        .insert({
-          trip_id: tripId,
-          user_id: userId || '00000000-0000-0000-0000-000000000000',
-          tool_name: 'addReminder',
-          ...(idempotency_key ? { tool_call_id: idempotency_key } : {}),
-          payload: {
-            message: String(message),
-            remind_at: String(remindAt),
-            entity_type: entityType || 'custom',
-            entity_id: entityId || null,
-            trip_id: tripId,
-            user_id: userId,
-          },
-          source_type: 'ai_concierge',
-        })
-        .select('id')
-        .single();
-
-      if (pendingError) throw pendingError;
-      return {
-        success: true,
-        pending: true,
-        pendingActionId: pending.id,
-        actionType: 'add_reminder',
-        message: `Reminder set: "${message}" at ${remindAt}`,
-      };
-    }
-
     case 'getVisaRequirements': {
       const { destination, passportCountry } = args;
       if (!destination) return { error: 'Destination is required' };
@@ -3073,39 +3150,6 @@ async function _executeImpl(
         placeType: String(placeType),
         places: results.slice(0, maxResults),
         message: `Nearby ${placeType} results`,
-      };
-    }
-
-    case 'setTripBudget': {
-      const { totalBudget, currency, categoryBudgets, notes, idempotency_key } = args;
-      if (totalBudget == null) return { error: 'totalBudget is required' };
-
-      const { data: pending, error: pendingError } = await supabase
-        .from('trip_pending_actions')
-        .insert({
-          trip_id: tripId,
-          user_id: userId || '00000000-0000-0000-0000-000000000000',
-          tool_name: 'setTripBudget',
-          ...(idempotency_key ? { tool_call_id: idempotency_key } : {}),
-          payload: {
-            total_budget: Number(totalBudget),
-            currency: currency ? String(currency).toUpperCase() : 'USD',
-            category_budgets: categoryBudgets || {},
-            notes: notes || null,
-            trip_id: tripId,
-          },
-          source_type: 'ai_concierge',
-        })
-        .select('id')
-        .single();
-
-      if (pendingError) throw pendingError;
-      return {
-        success: true,
-        pending: true,
-        pendingActionId: pending.id,
-        actionType: 'set_trip_budget',
-        message: `Trip budget set to ${totalBudget} ${currency || 'USD'}`,
       };
     }
 
@@ -4088,6 +4132,13 @@ async function _executeImpl(
     }
 
     default:
+      // Loudly surface hallucinated / unregistered tool names. Routine tool calls
+      // emit single-line success/error logs from executeFunctionCall; a default-case
+      // hit means the model invented a name or a registered tool is missing an
+      // executor branch (memory #26 -- five-file sync).
+      console.error(
+        `[Tool] UNKNOWN_FUNCTION | name=${functionName} | tripId=${tripId} | argsKeys=${Object.keys(args || {}).join(',') || '(none)'}`,
+      );
       return { error: `Unknown function: ${functionName}` };
   }
 }

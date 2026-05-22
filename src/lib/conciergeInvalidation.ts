@@ -11,8 +11,8 @@ export type ConciergeInvalidationQueryKey = string[];
  *   Tasks:    createTask, updateTask, deleteTask, splitTaskAssignments, bulkMarkTasksDone
  *   Polls:    createPoll, closePoll
  *   Places:   savePlace, emitReservationDraft, makeReservation
- *   Payments: settleExpense, addExpense, setTripBudget
- *   Comms:    createBroadcast, createNotification, addReminder
+ *   Payments: settleExpense, addExpense
+ *   Comms:    createBroadcast, createNotification
  *   Trip:     setBasecamp, addToAgenda, setTripHeaderImage, generateTripImage, updateTripDetails
  */
 const CONCIERGE_WRITE_ACTIONS = new Set<string>([
@@ -42,11 +42,9 @@ const CONCIERGE_WRITE_ACTIONS = new Set<string>([
   // Payments / Expenses
   'settleExpense',
   'addExpense',
-  'setTripBudget',
-  // Broadcasts / Notifications / Reminders
+  // Broadcasts / Notifications
   'createBroadcast',
   'createNotification',
-  'addReminder',
   // Trip-level
   'setBasecamp',
   'addToAgenda',
@@ -106,7 +104,6 @@ export function getConciergeInvalidationKeys(
     // Payments / Expenses
     case 'settleExpense':
     case 'addExpense':
-    case 'setTripBudget':
       return [['tripPayments', tripId]];
 
     // Broadcasts
@@ -116,10 +113,6 @@ export function getConciergeInvalidationKeys(
     // Notifications — no dedicated query key; realtime handles updates.
     case 'createNotification':
       return [];
-
-    // Reminders — calendar is closest.
-    case 'addReminder':
-      return [['calendarEvents', tripId]];
 
     // Trip-level basecamp — invalidate tripBasecamp query + trip detail + personal basecamp prefix
     case 'setBasecamp':

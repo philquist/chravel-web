@@ -10,6 +10,7 @@ import {
   CheckCircle,
   Tag,
 } from 'lucide-react';
+import { sanitizeDeepLink } from '@/lib/sanitizeDeepLink';
 
 export interface HotelResult {
   id?: string | null;
@@ -52,12 +53,14 @@ interface HotelResultCardsProps {
 }
 
 const toExternalHttpsUrl = (value?: string | null): string | null => {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-
-  if (/^https:\/\//i.test(trimmed)) return trimmed;
-  if (/^http:\/\//i.test(trimmed)) return `https://${trimmed.slice('http://'.length)}`;
+  const sanitized = sanitizeDeepLink(value);
+  if (!sanitized) return null;
+  if (sanitized.startsWith('http://')) {
+    return `https://${sanitized.slice('http://'.length)}`;
+  }
+  if (sanitized.startsWith('https://')) {
+    return sanitized;
+  }
   return null;
 };
 

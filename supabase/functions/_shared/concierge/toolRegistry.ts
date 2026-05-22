@@ -28,6 +28,7 @@ export const MUTATING_TOOL_NAMES = new Set<string>([
   'addToCalendar',
   'createTask',
   'createPoll',
+  'closePoll',
   'savePlace',
   'setBasecamp',
   'addToAgenda',
@@ -36,13 +37,21 @@ export const MUTATING_TOOL_NAMES = new Set<string>([
   'updateCalendarEvent',
   'deleteCalendarEvent',
   'bulkDeleteCalendarEvents',
+  'duplicateCalendarEvent',
+  'moveCalendarEvent',
+  'cloneActivity',
   'updateTask',
   'deleteTask',
+  'bulkMarkTasksDone',
+  'splitTaskAssignments',
+  'addExpense',
   'settleExpense',
+  'updateTripDetails',
   'generateTripImage',
   'setTripHeaderImage',
   'emitSmartImportPreview',
   'emitReservationDraft',
+  'emitBulkDeletePreview',
 ]);
 
 export interface ToolDeclaration {
@@ -967,28 +976,6 @@ export const ALL_TOOL_DECLARATIONS: ToolDeclaration[] = [
     },
   },
   {
-    name: 'addReminder',
-    description:
-      'Set a time-based reminder for a trip activity, task, or custom message. Delivered as an in-app notification at the specified time.',
-    parameters: {
-      type: 'object',
-      properties: {
-        idempotency_key: { type: 'string' },
-        message: { type: 'string', description: 'Reminder message content' },
-        remindAt: {
-          type: 'string',
-          description: 'ISO 8601 datetime for when to send the reminder',
-        },
-        entityType: { type: 'string', description: 'Optional: event, task, or custom' },
-        entityId: {
-          type: 'string',
-          description: 'Optional: ID of the associated event or task',
-        },
-      },
-      required: ['message', 'remindAt'],
-    },
-  },
-  {
     name: 'getVisaRequirements',
     description:
       "Look up visa and entry requirements for a destination country based on the traveler's passport nationality. Returns visa type needed, required documents, processing time, and cost.",
@@ -1139,29 +1126,6 @@ export const ALL_TOOL_DECLARATIONS: ToolDeclaration[] = [
         limit: { type: 'number', description: 'Max results to return (default 5, max 10)' },
       },
       required: ['placeType'],
-    },
-  },
-  {
-    name: 'setTripBudget',
-    description:
-      'Set a budget target for the trip — total or per category — so the group can track spending against a goal.',
-    parameters: {
-      type: 'object',
-      properties: {
-        idempotency_key: { type: 'string' },
-        totalBudget: {
-          type: 'number',
-          description: "Total trip budget in the group's currency",
-        },
-        currency: { type: 'string', description: 'Currency code, e.g. USD, EUR, GBP' },
-        categoryBudgets: {
-          type: 'object',
-          description:
-            'Optional per-category budgets, e.g. { "food": 500, "accommodation": 1200, "transport": 300 }',
-        },
-        notes: { type: 'string', description: 'Optional budget notes' },
-      },
-      required: ['totalBudget'],
     },
   },
   {
@@ -1534,7 +1498,6 @@ const QUERY_CLASS_TOOLS: Record<QueryClass, string[] | 'all'> = {
     'detectCalendarConflicts',
     'optimizeItinerary',
     'detectScheduleConflicts',
-    'addReminder',
     'duplicateCalendarEvent',
     'moveCalendarEvent',
     'cloneActivity',
@@ -1545,19 +1508,12 @@ const QUERY_CLASS_TOOLS: Record<QueryClass, string[] | 'all'> = {
     'createTask',
     'updateTask',
     'deleteTask',
-    'addReminder',
     'splitTaskAssignments',
     'bulkMarkTasksDone',
     'getTaskSummary',
     'getUpcomingReminders',
   ],
-  payment_query: [
-    'getPaymentSummary',
-    'settleExpense',
-    'setTripBudget',
-    'getTripStats',
-    'addExpense',
-  ],
+  payment_query: ['getPaymentSummary', 'settleExpense', 'getTripStats', 'addExpense'],
   trip_search: [
     'searchTripData',
     'searchTripArtifacts',
@@ -1693,7 +1649,6 @@ const VOICE_DESCRIPTION_OVERRIDES: Record<string, string> = {
   optimizeItinerary: 'Suggest the best order to visit multiple stops to minimize travel time.',
   detectScheduleConflicts: 'Scan the trip calendar for overlapping or conflicting events.',
   generatePackingList: 'Generate a packing list based on destination, weather, and activities.',
-  addReminder: 'Set a time-based reminder for an activity, task, or custom message.',
   getVisaRequirements: 'Look up visa and entry requirements for a destination country.',
   getTravelAdvisories: 'Get current travel safety advisories for a destination.',
   getLocalPhrases: 'Get useful phrases in the local language with pronunciation tips.',
@@ -1703,7 +1658,6 @@ const VOICE_DESCRIPTION_OVERRIDES: Record<string, string> = {
   searchExperiences: 'Search for bookable tours and activities near a destination.',
   getLocalEvents: 'Find concerts, festivals, and events near the destination during the trip.',
   findNearby: 'Find nearby ATMs, pharmacies, hospitals, or other practical amenities.',
-  setTripBudget: 'Set a budget target for the trip to track spending against a goal.',
   splitTaskAssignments: 'Bulk-create and assign tasks across trip members.',
   getTripStats: 'Get aggregate trip statistics: total spend, cost per day, activity count.',
   shareItinerary: 'Generate a shareable link to the trip itinerary.',

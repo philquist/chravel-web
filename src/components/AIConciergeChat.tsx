@@ -350,20 +350,20 @@ export const AIConciergeChat = ({
         {messages.length === 0 && !isHistoryLoading && (
           <div className="text-center py-6 px-4 flex-shrink-0">
             <div className="text-sm text-gray-300 space-y-1 max-w-md mx-auto">
-              <p className="text-xs sm:text-sm mb-1.5">Try asking:</p>
+              <p className="text-xs sm:text-sm mb-1.5">Try asking your group&rsquo;s concierge:</p>
               <div className="text-xs text-gray-400 space-y-0.5 leading-snug">
                 <p>&bull; &ldquo;Find 5 great hotels near our base camp and show me cards&rdquo;</p>
-                <p>&bull; &ldquo;What&rsquo;s on our calendar for the rest of the trip?&rdquo;</p>
-                <p>
-                  &bull; &ldquo;Add a dinner reservation to the calendar for Saturday at 7pm near
-                  base camp&rdquo;
-                </p>
                 <p>
                   &bull; &ldquo;Create a poll: Saturday night plans with 4 options near us&rdquo;
                 </p>
+                <p>&bull; &ldquo;Send an urgent broadcast: meet at the lobby at 7pm&rdquo;</p>
+                <p>
+                  &bull; &ldquo;Split last night&rsquo;s dinner $240 four ways and log it&rdquo;
+                </p>
+                <p>&bull; &ldquo;What&rsquo;s on our calendar for the rest of the trip?&rdquo;</p>
               </div>
               <div className="mt-2 text-xs text-amber-400 bg-amber-500/10 rounded px-2.5 py-1 inline-block">
-                Chravel Agent can search, display info cards, and add things directly your trip
+                Group-aware — knows your trip, your members, and writes back to shared state.
               </div>
             </div>
           </div>
@@ -429,11 +429,22 @@ export const AIConciergeChat = ({
                 <label className="block text-[11px] text-gray-400 mb-1">Attachment intent</label>
                 <select
                   value={attachmentIntent}
-                  onChange={e => setAttachmentIntent(e.target.value as AttachmentIntent)}
+                  onChange={e => {
+                    const next = e.target.value as AttachmentIntent;
+                    if (next === 'smart_import' && userPlan === 'free') {
+                      toast.error(
+                        'Smart Import requires Explorer+. Upgrade to extract events from receipts and screenshots.',
+                      );
+                      return;
+                    }
+                    setAttachmentIntent(next);
+                  }}
                   className="w-full h-11 rounded-xl bg-zinc-900/80 border border-white/10 px-3 text-sm text-white"
                   aria-label="Attachment intent"
                 >
-                  <option value="smart_import">Extract events (Smart Import)</option>
+                  <option value="smart_import" disabled={userPlan === 'free'}>
+                    Extract events (Smart Import){userPlan === 'free' ? ' — Explorer+' : ''}
+                  </option>
                   <option value="summarize">Summarize file/image</option>
                   <option value="qa">Q&A on this file/image</option>
                 </select>

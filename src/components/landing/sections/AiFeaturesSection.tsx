@@ -11,18 +11,18 @@ export const AiFeaturesSection = () => {
       icon: <Wand2 className="text-accent" size={28} />,
       title: 'Context-Aware Concierge',
       description:
-        'Your full trip context — itinerary, tasks, payments, places — loaded before every answer. Live web search for real-time hours and prices.',
+        'Your full trip context — itinerary, tasks, payments, places — loaded before every answer. No extra AI app, no extra subscription.',
     },
     {
       icon: <DollarSign className="text-primary" size={28} />,
       title: 'Payment Tracking',
-      description: 'Who owes what — no spreadsheets.',
+      description: 'Who owes what — no spreadsheets. Settle splits with one ask.',
     },
     {
       icon: <Bot className="text-accent" size={28} />,
-      title: 'Chravel Agent',
+      title: 'Group-Aware Agent',
       description:
-        'Takes action: adds places, creates polls, updates calendars, assigns tasks, and pulls travel suggestions.',
+        'Takes action with the group in the loop: polls, broadcasts, calendars, expenses, and tasks — every write confirmable in chat.',
     },
   ];
 
