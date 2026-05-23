@@ -59,6 +59,8 @@ export const PlacesSection = ({
     await queryClient.invalidateQueries({
       queryKey: personalBasecampKeys.tripUser(tripId, effectiveUserId),
     });
+    await queryClient.invalidateQueries({ queryKey: ['tripBaseCamps', tripId] });
+    await queryClient.invalidateQueries({ queryKey: ['personalBaseCamps', tripId] });
     await queryClient.invalidateQueries({ queryKey: tripKeys.places(tripId) });
   }, [queryClient, tripId, effectiveUserId]);
 
@@ -95,7 +97,11 @@ export const PlacesSection = ({
   const lastLocalUpdateRef = useRef<{ timestamp: number; address: string } | null>(null);
   const UPDATE_DEBOUNCE_MS = 2000;
 
-  // Realtime sync for trip basecamp updates - invalidate TanStack Query cache
+  // Realtime sync for trip basecamp updates - invalidate TanStack Query cache.
+  // tripId nullity is guarded above; closure captures the validated string.
+  // RLS on trip_base_camps and trip_personal_base_camps already gates which
+  // rows the channel can ever broadcast to this client (see
+  // supabase/migrations/20260518120000_add_multi_base_camps.sql).
   useEffect(() => {
     if (isDemoMode || !tripId) return;
 
@@ -128,6 +134,30 @@ export const PlacesSection = ({
           } else {
             console.log('[PlacesSection] Local basecamp update detected, skipping notification');
           }
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'trip_base_camps',
+          filter: `trip_id=eq.${tripId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['tripBaseCamps', tripId] });
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'trip_personal_base_camps',
+          filter: `trip_id=eq.${tripId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['personalBaseCamps', tripId] });
         },
       )
       .subscribe();

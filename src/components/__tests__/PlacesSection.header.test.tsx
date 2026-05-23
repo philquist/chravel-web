@@ -40,14 +40,18 @@ vi.mock('@/hooks/usePlacesLinkSync', () => ({
   }),
 }));
 
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    channel: () => ({
-      on: () => ({ subscribe: () => ({}) }),
-    }),
-    removeChannel: vi.fn(),
-  },
-}));
+vi.mock('@/integrations/supabase/client', () => {
+  const chainable: { on: () => typeof chainable; subscribe: () => Record<string, unknown> } = {
+    on: () => chainable,
+    subscribe: () => ({}),
+  };
+  return {
+    supabase: {
+      channel: () => chainable,
+      removeChannel: vi.fn(),
+    },
+  };
+});
 
 vi.mock('@/services/tripPlacesService', () => ({
   fetchTripPlaces: vi.fn().mockResolvedValue([]),

@@ -35,6 +35,11 @@ const orderBaseCamps = (camps: BaseCampRecord[]) =>
       `${a.start_date ?? ''}`.localeCompare(`${b.start_date ?? ''}`),
   );
 
+const nextOrderIndex = (camps: BaseCampRecord[] | undefined): number => {
+  if (!camps || camps.length === 0) return 0;
+  return Math.max(...camps.map(c => c.order_index)) + 1;
+};
+
 export const useTripBaseCamps = (tripId: string) =>
   useQuery({
     queryKey: keys.trip(tripId),
@@ -75,15 +80,40 @@ export const useCreateTripBaseCamp = (tripId: string) => {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (payload: Partial<BaseCampRecord> & { address: string }) => {
+      const existing = qc.getQueryData<BaseCampRecord[]>(keys.trip(tripId)) ?? [];
+      const order_index = payload.order_index ?? nextOrderIndex(existing);
       const { data, error } = await supabase
         .from('trip_base_camps')
-        .insert({ ...payload, trip_id: tripId, created_by: user?.id })
+        .insert({ ...payload, trip_id: tripId, created_by: user?.id, order_index })
         .select('*')
         .single();
       if (error) throw error;
       return data as BaseCampRecord;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.trip(tripId) }),
+    onMutate: async payload => {
+      await qc.cancelQueries({ queryKey: keys.trip(tripId) });
+      const previous = qc.getQueryData<BaseCampRecord[]>(keys.trip(tripId));
+      const optimistic: BaseCampRecord = {
+        id: `optimistic-${Date.now()}`,
+        trip_id: tripId,
+        created_by: user?.id,
+        address: payload.address,
+        label: payload.label ?? null,
+        place_name: payload.place_name ?? null,
+        start_date: payload.start_date ?? null,
+        end_date: payload.end_date ?? null,
+        order_index: payload.order_index ?? nextOrderIndex(previous),
+        notes: payload.notes ?? null,
+        lat: payload.lat ?? null,
+        lng: payload.lng ?? null,
+      };
+      qc.setQueryData<BaseCampRecord[]>(keys.trip(tripId), [...(previous ?? []), optimistic]);
+      return { previous };
+    },
+    onError: (_err, _payload, ctx) => {
+      if (ctx?.previous) qc.setQueryData(keys.trip(tripId), ctx.previous);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.trip(tripId) }),
   });
 };
 
@@ -101,7 +131,21 @@ export const useUpdateTripBaseCamp = (tripId: string) => {
       if (error) throw error;
       return data as BaseCampRecord;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.trip(tripId) }),
+    onMutate: async ({ id, ...payload }) => {
+      await qc.cancelQueries({ queryKey: keys.trip(tripId) });
+      const previous = qc.getQueryData<BaseCampRecord[]>(keys.trip(tripId));
+      if (previous) {
+        qc.setQueryData<BaseCampRecord[]>(
+          keys.trip(tripId),
+          previous.map(c => (c.id === id ? { ...c, ...payload } : c)),
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _payload, ctx) => {
+      if (ctx?.previous) qc.setQueryData(keys.trip(tripId), ctx.previous);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.trip(tripId) }),
   });
 };
 
@@ -116,7 +160,21 @@ export const useDeleteTripBaseCamp = (tripId: string) => {
         .eq('trip_id', tripId);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.trip(tripId) }),
+    onMutate: async id => {
+      await qc.cancelQueries({ queryKey: keys.trip(tripId) });
+      const previous = qc.getQueryData<BaseCampRecord[]>(keys.trip(tripId));
+      if (previous) {
+        qc.setQueryData<BaseCampRecord[]>(
+          keys.trip(tripId),
+          previous.filter(c => c.id !== id),
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.previous) qc.setQueryData(keys.trip(tripId), ctx.previous);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.trip(tripId) }),
   });
 };
 
@@ -143,15 +201,47 @@ export const useCreatePersonalBaseCamp = (tripId: string) => {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (payload: Partial<BaseCampRecord> & { address: string }) => {
+      const personalKey = keys.personal(tripId, user?.id ?? 'anon');
+      const existing = qc.getQueryData<BaseCampRecord[]>(personalKey) ?? [];
+      const order_index = payload.order_index ?? nextOrderIndex(existing);
       const { data, error } = await supabase
         .from('trip_personal_base_camps')
-        .insert({ ...payload, trip_id: tripId, user_id: user?.id, created_by: user?.id })
+        .insert({ ...payload, trip_id: tripId, user_id: user?.id, order_index })
         .select('*')
         .single();
       if (error) throw error;
       return data as BaseCampRecord;
     },
-    onSuccess: () => user?.id && qc.invalidateQueries({ queryKey: keys.personal(tripId, user.id) }),
+    onMutate: async payload => {
+      if (!user?.id) return { previous: undefined };
+      const personalKey = keys.personal(tripId, user.id);
+      await qc.cancelQueries({ queryKey: personalKey });
+      const previous = qc.getQueryData<BaseCampRecord[]>(personalKey);
+      const optimistic: BaseCampRecord = {
+        id: `optimistic-${Date.now()}`,
+        trip_id: tripId,
+        user_id: user.id,
+        address: payload.address,
+        label: payload.label ?? null,
+        place_name: payload.place_name ?? null,
+        start_date: payload.start_date ?? null,
+        end_date: payload.end_date ?? null,
+        order_index: payload.order_index ?? nextOrderIndex(previous),
+        notes: payload.notes ?? null,
+        lat: payload.lat ?? null,
+        lng: payload.lng ?? null,
+      };
+      qc.setQueryData<BaseCampRecord[]>(personalKey, [...(previous ?? []), optimistic]);
+      return { previous };
+    },
+    onError: (_err, _payload, ctx) => {
+      if (user?.id && ctx?.previous) {
+        qc.setQueryData(keys.personal(tripId, user.id), ctx.previous);
+      }
+    },
+    onSettled: () => {
+      if (user?.id) qc.invalidateQueries({ queryKey: keys.personal(tripId, user.id) });
+    },
   });
 };
 
@@ -170,7 +260,27 @@ export const useUpdatePersonalBaseCamp = (tripId: string) => {
       if (error) throw error;
       return data as BaseCampRecord;
     },
-    onSuccess: () => user?.id && qc.invalidateQueries({ queryKey: keys.personal(tripId, user.id) }),
+    onMutate: async ({ id, ...payload }) => {
+      if (!user?.id) return { previous: undefined };
+      const personalKey = keys.personal(tripId, user.id);
+      await qc.cancelQueries({ queryKey: personalKey });
+      const previous = qc.getQueryData<BaseCampRecord[]>(personalKey);
+      if (previous) {
+        qc.setQueryData<BaseCampRecord[]>(
+          personalKey,
+          previous.map(c => (c.id === id ? { ...c, ...payload } : c)),
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _payload, ctx) => {
+      if (user?.id && ctx?.previous) {
+        qc.setQueryData(keys.personal(tripId, user.id), ctx.previous);
+      }
+    },
+    onSettled: () => {
+      if (user?.id) qc.invalidateQueries({ queryKey: keys.personal(tripId, user.id) });
+    },
   });
 };
 
@@ -186,7 +296,27 @@ export const useDeletePersonalBaseCamp = (tripId: string) => {
         .eq('trip_id', tripId);
       if (error) throw error;
     },
-    onSuccess: () => user?.id && qc.invalidateQueries({ queryKey: keys.personal(tripId, user.id) }),
+    onMutate: async id => {
+      if (!user?.id) return { previous: undefined };
+      const personalKey = keys.personal(tripId, user.id);
+      await qc.cancelQueries({ queryKey: personalKey });
+      const previous = qc.getQueryData<BaseCampRecord[]>(personalKey);
+      if (previous) {
+        qc.setQueryData<BaseCampRecord[]>(
+          personalKey,
+          previous.filter(c => c.id !== id),
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _id, ctx) => {
+      if (user?.id && ctx?.previous) {
+        qc.setQueryData(keys.personal(tripId, user.id), ctx.previous);
+      }
+    },
+    onSettled: () => {
+      if (user?.id) qc.invalidateQueries({ queryKey: keys.personal(tripId, user.id) });
+    },
   });
 };
 
