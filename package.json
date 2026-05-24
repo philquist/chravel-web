@@ -45,6 +45,7 @@
     "qa:chat-production-readiness": "node scripts/qa/run-chat-production-readiness-gate.cjs",
     "ops:check-stream-parity": "node scripts/check-stream-config-parity.cjs",
     "qa:basecamps-casing": "node scripts/qa/check-basecamps-import-casing.cjs",
+    "qa:mobile-perf-budget": "node scripts/qa/check-mobile-performance-budget.cjs"
     "qa:store-query-ownership": "node scripts/qa/store-query-ownership-guard.cjs"
     "permissions:generate": "node scripts/generate-permission-matrix.mjs",
     "permissions:drift": "node scripts/check-permission-matrix-drift.mjs"

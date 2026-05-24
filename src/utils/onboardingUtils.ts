@@ -72,6 +72,8 @@ export function capturePendingDestination(currentPath: string): string | null {
   // Check for paths that should be preserved
   const preservePaths = [
     /^\/trip\/[^/]+$/, // /trip/:id
+    /^\/trip\/[^/]+\/preview$/, // /trip/:id/preview
+    /^\/t\/[^/]+$/, // branded share alias /t/:id
     /^\/join\/[^/]+$/, // /join/:token
     /^\/tour\/pro\/[^/]+$/, // /tour/pro/:id
     /^\/event\/[^/]+$/, // /event/:id
@@ -81,7 +83,9 @@ export function capturePendingDestination(currentPath: string): string | null {
   // Check if current path should be preserved
   for (const pattern of preservePaths) {
     if (pattern.test(currentPath)) {
-      return currentPath;
+      const search = typeof window !== 'undefined' ? window.location.search : '';
+      const hash = typeof window !== 'undefined' ? window.location.hash : '';
+      return `${currentPath}${search}${hash}`;
     }
   }
 
