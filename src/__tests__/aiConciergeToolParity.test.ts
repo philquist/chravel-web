@@ -328,3 +328,52 @@ describe('AI concierge tool parity', () => {
     expect(missing).toEqual([]);
   });
 });
+
+/**
+ * Extract the quoted entries of a named `new Set([...])` declaration from source.
+ * Matches the `<name> =` definition site (not `.has()` reference sites).
+ */
+function parseNamedSet(source: string, name: string): Set<string> {
+  const block = extractBlock(source, new RegExp(`${name}\\s*=`));
+  return parseQuotedNames(block, /'([^']+)'/g);
+}
+
+describe('AI concierge mutating-tool list parity', () => {
+  const registrySource = readRepoFile('supabase/functions/_shared/concierge/toolRegistry.ts');
+  const securitySource = readRepoFile('supabase/functions/_shared/security/aiSecurityBoundary.ts');
+  const invalidationSource = readRepoFile('src/lib/conciergeInvalidation.ts');
+
+  const mutatingNames = parseNamedSet(registrySource, 'MUTATING_TOOL_NAMES');
+  const mutatingAllowlist = parseNamedSet(securitySource, 'MUTATING_TOOL_ALLOWLIST');
+  const writeActions = parseNamedSet(invalidationSource, 'CONCIERGE_WRITE_ACTIONS');
+  const declaredTools = parseQuotedNames(registrySource, /name:\s*'([^']+)'/g);
+
+  it('keeps the two backend mutating-tool lists byte-for-byte identical', () => {
+    // MUTATING_TOOL_NAMES (registry) and MUTATING_TOOL_ALLOWLIST (security boundary)
+    // both classify a tool as a mutation. If they drift, a write tool can be treated
+    // as read-only at the security boundary and lose its mutation-mode protection.
+    expect([...mutatingAllowlist].sort()).toEqual([...mutatingNames].sort());
+  });
+
+  it('routes every backend mutating tool through frontend cache invalidation', () => {
+    // Every server-side mutation must have a frontend invalidation entry, or the UI
+    // shows stale data after the AI writes. (The frontend set MAY hold extra
+    // orchestration tools like makeReservation that invalidate without direct writes.)
+    const missing = [...mutatingNames].filter(t => !writeActions.has(t));
+    expect(missing).toEqual([]);
+  });
+
+  it('references only real declared tools in every mutating-tool list', () => {
+    const unknownInNames = [...mutatingNames].filter(t => !declaredTools.has(t));
+    const unknownInWrite = [...writeActions].filter(t => !declaredTools.has(t));
+    expect({ unknownInNames, unknownInWrite }).toEqual({
+      unknownInNames: [],
+      unknownInWrite: [],
+    });
+  });
+
+  it('parses non-trivial sets (guards against a silent parser regression)', () => {
+    expect(mutatingNames.size).toBeGreaterThan(20);
+    expect(writeActions.size).toBeGreaterThanOrEqual(mutatingNames.size);
+  });
+});
