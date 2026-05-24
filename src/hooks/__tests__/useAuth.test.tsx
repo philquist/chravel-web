@@ -191,7 +191,7 @@ describe('AuthProvider', () => {
 
   it('handles logout race by ending in signed-out state', async () => {
     let authListener: ((event: string, session: any) => void) | undefined;
-    mockSupabaseClient.auth.(onAuthStateChange as any).mockImplementation((cb: any) => {
+    (mockSupabaseClient.auth.onAuthStateChange as any).mockImplementation((cb: any) => {
       authListener = cb;
       return { data: { subscription: { unsubscribe: vi.fn() } } };
     });
@@ -213,7 +213,7 @@ describe('AuthProvider', () => {
 
   it('propagates multi-tab sign-out via auth subscription', async () => {
     let authListener: ((event: string, session: any) => void) | undefined;
-    mockSupabaseClient.auth.(onAuthStateChange as any).mockImplementation((cb: any) => {
+    (mockSupabaseClient.auth.onAuthStateChange as any).mockImplementation((cb: any) => {
       authListener = cb;
       return { data: { subscription: { unsubscribe: vi.fn() } } };
     });
