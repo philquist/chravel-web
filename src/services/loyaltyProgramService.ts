@@ -18,7 +18,7 @@ export interface LoyaltyProgram {
 
 export const loyaltyProgramService = {
   async getUserPrograms(userId: string): Promise<LoyaltyProgram[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('user_loyalty_programs')
       .select(
         'id, user_id, program_type, company_name, program_name, membership_number, tier, is_preferred, created_at, updated_at',
@@ -40,7 +40,7 @@ export const loyaltyProgramService = {
     userId: string,
     program: Omit<LoyaltyProgram, 'id' | 'user_id' | 'created_at' | 'updated_at'>,
   ): Promise<LoyaltyProgram | null> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('user_loyalty_programs')
       .insert({ ...program, user_id: userId })
       .select(
@@ -54,7 +54,7 @@ export const loyaltyProgramService = {
   },
 
   async updateProgram(programId: string, updates: Partial<LoyaltyProgram>): Promise<boolean> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('user_loyalty_programs')
       .update({
         company_name: updates.company_name,
