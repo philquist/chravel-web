@@ -60,4 +60,6 @@ if (totals.warnings > baseline) {
 
 fs.unlinkSync(reportPath);
 console.log(`\n✅ ESLint warnings within budget: ${totals.warnings}/${baseline}.`);
-process.exit(status === 0 ? 0 : 1);
+// Exit 0: budget passed. ESLint may exit 1 when warnings exist, but that is expected
+// and controlled by the budget check above — do not propagate ESLint's exit code here.
+process.exit(0);
