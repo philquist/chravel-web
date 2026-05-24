@@ -13,7 +13,7 @@ import {
 } from './eventRouting.ts';
 import {
   buildMentionNotificationRows,
-  filterMentionRecipientsByPreferences,
+  resolveEligibleMentionRecipients,
 } from './mentionNotifications.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -247,19 +247,21 @@ serve(async req => {
 
       if (prefError) {
         console.warn(
-          '[stream-webhook] failed to fetch notification_preferences:',
+          '[stream-webhook] failed to fetch notification_preferences; suppressing mention fanout (fail-closed)',
           prefError.message,
         );
-        // Continue with all recipients on preference fetch failure (fail-open for mentions)
-      } else if (prefData) {
-        eligibleRecipients = filterMentionRecipientsByPreferences(validRecipients, prefData);
+      }
+      eligibleRecipients = resolveEligibleMentionRecipients({
+        validRecipients,
+        preferenceRows: prefData ?? null,
+        preferenceError: prefError ? { message: prefError.message } : null,
+      });
 
-        const filteredCount = validRecipients.length - eligibleRecipients.length;
-        if (filteredCount > 0) {
-          console.log(
-            `[stream-webhook] filtered ${filteredCount} recipients by notification preferences`,
-          );
-        }
+      const filteredCount = validRecipients.length - eligibleRecipients.length;
+      if (filteredCount > 0) {
+        console.log(
+          `[stream-webhook] filtered ${filteredCount} recipients by notification preferences`,
+        );
       }
     }
 

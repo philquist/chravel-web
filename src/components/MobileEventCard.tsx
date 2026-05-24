@@ -25,7 +25,7 @@ import {
 } from '../utils/tripStatsUtils';
 import { InviteModal } from './InviteModal';
 import { ShareTripModal } from './share/ShareTripModal';
-import { TripExportModal } from './trip/TripExportModal';
+import { LazyTripExportModal } from './trip/LazyTripExportModal';
 import { ArchiveConfirmDialog } from './ArchiveConfirmDialog';
 import { DeleteTripConfirmDialog } from './DeleteTripConfirmDialog';
 import { useToast } from '../hooks/use-toast';
@@ -376,7 +376,7 @@ export const MobileEventCard = ({
         tripType="event"
       />
 
-      <TripExportModal
+      <LazyTripExportModal
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
         onExport={handleExportPdf}

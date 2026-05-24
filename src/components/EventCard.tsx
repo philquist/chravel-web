@@ -20,7 +20,7 @@ import { ArchiveConfirmDialog } from './ArchiveConfirmDialog';
 import { DeleteTripConfirmDialog } from './DeleteTripConfirmDialog';
 import { InviteModal } from './InviteModal';
 import { ShareTripModal } from './share/ShareTripModal';
-import { TripExportModal } from './trip/TripExportModal';
+import { LazyTripExportModal } from './trip/LazyTripExportModal';
 import { useToast } from '../hooks/use-toast';
 import { useDeleteTrip } from '../hooks/useDeleteTrip';
 import { archiveService } from '../services/archiveService';
@@ -397,7 +397,7 @@ export const EventCard = ({
         tripType="event"
       />
 
-      <TripExportModal
+      <LazyTripExportModal
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
         onExport={handleExportPdf}

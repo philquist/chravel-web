@@ -28,6 +28,16 @@ export function filterMentionRecipientsByPreferences(
   });
 }
 
+export function resolveEligibleMentionRecipients(params: {
+  validRecipients: string[];
+  preferenceRows: NotificationPreferenceRow[] | null;
+  preferenceError: { message: string } | null;
+}): string[] {
+  if (params.preferenceError) return [];
+  if (!params.preferenceRows) return params.validRecipients;
+  return filterMentionRecipientsByPreferences(params.validRecipients, params.preferenceRows);
+}
+
 export function buildMentionNotificationRows(
   input: BuildMentionRowsInput,
 ): Array<Record<string, unknown>> {
