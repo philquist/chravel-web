@@ -1,0 +1,72 @@
+name: Atlas
+
+# Refreshes the Codebase Architecture Atlas metrics after CI passes on main,
+# then publishes codebase-atlas/ to GitHub Pages. Publish-only: nothing is
+# committed back to the repo (the committed copy stays a periodic seed/snapshot).
+# The judgment layer (curated.json) is refreshed separately via the codebase-atlas skill.
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: atlas-pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  NODE_VERSION: '20.19.0'
+  # Build-time placeholders so `vite build` succeeds in CI (mirrors ci.yml).
+  VITE_SUPABASE_URL: 'https://ci-placeholder.supabase.co'
+  VITE_SUPABASE_ANON_KEY: 'sb_publishable_ci_placeholder'
+  VITE_GOOGLE_MAPS_API_KEY: 'STUB_MAPS_KEY_CI'
+
+jobs:
+  publish:
+    # Only after CI succeeds on main, or when triggered manually.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout (the commit CI validated)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --fund=false
+
+      - name: Build (produces dist/ for bundle metrics)
+        run: npm run build
+
+      - name: Refresh atlas metrics
+        run: npm run atlas
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload atlas as Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: codebase-atlas
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

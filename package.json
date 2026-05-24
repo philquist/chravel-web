@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "vite build && node scripts/build-sw.cjs",
     "build:dev": "vite build --mode development",
+    "atlas": "node scripts/build-atlas.mjs",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
     "lint:budget": "node scripts/eslint-warning-budget.cjs",
