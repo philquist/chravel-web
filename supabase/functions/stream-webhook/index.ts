@@ -247,10 +247,10 @@ serve(async req => {
 
       if (prefError) {
         console.warn(
-          '[stream-webhook] failed to fetch notification_preferences:',
+          '[stream-webhook] failed to fetch notification_preferences; suppressing mention fanout (fail-closed)',
           prefError.message,
         );
-        // Continue with all recipients on preference fetch failure (fail-open for mentions)
+        eligibleRecipients = [];
       } else if (prefData) {
         eligibleRecipients = filterMentionRecipientsByPreferences(validRecipients, prefData);
 
