@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildMentionNotificationRows,
   filterMentionRecipientsByPreferences,
+  resolveEligibleMentionRecipients,
 } from '../mentionNotifications.ts';
 
 describe('stream-webhook mention integrations', () => {
@@ -44,5 +45,23 @@ describe('stream-webhook mention integrations', () => {
         stream_channel_id: 'trip-1',
       },
     });
+  });
+
+  it('fails closed when preference lookup errors', () => {
+    const eligible = resolveEligibleMentionRecipients({
+      validRecipients: ['u1', 'u2'],
+      preferenceRows: null,
+      preferenceError: { message: 'db timeout' },
+    });
+    expect(eligible).toEqual([]);
+  });
+
+  it('passes through all recipients when preference rows are unavailable without error', () => {
+    const eligible = resolveEligibleMentionRecipients({
+      validRecipients: ['u1', 'u2'],
+      preferenceRows: null,
+      preferenceError: null,
+    });
+    expect(eligible).toEqual(['u1', 'u2']);
   });
 });
