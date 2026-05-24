@@ -186,6 +186,7 @@ export async function insertMediaIndex(params: {
       metadata: normalizeMediaMetadata({
         ownerUserId: params.uploadedBy ?? 'unknown',
         checksum: params.checksum ?? '',
+        uploadPath: params.uploadPath,
         width: params.width,
         height: params.height,
         durationSeconds: params.durationSeconds,

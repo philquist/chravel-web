@@ -11,13 +11,19 @@ vi.mock('@/services/uploadService', () => ({
   insertMediaIndex: vi.fn(),
 }));
 
+const getUserMock = vi.fn(async () => ({ data: { user: { id: 'user-1' } } }));
+const duplicateLookupMock = vi.fn(async () => ({ data: [] as { id: string }[], error: null }));
+
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
+    auth: {
+      getUser: () => getUserMock(),
+    },
     from: vi.fn(() => ({
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
           eq: vi.fn(() => ({
-            limit: vi.fn(async () => ({ data: [{ id: 'dup' }], error: null })),
+            limit: () => duplicateLookupMock(),
           })),
         })),
       })),
@@ -40,6 +46,8 @@ const createMockFile = (name: string, type: string, body: string): File =>
 describe('mediaUploadPipeline', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    duplicateLookupMock.mockResolvedValue({ data: [], error: null });
+    getUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } } });
   });
 
   it('retries on flaky network and eventually succeeds', async () => {
@@ -70,7 +78,42 @@ describe('mediaUploadPipeline', () => {
   });
 
   it('detects duplicate media by checksum', async () => {
+    duplicateLookupMock.mockResolvedValueOnce({ data: [{ id: 'dup' }], error: null });
     const isDuplicate = await detectDuplicateMedia('trip1', 'hash');
     expect(isDuplicate).toBe(true);
+  });
+
+  it('fails fast when duplicate checksum exists before upload', async () => {
+    duplicateLookupMock.mockResolvedValueOnce({ data: [{ id: 'dup' }], error: null });
+
+    const file = createMockFile('a.jpg', 'image/jpeg', 'abc');
+    const checksum = await computeFileChecksum(file);
+    const job = createUploadJob({ tripId: 'trip1', file, mediaType: 'image', checksum });
+
+    const result = await executeUploadJob(job);
+    expect(result.state).toBe('failed');
+    expect(result.error).toContain('Duplicate');
+    expect(uploadMock).not.toHaveBeenCalled();
+  });
+
+  it('retries insert without re-uploading storage when upload already succeeded', async () => {
+    uploadMock.mockResolvedValue({ key: 'trip/images/a.jpg', publicUrl: 'https://cdn/a.jpg' });
+    insertMock.mockRejectedValueOnce(new Error('db down')).mockResolvedValue({ id: 'm1' } as never);
+
+    const file = createMockFile('a.jpg', 'image/jpeg', 'unique-body');
+    const checksum = await computeFileChecksum(file);
+    const job = createUploadJob({ tripId: 'trip1', file, mediaType: 'image', checksum });
+
+    const result = await executeUploadJob(job);
+    expect(result.state).toBe('ready');
+    expect(uploadMock).toHaveBeenCalledTimes(1);
+    expect(insertMock).toHaveBeenCalledTimes(2);
+    expect(insertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        uploadPath: 'trip/images/a.jpg',
+        checksum,
+        uploadedBy: 'user-1',
+      }),
+    );
   });
 });

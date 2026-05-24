@@ -5,10 +5,12 @@ export interface MediaMetadataWrite {
   tags?: string[];
   ownerUserId: string;
   checksum: string;
+  /** Storage object key in trip-media bucket (required for archive/signing flows). */
+  uploadPath?: string;
 }
 
 export function normalizeMediaMetadata(payload: MediaMetadataWrite): Record<string, unknown> {
-  return {
+  const normalized: Record<string, unknown> = {
     dimensions:
       typeof payload.width === 'number' && typeof payload.height === 'number'
         ? { width: payload.width, height: payload.height }
@@ -22,5 +24,13 @@ export function normalizeMediaMetadata(payload: MediaMetadataWrite): Record<stri
       uploaded_by: payload.ownerUserId,
     },
     checksum: payload.checksum,
+    // Top-level uploaded_by keeps parity with legacy trip_media_index.metadata rows.
+    uploaded_by: payload.ownerUserId,
   };
+
+  if (payload.uploadPath && payload.uploadPath.length > 0) {
+    normalized.upload_path = payload.uploadPath;
+  }
+
+  return normalized;
 }

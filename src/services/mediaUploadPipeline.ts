@@ -37,25 +37,40 @@ export async function detectDuplicateMedia(tripId: string, checksum: string): Pr
 }
 
 export async function executeUploadJob(job: UploadJob): Promise<UploadJob> {
+  if (job.checksum) {
+    const isDuplicate = await detectDuplicateMedia(job.tripId, job.checksum);
+    if (isDuplicate) {
+      return { ...job, state: 'failed', error: 'Duplicate media already exists for this trip' };
+    }
+  }
+
   let next: UploadJob = { ...job, state: 'uploading' };
+  let cachedUpload: { key: string; publicUrl: string } | null = null;
 
   while (next.attempts < MAX_ATTEMPTS) {
     try {
       next = { ...next, attempts: next.attempts + 1, state: 'uploading', error: undefined };
 
-      const subdir = next.mediaType === 'image' ? 'images' : 'videos';
-      const { key, publicUrl } = await uploadToStorage(next.file, next.tripId, subdir);
+      if (!cachedUpload) {
+        const subdir = next.mediaType === 'image' ? 'images' : 'videos';
+        cachedUpload = await uploadToStorage(next.file, next.tripId, subdir);
+      }
 
       next = { ...next, state: 'processing' };
+
+      const { data: authData } = await supabase.auth.getUser();
+      const uploadedBy = authData?.user?.id;
 
       await insertMediaIndex({
         tripId: next.tripId,
         mediaType: next.mediaType,
-        url: publicUrl,
-        uploadPath: key,
+        url: cachedUpload.publicUrl,
+        uploadPath: cachedUpload.key,
         filename: next.file.name,
         fileSize: next.file.size,
         mimeType: next.file.type,
+        checksum: next.checksum,
+        uploadedBy,
       });
 
       return { ...next, state: 'ready' };
