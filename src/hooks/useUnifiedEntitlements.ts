@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useEffect } from 'react';
-import { useEntitlementsStore } from '@/stores/entitlementsStore';
+import { useEntitlementsStore } from '@/store/entitlementsStore';
 import { useDemoMode } from './useDemoMode';
 import { useAuth } from './useAuth';
 import { getEntitlementsForTier, FEATURE_LIMITS } from '@/billing/entitlements';
@@ -18,7 +18,7 @@ import {
 import { REVENUECAT_CONFIG } from '@/constants/revenuecat';
 import { isSuperAdminEmail } from '@/utils/isSuperAdmin';
 import type { FeatureName, FeatureContext, SubscriptionTier, EntitlementId } from '@/billing/types';
-import type { EntitlementStatus } from '@/stores/entitlementsStore';
+import type { EntitlementStatus } from '@/store/entitlementsStore';
 
 // FEATURE_LIMITS imported from '@/billing/entitlements' — single source of truth
 
