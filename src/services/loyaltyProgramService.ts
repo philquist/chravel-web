@@ -70,7 +70,7 @@ export const loyaltyProgramService = {
   },
 
   async deleteProgram(programId: string): Promise<boolean> {
-    const { error } = await supabase.from('user_loyalty_programs').delete().eq('id', programId);
+    const { error } = await ((supabase as any).from)('user_loyalty_programs').delete().eq('id', programId);
     if (error) throw error;
     return true;
   },
