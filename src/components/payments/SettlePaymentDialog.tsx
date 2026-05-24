@@ -11,7 +11,6 @@ import { Button } from '../ui/button';
 import { useQueryClient } from '@tanstack/react-query';
 import { tripKeys } from '@/lib/queryKeys';
 import { PersonalBalance } from '../../services/paymentBalanceService';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '../../integrations/supabase/client';
 import { useToast } from '../ui/use-toast';
 import { formatCurrency } from '../../services/currencyService';
@@ -30,7 +29,6 @@ export const SettlePaymentDialog = ({
   tripId,
 }: SettlePaymentDialogProps) => {
   const { toast } = useToast();
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [settling, setSettling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +94,7 @@ export const SettlePaymentDialog = ({
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: tripKeys.payments(tripId) }),
         queryClient.invalidateQueries({
-          queryKey: tripKeys.paymentBalances(tripId, user?.id || ''),
+          queryKey: tripKeys.paymentBalances(tripId, user.id),
         }),
       ]);
     } catch (error) {

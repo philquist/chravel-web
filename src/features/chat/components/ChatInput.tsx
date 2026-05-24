@@ -23,8 +23,6 @@ import {
 import { PaymentInput } from '@/components/payments/PaymentInput';
 import { useShareAsset } from '@/hooks/useShareAsset';
 import { ParsedContentSuggestions } from './ParsedContentSuggestions';
-import { toast } from 'sonner';
-import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { CTA_GRADIENT, CTA_INTERACTIVE, CTA_DISABLED } from '@/lib/ctaButtonStyles';
@@ -78,9 +76,9 @@ export const ChatInput = ({
   onFileUpload,
   isTyping,
   tripMembers = [],
-  hidePayments = false,
-  isInChannelMode = false,
-  isPro = false,
+  hidePayments: _hidePayments = false,
+  isInChannelMode: _isInChannelMode = false,
+  isPro: _isPro = false,
   tripId,
   onTypingChange,
   safeAreaBottom = true,

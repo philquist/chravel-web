@@ -45,7 +45,6 @@ import type { SmartImportCandidate } from '@/features/smart-import/types';
 import { gmailAcceptedCandidatesToSmartParseResult } from '@/features/calendar/utils/gmailReservationsToCalendarParseResult';
 import { normalizeCalendarCategory } from '@/constants/calendarCategories';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
-import { hasPaidAccess } from '@/utils/paidAccess';
 import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
 import { useNavigate } from 'react-router-dom';
 

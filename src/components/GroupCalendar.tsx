@@ -18,7 +18,6 @@ import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { useBackgroundImport } from '@/features/calendar/hooks/useBackgroundImport';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
-import { hasPaidAccess } from '@/utils/paidAccess';
 import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
 import type { CalendarEvent } from '@/types/calendar';
 import { CalendarErrorState } from '@/features/calendar/components/CalendarErrorState';
@@ -46,11 +45,8 @@ export const GroupCalendar = React.memo(({ tripId }: GroupCalendarProps) => {
     setEditingEvent,
     viewMode,
     toggleViewMode,
-    newEvent,
     updateEventField,
     getEventsForDate,
-    handleAddEvent,
-    updateEvent,
     deleteEvent,
     resetForm,
     isLoading,
@@ -161,21 +157,6 @@ export const GroupCalendar = React.memo(({ tripId }: GroupCalendarProps) => {
     updateEventField('description', event.description || '');
     updateEventField('category', event.event_category || 'other');
     updateEventField('include_in_itinerary', event.include_in_itinerary ?? true);
-  };
-
-  const handleFormSubmit = async () => {
-    if (editingEvent) {
-      // Update existing event - updateEvent handles success/error toasts and state cleanup
-      const success = await updateEvent(editingEvent.id, newEvent);
-      // Only reset form on success - updateEvent already handles setEditingEvent and setShowAddEvent
-      if (success) {
-        resetForm();
-      }
-      // On failure, modal stays open so user can retry
-    } else {
-      // Create new event
-      await handleAddEvent();
-    }
   };
 
   const handleFormCancel = () => {

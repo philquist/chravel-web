@@ -104,7 +104,7 @@ export const MessageActions: React.FC<MessageActionsComponentProps> = ({
   transportMode = 'legacy',
   isOwnMessage,
   isDeleted = false,
-  isAdmin = false,
+  isAdmin: _isAdmin = false,
   canDeleteOwnMessage = true,
   canDeleteAnyMessage = false,
   canUpdateOwnMessage = true,
