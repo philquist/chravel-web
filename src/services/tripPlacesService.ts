@@ -118,12 +118,20 @@ export const fetchTripPlaces = async (
     };
   });
 
+  const dedupedPlaces = Array.from(
+    new Map(placesWithDistance.map(place => [place.id, place])).values(),
+  ).filter(
+    place =>
+      !place.coordinates ||
+      (Number.isFinite(place.coordinates.lat) && Number.isFinite(place.coordinates.lng)),
+  );
+
   await cacheEntity({
     entityType: 'trip_links',
     entityId: cacheKey,
     tripId,
-    data: placesWithDistance,
+    data: dedupedPlaces,
   });
 
-  return placesWithDistance;
+  return dedupedPlaces;
 };
