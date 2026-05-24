@@ -3,6 +3,7 @@ import imageCompression from 'browser-image-compression';
 import { getUploadContentType } from '@/utils/mime';
 import { FREEMIUM_LIMITS, type FreemiumTier } from '@/utils/featureTiers';
 import { resolveEffectiveTier } from './entitlementService';
+import { normalizeMediaMetadata } from './mediaMetadataService';
 
 // Generate UUID using crypto API
 const uuid = () => crypto.randomUUID();
@@ -164,6 +165,11 @@ export async function insertMediaIndex(params: {
   mimeType?: string;
   messageId?: string;
   uploadedBy?: string;
+  checksum?: string;
+  width?: number;
+  height?: number;
+  durationSeconds?: number;
+  tags?: string[];
 }) {
   const normalizedMimeType =
     params.mimeType && params.mimeType.length > 0 ? params.mimeType : undefined;
@@ -177,13 +183,14 @@ export async function insertMediaIndex(params: {
       file_size: params.fileSize ?? null,
       mime_type: normalizedMimeType ?? null,
       message_id: params.messageId ?? null,
-      metadata:
-        params.uploadedBy || params.uploadPath
-          ? {
-              ...(params.uploadedBy ? { uploaded_by: params.uploadedBy } : {}),
-              ...(params.uploadPath ? { upload_path: params.uploadPath } : {}),
-            }
-          : null,
+      metadata: normalizeMediaMetadata({
+        ownerUserId: params.uploadedBy ?? 'unknown',
+        checksum: params.checksum ?? '',
+        width: params.width,
+        height: params.height,
+        durationSeconds: params.durationSeconds,
+        tags: params.tags,
+      }),
       caption: null,
       tags: [],
     })
