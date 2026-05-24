@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { TripMembershipState } from '@/types/tripMembership';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -170,6 +171,18 @@ export const useJoinRequests = ({
     };
   }, [tripId, enabled, isDemoMode, fetchRequests]);
 
+  const runOptimisticTransition = (requestId: string, toState: TripMembershipState) => {
+    const snapshot = requests;
+    if (toState !== 'invited') {
+      setRequests(prev => prev.filter(r => r.id !== requestId));
+    }
+    return snapshot;
+  };
+
+  const rollbackOptimisticTransition = (snapshot: JoinRequest[]) => {
+    setRequests(snapshot);
+  };
+
   const approveRequest = useCallback(
     async (requestId: string) => {
       setIsProcessing(true);
@@ -194,10 +207,12 @@ export const useJoinRequests = ({
         return;
       }
 
+      const snapshot = runOptimisticTransition(requestId, 'accepted');
       try {
         await approveJoinRequestById(queryClient, { requestId, tripId });
         await fetchRequests();
       } catch (error) {
+        rollbackOptimisticTransition(snapshot);
         console.error('Error approving request:', error);
         toast.error(error instanceof Error ? error.message : 'Failed to approve request');
         throw error;
@@ -220,10 +235,12 @@ export const useJoinRequests = ({
         return;
       }
 
+      const snapshot = runOptimisticTransition(requestId, 'declined');
       try {
         await rejectJoinRequestById(queryClient, { requestId, tripId });
         await fetchRequests();
       } catch (error) {
+        rollbackOptimisticTransition(snapshot);
         console.error('Error rejecting request:', error);
         toast.error(error instanceof Error ? error.message : 'Failed to reject request');
         throw error;
