@@ -27,6 +27,7 @@ import type {
   CandidateImportResult,
 } from '../types';
 import { IMPORT_PHASE_LABELS } from '../types';
+import { detectArtifactKind, validateCandidate } from '../importValidation';
 
 // Map Gmail extraction types → artifact-ingest artifact_type overrides
 const RESERVATION_TO_ARTIFACT_TYPE: Record<string, string> = {
@@ -87,9 +88,12 @@ const filterTabs: { key: FilterTab; label: string }[] = [
 /** Progress phase indicator with labeled steps */
 const ImportPhaseBar: React.FC<{ progress: ImportProgress }> = ({ progress }) => {
   const steps: { key: ImportPhase; label: string }[] = [
-    { key: 'parsing', label: 'Parsing' },
-    { key: 'validating', label: 'Validating' },
-    { key: 'importing', label: 'Importing' },
+    { key: 'ingest', label: 'Ingest' },
+    { key: 'parse', label: 'Parse' },
+    { key: 'extract', label: 'Extract' },
+    { key: 'validate', label: 'Validate' },
+    { key: 'preview', label: 'Preview' },
+    { key: 'commit', label: 'Commit' },
     { key: 'done', label: 'Done' },
   ];
 
@@ -210,6 +214,7 @@ export const SmartImportReview: React.FC<ReviewCandidatesProps> = ({
   const [candidateResults, setCandidateResults] = useState<Map<string, CandidateImportResult>>(
     new Map(),
   );
+  const [commitConfirmed, setCommitConfirmed] = useState(false);
 
   const visibleCandidates = useMemo(() => {
     if (activeFilter === 'all') return candidates;
@@ -275,6 +280,13 @@ export const SmartImportReview: React.FC<ReviewCandidatesProps> = ({
     setCandidateResults(new Map());
     try {
       const accepted = candidates.filter(c => selectedIds.has(c.id));
+
+      if (!commitConfirmed) {
+        toast.message('Review complete. Confirm to commit selected imports.');
+        setCommitConfirmed(true);
+        setIsSubmitting(false);
+        return;
+      }
       const rejected = candidates.filter(c => !selectedIds.has(c.id));
 
       let persistedCount = 0;
@@ -285,7 +297,7 @@ export const SmartImportReview: React.FC<ReviewCandidatesProps> = ({
 
       if (tripId && accepted.length > 0) {
         const progress: ImportProgress = {
-          phase: 'validating',
+          phase: 'ingest',
           total: accepted.length,
           completed: 0,
           succeeded: 0,
@@ -294,12 +306,46 @@ export const SmartImportReview: React.FC<ReviewCandidatesProps> = ({
         };
         setImportProgress({ ...progress });
 
-        // Transition to importing phase
-        progress.phase = 'importing';
+        // Pipeline stages before commit
+        progress.phase = 'parse';
+        setImportProgress({ ...progress });
+        progress.phase = 'extract';
+        setImportProgress({ ...progress });
+        progress.phase = 'validate';
+        setImportProgress({ ...progress });
+
+        const seenIds = new Set<string>();
+        const validCandidates = accepted.filter(candidate => {
+          const validation = validateCandidate(
+            candidate,
+            detectArtifactKind(candidate.source),
+            seenIds,
+          );
+          seenIds.add(candidate.id);
+          if (!validation.valid) {
+            const err = validation.errors.map(e => e.code).join(', ');
+            results.set(candidate.id, {
+              candidateId: candidate.id,
+              status: 'failed',
+              errorMessage: err,
+            });
+            failedCount++;
+            newFailedIds.push(candidate.id);
+            progress.completed++;
+            progress.failed++;
+          }
+          return validation.valid;
+        });
+        setCandidateResults(new Map(results));
+        setImportProgress({ ...progress });
+
+        progress.phase = 'preview';
+        setImportProgress({ ...progress });
+        progress.phase = 'commit';
         setImportProgress({ ...progress });
 
         const ingestResults = await Promise.allSettled(
-          accepted.map(async candidate => {
+          validCandidates.map(async candidate => {
             const id = await ingestCandidate(candidate);
             progress.completed++;
             progress.succeeded++;
@@ -313,21 +359,21 @@ export const SmartImportReview: React.FC<ReviewCandidatesProps> = ({
         for (let i = 0; i < ingestResults.length; i++) {
           const result = ingestResults[i];
           if (result.status === 'fulfilled') {
-            succeededIds.push(accepted[i].id);
+            succeededIds.push(validCandidates[i].id);
             persistedCount++;
           } else {
             failedCount++;
-            newFailedIds.push(accepted[i].id);
+            newFailedIds.push(validCandidates[i].id);
             const errorMsg =
               result.reason instanceof Error ? result.reason.message : 'Unknown error';
-            results.set(accepted[i].id, {
-              candidateId: accepted[i].id,
+            results.set(validCandidates[i].id, {
+              candidateId: validCandidates[i].id,
               status: 'failed',
               errorMessage: errorMsg,
             });
             progress.completed++;
             progress.failed++;
-            progress.failedCandidateIds.push(accepted[i].id);
+            progress.failedCandidateIds.push(validCandidates[i].id);
             setCandidateResults(new Map(results));
             setImportProgress({ ...progress });
           }
