@@ -2,53 +2,13 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { requireSecrets } from '../_shared/validateSecrets.ts';
 import { USER_ENTITLEMENT_CONFLICT_TARGET } from '../_shared/entitlementUpsert.ts';
-
-// RevenueCat event types that affect subscription state
-const SUBSCRIPTION_EVENTS = new Set([
-  'INITIAL_PURCHASE',
-  'RENEWAL',
-  'PRODUCT_CHANGE',
-  'CANCELLATION',
-  'UNCANCELLATION',
-  'BILLING_ISSUE',
-  'SUBSCRIBER_ALIAS',
-  'EXPIRATION',
-  'TRANSFER',
-  'SUBSCRIPTION_PAUSED',
-  'SUBSCRIPTION_EXTENDED',
-  'REFUND',
-]);
-
-// Entitlement ID → plan mapping (must match RevenueCat dashboard + constants/revenuecat.ts)
-const ENTITLEMENT_TO_PLAN: Record<string, string> = {
-  chravel_explorer: 'explorer',
-  chravel_frequent_chraveler: 'frequent-chraveler',
-  chravel_pro_starter: 'pro-starter',
-  chravel_pro_growth: 'pro-growth',
-  chravel_pro_enterprise: 'pro-enterprise',
-};
-
-const PLAN_PRIORITY = [
-  'free',
-  'explorer',
-  'frequent-chraveler',
-  'pro-starter',
-  'pro-growth',
-  'pro-enterprise',
-];
-
-interface RevenueCatEvent {
-  type: string;
-  app_user_id: string;
-  original_app_user_id?: string;
-  expiration_at_ms?: number;
-  purchased_at_ms?: number;
-  period_type?: string;
-  entitlement_ids?: string[];
-  product_id?: string;
-  store?: string;
-  environment?: string;
-}
+import {
+  SUBSCRIPTION_EVENTS,
+  deriveEntitlementFromEvent,
+  isStaleExpiration,
+  revenueCatIdempotencyKey,
+  type RevenueCatEvent,
+} from './eventState.ts';
 
 interface RevenueCatWebhookPayload {
   event: RevenueCatEvent;
@@ -116,52 +76,35 @@ serve(async req => {
 
   const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  // Derive plan from active entitlements
-  let plan = 'free';
-  let status: string;
-  let currentPeriodEnd: string | null = null;
-  const entitlementIds: string[] = event.entitlement_ids || [];
+  // Atomic idempotency: insert the event id into the shared webhook_events table.
+  // A unique-constraint violation (23505) means RevenueCat re-delivered an event we
+  // already processed (retry/storm) — skip it. The key is `rc_`-prefixed so it can
+  // never collide with Stripe's `evt_*` ids in the same table.
+  const idempotencyKey = revenueCatIdempotencyKey(event);
+  const { error: idempotencyError } = await serviceClient.from('webhook_events').insert({
+    event_id: idempotencyKey,
+    event_type: event.type,
+    processed_at: new Date().toISOString(),
+  });
 
-  for (const entitlementId of entitlementIds) {
-    const mappedPlan = ENTITLEMENT_TO_PLAN[entitlementId];
-    if (mappedPlan && PLAN_PRIORITY.indexOf(mappedPlan) > PLAN_PRIORITY.indexOf(plan)) {
-      plan = mappedPlan;
+  if (idempotencyError) {
+    if (idempotencyError.code === '23505') {
+      console.log(`[rc-webhook] Duplicate event skipped (idempotency): ${idempotencyKey}`);
+      return new Response(JSON.stringify({ success: true, duplicate: true }), { status: 200 });
     }
+    // Any other DB error — log and continue (don't silently drop real events).
+    console.warn('[rc-webhook] Idempotency insert failed:', idempotencyError.message);
   }
 
-  if (event.expiration_at_ms) {
-    currentPeriodEnd = new Date(event.expiration_at_ms).toISOString();
-  }
+  const releaseIdempotency = async () => {
+    // On processing failure we remove the marker so RevenueCat's retry can reprocess.
+    await serviceClient.from('webhook_events').delete().eq('event_id', idempotencyKey);
+  };
 
-  // Map event type to subscription status.
-  // SUBSCRIPTION_PAUSED: Google Play concept — access is retained until EXPIRATION fires.
-  // Do NOT revoke on pause; keep active so user retains access until the period ends.
-  switch (event.type) {
-    case 'INITIAL_PURCHASE':
-    case 'RENEWAL':
-    case 'UNCANCELLATION':
-    case 'SUBSCRIPTION_EXTENDED':
-    case 'PRODUCT_CHANGE':
-    case 'SUBSCRIPTION_PAUSED': // access retained until EXPIRATION
-      status = event.period_type === 'TRIAL' ? 'trialing' : 'active';
-      break;
-    case 'CANCELLATION':
-      status = 'canceled';
-      break;
-    case 'BILLING_ISSUE':
-      // Grace period: user retains access while RevenueCat retries billing.
-      status = 'past_due';
-      break;
-    case 'EXPIRATION':
-    case 'REFUND':
-      status = 'expired';
-      plan = 'free';
-      break;
-    default:
-      status = 'active';
-  }
+  const { plan, status, currentPeriodEnd } = deriveEntitlementFromEvent(event);
 
-  // Idempotency guard: skip write if nothing changed
+  // Read the current entitlement once: used for both the reorder guard and the
+  // no-op content-diff check.
   const { data: existing } = await serviceClient
     .from('user_entitlements')
     .select('plan, status, current_period_end')
@@ -169,6 +112,15 @@ serve(async req => {
     .eq('source', 'revenuecat')
     .eq('purchase_type', 'subscription')
     .maybeSingle();
+
+  // Reorder guard: a late/replayed EXPIRATION must not revoke access that a newer
+  // RENEWAL already extended into the future.
+  if (isStaleExpiration(event, existing?.current_period_end ?? null, new Date().toISOString())) {
+    console.log(`[rc-webhook] Stale EXPIRATION for user ${userId} — access still valid, skipping`);
+    return new Response(JSON.stringify({ success: true, synced: false, reason: 'stale_event' }), {
+      status: 200,
+    });
+  }
 
   const normalizedPeriodEnd = currentPeriodEnd ? new Date(currentPeriodEnd).toISOString() : null;
   const existingPeriodEnd = existing?.current_period_end
@@ -195,7 +147,7 @@ serve(async req => {
       status,
       purchase_type: 'subscription',
       current_period_end: currentPeriodEnd,
-      entitlements: entitlementIds,
+      entitlements: event.entitlement_ids || [],
       revenuecat_customer_id: event.app_user_id,
       updated_at: new Date().toISOString(),
     },
@@ -204,6 +156,7 @@ serve(async req => {
 
   if (upsertError) {
     console.error(`[rc-webhook] Upsert error for user ${userId}:`, upsertError);
+    await releaseIdempotency();
     // Return 500 so RevenueCat retries
     return new Response(JSON.stringify({ error: 'Database update failed' }), { status: 500 });
   }

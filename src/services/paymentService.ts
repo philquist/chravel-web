@@ -383,33 +383,50 @@ export const paymentService = {
     updates: { amount?: number; description?: string },
   ): Promise<boolean> {
     try {
+      // Read the current row first: its version drives optimistic locking and its
+      // split_count drives the proportional split recalculation.
+      const { data: current, error: readError } = await supabase
+        .from('trip_payment_messages')
+        .select('version, split_count')
+        .eq('id', paymentId)
+        .single();
+
+      if (readError || !current) throw readError ?? new Error('Payment not found');
+
+      const expectedVersion = current.version ?? 1;
+
       const updateData: Record<string, unknown> = {};
       if (updates.amount !== undefined) updateData.amount = updates.amount;
       if (updates.description !== undefined) updateData.description = updates.description;
       updateData.updated_at = new Date().toISOString();
+      updateData.version = expectedVersion + 1;
 
-      const { error } = await supabase
+      // Optimistic lock: the update only matches if no concurrent edit bumped the
+      // version since our read. A 0-row result means another writer won the race.
+      const { data: updated, error } = await supabase
         .from('trip_payment_messages')
         .update(updateData)
-        .eq('id', paymentId);
+        .eq('id', paymentId)
+        .eq('version', expectedVersion)
+        .select('id');
 
       if (error) throw error;
+      if (!updated || updated.length === 0) {
+        if (import.meta.env.DEV)
+          console.warn('updatePaymentMessage: version conflict — edit rejected');
+        return false;
+      }
 
-      // If amount changed, update splits proportionally
-      if (updates.amount !== undefined) {
-        const { data: payment } = await supabase
-          .from('trip_payment_messages')
-          .select('split_count')
-          .eq('id', paymentId)
-          .single();
-
-        if (payment) {
-          const newSplitAmount = updates.amount / payment.split_count;
-          await supabase
-            .from('payment_splits')
-            .update({ amount_owed: newSplitAmount })
-            .eq('payment_message_id', paymentId);
-        }
+      // If the total changed, redistribute across UNSETTLED splits only. Settled
+      // participants already paid their agreed share; their amount_owed must not be
+      // overwritten (doing so corrupts the settled ledger).
+      if (updates.amount !== undefined && current.split_count > 0) {
+        const newSplitAmount = updates.amount / current.split_count;
+        await supabase
+          .from('payment_splits')
+          .update({ amount_owed: newSplitAmount })
+          .eq('payment_message_id', paymentId)
+          .eq('is_settled', false);
       }
 
       return true;
