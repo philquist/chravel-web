@@ -48,7 +48,9 @@ export const CalendarGrid = ({
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
     events.forEach(event => {
-      const dateKey = format(event.date, 'yyyy-MM-dd');
+      const dateKey = event.is_all_day
+        ? event.date.toISOString().slice(0, 10)
+        : format(event.date, 'yyyy-MM-dd');
       if (!map.has(dateKey)) {
         map.set(dateKey, []);
       }

@@ -69,7 +69,8 @@ function parseICSDate(dateStr: string): { date: Date; isAllDay: boolean } | null
     const year = parseInt(cleaned.slice(0, 4), 10);
     const month = parseInt(cleaned.slice(4, 6), 10) - 1; // JS months are 0-indexed
     const day = parseInt(cleaned.slice(6, 8), 10);
-    return { date: new Date(year, month, day), isAllDay: true };
+    // Use Date.UTC so the calendar date is preserved independent of the viewer's timezone.
+    return { date: new Date(Date.UTC(year, month, day)), isAllDay: true };
   }
 
   // DATETIME format: YYYYMMDDTHHmmss or YYYYMMDDTHHmmssZ

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CalendarEvent } from '@/types/calendar';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,43 +12,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import {
-  Clock,
-  MapPin,
-  Trash2,
-  Pencil,
-  Sun,
-  CalendarDays,
-  Repeat,
-  CheckCircle2,
-  XCircle,
-  HelpCircle,
-  Bell,
-} from 'lucide-react';
+import { Clock, MapPin, Trash2, Pencil, Sun, CalendarDays, Repeat, Bell } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-
-type RSVPStatus = 'going' | 'not_going' | 'maybe' | null;
 
 interface EventItemProps {
   event: CalendarEvent;
   onEdit?: (event: CalendarEvent) => void;
   onDelete: (eventId: string) => void;
   isDeleting?: boolean;
-  onRSVP?: (eventId: string, status: RSVPStatus) => void;
-  currentRSVP?: RSVPStatus;
 }
 
-export const EventItem = ({
-  event,
-  onEdit,
-  onDelete,
-  isDeleting = false,
-  onRSVP,
-  currentRSVP,
-}: EventItemProps) => {
-  const [rsvpStatus, setRsvpStatus] = useState<RSVPStatus>(currentRSVP || null);
-
+export const EventItem = ({ event, onEdit, onDelete, isDeleting = false }: EventItemProps) => {
   const categoryEmojis: Record<string, string> = {
     dining: '🍽️',
     lodging: '🏨',
@@ -56,12 +31,6 @@ export const EventItem = ({
     transportation: '🚗',
     entertainment: '🎭',
     other: '📌',
-  };
-
-  const handleRSVP = (status: RSVPStatus) => {
-    const newStatus = rsvpStatus === status ? null : status;
-    setRsvpStatus(newStatus);
-    onRSVP?.(event.id, newStatus);
   };
 
   const sourceData = event.source_data as Record<string, unknown> | undefined;
@@ -93,7 +62,9 @@ export const EventItem = ({
           <div className="space-y-1 text-sm text-muted-foreground">
             {event.is_all_day ? (
               <div className="flex items-center gap-2">
-                {event.end_date && event.end_date.toDateString() !== event.date.toDateString() ? (
+                {event.end_date &&
+                event.end_date.toISOString().slice(0, 10) !==
+                  event.date.toISOString().slice(0, 10) ? (
                   <>
                     <CalendarDays className="h-4 w-4" />
                     <span>
@@ -140,51 +111,6 @@ export const EventItem = ({
 
           {event.description && (
             <p className="text-sm text-muted-foreground mt-2">{event.description}</p>
-          )}
-
-          {/* RSVP buttons */}
-          {onRSVP && (
-            <div className="flex gap-2 mt-3">
-              <button
-                type="button"
-                onClick={() => handleRSVP('going')}
-                className={cn(
-                  'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
-                  rsvpStatus === 'going'
-                    ? 'bg-green-500/20 text-green-400 ring-1 ring-green-500/40'
-                    : 'bg-secondary text-secondary-foreground hover:bg-green-500/10 hover:text-green-400',
-                )}
-              >
-                <CheckCircle2 className="h-3 w-3" />
-                Going
-              </button>
-              <button
-                type="button"
-                onClick={() => handleRSVP('maybe')}
-                className={cn(
-                  'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
-                  rsvpStatus === 'maybe'
-                    ? 'bg-yellow-500/20 text-yellow-400 ring-1 ring-yellow-500/40'
-                    : 'bg-secondary text-secondary-foreground hover:bg-yellow-500/10 hover:text-yellow-400',
-                )}
-              >
-                <HelpCircle className="h-3 w-3" />
-                Maybe
-              </button>
-              <button
-                type="button"
-                onClick={() => handleRSVP('not_going')}
-                className={cn(
-                  'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
-                  rsvpStatus === 'not_going'
-                    ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/40'
-                    : 'bg-secondary text-secondary-foreground hover:bg-red-500/10 hover:text-red-400',
-                )}
-              >
-                <XCircle className="h-3 w-3" />
-                Can't go
-              </button>
-            </div>
           )}
         </div>
 

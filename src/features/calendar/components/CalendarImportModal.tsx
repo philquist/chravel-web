@@ -222,16 +222,31 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
       .map(({ event, index }) => {
         let endTime: string | undefined;
         if (event.endTime && event.endTime.getTime() !== event.startTime.getTime()) {
-          endTime = event.endTime.toISOString();
+          endTime = event.isAllDay
+            ? // For all-day, clamp end to UTC 23:59:59.999 of the end UTC date
+              new Date(
+                Date.UTC(
+                  event.endTime.getUTCFullYear(),
+                  event.endTime.getUTCMonth(),
+                  event.endTime.getUTCDate(),
+                  23,
+                  59,
+                  59,
+                  999,
+                ),
+              ).toISOString()
+            : event.endTime.toISOString();
         } else if (event.isAllDay) {
-          const endOfDay = new Date(event.startTime);
-          endOfDay.setHours(23, 59, 59, 999);
-          endTime = endOfDay.toISOString();
+          const s = event.startTime;
+          endTime = new Date(
+            Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate(), 23, 59, 59, 999),
+          ).toISOString();
         }
 
         const rawCategory = parseResult.eventMeta?.[index]?.eventCategory;
         const eventCategory = rawCategory ? normalizeCalendarCategory(rawCategory) : 'other';
         const isGmail = parseResult.sourceFormat === 'gmail';
+        const isICS = parseResult.sourceFormat === 'ics';
 
         return {
           trip_id: tripId,
@@ -242,12 +257,15 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
           location: event.location,
           event_category: eventCategory,
           include_in_itinerary: true,
-          source_type: 'manual',
+          is_all_day: event.isAllDay ?? false,
+          source_type: isICS ? 'bulk_import' : 'manual',
           source_data: {
             imported_from: parseResult.sourceFormat,
             original_uid: event.uid,
             ...(isGmail ? { from_gmail_smart_import: true as const } : {}),
           },
+          idempotency_key:
+            isICS && event.uid && !event.uid.startsWith('imported-') ? event.uid : null,
         };
       });
 

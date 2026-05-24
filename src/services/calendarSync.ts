@@ -18,22 +18,36 @@ export interface ICalEvent {
   url?: string;
   rrule?: string;
   status?: 'CONFIRMED' | 'TENTATIVE' | 'CANCELLED';
+  isAllDay?: boolean;
 }
 
 /**
  * Convert CalendarEvent to iCal format
  */
 function eventToICal(event: CalendarEvent): ICalEvent {
-  const startDate = new Date(event.date);
-  const [hours, minutes] = event.time.split(':');
-  startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-
+  let startDate: Date;
   let endDate: Date | undefined;
-  if (event.end_time) {
-    endDate = event.end_time;
-  } else if (event.time) {
-    endDate = new Date(startDate);
-    endDate.setHours(endDate.getHours() + 1);
+
+  if (event.is_all_day) {
+    // event.date is UTC midnight after the timezone fix — use UTC components directly.
+    const d = event.date;
+    startDate = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    const endSrc = event.end_date ?? event.date;
+    // ICS all-day DTEND is the exclusive next day per RFC 5545
+    endDate = new Date(
+      Date.UTC(endSrc.getUTCFullYear(), endSrc.getUTCMonth(), endSrc.getUTCDate() + 1),
+    );
+  } else {
+    startDate = new Date(event.date);
+    const [hours, minutes] = event.time.split(':');
+    startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+
+    if (event.end_time) {
+      endDate = event.end_time;
+    } else if (event.time) {
+      endDate = new Date(startDate);
+      endDate.setHours(endDate.getHours() + 1);
+    }
   }
 
   const status =
@@ -52,6 +66,7 @@ function eventToICal(event: CalendarEvent): ICalEvent {
     location: event.location || '',
     rrule: event.recurrence_rule,
     status,
+    isAllDay: event.is_all_day ?? false,
   };
 }
 
@@ -88,12 +103,19 @@ function generateICalContent(events: CalendarEvent[], tripName: string): string 
     ical += `UID:${icalEvent.uid}\r\n`;
     ical += `DTSTAMP:${formattedNow}\r\n`;
 
-    const dtstart = icalEvent.dtstart.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    ical += `DTSTART:${dtstart}\r\n`;
-
-    if (icalEvent.dtend) {
-      const dtend = icalEvent.dtend.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-      ical += `DTEND:${dtend}\r\n`;
+    if (icalEvent.isAllDay) {
+      const dateOnly = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '');
+      ical += `DTSTART;VALUE=DATE:${dateOnly(icalEvent.dtstart)}\r\n`;
+      if (icalEvent.dtend) {
+        ical += `DTEND;VALUE=DATE:${dateOnly(icalEvent.dtend)}\r\n`;
+      }
+    } else {
+      const dtstart = icalEvent.dtstart.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      ical += `DTSTART:${dtstart}\r\n`;
+      if (icalEvent.dtend) {
+        const dtend = icalEvent.dtend.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        ical += `DTEND:${dtend}\r\n`;
+      }
     }
 
     ical += `SUMMARY:${escapeICalText(icalEvent.summary)}\r\n`;

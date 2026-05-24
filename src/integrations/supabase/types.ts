@@ -3091,6 +3091,7 @@ export type Database = {
           end_time: string | null
           event_category: string | null
           id: string
+          idempotency_key: string | null
           include_in_itinerary: boolean | null
           is_all_day: boolean | null
           location: string | null
@@ -3109,6 +3110,7 @@ export type Database = {
           end_time?: string | null
           event_category?: string | null
           id?: string
+          idempotency_key?: string | null
           include_in_itinerary?: boolean | null
           is_all_day?: boolean | null
           location?: string | null
@@ -3127,6 +3129,7 @@ export type Database = {
           end_time?: string | null
           event_category?: string | null
           id?: string
+          idempotency_key?: string | null
           include_in_itinerary?: boolean | null
           is_all_day?: boolean | null
           location?: string | null
