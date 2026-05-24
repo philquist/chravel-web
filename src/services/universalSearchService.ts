@@ -1,6 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Supabase generated types have SelectQueryError mismatches with runtime columns
 import { supabase } from '@/integrations/supabase/client';
+import { searchArtifactsByDomain } from '@/services/dal/artifactSearchService';
 import { searchMessagesAcrossTripChannels } from '@/services/stream/streamMessageSearch';
 
 export type ContentType =
@@ -716,18 +717,16 @@ async function searchArtifacts(
 
   try {
     // Use the artifact-search edge function for semantic search
-    const { data, error } = await supabase.functions.invoke('artifact-search', {
-      body: {
-        tripId: tripIds?.[0] || '',
-        query,
-        limit: 10,
-        threshold: 0.45,
-      },
+    const { results, error } = await searchArtifactsByDomain({
+      tripId: tripIds?.[0] || '',
+      query,
+      limit: 10,
+      threshold: 0.45,
     });
 
-    if (error || !data?.success) return [];
+    if (error) return [];
 
-    return (data.results || []).map(
+    return results.map(
       (artifact: {
         id: string;
         tripId: string;

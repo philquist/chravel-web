@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import type { ArtifactSearchResult, ArtifactSearchQuery } from '@/types/artifacts';
+import { searchArtifactsByDomain } from '@/services/dal/artifactSearchService';
 
 interface SearchState {
   isSearching: boolean;
@@ -32,29 +32,11 @@ export function useArtifactSearch() {
       setState(prev => ({ ...prev, isSearching: true, error: null }));
 
       try {
-        const { data, error } = await supabase.functions.invoke('artifact-search', {
-          body: {
-            tripId: query.tripId,
-            query: query.query,
-            artifactTypes: query.artifactTypes,
-            sourceTypes: query.sourceTypes,
-            createdAfter: query.createdAfter,
-            createdBefore: query.createdBefore,
-            creatorId: query.creatorId,
-            limit: query.limit || 10,
-            threshold: query.threshold || 0.5,
-          },
-        });
+        const { results, error } = await searchArtifactsByDomain(query);
 
         if (error) {
-          throw error;
+          throw new Error(error);
         }
-
-        if (!data?.success) {
-          throw new Error(data?.error || 'Artifact search failed');
-        }
-
-        const results: ArtifactSearchResult[] = data.results || [];
         setState({ isSearching: false, error: null, results });
         return results;
       } catch (error) {

@@ -81,3 +81,14 @@ export interface NotificationPayload {
   isHighPriority?: boolean;
   data?: NotificationPayloadMetadata;
 }
+
+export interface ReadStateConsistencyContract {
+  /** Canonical unread boolean used by both notifications and messaging badges. */
+  isRead: boolean;
+  /** Optional trip-scoped unread aggregate from same source as messaging counts. */
+  unreadCount?: number;
+  /** App-shell badge value must be computed from canonical unread rows only. */
+  badgeCount?: number;
+  /** Idempotency key for cross-channel dedupe + observability joins. */
+  eventId?: string;
+}

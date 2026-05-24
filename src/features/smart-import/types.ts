@@ -1,12 +1,24 @@
 /** State machine phases for the Smart Import pipeline */
-export type ImportPhase = 'idle' | 'parsing' | 'validating' | 'importing' | 'done' | 'failed';
+export type ImportPhase =
+  | 'idle'
+  | 'ingest'
+  | 'parse'
+  | 'extract'
+  | 'validate'
+  | 'preview'
+  | 'commit'
+  | 'done'
+  | 'failed';
 
 /** Human-readable labels for each import phase */
 export const IMPORT_PHASE_LABELS: Record<ImportPhase, string> = {
   idle: 'Ready',
-  parsing: 'Parsing items…',
-  validating: 'Validating data…',
-  importing: 'Importing to trip…',
+  ingest: 'Ingesting artifacts…',
+  parse: 'Parsing artifacts…',
+  extract: 'Extracting reservation data…',
+  validate: 'Validating extracted data…',
+  preview: 'Awaiting human preview…',
+  commit: 'Committing to trip…',
   done: 'Complete',
   failed: 'Import failed',
 };

@@ -13,10 +13,10 @@
  * @module services/chatContentParser
  */
 
-import { supabase } from '@/integrations/supabase/client';
 import { calendarService, CreateEventData } from './calendarService';
 import { fetchOGMetadata } from './ogMetadataService';
 import { insertLinkIndex } from './linkService';
+import { invokeEnhancedAiParser } from './dal/enhancedAiParserService';
 
 export interface ParsedReceipt {
   extracted_text: string;
@@ -102,13 +102,11 @@ export interface ParsedContent {
  */
 export async function parseReceipt(imageUrl: string, tripId: string): Promise<ParsedContent> {
   try {
-    const { data, error } = await supabase.functions.invoke('enhanced-ai-parser', {
-      body: {
-        fileUrl: imageUrl,
-        fileType: 'image/jpeg',
-        extractionType: 'document_parse',
-        tripId,
-      },
+    const { data, error } = await invokeEnhancedAiParser({
+      fileUrl: imageUrl,
+      fileType: 'image/jpeg',
+      extractionType: 'document_parse',
+      tripId,
     });
 
     if (error) {
@@ -184,14 +182,12 @@ export async function parseItinerary(
   tripId: string,
 ): Promise<ParsedContent> {
   try {
-    const { data, error } = await supabase.functions.invoke('enhanced-ai-parser', {
-      body: {
-        fileUrl,
-        fileType,
-        messageText,
-        extractionType: 'calendar',
-        tripId,
-      },
+    const { data, error } = await invokeEnhancedAiParser({
+      fileUrl,
+      fileType,
+      messageText,
+      extractionType: 'calendar',
+      tripId,
     });
 
     if (error) {
@@ -297,12 +293,10 @@ export async function parseLink(
 export async function parseMessage(messageText: string, tripId: string): Promise<ParsedContent> {
   try {
     // Use enhanced-ai-parser for entity extraction
-    const { data, error } = await supabase.functions.invoke('enhanced-ai-parser', {
-      body: {
-        messageText,
-        extractionType: 'calendar',
-        tripId,
-      },
+    const { data, error } = await invokeEnhancedAiParser({
+      messageText,
+      extractionType: 'calendar',
+      tripId,
     });
 
     if (error) {
@@ -353,13 +347,15 @@ export async function parseMessage(messageText: string, tripId: string): Promise
     }
 
     // Also check for todo items
-    const { data: todoData } = await supabase.functions.invoke('enhanced-ai-parser', {
-      body: {
-        messageText,
-        extractionType: 'todo',
-        tripId,
-      },
+    const { data: todoData, error: todoError } = await invokeEnhancedAiParser({
+      messageText,
+      extractionType: 'todo',
+      tripId,
     });
+
+    if (todoError) {
+      throw new Error(`Failed to parse todos: ${todoError.message}`);
+    }
 
     const todos: ParsedTodo[] = todoData?.todos || [];
 

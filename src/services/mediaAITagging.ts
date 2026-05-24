@@ -9,7 +9,7 @@
  * @module services/mediaAITagging
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEnhancedAiParser } from './dal/enhancedAiParserService';
 
 export interface AITagResult {
   tags: string[];
@@ -38,13 +38,11 @@ export async function tagMediaItem(
 ): Promise<AITagResult | null> {
   try {
     // Call enhanced-ai-parser edge function
-    const response = await supabase.functions.invoke('enhanced-ai-parser', {
-      body: {
-        extractionType: 'photo_analysis',
-        fileUrl: item.media_url,
-        fileType: item.media_type === 'image' ? 'image/jpeg' : 'video/mp4',
-        tripId,
-      },
+    const response = await invokeEnhancedAiParser({
+      extractionType: 'photo_analysis',
+      fileUrl: item.media_url,
+      fileType: item.media_type === 'image' ? 'image/jpeg' : 'video/mp4',
+      tripId,
     });
 
     if (response.error) {
