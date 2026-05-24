@@ -6,7 +6,11 @@ function sh(cmd) {
 }
 
 function safe(cmd, fallback = '') {
-  try { return sh(cmd); } catch { return fallback; }
+  try {
+    return sh(cmd);
+  } catch {
+    return fallback;
+  }
 }
 
 function lines(cmd) {
@@ -20,18 +24,22 @@ function fileLoc(file) {
 
 const tsFiles = lines('rg --files src | rg "\\.(ts|tsx)$"');
 const hotspots = tsFiles
-  .map((f) => ({ file: f, loc: fileLoc(f) }))
-  .filter((x) => x.loc >= 500)
+  .map(f => ({ file: f, loc: fileLoc(f) }))
+  .filter(x => x.loc >= 500)
   .sort((a, b) => b.loc - a.loc);
 
 const lintOutput = safe('npm run -s lint:check', '');
-const lintSummary = lintOutput.match(/✖\s+(\d+)\s+problems?\s+\((\d+)\s+errors?,\s+(\d+)\s+warnings?\)/);
+const lintSummary = lintOutput.match(
+  /✖\s+(\d+)\s+problems?\s+\((\d+)\s+errors?,\s+(\d+)\s+warnings?\)/,
+);
 const lintErrors = lintSummary ? Number.parseInt(lintSummary[2], 10) : 0;
 const lintWarnings = lintSummary ? Number.parseInt(lintSummary[3], 10) : 0;
 
 const typecheckOk = safe('npm run -s typecheck >/dev/null 2>&1; echo $?', '1') === '0';
 
-const deadFileCandidates = safe("rg -n 'patch_tripchat|resolver3\\.js' -g '*'", '').split('\n').filter(Boolean).length;
+const deadFileCandidates = safe("rg -n 'patch_tripchat|resolver3\\.js' -g '*'", '')
+  .split('\n')
+  .filter(Boolean).length;
 
 const health = {
   generatedAt: new Date().toISOString(),
