@@ -173,7 +173,7 @@ export async function insertMediaIndex(params: {
 }) {
   const normalizedMimeType =
     params.mimeType && params.mimeType.length > 0 ? params.mimeType : undefined;
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('trip_media_index')
     .insert({
       trip_id: params.tripId,
