@@ -42,7 +42,7 @@ export const useTripDetailData = (tripId: string | undefined): UseTripDetailData
   const { isDemoMode } = useDemoMode();
   // 🔒 FIX: Get BOTH user and session - use same pattern as useTrips for consistency
   // useTrips uses `user`, so we should too. This ensures if trips list works, detail works.
-  const { user, session, isLoading: isAuthLoading } = useAuth();
+  const { user, session, isLoading: isAuthLoading, isHydrated } = useAuth();
 
   // 🔒 CRITICAL: Use user?.id (same as useTrips) as primary auth identifier
   // Fallback to session?.user?.id only if user transform is incomplete
@@ -78,7 +78,8 @@ export const useTripDetailData = (tripId: string | undefined): UseTripDetailData
   // 4. User has active session (use raw session.user.id, not transformed user)
   // 🔒 FIX: Gate on authUserId (from session) instead of user to prevent race condition
   // where session exists but user transform fails/is delayed
-  const isQueryEnabled = !!tripId && !shouldUseDemoPath && !isAuthLoading && !!authUserId;
+  const isAuthResolved = isHydrated && !isAuthLoading;
+  const isQueryEnabled = !!tripId && !shouldUseDemoPath && isAuthResolved && !!authUserId;
 
   // ⚡ PRIORITY 1: Trip data - gates rendering
   // 🔑 Include authUserId in query key to prevent anon cache poisoning auth cache
@@ -160,7 +161,7 @@ export const useTripDetailData = (tripId: string | undefined): UseTripDetailData
   }
 
   // 🔒 If auth is still loading, return loading state (NOT "trip not found")
-  if (isAuthLoading) {
+  if (!isAuthResolved) {
     return {
       trip: null,
       tripMembers: [],

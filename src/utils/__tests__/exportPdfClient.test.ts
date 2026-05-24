@@ -28,6 +28,7 @@ vi.mock('jspdf', () => {
     setFontSize() {}
     setTextColor() {}
     setDrawColor() {}
+    setLineWidth() {}
     line() {}
     addPage() {
       this.internal.pages.push([]);

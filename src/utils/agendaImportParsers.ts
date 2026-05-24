@@ -16,7 +16,8 @@ import { getSmartImportErrorMessage } from '@/utils/smartImportPaywall';
 import { formatLocalDate } from './dateHelpers';
 import type { EventAgendaItem } from '@/types/events';
 import { parseICSContent, ICSParsedEvent } from './calendarImport';
-import ExcelJS from 'exceljs';
+// exceljs (~950 kB) is dynamically imported inside parseExcelAgenda so it only
+// loads when a user actually imports a spreadsheet, not on agenda mount.
 
 export type AgendaSourceFormat = 'ics' | 'csv' | 'excel' | 'pdf' | 'image' | 'url' | 'text';
 
@@ -202,6 +203,7 @@ async function parseCSVAgenda(file: File): Promise<AgendaParseResult> {
 }
 
 async function parseExcelAgenda(file: File): Promise<AgendaParseResult> {
+  const { default: ExcelJS } = await import('exceljs');
   const buffer = await file.arrayBuffer();
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer);

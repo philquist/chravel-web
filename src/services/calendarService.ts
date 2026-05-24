@@ -222,12 +222,6 @@ export const calendarService = {
       // Direct insert - simpler and more reliable than RPC
       const createdEvent = await retryWithBackoff(
         async () => {
-          // Store is_all_day in source_data since the DB column may not exist yet
-          const sourceData = {
-            ...(eventData.source_data || {}),
-            ...(eventData.is_all_day ? { is_all_day: true } : {}),
-          };
-
           const { data: directEvent, error: directError } = await supabase
             .from('trip_events')
             .insert({
@@ -240,8 +234,10 @@ export const calendarService = {
               created_by: user.id,
               event_category: eventData.event_category || 'other',
               include_in_itinerary: eventData.include_in_itinerary ?? true,
+              is_all_day: eventData.is_all_day ?? false,
               source_type: eventData.source_type || 'manual',
-              source_data: sourceData,
+              source_data: (eventData.source_data || {}) as Json,
+              ...(eventData.idempotency_key ? { idempotency_key: eventData.idempotency_key } : {}),
             })
             .select('*')
             .single();
@@ -734,8 +730,10 @@ export const calendarService = {
       created_by: string;
       event_category: string;
       include_in_itinerary: boolean;
+      is_all_day: boolean;
       source_type: string;
       source_data: Json;
+      idempotency_key: string | null;
     }> = events.map(e => ({
       trip_id: e.trip_id,
       title: e.title,
@@ -746,15 +744,19 @@ export const calendarService = {
       created_by: user.id,
       event_category: e.event_category || 'other',
       include_in_itinerary: e.include_in_itinerary ?? true,
+      is_all_day: e.is_all_day ?? false,
       source_type: 'bulk_import',
       source_data: (e.source_data || {}) as Json,
+      idempotency_key: e.idempotency_key ?? null,
     }));
 
     const CHUNK_SIZE = 50;
 
     // 4. Single batch: <= CHUNK_SIZE events
     if (rows.length <= CHUNK_SIZE) {
-      const { error } = await supabase.from('trip_events').insert(rows);
+      const { error } = await supabase
+        .from('trip_events')
+        .upsert(rows, { onConflict: 'trip_id,idempotency_key', ignoreDuplicates: true });
 
       if (!error) {
         onProgress?.(rows.length, rows.length);
@@ -777,7 +779,9 @@ export const calendarService = {
 
     for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
       const chunk = rows.slice(i, i + CHUNK_SIZE);
-      const { error } = await supabase.from('trip_events').insert(chunk);
+      const { error } = await supabase
+        .from('trip_events')
+        .upsert(chunk, { onConflict: 'trip_id,idempotency_key', ignoreDuplicates: true });
 
       if (!error) {
         imported += chunk.length;
@@ -860,8 +864,10 @@ export const calendarService = {
       created_by: string;
       event_category: string;
       include_in_itinerary: boolean;
+      is_all_day: boolean;
       source_type: string;
       source_data: Json;
+      idempotency_key: string | null;
     }>,
     onProgress?: (completed: number, total: number) => void,
   ): Promise<{ imported: number; failed: number; events: TripEvent[] }> {
@@ -874,7 +880,11 @@ export const calendarService = {
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       try {
-        const { data, error } = await supabase.from('trip_events').insert(row).select('*').single();
+        const { data, error } = await supabase
+          .from('trip_events')
+          .upsert(row, { onConflict: 'trip_id,idempotency_key', ignoreDuplicates: true })
+          .select('*')
+          .single();
 
         if (error) {
           console.error(
@@ -975,17 +985,26 @@ export const calendarService = {
       availability_status?: string;
     },
   ): CalendarEvent {
-    const startDate = new Date(tripEvent.start_time);
-    // Read is_all_day from the field or from source_data as fallback (before DB migration)
+    // Read is_all_day from the field or from source_data as fallback for old rows
     const sourceDataObj = tripEvent.source_data as Record<string, unknown> | null;
     const isAllDay = tripEvent.is_all_day ?? sourceDataObj?.is_all_day === true;
+
+    // For all-day events, build dates from UTC components so the calendar date is
+    // timezone-invariant: a UTC-midnight timestamp reads as the same date everywhere.
+    const toUtcDate = (iso: string) => {
+      const r = new Date(iso);
+      return new Date(Date.UTC(r.getUTCFullYear(), r.getUTCMonth(), r.getUTCDate()));
+    };
+    const rawStartDate = new Date(tripEvent.start_time);
+    const startDate = isAllDay ? toUtcDate(tripEvent.start_time) : rawStartDate;
+
     return {
       id: tripEvent.id,
       title: tripEvent.title,
       date: startDate,
       time: isAllDay
         ? ''
-        : startDate.toLocaleTimeString('en-US', {
+        : rawStartDate.toLocaleTimeString('en-US', {
             hour12: false,
             hour: '2-digit',
             minute: '2-digit',
@@ -997,7 +1016,11 @@ export const calendarService = {
       creatorAvatar: tripEvent.creator?.avatar_url,
       include_in_itinerary: tripEvent.include_in_itinerary ?? true,
       is_all_day: isAllDay,
-      end_date: tripEvent.end_time ? new Date(tripEvent.end_time) : undefined,
+      end_date: tripEvent.end_time
+        ? isAllDay
+          ? toUtcDate(tripEvent.end_time)
+          : new Date(tripEvent.end_time)
+        : undefined,
       event_category: normalizeCalendarCategory(tripEvent.event_category),
       source_type: (tripEvent.source_type as CalendarEvent['source_type']) ?? 'manual',
       source_data: tripEvent.source_data,
@@ -1020,20 +1043,15 @@ export const calendarService = {
     let endTimeStr: string | undefined;
 
     if (isAllDay) {
-      // All-day events: set start to beginning of day, end to end of last day
-      const startOfDay = new Date(calendarEvent.date);
-      startOfDay.setHours(0, 0, 0, 0);
-      startTimeStr = startOfDay.toISOString();
+      // All-day events: store as UTC midnight of the user's chosen local date.
+      // Using Date.UTC preserves the calendar date independent of the viewer's timezone.
+      const d = calendarEvent.date;
+      startTimeStr = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
 
-      if (calendarEvent.end_date) {
-        const endOfDay = new Date(calendarEvent.end_date);
-        endOfDay.setHours(23, 59, 59, 999);
-        endTimeStr = endOfDay.toISOString();
-      } else {
-        const endOfDay = new Date(calendarEvent.date);
-        endOfDay.setHours(23, 59, 59, 999);
-        endTimeStr = endOfDay.toISOString();
-      }
+      const endSrc = calendarEvent.end_date ?? calendarEvent.date;
+      endTimeStr = new Date(
+        Date.UTC(endSrc.getFullYear(), endSrc.getMonth(), endSrc.getDate(), 23, 59, 59, 999),
+      ).toISOString();
     } else {
       const startTime = new Date(calendarEvent.date);
       const [hours, minutes] = calendarEvent.time.split(':');

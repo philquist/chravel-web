@@ -36,7 +36,6 @@ import { useCalendarEvents } from '@/features/calendar/hooks/useCalendarEvents';
 import { useBackgroundImport } from '@/features/calendar/hooks/useBackgroundImport';
 import { toast } from 'sonner';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
-import { hasPaidAccess } from '@/utils/paidAccess';
 import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useTripMembersQuery } from '@/hooks/useTripMembersQuery';

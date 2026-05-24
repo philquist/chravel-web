@@ -19,7 +19,7 @@ import { ArchiveConfirmDialog } from './ArchiveConfirmDialog';
 import { DeleteTripConfirmDialog } from './DeleteTripConfirmDialog';
 import { InviteModal } from './InviteModal';
 import { ShareTripModal } from './share/ShareTripModal';
-import { TripExportModal } from './trip/TripExportModal';
+import { LazyTripExportModal } from './trip/LazyTripExportModal';
 import { ProTripData } from '../types/pro';
 import { useProTrips } from '../hooks/useProTrips';
 import { useToast } from '../hooks/use-toast';
@@ -477,7 +477,7 @@ export const ProTripCard = ({
         trip={shareTrip}
       />
 
-      <TripExportModal
+      <LazyTripExportModal
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
         tripId={trip.id.toString()}

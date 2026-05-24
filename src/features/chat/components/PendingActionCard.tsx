@@ -15,7 +15,7 @@ interface PendingActionCardProps {
   action: PendingAction;
   title?: string;
   detail?: string | null;
-  onConfirm: (actionId: string) => void;
+  onConfirm: (actionId: string) => void | Promise<unknown>;
   onReject: (actionId: string) => void;
   isConfirming: boolean;
   isRejecting: boolean;
@@ -141,6 +141,9 @@ export function PendingActionCard({
   isConfirming,
   isRejecting,
 }: PendingActionCardProps) {
+  const [confirmState, setConfirmState] = useState<'idle' | 'pending' | 'success' | 'error'>(
+    'idle',
+  );
   const [confirmingDismiss, setConfirmingDismiss] = useState(false);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -160,6 +163,16 @@ export function PendingActionCard({
       dismissTimerRef.current = setTimeout(() => {
         setConfirmingDismiss(false);
       }, 3000);
+    }
+  };
+  const handleConfirmClick = async () => {
+    if (busy || confirmState === 'success') return;
+    setConfirmState('pending');
+    try {
+      await Promise.resolve(onConfirm(action.id));
+      setConfirmState('success');
+    } catch {
+      setConfirmState('error');
     }
   };
 
@@ -190,16 +203,24 @@ export function PendingActionCard({
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={() => onConfirm(action.id)}
-          disabled={busy}
+          onClick={handleConfirmClick}
+          disabled={busy || confirmState === 'success'}
           className="flex-1 flex items-center justify-center gap-1.5 rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-medium py-1.5 px-3 transition-colors disabled:opacity-50"
         >
-          {isConfirming ? (
+          {isConfirming || confirmState === 'pending' ? (
             <div className="h-3 w-3 animate-spin gold-gradient-spinner" />
+          ) : confirmState === 'success' ? (
+            <Check className="h-3 w-3 text-emerald-300" />
           ) : (
             <Check className="h-3 w-3" />
           )}
-          Confirm
+          {confirmState === 'pending'
+            ? 'Confirming...'
+            : confirmState === 'success'
+              ? 'Confirmed'
+              : confirmState === 'error'
+                ? 'Retry confirm'
+                : 'Confirm'}
         </button>
         <button
           type="button"

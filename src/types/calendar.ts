@@ -59,6 +59,7 @@ export interface TripEvent {
   created_at: string;
   updated_at: string;
   version?: number;
+  idempotency_key?: string | null;
 }
 
 /**
@@ -80,6 +81,7 @@ export interface CreateEventData {
   recurrence_exceptions?: string[];
   is_busy?: boolean;
   availability_status?: CalendarAvailabilityStatus;
+  idempotency_key?: string;
 }
 
 // ---------------------------------------------------------------------------

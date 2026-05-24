@@ -116,10 +116,10 @@ const fetchTripByIdViaEdgeFunction = async (tripId: string): Promise<Trip | null
       throw new Error('AUTH_REQUIRED');
     }
     if (response.error_code === 'ACCESS_DENIED') {
-      throw new Error('permission denied');
+      throw new Error('ACCESS_DENIED');
     }
     if (response.error_code === 'TRIP_NOT_FOUND') {
-      return null;
+      throw new Error('TRIP_NOT_FOUND');
     }
     throw new Error(response.error || 'Failed to load trip');
   }
@@ -474,10 +474,36 @@ export const tripService = {
     }
 
     if (data) {
+      const activeUser = await getCachedAuthUser();
+      if (!activeUser?.id) {
+        throw new Error('AUTH_REQUIRED');
+      }
+
+      const isCreator = data.created_by === activeUser.id;
+      if (isCreator) {
+        return data as Trip;
+      }
+
+      // Explicit membership check to avoid treating any RLS-visible row as readable
+      const { data: memberRow, error: memberError } = await supabase
+        .from('trip_members')
+        .select('id')
+        .eq('trip_id', tripId)
+        .eq('user_id', activeUser.id)
+        .maybeSingle();
+
+      if (memberError) {
+        throw new Error(`Failed to verify membership: ${memberError.message}`);
+      }
+
+      if (!memberRow) {
+        throw new Error('ACCESS_DENIED');
+      }
+
       return data as Trip;
     }
 
-    // No error but no data could be RLS filtering; fall back to server-side access check
+    // No row from direct query - defer to canonical server-side trip existence + access check
     return await fetchTripByIdViaEdgeFunction(tripId);
   },
 

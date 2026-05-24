@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "vite build && node scripts/build-sw.cjs",
     "build:dev": "vite build --mode development",
+    "atlas": "node scripts/build-atlas.mjs",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
     "lint:budget": "node scripts/eslint-warning-budget.cjs",
@@ -49,7 +50,8 @@
     "qa:store-query-ownership": "node scripts/qa/store-query-ownership-guard.cjs",
     "permissions:generate": "node scripts/generate-permission-matrix.mjs",
     "permissions:drift": "node scripts/check-permission-matrix-drift.mjs",
-    "lint:dal": "bash scripts/check-duplicate-service-wrappers.sh"
+    "lint:dal": "bash scripts/check-duplicate-service-wrappers.sh",
+    "health:metrics": "node scripts/codebase-health-metrics.cjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -85,7 +87,6 @@
     "@revenuecat/purchases-js": "^1.23.0",
     "@sentry/react": "^10.43.0",
     "@supabase/supabase-js": "^2.53.0",
-    "@tailwindcss/typography": "^0.5.15",
     "@tanstack/react-query": "^5.56.2",
     "@tanstack/react-virtual": "^3.13.18",
     "@testing-library/jest-dom": "^6.6.3",
@@ -94,9 +95,6 @@
     "@types/node": "^25.3.0",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
-    "@types/react-image-crop": "^8.1.6",
-    "@typescript-eslint/eslint-plugin": "^8.46.2",
-    "@typescript-eslint/parser": "^8.46.2",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.20",
     "browser-image-compression": "^2.0.2",
@@ -153,7 +151,6 @@
     "@vitest/ui": "^4.0.18",
     "jsdom": "^27.4.0",
     "knip": "^6.3.0",
-    "ts-prune": "^0.10.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"

@@ -10,7 +10,7 @@ import {
 export async function recordTripMembershipAuditEvent(
   event: TripMembershipAuditEvent,
 ): Promise<void> {
-  await supabase.from('trip_membership_audit_events').insert({
+  await ((supabase as any).from)('trip_membership_audit_events').insert({
     trip_id: event.tripId,
     user_id: event.userId,
     actor_user_id: event.actorUserId,

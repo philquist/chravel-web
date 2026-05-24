@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { calendarService } from '@/services/calendarService';
 import type { TripEvent, CreateEventData, CalendarEvent } from '@/types/calendar';
 import { useDemoMode } from '@/hooks/useDemoMode';
-import { useAuth } from '@/hooks/useAuth';
 import { useMutationPermissions } from '@/hooks/useMutationPermissions';
 import { useCalendarRealtime } from './useCalendarRealtime';
 import { createCalendarQueryFn } from './calendarQueryFn';
@@ -23,7 +22,6 @@ import { toast } from 'sonner';
 export const useCalendarEvents = (tripId?: string) => {
   const queryClient = useQueryClient();
   const { isDemoMode } = useDemoMode();
-  const { user } = useAuth();
   const permissions = useMutationPermissions(tripId || '');
 
   // Main query for calendar events with proper caching

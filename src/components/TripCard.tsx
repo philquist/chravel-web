@@ -19,7 +19,7 @@ import { InviteModal } from './InviteModal';
 import { ShareTripModal } from './share/ShareTripModal';
 import { ArchiveConfirmDialog } from './ArchiveConfirmDialog';
 import { DeleteTripConfirmDialog } from './DeleteTripConfirmDialog';
-import { TripExportModal } from './trip/TripExportModal';
+import { LazyTripExportModal } from './trip/LazyTripExportModal';
 import { OptimizedImage } from './OptimizedImage';
 import { archiveTrip, hideTrip } from '../services/archiveService';
 import { useDeleteTrip } from '../hooks/useDeleteTrip';
@@ -672,7 +672,7 @@ export const TripCard = ({
         isCreator={isCreator && !isFreeUser}
       />
 
-      <TripExportModal
+      <LazyTripExportModal
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
         onExport={handleExportPdf}

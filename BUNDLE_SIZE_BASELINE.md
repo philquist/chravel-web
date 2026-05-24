@@ -52,3 +52,29 @@ Generated: 2026-01-28
 - Main bundle exceeds 1MB warning threshold
 - Consider further code splitting for TripDetailModals
 - PDF and Charts are properly lazy-loaded (only load when needed)
+
+## 2026-05-24 Update — Eager-chunk reductions
+
+| Chunk | Before | After | Change |
+|-------|--------|-------|--------|
+| `useDeferredPaidAccess` (calendar/event-reachable) | 944.53 kB | 6.26 kB | exceljs removed from static graph |
+| `exceljs` | (inlined, eager) | 938.58 kB (lazy) | now loads only on spreadsheet import |
+| `streamTripMemberInlineActivity` | 423.13 kB | 121.71 kB | stream-chat extracted to shared chunk |
+| `stream-chat` | (inlined) | 301.32 kB (shared, cached) | single deduped chunk |
+
+Root cause of the 944 kB chunk: `exceljs` (~938 kB) was statically imported by
+`calendarImportParsers`, `agendaImportParsers`, and `lineupImportParsers`, which
+are eagerly pulled in by calendar/event components. Moved to dynamic `import()`
+inside each `parseExcel*` function.
+
+Verified already-lazy (no action needed): `recharts`/charts (only reachable from
+lazy `SeoDashboard`/`AdvertiserDashboard` routes), `pdf`, all page routes
+(`React.lazy` + `retryImport`).
+
+Remaining follow-up (tracked): fully defer `stream-chat` off the trip-page
+module graph. It is statically reachable from `useTripMembers`, `useTripTasks`,
+`useTripPolls`, `mediaService`, `tripService`, `calendarService`, and
+`JoinTrip` via `streamMembershipCoordinator`/`systemMessageService`. Deferring
+requires converting those call sites to dynamic imports — a multi-file
+critical-path change that needs per-flow test coverage (create trip, join,
+calendar share, task/poll system messages).

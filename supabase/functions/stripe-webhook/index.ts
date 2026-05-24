@@ -583,7 +583,11 @@ async function handleSubscriptionDeleted(
     })
     .eq('id', userId);
 
-  // FIX 5: Keep the subscription_end so we know when access actually expires
+  // FIX 5: Keep the subscription_end so we know when access actually expires.
+  // The period end is honored: if it's in the future the user keeps access until
+  // then (a cron or next check-subscription call downgrades on expiry).
+  const productId = subscription.items.data[0]?.price.product as string;
+  const tier = PRODUCT_TO_TIER[productId] || 'free';
   const subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
   const canceledTransition = resolveCanceledTransition({
     mappedTier: tier,
@@ -599,12 +603,6 @@ async function handleSubscriptionDeleted(
       subscription_end: subscriptionEnd,
     })
     .eq('user_id', userId);
-
-  // FIX 5: If the period end is in the future, keep the plan active until then.
-  // The user paid for this period — honor it. A cron or next check-subscription
-  // call will downgrade when the period actually expires.
-  const productId = subscription.items.data[0]?.price.product as string;
-  const tier = PRODUCT_TO_TIER[productId] || 'free';
 
   if (canceledTransition.plan !== 'free') {
     await supabase.from('user_entitlements').upsert(
@@ -662,9 +660,10 @@ async function handleSubscriptionDeleted(
     user_id: userId,
     type: 'subscription',
     title: 'Subscription Canceled',
-    message: periodEndInFuture
-      ? `Your subscription has been canceled. You'll retain full access until ${new Date(subscriptionEnd).toLocaleDateString()}.`
-      : 'Your subscription has ended. Upgrade anytime to restore premium features.',
+    message:
+      canceledTransition.plan !== 'free'
+        ? `Your subscription has been canceled. You'll retain full access until ${new Date(subscriptionEnd).toLocaleDateString()}.`
+        : 'Your subscription has ended. Upgrade anytime to restore premium features.',
     metadata: { subscription_id: subscription.id, period_end: subscriptionEnd },
   });
 }

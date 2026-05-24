@@ -202,6 +202,9 @@ serve(async req => {
 
   try {
     logStep('Function started');
+    const requestBody = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
+    const requestReason =
+      typeof requestBody?.reason === 'string' ? requestBody.reason : 'unspecified';
 
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) {
@@ -253,6 +256,7 @@ serve(async req => {
         tier: normalized.tier,
         status: normalized.status,
         purchase_type: normalized.purchase_type,
+        reason: requestReason,
       });
       return createSecureResponse(normalized);
     }
@@ -292,6 +296,20 @@ serve(async req => {
 
     const bestSubscription = pickBestStripeSubscription(subscriptions.data);
     const { response, entitlementRow } = normalizeFromStripeSubscription(bestSubscription);
+    const priorNormalized = normalizeFromEntitlement(primary);
+    const hasMismatchBeforeReconcile =
+      priorNormalized.tier !== response.tier ||
+      priorNormalized.status !== response.status ||
+      priorNormalized.purchase_type !== response.purchase_type;
+
+    if (hasMismatchBeforeReconcile) {
+      logStep('Reconciliation mismatch detected', {
+        reason: requestReason,
+        userId: user.id,
+        before: priorNormalized,
+        after: response,
+      });
+    }
 
     await supabaseClient.from('user_entitlements').upsert(
       {

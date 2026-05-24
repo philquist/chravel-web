@@ -16,7 +16,6 @@ import { toast } from '../ui/use-toast';
 import { CheckCircle2 } from 'lucide-react';
 import { hapticService as haptics } from '@/services/hapticService';
 import { formatCurrency } from '../../services/currencyService';
-import { useAuth } from '@/hooks/useAuth';
 
 interface ConfirmPaymentDialogProps {
   open: boolean;
@@ -31,7 +30,6 @@ export const ConfirmPaymentDialog = ({
   balance,
   tripId,
 }: ConfirmPaymentDialogProps) => {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +74,7 @@ export const ConfirmPaymentDialog = ({
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: tripKeys.payments(tripId) }),
         queryClient.invalidateQueries({
-          queryKey: tripKeys.paymentBalances(tripId, user?.id || ''),
+          queryKey: tripKeys.paymentBalances(tripId, user.id),
         }),
       ]);
     } catch (error) {

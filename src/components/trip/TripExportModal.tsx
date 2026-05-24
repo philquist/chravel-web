@@ -6,7 +6,7 @@ import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { usePdfExportUsage } from '@/hooks/usePdfExportUsage';
 import { Badge } from '@/components/ui/badge';
 
-interface TripExportModalProps {
+export interface TripExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onExport: (sections: ExportSection[], signal: AbortSignal) => Promise<void>;

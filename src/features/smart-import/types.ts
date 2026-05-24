@@ -3,24 +3,30 @@ export type ImportPhase =
   | 'idle'
   | 'ingest'
   | 'parse'
+  | 'parsing'
   | 'extract'
   | 'validate'
+  | 'validating'
   | 'preview'
   | 'commit'
+  | 'importing'
   | 'done'
   | 'failed';
 
 /** Human-readable labels for each import phase */
 export const IMPORT_PHASE_LABELS: Record<ImportPhase, string> = {
-  idle: 'Ready',
-  ingest: 'Ingesting artifacts…',
-  parse: 'Parsing artifacts…',
-  extract: 'Extracting reservation data…',
-  validate: 'Validating extracted data…',
-  preview: 'Awaiting human preview…',
-  commit: 'Committing to trip…',
-  done: 'Complete',
-  failed: 'Import failed',
+  idle: 'Ready to import',
+  ingest: 'Reading your file…',
+  parse: 'Parsing file contents…',
+  parsing: 'Parsing file contents…',
+  extract: 'Extracting reservation details…',
+  validate: 'Checking extracted data…',
+  validating: 'Checking extracted data…',
+  preview: 'Ready for your review',
+  commit: 'Saving to your trip…',
+  importing: 'Saving to your trip…',
+  done: 'Import complete',
+  failed: 'Import failed — please retry',
 };
 
 export interface SmartImportCandidate {

@@ -237,7 +237,9 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
   const channelRef = useRef<Channel | null>(null);
   const messagesRef = useRef<MessageResponse[]>([]);
   const hasHydratedMessagesRef = useRef(false);
-  const lastMessageTimestampRef = useRef<string | null>(null);
+  const lastConfirmedCursorRef = useRef<{ id: string; createdAt: string } | null>(null);
+  const reconnectBackfillInFlightRef = useRef<Promise<void> | null>(null);
+  const lastReconnectBackfillAtRef = useRef(0);
   // State mirror of channelRef for triggering the event subscription effect
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
   const isMountedRef = useRef(true);
@@ -319,42 +321,54 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
     [tripId],
   );
 
+  const mergeMessagesById = useCallback((nextMessages: MessageResponse[]) => {
+    setMessages(prev => {
+      if (nextMessages.length === 0) return prev;
+      const byId = new Map(prev.map(message => [message.id, message]));
+      for (const message of nextMessages) byId.set(message.id, message);
+      return sortMessagesWithCanonicalOrdering(Array.from(byId.values()));
+    });
+  }, []);
+
   // Backfill messages missed during WebSocket disconnection (agent memory #13)
-  const backfillMissedMessages = useCallback(async () => {
-    const channel = channelRef.current;
-    if (!channel || !lastMessageTimestampRef.current || !isMountedRef.current || !tripId) return;
+  const backfillMissedMessages = useCallback(
+    async (source: 'socket_reconnect' | 'visibility_resume') => {
+      const now = Date.now();
+      if (reconnectBackfillInFlightRef.current) return reconnectBackfillInFlightRef.current;
+      if (now - lastReconnectBackfillAtRef.current < 1000) return;
 
-    try {
-      const response = await channel.query({
-        messages: {
-          created_at_after: lastMessageTimestampRef.current,
-          limit: 100,
-        },
-      });
+      const channel = channelRef.current;
+      const cursor = lastConfirmedCursorRef.current;
+      if (!channel || !cursor || !isMountedRef.current || !tripId) return;
 
-      const fetchedMessages = (response.messages || []) as MessageResponse[];
-      streamReliabilityEvents.reconnectBackfill(tripId, 'socket_reconnect', fetchedMessages.length);
-      if (fetchedMessages.length === 0) return;
-
-      setMessages(prev => {
-        const existingIds = new Set(prev.map(m => m.id));
-        const newMessages = fetchedMessages.filter(m => !existingIds.has(m.id));
-        if (newMessages.length === 0) return prev;
-
-        const merged = [...prev, ...newMessages].sort(
-          (a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime(),
-        );
-        return merged;
-      });
-    } catch (err) {
-      reportCanaryIncident('reconnect_backfill_mismatch', {
-        reason: err instanceof Error ? err.message : 'backfill_query_failed',
-      });
-      if (import.meta.env.DEV) {
-        console.warn('[Stream] backfill failed:', err);
-      }
-    }
-  }, [tripId]);
+      const run = (async () => {
+        try {
+          lastReconnectBackfillAtRef.current = now;
+          const response = await channel.query({
+            messages: {
+              created_at_after: cursor.createdAt,
+              limit: 100,
+            },
+          });
+          const fetchedMessages = (response.messages || []) as MessageResponse[];
+          streamReliabilityEvents.reconnectBackfill(tripId, source, fetchedMessages.length);
+          mergeMessagesById(fetchedMessages);
+        } catch (err) {
+          reportCanaryIncident('reconnect_backfill_mismatch', {
+            reason: err instanceof Error ? err.message : 'backfill_query_failed',
+          });
+          if (import.meta.env.DEV) {
+            console.warn('[Stream] backfill failed:', err);
+          }
+        } finally {
+          reconnectBackfillInFlightRef.current = null;
+        }
+      })();
+      reconnectBackfillInFlightRef.current = run;
+      return run;
+    },
+    [mergeMessagesById, reportCanaryIncident, tripId],
+  );
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -378,7 +392,7 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
       setStreamClientReady(isConnected);
 
       if (isConnected && hasHydratedMessagesRef.current) {
-        void backfillMissedMessages();
+        void backfillMissedMessages('socket_reconnect');
       }
     });
     return unsubscribe;
@@ -388,44 +402,12 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && hasHydratedMessagesRef.current) {
-        const channel = channelRef.current;
-        if (!channel || !lastMessageTimestampRef.current || !isMountedRef.current || !tripId)
-          return;
-        void channel
-          .query({
-            messages: {
-              created_at_after: lastMessageTimestampRef.current,
-              limit: 100,
-            },
-          })
-          .then(response => {
-            const fetchedMessages = (response.messages || []) as MessageResponse[];
-            streamReliabilityEvents.reconnectBackfill(
-              tripId,
-              'visibility_resume',
-              fetchedMessages.length,
-            );
-            if (fetchedMessages.length === 0) return;
-            setMessages(prev => {
-              const existingIds = new Set(prev.map(m => m.id));
-              const newMessages = fetchedMessages.filter(m => !existingIds.has(m.id));
-              if (newMessages.length === 0) return prev;
-              return [...prev, ...newMessages].sort(
-                (a, b) =>
-                  new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime(),
-              );
-            });
-          })
-          .catch(err => {
-            if (import.meta.env.DEV) {
-              console.warn('[Stream] visibility backfill failed:', err);
-            }
-          });
+        void backfillMissedMessages('visibility_resume');
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [backfillMissedMessages, tripId]);
+  }, [backfillMissedMessages]);
 
   useEffect(() => {
     if (!isEnabled || !tripId || streamClientReady || getStreamClient()?.userID) return;
@@ -473,16 +455,21 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
     ownReactionTypesByMessageRef.current.clear();
     firstMessageTrackedRef.current = false;
     chatOpenAtMsRef.current = Date.now();
+    lastConfirmedCursorRef.current = null;
+    reconnectBackfillInFlightRef.current = null;
+    lastReconnectBackfillAtRef.current = 0;
   }, [tripId]);
 
   useEffect(() => {
     messagesRef.current = messages;
     if (messages.length > 0) {
       hasHydratedMessagesRef.current = true;
-      // Track latest message timestamp for reconnect backfill
       const latestMsg = messages[messages.length - 1];
-      if (latestMsg?.created_at) {
-        lastMessageTimestampRef.current = latestMsg.created_at;
+      if (latestMsg?.id && latestMsg?.created_at) {
+        lastConfirmedCursorRef.current = {
+          id: latestMsg.id,
+          createdAt: latestMsg.created_at,
+        };
       }
     }
   }, [messages]);

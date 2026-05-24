@@ -17,6 +17,7 @@ import { calendarService, CreateEventData } from './calendarService';
 import { fetchOGMetadata } from './ogMetadataService';
 import { insertLinkIndex } from './linkService';
 import { invokeEnhancedAiParser } from './dal/enhancedAiParserService';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ParsedReceipt {
   extracted_text: string;

@@ -10,7 +10,7 @@
 
 import { useMemo } from 'react';
 import { useBilling } from './useBilling';
-import { useEntitlementsStore } from '@/stores/entitlementsStore';
+import { useEntitlementsStore } from '@/store/entitlementsStore';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import type { FeatureName, FeatureContext, EntitlementId } from '../types';
 

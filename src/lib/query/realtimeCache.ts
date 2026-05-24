@@ -1,8 +1,19 @@
+import type { NotificationType, NotificationPayloadMetadata } from '@/types/notifications';
+
 export interface NotificationCacheItem {
   id: string;
   isRead: boolean;
   timestampMs: number;
   optimisticMutationId?: string;
+  // Extended display fields (populated by mapRowToNotification)
+  type?: NotificationType;
+  title?: string;
+  description?: string;
+  tripId?: string;
+  tripName?: string;
+  timestamp?: string;
+  isHighPriority?: boolean;
+  data?: NotificationPayloadMetadata;
 }
 
 export function applyNotificationPatch(

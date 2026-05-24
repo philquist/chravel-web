@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [authErrorReason, setAuthErrorReason] = useState<string | null>(null);
   const authState: AuthContextType['authState'] = isLoading
     ? 'loading'
@@ -581,6 +582,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.error('[Auth] Unexpected error in getSessionAndUser:', error);
         }
         setIsLoading(false);
+      } finally {
+        setIsHydrated(true);
       }
     };
 
@@ -1254,6 +1257,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         session,
         isLoading,
+        isHydrated,
         signIn,
         signInWithGoogle,
         signInWithApple,

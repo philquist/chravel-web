@@ -1,0 +1,3350 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chravel — Codebase Architecture Atlas</title>
+    <style>
+      :root {
+        --bg: #0a0a0b;
+        --surface: #141417;
+        --surface2: #1c1c21;
+        --surface3: #26262d;
+        --border: #2c2c34;
+        --text: #f4f4f6;
+        --muted: #9a9aa4;
+        --muted2: #6c6c76;
+        --gold: #fbbf24;
+        --gold-dim: #a9801f;
+        --green: #34d399;
+        --yellow: #fbbf24;
+        --orange: #fb923c;
+        --red: #f87171;
+        --blue: #60a5fa;
+        --purple: #c084fc;
+        --gray: #8b8b95;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font:
+          15px/1.55 -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--gold);
+        text-decoration: none;
+      }
+      code {
+        background: var(--surface3);
+        padding: 1px 6px;
+        border-radius: 5px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12.5px;
+        color: #ffe9b0;
+        word-break: break-word;
+      }
+      .layout {
+        display: flex;
+        min-height: 100vh;
+      }
+      /* sidebar */
+      .side {
+        position: sticky;
+        top: 0;
+        align-self: flex-start;
+        height: 100vh;
+        width: 248px;
+        flex: 0 0 248px;
+        background: linear-gradient(180deg, #101013, #0a0a0b);
+        border-right: 1px solid var(--border);
+        padding: 20px 14px;
+        overflow-y: auto;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 4px;
+      }
+      .brand .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--gold);
+        box-shadow: 0 0 12px var(--gold);
+      }
+      .brand b {
+        font-size: 15px;
+        letter-spacing: 0.3px;
+      }
+      .brand small {
+        display: block;
+        color: var(--muted2);
+        font-size: 11px;
+        margin-top: 2px;
+      }
+      .nav {
+        margin-top: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .nav a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        padding: 7px 10px;
+        border-radius: 8px;
+        font-size: 13.5px;
+        border: 1px solid transparent;
+      }
+      .nav a:hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+      .nav a.active {
+        background: var(--surface3);
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .nav .num {
+        color: var(--gold-dim);
+        font-size: 11px;
+        width: 18px;
+        text-align: right;
+      }
+      /* main */
+      .main {
+        flex: 1;
+        min-width: 0;
+        padding: 34px 40px 80px;
+        max-width: 1180px;
+      }
+      header.hero {
+        margin-bottom: 26px;
+      }
+      header.hero h1 {
+        font-size: 30px;
+        margin: 0 0 6px;
+        letter-spacing: -0.4px;
+      }
+      header.hero .tag {
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .pill {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 5px 12px;
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+      .pill b {
+        color: var(--gold);
+        font-weight: 600;
+      }
+      .stack-list {
+        margin-top: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .stack-list span {
+        font-size: 11.5px;
+        color: var(--muted);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 3px 8px;
+      }
+      section {
+        margin: 40px 0;
+        scroll-margin-top: 18px;
+      }
+      section h2 {
+        font-size: 21px;
+        margin: 0 0 4px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      section h2 .ix {
+        color: var(--gold-dim);
+        font-size: 13px;
+        font-weight: 700;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 2px 7px;
+      }
+      section .lead {
+        color: var(--muted);
+        margin: 0 0 18px;
+        max-width: 80ch;
+      }
+      /* score heatmap */
+      .scores {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+      .score {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+      }
+      .score .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .score .lab {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .score .val {
+        font-size: 24px;
+        font-weight: 700;
+      }
+      .bar {
+        height: 7px;
+        border-radius: 99px;
+        background: var(--surface3);
+        margin: 9px 0 8px;
+        overflow: hidden;
+      }
+      .bar > i {
+        display: block;
+        height: 100%;
+        border-radius: 99px;
+      }
+      .score .why {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      /* cards */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+        gap: 14px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        border-left-width: 4px;
+      }
+      .card .hd {
+        padding: 13px 15px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .card .hd:hover {
+        background: var(--surface2);
+      }
+      .card .hd h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .card .hd .sub {
+        color: var(--muted);
+        font-size: 12.5px;
+        margin-top: 3px;
+      }
+      .card .chev {
+        color: var(--muted2);
+        transition: transform 0.15s;
+        flex: 0 0 auto;
+        margin-top: 2px;
+      }
+      .card.open .chev {
+        transform: rotate(90deg);
+      }
+      .card .bd {
+        display: none;
+        padding: 0 15px 15px;
+        border-top: 1px solid var(--border);
+        font-size: 13px;
+      }
+      .card.open .bd {
+        display: block;
+      }
+      .kv {
+        margin: 10px 0 0;
+      }
+      .kv .k {
+        color: var(--gold-dim);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .kv .v {
+        color: var(--text);
+        margin-top: 2px;
+      }
+      .kv .v.muted {
+        color: var(--muted);
+      }
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 9px;
+      }
+      .b {
+        font-size: 10.5px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+      }
+      .tagrow {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 6px;
+      }
+      .chip {
+        font-size: 11px;
+        padding: 2px 9px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        color: var(--muted);
+      }
+      .risk {
+        font-weight: 700;
+      }
+      ul.clean {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+      ul.clean li {
+        margin: 4px 0;
+        color: var(--muted);
+      }
+      ul.clean li b {
+        color: var(--text);
+        font-weight: 600;
+      }
+      /* tables */
+      .tbl {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin-top: 8px;
+      }
+      .tbl th,
+      .tbl td {
+        text-align: left;
+        padding: 9px 11px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      .tbl th {
+        color: var(--gold-dim);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .tbl tr:hover td {
+        background: var(--surface2);
+      }
+      .tbl code {
+        font-size: 11.5px;
+      }
+      /* search */
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin: 6px 0 16px;
+        flex-wrap: wrap;
+      }
+      .toolbar input {
+        flex: 1;
+        min-width: 220px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: 9px 13px;
+        color: var(--text);
+        font-size: 13.5px;
+      }
+      .toolbar input::placeholder {
+        color: var(--muted2);
+      }
+      .toolbar .count {
+        color: var(--muted2);
+        font-size: 12.5px;
+      }
+      /* exec columns */
+      .cols {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 14px;
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 16px;
+      }
+      .panel h4 {
+        margin: 0 0 8px;
+        font-size: 13px;
+        color: var(--gold);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .summary {
+        background: linear-gradient(135deg, #15110a, #121214);
+        border: 1px solid var(--gold-dim);
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-bottom: 18px;
+      }
+      .summary p {
+        margin: 0;
+        color: #f0e6d0;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .legend i {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        margin-right: 5px;
+        vertical-align: middle;
+      }
+      .foot {
+        margin-top: 50px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border);
+        color: var(--muted2);
+        font-size: 12px;
+      }
+      .copy {
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        color: var(--muted);
+        border-radius: 6px;
+        font-size: 10.5px;
+        padding: 1px 7px;
+        margin-left: 6px;
+      }
+      .copy:hover {
+        color: var(--gold);
+        border-color: var(--gold-dim);
+      }
+      .step {
+        display: flex;
+        gap: 10px;
+        margin: 6px 0;
+        align-items: baseline;
+      }
+      .step .lyr {
+        flex: 0 0 84px;
+        color: var(--gold-dim);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .step .det {
+        color: var(--muted);
+      }
+      @media (max-width: 880px) {
+        .side {
+          display: none;
+        }
+        .main {
+          padding: 22px 18px 60px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="side">
+        <div class="brand">
+          <span class="dot"></span>
+          <div><b>Chravel Atlas</b><small>Architecture command center</small></div>
+        </div>
+        <nav class="nav" id="nav"></nav>
+      </aside>
+      <main class="main">
+        <header class="hero" id="hero"></header>
+        <div id="sections"></div>
+        <div class="foot" id="foot"></div>
+      </main>
+    </div>
+    <script id="atlas-data" type="application/json">{
+  "meta": {
+    "app": "Chravel",
+    "tagline": "The AI-native operating system for group travel, touring, and events.",
+    "repo": "chravel-inc/chravel-web",
+    "branch": "claude/codebase-atlas-prompt-Wb9CF",
+    "stack": [
+      "React 18 + Vite 5 (SWC) + TypeScript (strict OFF)",
+      "TanStack Query 5 (server state) + Zustand 5 (client state)",
+      "Tailwind 3 + shadcn/ui (Radix)",
+      "Supabase: Postgres + Auth + Realtime + Storage + ~96 Edge Functions (Deno)",
+      "Stripe (web) + RevenueCat (iOS) — never mixed",
+      "Gemini text via lovable-concierge (38 tools / 18 query classes) + Vertex AI Live voice",
+      "Stream Chat (GetStream) for messaging",
+      "Google Maps + Google Calendar",
+      "Capacitor 8 (web + PWA + iOS wrapper — NOT React Native)",
+      "Sentry + PostHog; Vercel (frontend) + Render (OG unfurl proxy)"
+    ],
+    "sources": [
+      "SYSTEM_MAP.md (subsystem topology, 2026-03-16)",
+      "tech_debt_report.md (debt inventory + bundle ROI)",
+      "knip_output.txt (dead-code scan)",
+      "CLAUDE.md, AUDIT_INDEX.md, DEBUG_PATTERNS.md, LESSONS.md, TEST_GAPS.md",
+      "eslint.config.js (encoded deprecation rules)",
+      "Static analysis: file counts, LOC ranking, import graph (this session)"
+    ],
+    "stats": {
+      "Source files (.ts/.tsx)": 1129,
+      "React components": 354,
+      "Custom hooks": 143,
+      "Service modules": 138,
+      "Route pages": 36,
+      "Feature modules": 6,
+      "Test files": 274,
+      "Supabase edge functions": 96,
+      "DB migrations": 378
+    },
+    "generated": "2026-05-24",
+    "commit": "6a316fb",
+    "commitUrl": "https://github.com/chravel-inc/chravel-web/commit/6a316fb",
+    "metrics": {
+      "knip": {
+        "files": 265,
+        "deps": 5,
+        "devDeps": 1,
+        "exports": 383,
+        "types": 378
+      },
+      "bundle": [
+        {
+          "name": "useDeferredPaidAccess",
+          "kb": 923,
+          "gzipKb": 267
+        },
+        {
+          "name": "pdf-BfBsdCw-",
+          "kb": 611,
+          "gzipKb": 183
+        },
+        {
+          "name": "charts",
+          "kb": 491,
+          "gzipKb": 129
+        },
+        {
+          "name": "streamTripMemberInlineActivity",
+          "kb": 414,
+          "gzipKb": 110
+        },
+        {
+          "name": "native",
+          "kb": 388,
+          "gzipKb": 80
+        },
+        {
+          "name": "TripChat",
+          "kb": 232,
+          "gzipKb": 75
+        },
+        {
+          "name": "index",
+          "kb": 232,
+          "gzipKb": 74
+        },
+        {
+          "name": "SettingsMenu",
+          "kb": 188,
+          "gzipKb": 45
+        }
+      ],
+      "anyCount": 362,
+      "todoCount": 7
+    }
+  },
+  "scores": [
+    {
+      "key": "overall",
+      "label": "Overall Codebase Health",
+      "score": 68,
+      "rationale": "Mature, feature-complete product with unusually strong documentation (SYSTEM_MAP, audits, DEBUG_PATTERNS) and a clear critical path. Pulled down by accumulated debt: several 'god files' (1k-2.5k LOC), 300+ `any` usages, ~1,200 ESLint warnings, and a large dead-code surface. Solid foundation, needs consolidation before scale."
+    },
+    {
+      "key": "clarity",
+      "label": "Architecture Clarity",
+      "score": 74,
+      "rationale": "Feature-module convention (src/features/*) and documented critical path are real strengths. Weakened by a 354-component src/components/ that absorbs domain logic, two parallel state dirs (src/store/ and src/stores/), and mock/demo data living inside the service layer."
+    },
+    {
+      "key": "maintainability",
+      "label": "Maintainability",
+      "score": 60,
+      "rationale": "Hot spots are concentrated and well-known: AIConciergeChat.tsx (~2.5k LOC), useAuth.tsx (1,366), TripChat.tsx (1,246), useStreamTripChat.ts (1,215), demoModeService.ts (1,313). 300+ `any` at boundaries and ~1,200 lint warnings add daily DX drag."
+    },
+    {
+      "key": "scalability",
+      "label": "Scalability",
+      "score": 70,
+      "rationale": "Supabase + 96 edge functions + RLS scale horizontally and the realtime patterns are documented. Bundle is the ceiling: paidAccess chunk ~924K, revenuecat-web ~616K, pdf ~612K, livekit ~464K are eagerly reachable and hurt first paint / mobile."
+    },
+    {
+      "key": "security",
+      "label": "Security / Posture",
+      "score": 78,
+      "rationale": "756 RLS policies, requireAuth on every edge function, secret validation, and a March-2026 permissions hardening pass. Tempered by documented fail-open patterns (CronGuard, capability-token default secret) and misleading client-side super-admin dead code — all catalogued in DEBUG_PATTERNS.md, which is itself a good sign."
+    },
+    {
+      "key": "tests",
+      "label": "Test Coverage Confidence",
+      "score": 55,
+      "rationale": "274 test files exist, but TEST_GAPS.md tracks 17 untested critical areas — chat WebSocket reconnect/backfill, read-receipt write amplification, integration idempotency, export authorization. Coverage is broad but thin on the highest-risk paths."
+    },
+    {
+      "key": "deadcode",
+      "label": "Dead Code Risk (higher = worse)",
+      "score": 58,
+      "rationale": "knip reports 285 unused files, 376 unused exports, 325 unused exported types, 8 unused deps. BUT a large share are framework entry points knip can't resolve (Vercel api/, Remotion compositions, scripts/) — those are Future/Unclear, not dead. Genuine stale artifacts (root patch_tripchat*.py, resolver3.js) inflate perceived risk."
+    }
+  ],
+  "executive": {
+    "whatItDoes": "Chravel is a collaborative trip-planning and coordination platform. A group creates a trip, then chats, splits expenses, syncs calendars, uploads media, imports reservations from email/PDF, and asks an AI concierge to plan and book — across web, installable PWA, and an iOS app that wraps the same web code.",
+    "whoItServes": [
+      "Consumer travel groups (friends, family) — open, collaborative permissions",
+      "Pro / touring \u0026 business coordinators — role-based permissions",
+      "Large-event organizers (conferences, weddings, festivals) — organizer-controlled"
+    ],
+    "primaryFlows": [
+      "Sign up / log in (Supabase Auth, email + Google OAuth) and hydrate session",
+      "Create a trip, invite members, resolve role/tier",
+      "Group chat + channels + broadcasts (Stream + Supabase Realtime)",
+      "Split expenses / manage subscriptions (Stripe web, RevenueCat iOS)",
+      "Ask the AI Concierge to plan, recommend, or take actions (text + voice)",
+      "Sync Google Calendar; import reservations via Smart Import"
+    ],
+    "majorSystems": [
+      "Auth \u0026 Session",
+      "Trips \u0026 Membership",
+      "Unified Messaging",
+      "AI Concierge (text+voice)",
+      "Calendar \u0026 Events",
+      "Payments \u0026 Subscriptions",
+      "Smart Import",
+      "Media \u0026 Storage",
+      "Maps \u0026 Places",
+      "Notifications \u0026 Realtime",
+      "Organizations (B2B)",
+      "Permissions \u0026 Roles"
+    ],
+    "highestLeverage": [
+      "src/integrations/supabase/client.ts — the single data gateway every read/write flows through",
+      "src/hooks/useAuth.tsx — gates the entire critical path; a bug here cascades everywhere",
+      "src/services/* (138 modules) — the de-facto API layer between UI and Supabase",
+      "supabase RLS policies (756) — the real security boundary, not the client",
+      "src/lib/queryKeys.ts — cache-invalidation contract for all server state"
+    ],
+    "topRisks": [
+      "Auth hydration race → 'Trip Not Found' flash (the #1 documented regression)",
+      "Chat message loss on WebSocket reconnect (no replay/backfill in some paths)",
+      "Client-side permission checks diverging from RLS (privilege-escalation surface)",
+      "God files (AIConciergeChat, useAuth, TripChat) concentrate risk and merge conflicts",
+      "Bundle weight (paidAccess/revenuecat/pdf/livekit chunks) degrades mobile first paint"
+    ],
+    "topCleanups": [
+      "Remove stray root artifacts: patch_tripchat*.py (repo is 'No Python'), resolver3.js, output.md, claude-progress.txt",
+      "Prune 8 unused dependencies + 1 unused devDependency reported by knip",
+      "Delete confirmed-dead exports/types after manual verification (knip: 376 exports, 325 types)",
+      "Consolidate src/store/ and src/stores/ into one state directory",
+      "Lazy-load heavy chunks (revenuecat-web, jspdf, livekit, recharts) per tech_debt_report"
+    ],
+    "topMissing": [
+      "Tests for chat reconnect/backfill, read receipts, and integration idempotency (TEST_GAPS.md)",
+      "Strong typing at boundaries — 300+ `any` usages remain",
+      "State machine for Smart Import (partial-import rollback / UX surfacing)",
+      "Bundle/code-split discipline enforced in CI",
+      "A single canonical mock/demo-data boundary separate from live service code"
+    ]
+  },
+  "systemMap": [
+    {
+      "id": "auth",
+      "name": "Authentication \u0026 Session",
+      "color": "blue",
+      "risk": "Medium",
+      "quality": 72,
+      "purpose": "Session hydration, user identity, role resolution. Gates everything downstream.",
+      "keyFiles": [
+        "src/hooks/useAuth.tsx",
+        "src/integrations/supabase/client.ts"
+      ],
+      "deps": [
+        "Supabase Auth"
+      ],
+      "upstream": "—",
+      "downstream": "All subsystems",
+      "actions": [
+        "Split useAuth.tsx (1,366 LOC) into session/identity/role hooks",
+        "Add explicit hydrated-before-fetch guard tests"
+      ],
+      "failureModes": "Hydration race → Trip Not Found flash; token refresh failure; demo/auth crossover"
+    },
+    {
+      "id": "trips",
+      "name": "Trip Management \u0026 Membership",
+      "color": "blue",
+      "risk": "Medium",
+      "quality": 78,
+      "purpose": "Trip CRUD, members, invites, archival. Trip context gates most features.",
+      "keyFiles": [
+        "src/hooks/useTrips.ts",
+        "src/hooks/useTripMembers.ts",
+        "src/services/tripService.ts"
+      ],
+      "deps": [
+        "Supabase (trips, trip_members)"
+      ],
+      "upstream": "Auth",
+      "downstream": "Chat, Payments, Calendar, Media, Concierge",
+      "actions": [
+        "Ensure existence vs membership checks are distinct (RLS + hook)",
+        "Cover status/archival drift with tests"
+      ],
+      "failureModes": "Access without membership; status drift; invite expiry"
+    },
+    {
+      "id": "chat",
+      "name": "Unified Messaging (Chat / Channels / Broadcasts)",
+      "color": "orange",
+      "risk": "High",
+      "quality": 64,
+      "purpose": "Trip chat, role channels, broadcasts, threads, reactions, read receipts.",
+      "keyFiles": [
+        "src/features/chat/components/TripChat.tsx",
+        "src/hooks/stream/useStreamTripChat.ts",
+        "src/services/unifiedMessagingService.ts",
+        "src/services/channelService.ts"
+      ],
+      "deps": [
+        "Stream Chat",
+        "Supabase Realtime"
+      ],
+      "upstream": "Trips",
+      "downstream": "Notifications",
+      "actions": [
+        "Add reconnect backfill + tests",
+        "Decompose TripChat.tsx (1,246 LOC)",
+        "Honor eslint ban on legacy chatService in Stream surfaces"
+      ],
+      "failureModes": "Message loss on reconnect; read-receipt write amplification; reaction refetch storm"
+    },
+    {
+      "id": "concierge",
+      "name": "AI Concierge (Text + Voice)",
+      "color": "purple",
+      "risk": "High",
+      "quality": 58,
+      "purpose": "Gemini-powered assistant; text chat + Gemini Live voice; tool-calling that can mutate trip data.",
+      "keyFiles": [
+        "src/components/AIConciergeChat.tsx",
+        "src/hooks/useGeminiLive.ts",
+        "src/hooks/useVoiceToolHandler.ts",
+        "src/services/conciergeGateway.ts",
+        "src/features/concierge/hooks/useConciergeStreaming.ts"
+      ],
+      "deps": [
+        "Gemini / Vertex AI Live"
+      ],
+      "upstream": "Trips",
+      "downstream": "Chat, Calendar, Payments (via pending actions)",
+      "actions": [
+        "Break up AIConciergeChat.tsx (~2.5k LOC)",
+        "Keep tool declarations single-source (toolRegistry.ts)",
+        "Route all writes through pending-actions buffer"
+      ],
+      "failureModes": "Prompt injection; tool-call hallucination writing shared state; voice WebSocket drop; audio stuck after session end"
+    },
+    {
+      "id": "calendar",
+      "name": "Calendar \u0026 Events",
+      "color": "green",
+      "risk": "Medium",
+      "quality": 76,
+      "purpose": "Google Calendar bi-directional sync, event CRUD, RSVP, reminders.",
+      "keyFiles": [
+        "src/features/calendar/",
+        "src/services/calendarService.ts",
+        "supabase/functions/calendar-sync/"
+      ],
+      "deps": [
+        "Google Calendar API"
+      ],
+      "upstream": "Trips",
+      "downstream": "Notifications",
+      "actions": [
+        "Keep sync idempotent (dedupe by external event id)",
+        "Cover sync-token expiry + recurring edge cases"
+      ],
+      "failureModes": "Sync token expiry; bi-directional conflict; duplicate events from replay; timezone/recurring edge cases"
+    },
+    {
+      "id": "payments",
+      "name": "Payments \u0026 Subscriptions",
+      "color": "orange",
+      "risk": "High",
+      "quality": 70,
+      "purpose": "Consumer/Pro subscriptions, expense splitting, payment requests, balances.",
+      "keyFiles": [
+        "src/hooks/usePayments.ts",
+        "src/hooks/useConsumerSubscription.tsx",
+        "src/integrations/revenuecat/revenuecatClient.ts",
+        "src/services/paymentService.ts"
+      ],
+      "deps": [
+        "RevenueCat (iOS)",
+        "Stripe (web)"
+      ],
+      "upstream": "Auth, Trips",
+      "downstream": "Org billing",
+      "actions": [
+        "Never mix SDKs per platform",
+        "Validate entitlements server-side",
+        "Model splits as state machines with optimistic locking"
+      ],
+      "failureModes": "Webhook delivery failure; SDK mismatch per platform; cache drift; client-side billing bypass attempts"
+    },
+    {
+      "id": "import",
+      "name": "Smart Import (Gmail / PDF / Artifacts)",
+      "color": "orange",
+      "risk": "Medium",
+      "quality": 60,
+      "purpose": "AI-powered import of trip data from emails, PDFs, links.",
+      "keyFiles": [
+        "src/features/smart-import/",
+        "supabase/functions/gmail-import-worker/",
+        "supabase/functions/artifact-ingest/"
+      ],
+      "deps": [
+        "Gmail API (OAuth)",
+        "Gemini"
+      ],
+      "upstream": "Trips",
+      "downstream": "Calendar, Media",
+      "actions": [
+        "Persist partial state on failure (never drop parsed items)",
+        "Surface import state in UX",
+        "Treat imports as state machines"
+      ],
+      "failureModes": "OAuth refresh failure; parser ambiguity → duplicates; partial import with no rollback"
+    },
+    {
+      "id": "media",
+      "name": "Media Gallery \u0026 Storage",
+      "color": "green",
+      "risk": "Low",
+      "quality": 78,
+      "purpose": "Photo/video upload, compression, AI tagging, lightbox.",
+      "keyFiles": [
+        "src/services/mediaService.ts",
+        "src/services/mediaAITagging.ts",
+        "supabase/functions/image-upload/"
+      ],
+      "deps": [
+        "Supabase Storage",
+        "Gemini (tagging)"
+      ],
+      "upstream": "Trips",
+      "downstream": "Chat, Notifications",
+      "actions": [
+        "Server-side validation + signed URLs + cleanup triggers",
+        "Don't silently ignore tagging errors"
+      ],
+      "failureModes": "Upload timeout; quota exceeded; compression failure; tagging errors ignored"
+    },
+    {
+      "id": "maps",
+      "name": "Maps \u0026 Places",
+      "color": "green",
+      "risk": "Low",
+      "quality": 74,
+      "purpose": "Google Maps display, place search, autocomplete, location sharing.",
+      "keyFiles": [
+        "src/services/googleMapsService.ts",
+        "src/services/googlePlacesNew.ts",
+        "src/services/googlePlacesCache.ts"
+      ],
+      "deps": [
+        "Google Maps JS API"
+      ],
+      "upstream": "Trips",
+      "downstream": "—",
+      "actions": [
+        "Single map instance per page",
+        "Debounce drag/zoom/bounds at 300ms",
+        "Clean up listeners on unmount"
+      ],
+      "failureModes": "Multiple map instances; key rate limiting; stale cache; listener leak"
+    },
+    {
+      "id": "notifications",
+      "name": "Notifications \u0026 Realtime",
+      "color": "green",
+      "risk": "Medium",
+      "quality": 75,
+      "purpose": "Push, email, SMS, in-app alerts, read receipts, badge counts.",
+      "keyFiles": [
+        "src/services/notificationService.ts",
+        "src/hooks/useNotificationRealtime.ts",
+        "src/native/push.ts"
+      ],
+      "deps": [
+        "Supabase Realtime",
+        "APNS",
+        "Resend",
+        "Twilio"
+      ],
+      "upstream": "All emitters",
+      "downstream": "Native shell",
+      "actions": [
+        "Filter realtime channels by trip_id",
+        "Preserve dual-path dedup pattern",
+        "Backfill badge counts on reconnect"
+      ],
+      "failureModes": "Dual-path duplicate generation; badge drift; multi-device read desync; quiet-hours bypass"
+    },
+    {
+      "id": "orgs",
+      "name": "Organizations \u0026 Teams (B2B)",
+      "color": "yellow",
+      "risk": "Medium",
+      "quality": 66,
+      "purpose": "Seat-based billing, team management, org admin dashboard.",
+      "keyFiles": [
+        "src/pages/OrganizationDashboard.tsx"
+      ],
+      "deps": [
+        "Stripe (seat billing)"
+      ],
+      "upstream": "Auth",
+      "downstream": "Payments",
+      "actions": [
+        "Reconcile seat count with billing",
+        "Clarify org↔trip role inheritance"
+      ],
+      "failureModes": "Seat billing desync; role inheritance ambiguity; separate invite flow"
+    },
+    {
+      "id": "permissions",
+      "name": "Permissions \u0026 Roles",
+      "color": "blue",
+      "risk": "High",
+      "quality": 80,
+      "purpose": "Role-based access across consumer/pro/event trip types.",
+      "keyFiles": [
+        "src/hooks/useMutationPermissions.ts",
+        "src/hooks/useRolePermissions.ts",
+        "src/hooks/useEventPermissions.ts"
+      ],
+      "deps": [
+        "Supabase RLS"
+      ],
+      "upstream": "Auth, Trips",
+      "downstream": "Every mutation",
+      "actions": [
+        "Flow roles DB → RLS → hook → UI; never trust client claims",
+        "Check trip type before granting mutation access"
+      ],
+      "failureModes": "Client checks diverging from RLS; escalation via direct API; tier gate disabling features for real trips"
+    },
+    {
+      "id": "data",
+      "name": "Data Access Layer (Supabase client + services)",
+      "color": "blue",
+      "risk": "Medium",
+      "quality": 70,
+      "purpose": "Single Supabase gateway; 138 service modules act as the API layer between UI and DB.",
+      "keyFiles": [
+        "src/integrations/supabase/client.ts",
+        "src/integrations/supabase/types.ts (5,183 LOC, generated)",
+        "src/services/"
+      ],
+      "deps": [
+        "Supabase"
+      ],
+      "upstream": "All hooks",
+      "downstream": "Postgres + RLS",
+      "actions": [
+        "Keep all Supabase access out of JSX",
+        "Separate mock/demo data from live services",
+        "Treat types.ts as generated-only"
+      ],
+      "failureModes": "Direct JSX calls bypassing the gateway; mock/live contamination in service layer"
+    },
+    {
+      "id": "state",
+      "name": "State Management",
+      "color": "blue",
+      "risk": "Medium",
+      "quality": 68,
+      "purpose": "TanStack Query (server) + Zustand (client) + Realtime + feature flags.",
+      "keyFiles": [
+        "src/lib/queryKeys.ts",
+        "src/stores/",
+        "src/store/",
+        "src/lib/featureFlags.ts"
+      ],
+      "deps": [
+        "TanStack Query",
+        "Zustand"
+      ],
+      "upstream": "—",
+      "downstream": "All UI",
+      "actions": [
+        "Merge src/store/ and src/stores/",
+        "Centralize invalidation footprints in queryKeys"
+      ],
+      "failureModes": "Two store dirs cause confusion; ad-hoc invalidation drift"
+    },
+    {
+      "id": "mobile",
+      "name": "Mobile / PWA / Native (Capacitor)",
+      "color": "purple",
+      "risk": "Medium",
+      "quality": 70,
+      "purpose": "Same web app wrapped via Capacitor 8 for iOS + installable PWA; platform-conditional code.",
+      "keyFiles": [
+        "src/platform/",
+        "src/native/",
+        "src/offline/",
+        "public/sw.js",
+        "scripts/build-sw.cjs"
+      ],
+      "deps": [
+        "Capacitor 8",
+        "Workbox"
+      ],
+      "upstream": "Web app",
+      "downstream": "App Store / device",
+      "actions": [
+        "Keep web/PWA/native parity",
+        "Lazy-load native plugins on web"
+      ],
+      "failureModes": "Native plugins eagerly imported on web; PWA/native layout drift"
+    },
+    {
+      "id": "backend",
+      "name": "Edge Functions \u0026 Migrations",
+      "color": "blue",
+      "risk": "Medium",
+      "quality": 72,
+      "purpose": "~96 Deno edge functions (AI, webhooks, imports, notifications, auth-gated mutations) + 378 SQL migrations.",
+      "keyFiles": [
+        "supabase/functions/ (96 dirs)",
+        "supabase/functions/_shared/requireAuth.ts",
+        "supabase/migrations/ (378)"
+      ],
+      "deps": [
+        "Supabase",
+        "external APIs"
+      ],
+      "upstream": "Frontend + webhooks",
+      "downstream": "Postgres",
+      "actions": [
+        "requireSecrets() at startup",
+        "Two-phase destructive migrations",
+        "lint-migrations clean"
+      ],
+      "failureModes": "Missing-secret fail-open; webhook auth gaps; migration drift"
+    }
+  ],
+  "files": [
+    {
+      "path": "src/integrations/supabase/client.ts",
+      "badges": [
+        "Core",
+        "Database",
+        "Well Designed"
+      ],
+      "color": "blue",
+      "plain": "The one doorway to the database and login. Every read and write goes through here.",
+      "tech": "Supabase singleton client; the only sanctioned data gateway (CLAUDE.md forbids Supabase calls in JSX).",
+      "exports": "supabase client",
+      "importedBy": "Nearly all hooks \u0026 services",
+      "risk": "High blast radius if changed",
+      "confidence": "High",
+      "action": "keep / protect with tests"
+    },
+    {
+      "path": "src/hooks/useAuth.tsx",
+      "badges": [
+        "Core",
+        "Auth",
+        "Risky",
+        "Needs Tests"
+      ],
+      "color": "orange",
+      "plain": "Controls who is logged in and what they can do. The most safety-critical file in the app.",
+      "tech": "1,366 LOC auth/session/role hook. Gates the entire critical path; hydration timing here causes the Trip-Not-Found flash.",
+      "exports": "useAuth, AuthProvider",
+      "importedBy": "App shell + every gated route",
+      "risk": "Highest — auth desync cascades",
+      "confidence": "High",
+      "action": "refactor (split) + add hydration tests"
+    },
+    {
+      "path": "src/components/AIConciergeChat.tsx",
+      "badges": [
+        "Feature",
+        "AI",
+        "Risky"
+      ],
+      "color": "orange",
+      "plain": "The AI assistant's chat screen. So large it's hard to change safely.",
+      "tech": "~2,500 LOC 'god component' (tech_debt_report.md #1). Monolithic; high merge-conflict and AI-edit-confusion risk.",
+      "exports": "AIConciergeChat",
+      "importedBy": "Concierge routes/panels",
+      "risk": "High",
+      "confidence": "High",
+      "action": "refactor — extract sub-components \u0026 hooks"
+    },
+    {
+      "path": "src/features/chat/components/TripChat.tsx",
+      "badges": [
+        "Feature",
+        "UI",
+        "Risky"
+      ],
+      "color": "orange",
+      "plain": "The trip chat screen. Big and re-renders more than it should.",
+      "tech": "1,246 LOC; tech_debt_report flags over-fetching/memoization. Stream-enabled surface (eslint bans legacy chatService import).",
+      "exports": "TripChat",
+      "importedBy": "Trip detail surfaces",
+      "risk": "Medium-High",
+      "confidence": "High",
+      "action": "refactor — split render fns \u0026 filter tabs"
+    },
+    {
+      "path": "src/hooks/stream/useStreamTripChat.ts",
+      "badges": [
+        "Feature",
+        "State",
+        "Needs Tests"
+      ],
+      "color": "yellow",
+      "plain": "Wires the chat to the Stream messaging service.",
+      "tech": "1,215 LOC transport hook for Stream Chat; reconnect/backfill correctness is critical (TEST_GAPS.md).",
+      "exports": "useStreamTripChat",
+      "importedBy": "Chat components",
+      "risk": "Medium-High",
+      "confidence": "High",
+      "action": "add reconnect/backfill tests"
+    },
+    {
+      "path": "src/services/demoModeService.ts",
+      "badges": [
+        "Utility",
+        "Risky"
+      ],
+      "color": "orange",
+      "plain": "Generates fake 'demo' data. Risk of demo data leaking into real trips.",
+      "tech": "1,313 LOC; tech_debt_report flags unclear mock/live isolation. Demo-mode contamination is a zero-tolerance regression.",
+      "exports": "demo data builders",
+      "importedBy": "Demo flows + some services",
+      "risk": "High (contamination)",
+      "confidence": "High",
+      "action": "isolate behind a hard boundary; test no-leak invariant"
+    },
+    {
+      "path": "src/services/tripSpecificMockDataService.ts",
+      "badges": [
+        "Utility",
+        "Legacy"
+      ],
+      "color": "yellow",
+      "plain": "Large bank of trip mock data.",
+      "tech": "1,611 LOC of mock data inside the service layer (should not sit beside live services).",
+      "exports": "mock datasets",
+      "importedBy": "Demo/dev surfaces",
+      "risk": "Medium",
+      "confidence": "High",
+      "action": "move to src/mockData/, gate behind dev/demo flag"
+    },
+    {
+      "path": "src/integrations/supabase/types.ts",
+      "badges": [
+        "Database",
+        "Config"
+      ],
+      "color": "gray",
+      "plain": "Auto-generated description of the database shape.",
+      "tech": "5,183 LOC generated types. tech_debt_report warns it may contain manual edits/bloat.",
+      "exports": "Database types",
+      "importedBy": "Typed queries everywhere",
+      "risk": "Low (if generated-only)",
+      "confidence": "Medium",
+      "action": "verify generated-only; never hand-edit"
+    },
+    {
+      "path": "src/services/tripContextAggregator.ts",
+      "badges": [
+        "Core",
+        "Well Designed"
+      ],
+      "color": "green",
+      "plain": "The approved single source for assembling a trip's context for the AI.",
+      "tech": "Canonical replacement for the deprecated enhancedTripContextService (enforced via eslint no-restricted-imports).",
+      "exports": "TripContextAggregator",
+      "importedBy": "Concierge context builders",
+      "risk": "Low",
+      "confidence": "High",
+      "action": "keep — reference implementation"
+    },
+    {
+      "path": "src/services/enhancedTripContextService",
+      "badges": [
+        "Legacy",
+        "Suspected Dead"
+      ],
+      "color": "red",
+      "plain": "Old version of the trip-context builder, officially retired.",
+      "tech": "Deprecated; eslint blocks all import paths to it in favor of TripContextAggregator.",
+      "exports": "(deprecated)",
+      "importedBy": "Should be none",
+      "risk": "Low to remove (verify)",
+      "confidence": "High",
+      "action": "investigate then delete"
+    },
+    {
+      "path": "src/lib/queryKeys.ts",
+      "badges": [
+        "Core",
+        "State",
+        "Well Designed"
+      ],
+      "color": "blue",
+      "plain": "Naming system for cached data so updates refresh the right screens.",
+      "tech": "TanStack Query cache-key factory; the invalidation contract for server state.",
+      "exports": "queryKeys",
+      "importedBy": "Query/mutation hooks",
+      "risk": "Medium blast radius",
+      "confidence": "High",
+      "action": "keep; route all invalidation through it"
+    },
+    {
+      "path": "src/pages/Index.tsx",
+      "badges": [
+        "UI",
+        "Risky"
+      ],
+      "color": "yellow",
+      "plain": "The landing/home page — heavy for a first screen.",
+      "tech": "1,430 LOC; tech_debt_report flags it as too heavy for first paint (~260K chunk).",
+      "exports": "Index page",
+      "importedBy": "Router",
+      "risk": "Medium (perf)",
+      "confidence": "High",
+      "action": "code-split / lazy sections"
+    },
+    {
+      "path": "patch_tripchat*.py / resolver3.js / output.md / claude-progress.txt",
+      "badges": [
+        "Suspected Dead",
+        "Legacy"
+      ],
+      "color": "red",
+      "plain": "Stray helper/scratch files left in the project root.",
+      "tech": "Python patch scripts in a declared 'No Python' repo, plus scratch JS/markdown at root — not referenced by the app.",
+      "exports": "—",
+      "importedBy": "None",
+      "risk": "Very low to remove",
+      "confidence": "High",
+      "action": "delete (after a glance)"
+    }
+  ],
+  "dependencies": {
+    "notes": "Coupling concentrates in three places: the Supabase client (imported almost everywhere — intentional gateway), the service layer (138 modules acting as the API), and a handful of god files. No formal cycle scan was run this session; treat cycle claims as Low confidence pending a madge/dpdm run.",
+    "hubs": [
+      {
+        "path": "src/integrations/supabase/client.ts",
+        "role": "Data gateway — highest fan-in (by design)"
+      },
+      {
+        "path": "src/lib/queryKeys.ts",
+        "role": "Cache-key hub for all server state"
+      },
+      {
+        "path": "src/integrations/supabase/types.ts",
+        "role": "Type hub for all typed queries"
+      }
+    ],
+    "orphansNote": "knip lists 285 'unused files', but many are framework entry points it cannot resolve: Vercel api/*.ts, Remotion compositions under remotion/, and scripts/*. These are Future/Unclear, not confirmed dead. Verify per-file before any deletion.",
+    "godFileNotes": {
+      "src/components/AIConciergeChat.tsx": "Monolithic AI chat — too many responsibilities",
+      "src/services/tripSpecificMockDataService.ts": "Giant mock dataset in service layer",
+      "src/pages/Index.tsx": "Heavy landing page",
+      "src/hooks/useAuth.tsx": "Auth + session + roles in one hook",
+      "src/services/demoModeService.ts": "Demo data generation, contamination risk",
+      "src/hooks/useTripTasks.ts": "Task logic concentration",
+      "src/features/chat/components/TripChat.tsx": "Chat screen doing too much",
+      "src/hooks/stream/useStreamTripChat.ts": "Stream transport + state"
+    },
+    "godFiles": [
+      {
+        "path": "src/integrations/supabase/types.ts",
+        "loc": 5184,
+        "why": "Generated types (5184 LOC) — keep generated-only, do not hand-edit"
+      },
+      {
+        "path": "src/mockData/polls.ts",
+        "loc": 3150,
+        "why": "Mock/data file (3150 LOC) — large but low logic; gate behind dev/demo"
+      },
+      {
+        "path": "src/services/tripSpecificMockDataService.ts",
+        "loc": 1612,
+        "why": "Giant mock dataset in service layer"
+      },
+      {
+        "path": "src/pages/Index.tsx",
+        "loc": 1431,
+        "why": "Heavy landing page"
+      },
+      {
+        "path": "src/hooks/useAuth.tsx",
+        "loc": 1367,
+        "why": "Auth + session + roles in one hook"
+      },
+      {
+        "path": "src/services/demoModeService.ts",
+        "loc": 1314,
+        "why": "Demo data generation, contamination risk"
+      },
+      {
+        "path": "src/hooks/useTripTasks.ts",
+        "loc": 1295,
+        "why": "Task logic concentration"
+      },
+      {
+        "path": "src/features/chat/components/TripChat.tsx",
+        "loc": 1247,
+        "why": "Chat screen doing too much"
+      },
+      {
+        "path": "src/hooks/stream/useStreamTripChat.ts",
+        "loc": 1216,
+        "why": "Stream transport + state"
+      },
+      {
+        "path": "src/data/eventsMockData.ts",
+        "loc": 1115,
+        "why": "Mock/data file (1115 LOC) — large but low logic; gate behind dev/demo"
+      }
+    ]
+  },
+  "features": [
+    {
+      "name": "Trips \u0026 Membership",
+      "color": "blue",
+      "completeness": 90,
+      "plain": "Create trips, invite people, manage who's in.",
+      "screens": [
+        "TripDetail / MobileTripDetail",
+        "ProTripDetail",
+        "EventDetail"
+      ],
+      "backend": [
+        "trips, trip_members tables",
+        "tripService"
+      ],
+      "state": [
+        "useTrips",
+        "useTripMembers"
+      ],
+      "external": [
+        "Supabase"
+      ],
+      "missingStates": [
+        "edge cases on invite expiry"
+      ],
+      "risks": [
+        "existence vs membership confusion"
+      ],
+      "fixes": [
+        "test access guards"
+      ]
+    },
+    {
+      "name": "Unified Messaging",
+      "color": "orange",
+      "completeness": 80,
+      "plain": "Group chat, channels, and broadcasts.",
+      "screens": [
+        "TripChat",
+        "channel views"
+      ],
+      "backend": [
+        "Stream Chat",
+        "trip_chat_messages",
+        "Supabase Realtime"
+      ],
+      "state": [
+        "useStreamTripChat",
+        "unifiedMessagingService"
+      ],
+      "external": [
+        "Stream (GetStream)"
+      ],
+      "missingStates": [
+        "reconnect/backfill",
+        "offline queue"
+      ],
+      "risks": [
+        "message loss on reconnect"
+      ],
+      "fixes": [
+        "backfill on reconnect + tests"
+      ]
+    },
+    {
+      "name": "AI Concierge",
+      "color": "purple",
+      "completeness": 75,
+      "plain": "AI helper that plans trips and can take actions, by text or voice.",
+      "screens": [
+        "AIConciergeChat",
+        "voice UI"
+      ],
+      "backend": [
+        "conciergeGateway",
+        "ai_queries",
+        "Gemini/Vertex"
+      ],
+      "state": [
+        "useGeminiLive",
+        "useConciergeStreaming",
+        "useVoiceToolHandler"
+      ],
+      "external": [
+        "Gemini",
+        "Vertex AI Live"
+      ],
+      "missingStates": [
+        "voice WebSocket drop recovery",
+        "audio cleanup"
+      ],
+      "risks": [
+        "tool hallucination writing shared state",
+        "prompt injection"
+      ],
+      "fixes": [
+        "pending-actions buffer for all writes",
+        "decompose god component"
+      ]
+    },
+    {
+      "name": "Payments \u0026 Subscriptions",
+      "color": "orange",
+      "completeness": 82,
+      "plain": "Subscriptions and splitting costs.",
+      "screens": [
+        "billing/",
+        "paywall"
+      ],
+      "backend": [
+        "paymentService",
+        "user_subscriptions",
+        "webhooks"
+      ],
+      "state": [
+        "usePayments",
+        "useConsumerSubscription"
+      ],
+      "external": [
+        "Stripe (web)",
+        "RevenueCat (iOS)"
+      ],
+      "missingStates": [
+        "webhook retry surfacing"
+      ],
+      "risks": [
+        "SDK mismatch per platform",
+        "client billing bypass"
+      ],
+      "fixes": [
+        "server-side entitlement checks",
+        "split state machine"
+      ]
+    },
+    {
+      "name": "Calendar \u0026 Events",
+      "color": "green",
+      "completeness": 85,
+      "plain": "Shared calendar that syncs with Google.",
+      "screens": [
+        "calendar/"
+      ],
+      "backend": [
+        "calendarService",
+        "calendar-sync edge fn",
+        "calendar_events"
+      ],
+      "state": [
+        "calendar hooks"
+      ],
+      "external": [
+        "Google Calendar"
+      ],
+      "missingStates": [
+        "sync-token expiry UX"
+      ],
+      "risks": [
+        "duplicate events from replay"
+      ],
+      "fixes": [
+        "dedupe by external id"
+      ]
+    },
+    {
+      "name": "Smart Import",
+      "color": "orange",
+      "completeness": 65,
+      "plain": "Pulls reservations out of emails and PDFs automatically.",
+      "screens": [
+        "smart-import/"
+      ],
+      "backend": [
+        "gmail-import-worker",
+        "artifact-ingest",
+        "artifacts/import_runs"
+      ],
+      "state": [
+        "useArtifactIngest"
+      ],
+      "external": [
+        "Gmail",
+        "Gemini"
+      ],
+      "missingStates": [
+        "partial-import rollback",
+        "import progress UX"
+      ],
+      "risks": [
+        "dropping parsed items on retry"
+      ],
+      "fixes": [
+        "state machine + persist partial state"
+      ]
+    },
+    {
+      "name": "Media Gallery",
+      "color": "green",
+      "completeness": 85,
+      "plain": "Upload and view trip photos/videos.",
+      "screens": [
+        "media/"
+      ],
+      "backend": [
+        "mediaService",
+        "image-upload edge fn",
+        "Supabase Storage"
+      ],
+      "state": [
+        "media hooks"
+      ],
+      "external": [
+        "Supabase Storage",
+        "Gemini tagging"
+      ],
+      "missingStates": [
+        "quota-exceeded UX"
+      ],
+      "risks": [
+        "tagging errors ignored"
+      ],
+      "fixes": [
+        "signed URLs + cleanup triggers"
+      ]
+    },
+    {
+      "name": "Notifications",
+      "color": "green",
+      "completeness": 88,
+      "plain": "Push, email, SMS, and in-app alerts.",
+      "screens": [
+        "notifications/"
+      ],
+      "backend": [
+        "notificationService",
+        "notifications table"
+      ],
+      "state": [
+        "useNotificationRealtime",
+        "notificationRealtimeStore"
+      ],
+      "external": [
+        "APNS",
+        "Resend",
+        "Twilio"
+      ],
+      "missingStates": [
+        "badge reconcile on reconnect"
+      ],
+      "risks": [
+        "dual-path duplicates"
+      ],
+      "fixes": [
+        "preserve dedup pattern; filter by trip_id"
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "name": "Sign up / Log in",
+      "steps": [
+        {
+          "layer": "Entry",
+          "detail": "Auth page → Supabase Auth (email / Google OAuth)"
+        },
+        {
+          "layer": "State",
+          "detail": "useAuth hydrates session + role"
+        },
+        {
+          "layer": "Guard",
+          "detail": "Routes wait for hydrated session before fetching"
+        }
+      ],
+      "failurePoints": [
+        "Fetch fires before hydration → Trip Not Found flash"
+      ],
+      "risks": [
+        "Token refresh failure",
+        "demo/auth crossover"
+      ]
+    },
+    {
+      "name": "Open a trip",
+      "steps": [
+        {
+          "layer": "Entry",
+          "detail": "Route /trip/:id"
+        },
+        {
+          "layer": "Hook",
+          "detail": "useTrips / useTripMembers"
+        },
+        {
+          "layer": "Data",
+          "detail": "supabase client → trips + trip_members (RLS)"
+        },
+        {
+          "layer": "Render",
+          "detail": "TripDetail / MobileTripDetail"
+        }
+      ],
+      "failurePoints": [
+        "Existence ≠ access: must check membership, not just row exists"
+      ],
+      "risks": [
+        "RLS gap leaks data",
+        "loading vs not-found conflation"
+      ]
+    },
+    {
+      "name": "Send a chat message",
+      "steps": [
+        {
+          "layer": "Entry",
+          "detail": "TripChat composer"
+        },
+        {
+          "layer": "Transport",
+          "detail": "useStreamTripChat → Stream channel.sendMessage"
+        },
+        {
+          "layer": "Realtime",
+          "detail": "Supabase Realtime for system messages, filtered by trip_id"
+        }
+      ],
+      "failurePoints": [
+        "WebSocket reconnect without backfill loses messages"
+      ],
+      "risks": [
+        "Read-receipt write amplification",
+        "reaction refetch storm"
+      ]
+    },
+    {
+      "name": "AI Concierge action",
+      "steps": [
+        {
+          "layer": "Entry",
+          "detail": "AIConciergeChat / voice"
+        },
+        {
+          "layer": "Gateway",
+          "detail": "conciergeGateway selects tools via queryClassifier"
+        },
+        {
+          "layer": "Buffer",
+          "detail": "Writes go to trip_pending_actions (confirm card)"
+        },
+        {
+          "layer": "Commit",
+          "detail": "Confirm handler applies through normal mutation path"
+        }
+      ],
+      "failurePoints": [
+        "Missing confirm-handler case → confirm appears to work but writes nothing"
+      ],
+      "risks": [
+        "Tool hallucination",
+        "prompt injection",
+        "5-file tool sync missed"
+      ]
+    },
+    {
+      "name": "Subscribe / pay",
+      "steps": [
+        {
+          "layer": "Entry",
+          "detail": "Paywall / billing"
+        },
+        {
+          "layer": "SDK",
+          "detail": "Stripe (web) OR RevenueCat (iOS) — never both"
+        },
+        {
+          "layer": "Webhook",
+          "detail": "Edge function updates user_subscriptions"
+        },
+        {
+          "layer": "Gate",
+          "detail": "Entitlement checked server-side"
+        }
+      ],
+      "failurePoints": [
+        "Webhook delivery failure leaves state stale"
+      ],
+      "risks": [
+        "Client-side billing bypass",
+        "cache drift"
+      ]
+    },
+    {
+      "name": "Smart Import a reservation",
+      "steps": [
+        {
+          "layer": "Entry",
+          "detail": "Connect Gmail / upload PDF"
+        },
+        {
+          "layer": "Worker",
+          "detail": "gmail-import-worker / artifact-ingest"
+        },
+        {
+          "layer": "Parse",
+          "detail": "Gemini extracts structured items → artifacts"
+        },
+        {
+          "layer": "Apply",
+          "detail": "Items reviewed into trip"
+        }
+      ],
+      "failurePoints": [
+        "Retry drops parsed items if partial state not persisted"
+      ],
+      "risks": [
+        "Duplicate records from parser ambiguity",
+        "OAuth refresh failure"
+      ]
+    }
+  ],
+  "backend": {
+    "summary": "~96 Deno edge functions handle AI, webhooks, imports, notifications, and auth-gated mutations; 378 SQL migrations define schema; 756 RLS policies are the real authorization boundary.",
+    "items": [
+      {
+        "name": "_shared/requireAuth.ts",
+        "purpose": "Auth guard imported by every function",
+        "auth": "Validates user JWT",
+        "risk": "Bypass if a function forgets to call it",
+        "confidence": "High"
+      },
+      {
+        "name": "_shared/validateSecrets.ts (requireSecrets)",
+        "purpose": "Fail-fast on missing secrets at startup",
+        "auth": "n/a",
+        "risk": "Fail-open documented for some guards (DEBUG_PATTERNS: CronGuard, capability token)",
+        "confidence": "High"
+      },
+      {
+        "name": "calendar-sync",
+        "purpose": "Bi-directional Google Calendar sync",
+        "auth": "User + Google OAuth",
+        "risk": "Non-idempotent replay → duplicate events",
+        "confidence": "High"
+      },
+      {
+        "name": "gmail-import-worker / artifact-ingest",
+        "purpose": "Smart Import parsing pipeline",
+        "auth": "User + Gmail OAuth",
+        "risk": "Partial import with no rollback",
+        "confidence": "High"
+      },
+      {
+        "name": "image-upload",
+        "purpose": "Media upload + processing",
+        "auth": "User",
+        "risk": "Validation/quota handling",
+        "confidence": "Medium"
+      },
+      {
+        "name": "Stripe / RevenueCat webhooks",
+        "purpose": "Subscription state source of truth",
+        "auth": "Signature verification",
+        "risk": "Delivery failure → stale entitlement",
+        "confidence": "High"
+      }
+    ]
+  },
+  "integrations": [
+    {
+      "name": "Supabase",
+      "type": "core",
+      "color": "blue",
+      "configuredAt": "src/integrations/supabase/client.ts",
+      "usedAt": "All hooks/services + edge functions",
+      "envVars": [
+        "VITE_SUPABASE_URL",
+        "VITE_SUPABASE_ANON_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY (edge)"
+      ],
+      "failureModes": "Total outage = app down (core infra)",
+      "hardening": "RLS on every table; never expose service-role key client-side"
+    },
+    {
+      "name": "Gemini / Vertex AI",
+      "type": "ai",
+      "color": "purple",
+      "configuredAt": "lovable-concierge + src/lib/geminiLive/",
+      "usedAt": "Concierge, Smart Import, media tagging",
+      "envVars": [
+        "GEMINI_API_KEY",
+        "VERTEX_* (voice)"
+      ],
+      "failureModes": "AI features unavailable",
+      "hardening": "Feature-flag kill switch; treat tool calls as untrusted (pending-actions buffer)"
+    },
+    {
+      "name": "Stream Chat (GetStream)",
+      "type": "messaging",
+      "color": "purple",
+      "configuredAt": "src/features/chat/, src/hooks/stream/",
+      "usedAt": "Trip chat, channels",
+      "envVars": [
+        "VITE_STREAM_API_KEY",
+        "STREAM_API_SECRET (edge token mint)"
+      ],
+      "failureModes": "Chat unavailable",
+      "hardening": "Mint tokens server-side only; never ship secret to client"
+    },
+    {
+      "name": "Stripe",
+      "type": "payments",
+      "color": "purple",
+      "configuredAt": "paymentService + webhooks",
+      "usedAt": "Web checkout, org seat billing",
+      "envVars": [
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+        "VITE_STRIPE_PUBLISHABLE_KEY"
+      ],
+      "failureModes": "Web checkout down (RevenueCat iOS still works)",
+      "hardening": "Verify webhook signatures; validate amounts server-side"
+    },
+    {
+      "name": "RevenueCat",
+      "type": "payments",
+      "color": "purple",
+      "configuredAt": "src/integrations/revenuecat/revenuecatClient.ts",
+      "usedAt": "iOS subscriptions",
+      "envVars": [
+        "REVENUECAT_API_KEY",
+        "REVENUECAT_WEBHOOK_*"
+      ],
+      "failureModes": "iOS billing down (Stripe web still works)",
+      "hardening": "Never mix with Stripe per platform; server-side entitlement sync"
+    },
+    {
+      "name": "Google Maps / Places",
+      "type": "maps",
+      "color": "purple",
+      "configuredAt": "src/services/googleMapsService.ts",
+      "usedAt": "Maps, place search",
+      "envVars": [
+        "VITE_GOOGLE_MAPS_API_KEY"
+      ],
+      "failureModes": "Map/search non-functional → empty state",
+      "hardening": "Restrict key by referrer; single map instance; cache places"
+    },
+    {
+      "name": "Google Calendar",
+      "type": "calendar",
+      "color": "purple",
+      "configuredAt": "calendar-sync edge fn",
+      "usedAt": "Calendar sync",
+      "envVars": [
+        "GOOGLE_OAUTH_CLIENT_ID",
+        "GOOGLE_OAUTH_CLIENT_SECRET"
+      ],
+      "failureModes": "Sync pauses → local-only events",
+      "hardening": "Idempotent sync; handle token expiry"
+    },
+    {
+      "name": "Gmail API",
+      "type": "import",
+      "color": "purple",
+      "configuredAt": "gmail-import-worker",
+      "usedAt": "Smart Import",
+      "envVars": [
+        "GMAIL_OAUTH_*"
+      ],
+      "failureModes": "Email import unavailable → manual entry",
+      "hardening": "Persist partial state; refresh tokens safely"
+    },
+    {
+      "name": "Resend / Twilio / APNS",
+      "type": "notifications",
+      "color": "purple",
+      "configuredAt": "notificationService + edge fns + src/native/push.ts",
+      "usedAt": "Email / SMS / iOS push",
+      "envVars": [
+        "RESEND_API_KEY",
+        "TWILIO_*",
+        "APNS_*"
+      ],
+      "failureModes": "Channel-specific delivery failure (fallbacks exist)",
+      "hardening": "Dual-path dedup; respect quiet hours"
+    },
+    {
+      "name": "Sentry / PostHog",
+      "type": "observability",
+      "color": "purple",
+      "configuredAt": "src/telemetry/",
+      "usedAt": "Errors / analytics",
+      "envVars": [
+        "VITE_SENTRY_DSN",
+        "VITE_POSTHOG_KEY"
+      ],
+      "failureModes": "Silent monitoring/analytics loss",
+      "hardening": "Scrub PII; sample rates"
+    },
+    {
+      "name": "Capacitor 8",
+      "type": "native",
+      "color": "purple",
+      "configuredAt": "capacitor.config + src/native/ + src/platform/",
+      "usedAt": "iOS shell + PWA bridge",
+      "envVars": [
+        "(build-time)"
+      ],
+      "failureModes": "Native plugin failure on device",
+      "hardening": "Lazy-load native plugins on web; parity tests"
+    },
+    {
+      "name": "Vercel / Render",
+      "type": "hosting",
+      "color": "blue",
+      "configuredAt": "vercel.json / render.yaml",
+      "usedAt": "Frontend / OG unfurl proxy",
+      "envVars": [
+        "(platform-managed)"
+      ],
+      "failureModes": "Deploy/serve outage",
+      "hardening": "Rollback strategy; health checks"
+    }
+  ],
+  "deadCode": [
+    {
+      "path": "patch_tripchat.py, patch_tripchat2.py, patch_tripchat_import.py, patch_tripchat_receipts.py, patch_tripchat_receipts2.py",
+      "evidence": "Python scripts at repo root; CLAUDE.md states 'No Python'. Not referenced by the app.",
+      "confidence": "High",
+      "deletionRisk": "Very low",
+      "action": "delete"
+    },
+    {
+      "path": "resolver3.js, output.md, claude-progress.txt, validation-report.json, plan_refactoring.md",
+      "evidence": "Scratch/output artifacts at root, not imported by the build.",
+      "confidence": "Medium",
+      "deletionRisk": "Low",
+      "action": "investigate then delete"
+    },
+    {
+      "path": "src/services/enhancedTripContextService*",
+      "evidence": "Deprecated; eslint.config.js blocks all import paths in favor of TripContextAggregator.",
+      "confidence": "High",
+      "deletionRisk": "Low (verify zero imports)",
+      "action": "delete after grep-verify"
+    },
+    {
+      "path": "8 unused dependencies + 1 unused devDependency",
+      "evidence": "knip_output.txt 'Unused dependencies (8)' / 'Unused devDependencies (1)'.",
+      "confidence": "Medium",
+      "deletionRisk": "Low-Medium (confirm not used in scripts/edge)",
+      "action": "remove from package.json after verification"
+    },
+    {
+      "path": "376 unused exports / 325 unused exported types",
+      "evidence": "knip_output.txt. Many are intentional public surfaces or framework-resolved.",
+      "confidence": "Medium",
+      "deletionRisk": "Medium",
+      "action": "triage in batches; investigate manually"
+    },
+    {
+      "path": "285 'unused files' (knip)",
+      "evidence": "Includes Vercel api/*.ts, Remotion compositions, scripts/* that knip can't resolve as entry points.",
+      "confidence": "Low (as a blanket claim)",
+      "deletionRisk": "High if deleted blindly",
+      "action": "Future/Unclear — verify each before acting"
+    }
+  ],
+  "quality": [
+    {
+      "module": "AI Concierge",
+      "score": 58,
+      "status": "Fragile",
+      "why": "~2,500 LOC god component; tool-calling can mutate shared state; voice lifecycle edge cases.",
+      "evidence": "AIConciergeChat.tsx; SYSTEM_MAP #4; DEBUG_PATTERNS (voice tool silent fail).",
+      "fix": "Decompose component; enforce pending-actions buffer; single-source tool registry."
+    },
+    {
+      "module": "Messaging",
+      "score": 64,
+      "status": "Fragile",
+      "why": "Reconnect can lose messages; large components; write amplification.",
+      "evidence": "TripChat.tsx 1,246 LOC; TEST_GAPS chat reconnect; SYSTEM_MAP #3.",
+      "fix": "Backfill on reconnect + tests; decompose TripChat."
+    },
+    {
+      "module": "Auth \u0026 Session",
+      "score": 72,
+      "status": "Good",
+      "why": "Heavily guarded but oversized and timing-sensitive.",
+      "evidence": "useAuth.tsx 1,366 LOC; Trip-Not-Found flash pattern.",
+      "fix": "Split hook; add hydration-before-fetch tests."
+    },
+    {
+      "module": "Payments",
+      "score": 70,
+      "status": "Good",
+      "why": "Dual-SDK split is correct but webhook-state and bypass surfaces need vigilance.",
+      "evidence": "SYSTEM_MAP #6; chravel-payments skill.",
+      "fix": "Server-side entitlement checks; split state machine with optimistic locking."
+    },
+    {
+      "module": "Data layer / Services",
+      "score": 70,
+      "status": "Good",
+      "why": "Clean gateway, but mock/demo data mixed into services and 300+ `any`.",
+      "evidence": "demoModeService.ts; tech_debt_report #2/#5.",
+      "fix": "Hard mock/live boundary; type the boundaries."
+    },
+    {
+      "module": "Permissions \u0026 Roles",
+      "score": 80,
+      "status": "Good",
+      "why": "RLS-backed and recently hardened; main risk is client/RLS divergence.",
+      "evidence": "SYSTEM_MAP #12; LESSONS role propagation.",
+      "fix": "Keep DB→RLS→hook→UI flow; tier-gate tests."
+    },
+    {
+      "module": "Calendar / Media / Maps / Notifications",
+      "score": 76,
+      "status": "Good",
+      "why": "Stable, documented patterns; isolated failure modes with fallbacks.",
+      "evidence": "SYSTEM_MAP #5,#8,#9,#10.",
+      "fix": "Idempotency + cleanup tests; single map instance."
+    },
+    {
+      "module": "Build / Bundle",
+      "score": 62,
+      "status": "Fragile",
+      "why": "Several 400K-924K chunks eagerly reachable; hurts mobile first paint.",
+      "evidence": "tech_debt_report bundle table; BUNDLE_SIZE_BASELINE.md.",
+      "fix": "Lazy-load revenuecat-web, jspdf, livekit, recharts."
+    }
+  ],
+  "missing": [
+    {
+      "area": "Chat reconnect/backfill tests",
+      "impact": "High user trust",
+      "priority": "Urgent",
+      "note": "TEST_GAPS.md — message loss is silent and unacceptable."
+    },
+    {
+      "area": "Boundary typing (remove 300+ `any`)",
+      "impact": "Maintainability + runtime safety",
+      "priority": "Important",
+      "note": "tech_debt_report #2."
+    },
+    {
+      "area": "Smart Import state machine",
+      "impact": "Data integrity",
+      "priority": "Important",
+      "note": "Partial-import rollback + UX surfacing."
+    },
+    {
+      "area": "Bundle/code-split CI gate",
+      "impact": "Mobile performance / conversion",
+      "priority": "Important",
+      "note": "Prevent regressions of the 924K paidAccess chunk."
+    },
+    {
+      "area": "Mock/demo data boundary",
+      "impact": "Demo-mode contamination (zero-tolerance)",
+      "priority": "Urgent",
+      "note": "demoModeService + tripSpecificMockDataService sit beside live code."
+    },
+    {
+      "area": "Read-receipt amplification fix + tests",
+      "impact": "Scale / cost",
+      "priority": "Important",
+      "note": "DEBUG_PATTERNS N×M upserts."
+    },
+    {
+      "area": "Lint-warning burndown",
+      "impact": "DX / CI noise",
+      "priority": "Cosmetic",
+      "note": "~1,200 warnings (tech_debt_report #9)."
+    }
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 — Safe Cleanup",
+      "items": [
+        {
+          "desc": "Delete stray root artifacts (patch_tripchat*.py, resolver3.js, output.md, claude-progress.txt)",
+          "files": "repo root",
+          "risk": "Very low",
+          "complexity": "S",
+          "benefit": "Clarity; removes 'No Python' contradiction",
+          "validation": "build gate green"
+        },
+        {
+          "desc": "Remove 8 unused deps + 1 devDep (knip)",
+          "files": "package.json",
+          "risk": "Low",
+          "complexity": "S",
+          "benefit": "Smaller install/audit surface",
+          "validation": "build + smoke"
+        },
+        {
+          "desc": "Grep-verify and delete enhancedTripContextService",
+          "files": "src/services/",
+          "risk": "Low",
+          "complexity": "S",
+          "benefit": "Removes deprecated path",
+          "validation": "eslint + build"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2 — Consolidation",
+      "items": [
+        {
+          "desc": "Merge src/store/ and src/stores/ into one directory",
+          "files": "src/store*, imports",
+          "risk": "Medium",
+          "complexity": "M",
+          "benefit": "One obvious home for client state",
+          "validation": "typecheck + tests"
+        },
+        {
+          "desc": "Move mock/demo data out of services into src/mockData/ behind a flag",
+          "files": "demoModeService.ts, tripSpecificMockDataService.ts",
+          "risk": "Medium",
+          "complexity": "M",
+          "benefit": "Eliminates contamination risk",
+          "validation": "no-leak invariant test"
+        },
+        {
+          "desc": "Triage knip unused exports/types in batches",
+          "files": "various",
+          "risk": "Medium",
+          "complexity": "L",
+          "benefit": "Real dead-code reduction",
+          "validation": "per-batch build + tests"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3 — Architecture Hardening",
+      "items": [
+        {
+          "desc": "Add chat reconnect backfill + tests",
+          "files": "useStreamTripChat.ts, chat services",
+          "risk": "Medium",
+          "complexity": "M",
+          "benefit": "Stops silent message loss",
+          "validation": "integration test simulating reconnect"
+        },
+        {
+          "desc": "Decompose god files (AIConciergeChat, useAuth, TripChat)",
+          "files": "those 3",
+          "risk": "High",
+          "complexity": "XL",
+          "benefit": "Maintainability + safer AI edits",
+          "validation": "behavior-preserving tests before/after"
+        },
+        {
+          "desc": "Type boundaries; remove `any` at service edges",
+          "files": "src/services/*",
+          "risk": "Medium",
+          "complexity": "L",
+          "benefit": "Runtime safety",
+          "validation": "typecheck + tests"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4 — Product / Scale Readiness",
+      "items": [
+        {
+          "desc": "Lazy-load heavy chunks (revenuecat-web, jspdf, livekit, recharts)",
+          "files": "import sites + routes",
+          "risk": "Medium",
+          "complexity": "M",
+          "benefit": "Faster first paint, better mobile",
+          "validation": "bundle baseline diff"
+        },
+        {
+          "desc": "Add bundle-size CI gate",
+          "files": "CI config",
+          "risk": "Low",
+          "complexity": "S",
+          "benefit": "Prevents perf regressions",
+          "validation": "CI fails on oversize"
+        },
+        {
+          "desc": "Smart Import state machine + partial-state persistence",
+          "files": "smart-import + edge fns",
+          "risk": "Medium",
+          "complexity": "L",
+          "benefit": "Reliable imports",
+          "validation": "retry/idempotency tests"
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Hook (React)",
+      "plain": "A reusable piece of screen logic (e.g. 'are we logged in?').",
+      "why": "Most Chravel behavior lives in hooks; a buggy shared hook breaks many screens at once."
+    },
+    {
+      "term": "Component",
+      "plain": "A visual building block of the UI.",
+      "why": "354 of them; oversized ones (god components) are slow to change and risky."
+    },
+    {
+      "term": "State",
+      "plain": "Data the app is currently holding (who's logged in, the open trip).",
+      "why": "Server state (TanStack Query) vs client state (Zustand) must not drift."
+    },
+    {
+      "term": "Edge function",
+      "plain": "Small backend program that runs on demand (AI, webhooks, imports).",
+      "why": "96 of them are where trust-sensitive work happens; each must check auth + secrets."
+    },
+    {
+      "term": "RLS (Row-Level Security)",
+      "plain": "Database rules deciding which rows a user may see/change.",
+      "why": "Chravel's real security boundary — 756 policies; the client cannot be trusted."
+    },
+    {
+      "term": "Realtime subscription",
+      "plain": "A live feed pushing new messages/notifications instantly.",
+      "why": "Must be filtered by trip and must replay missed data on reconnect, or messages are lost."
+    },
+    {
+      "term": "Webhook",
+      "plain": "A 'ping' from an outside service (e.g. Stripe) telling us something happened.",
+      "why": "Payment/subscription truth arrives by webhook; a missed one leaves billing state stale."
+    },
+    {
+      "term": "Migration",
+      "plain": "A versioned change to the database shape.",
+      "why": "378 of them; destructive ones need a two-phase plan to avoid data loss."
+    },
+    {
+      "term": "Bucket",
+      "plain": "Cloud folder for uploaded files (photos/videos).",
+      "why": "Media storage; needs validation, signed URLs, and cleanup."
+    },
+    {
+      "term": "Environment variable",
+      "plain": "A named setting/secret provided at runtime (API keys).",
+      "why": "Misconfigured/missing ones can fail open — a documented security risk here."
+    },
+    {
+      "term": "Dependency",
+      "plain": "An outside code package the app relies on.",
+      "why": "Unused ones bloat the bundle and the security-audit surface (knip found 8)."
+    },
+    {
+      "term": "Circular dependency",
+      "plain": "Two files that need each other to load.",
+      "why": "Causes subtle load-order bugs; worth scanning for in a follow-up."
+    },
+    {
+      "term": "Dead code",
+      "plain": "Code nothing uses anymore.",
+      "why": "Confuses humans and AI editors; safe to remove only after verification."
+    },
+    {
+      "term": "Refactor",
+      "plain": "Reorganizing code without changing what it does.",
+      "why": "How god files get tamed — must be proven behavior-preserving with tests."
+    }
+  ]
+}</script>
+    <script>
+      (function () {
+        'use strict';
+        var D = JSON.parse(document.getElementById('atlas-data').textContent);
+        var COLOR = {
+          green: '#34d399',
+          yellow: '#fbbf24',
+          orange: '#fb923c',
+          red: '#f87171',
+          blue: '#60a5fa',
+          purple: '#c084fc',
+          gray: '#8b8b95',
+        };
+        // Defined here (before the render loop) so renderFiles/badge can use it — var assignments are not hoisted.
+        var BADGE_COLOR = {
+          Core: 'blue',
+          'Well Designed': 'green',
+          Feature: 'purple',
+          Shared: 'blue',
+          Utility: 'gray',
+          Config: 'gray',
+          Database: 'blue',
+          API: 'blue',
+          Auth: 'orange',
+          UI: 'purple',
+          State: 'blue',
+          Test: 'green',
+          Legacy: 'yellow',
+          'Suspected Dead': 'red',
+          Duplicate: 'orange',
+          Risky: 'red',
+          'Needs Docs': 'yellow',
+          'Needs Tests': 'yellow',
+          AI: 'purple',
+        };
+        function esc(s) {
+          return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+          });
+        }
+        function el(html) {
+          var t = document.createElement('template');
+          t.innerHTML = html.trim();
+          return t.content.firstChild;
+        }
+        function riskColor(r) {
+          r = (r || '').toLowerCase();
+          if (r.indexOf('very low') >= 0) return COLOR.green;
+          if (r.indexOf('high') >= 0) return COLOR.red;
+          if (r.indexOf('medium') >= 0) return COLOR.orange;
+          if (r.indexOf('low') >= 0) return COLOR.green;
+          return COLOR.gray;
+        }
+        function scoreColor(n) {
+          if (n >= 80) return COLOR.green;
+          if (n >= 70) return COLOR.yellow;
+          if (n >= 60) return COLOR.orange;
+          return COLOR.red;
+        }
+        function copyBtn(txt) {
+          return '<button class="copy" data-copy="' + esc(txt) + '">copy path</button>';
+        }
+
+        var SECTIONS = [
+          { id: 'overview', title: 'Executive Overview', render: renderOverview },
+          { id: 'scores', title: 'Health Scores', render: renderScores },
+          { id: 'system', title: 'System Map', render: renderSystem },
+          { id: 'files', title: 'File Explorer', render: renderFiles },
+          { id: 'deps', title: 'Dependency Graph', render: renderDeps },
+          { id: 'features', title: 'Feature Map', render: renderFeatures },
+          { id: 'flows', title: 'Data Flow Map', render: renderFlows },
+          { id: 'backend', title: 'Backend / API / DB', render: renderBackend },
+          { id: 'integrations', title: 'External Integrations', render: renderIntegrations },
+          { id: 'dead', title: 'Dead / Stale Code', render: renderDead },
+          { id: 'quality', title: 'Quality Review', render: renderQuality },
+          { id: 'missing', title: 'Missing Pieces', render: renderMissing },
+          { id: 'roadmap', title: 'Refactor Roadmap', render: renderRoadmap },
+          { id: 'glossary', title: 'Founder Glossary', render: renderGlossary },
+        ];
+
+        // ---- hero ----
+        var m = D.meta,
+          hero = document.getElementById('hero');
+        var pills = Object.keys(m.stats)
+          .map(function (k) {
+            return '<span class="pill"><b>' + esc(m.stats[k]) + '</b> ' + esc(k) + '</span>';
+          })
+          .join('');
+        var stack = m.stack
+          .map(function (s) {
+            return '<span>' + esc(s) + '</span>';
+          })
+          .join('');
+        hero.innerHTML =
+          '<h1>' +
+          esc(m.app) +
+          ' — Codebase Architecture Atlas</h1>' +
+          '<div class="tag">' +
+          esc(m.tagline) +
+          '</div>' +
+          '<div class="pills">' +
+          pills +
+          '</div>' +
+          '<div class="stack-list">' +
+          stack +
+          '</div>';
+
+        // ---- nav ----
+        var nav = document.getElementById('nav');
+        SECTIONS.forEach(function (s, i) {
+          nav.appendChild(
+            el(
+              '<a href="#' +
+                s.id +
+                '"><span class="num">' +
+                (i + 1) +
+                '</span>' +
+                esc(s.title) +
+                '</a>',
+            ),
+          );
+        });
+
+        // ---- sections ----
+        var root = document.getElementById('sections');
+        SECTIONS.forEach(function (s, i) {
+          var sec = el('<section id="' + s.id + '"></section>');
+          sec.appendChild(
+            el('<h2><span class="ix">' + (i + 1) + '</span>' + esc(s.title) + '</h2>'),
+          );
+          s.render(sec);
+          root.appendChild(sec);
+        });
+
+        function lead(t) {
+          return '<p class="lead">' + esc(t) + '</p>';
+        }
+        function list(arr) {
+          return (
+            '<ul class="clean">' +
+            arr
+              .map(function (x) {
+                return '<li>' + inlineCode(esc(x)) + '</li>';
+              })
+              .join('') +
+            '</ul>'
+          );
+        }
+        function inlineCode(s) {
+          return String(s).replace(
+            /(src\/[^\s,;]+|supabase\/[^\s,;]+|[A-Za-z0-9_]+\.(tsx|ts|py|js|md|sql|json))/g,
+            '<code>$1</code>',
+          );
+        }
+
+        function renderOverview(sec) {
+          var e = D.executive;
+          sec.appendChild(el('<div class="summary"><p>' + esc(e.whatItDoes) + '</p></div>'));
+          var cols = el('<div class="cols"></div>');
+          cols.appendChild(
+            el('<div class="panel"><h4>Who it serves</h4>' + list(e.whoItServes) + '</div>'),
+          );
+          cols.appendChild(
+            el('<div class="panel"><h4>Primary flows</h4>' + list(e.primaryFlows) + '</div>'),
+          );
+          cols.appendChild(
+            el(
+              '<div class="panel"><h4>Highest-leverage code</h4>' +
+                list(e.highestLeverage) +
+                '</div>',
+            ),
+          );
+          sec.appendChild(cols);
+          var cols2 = el('<div class="cols" style="margin-top:14px"></div>');
+          cols2.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid ' +
+                COLOR.red +
+                '"><h4>Top 5 risks</h4>' +
+                list(e.topRisks) +
+                '</div>',
+            ),
+          );
+          cols2.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid ' +
+                COLOR.green +
+                '"><h4>Top 5 safe cleanups</h4>' +
+                list(e.topCleanups) +
+                '</div>',
+            ),
+          );
+          cols2.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid ' +
+                COLOR.blue +
+                '"><h4>Top 5 missing pieces</h4>' +
+                list(e.topMissing) +
+                '</div>',
+            ),
+          );
+          sec.appendChild(cols2);
+        }
+
+        function renderScores(sec) {
+          sec.appendChild(
+            el(
+              lead(
+                'Each score is 0–100 with a written rationale. "Dead Code Risk" is inverted — higher means more risk.',
+              ),
+            ),
+          );
+          var g = el('<div class="scores"></div>');
+          D.scores.forEach(function (s) {
+            var c =
+              s.key === 'deadcode'
+                ? s.score >= 60
+                  ? COLOR.red
+                  : s.score >= 40
+                    ? COLOR.orange
+                    : COLOR.green
+                : scoreColor(s.score);
+            g.appendChild(
+              el(
+                '<div class="score"><div class="top"><span class="lab">' +
+                  esc(s.label) +
+                  '</span><span class="val" style="color:' +
+                  c +
+                  '">' +
+                  s.score +
+                  '</span></div>' +
+                  '<div class="bar"><i style="width:' +
+                  s.score +
+                  '%;background:' +
+                  c +
+                  '"></i></div>' +
+                  '<div class="why">' +
+                  esc(s.rationale) +
+                  '</div></div>',
+              ),
+            );
+          });
+          sec.appendChild(g);
+        }
+
+        function colorLegend() {
+          var items = [
+            ['green', 'Healthy'],
+            ['yellow', 'Attention'],
+            ['orange', 'Risky/complex'],
+            ['red', 'High-risk/dead'],
+            ['blue', 'Core infra'],
+            ['purple', 'AI/external'],
+            ['gray', 'Low confidence'],
+          ];
+          return (
+            '<div class="legend">' +
+            items
+              .map(function (x) {
+                return '<span><i style="background:' + COLOR[x[0]] + '"></i>' + x[1] + '</span>';
+              })
+              .join('') +
+            '</div>'
+          );
+        }
+
+        function renderSystem(sec) {
+          sec.appendChild(
+            el(
+              lead(
+                'The major domains of the app. Click any card for purpose, key files, dependencies, risks, and next actions. Risk and a 0–100 quality rating are shown per domain.',
+              ),
+            ),
+          );
+          sec.appendChild(el(colorLegend()));
+          var grid = el('<div class="grid" data-search="system" style="margin-top:14px"></div>');
+          D.systemMap.forEach(function (d) {
+            var card = el(
+              '<div class="card" style="border-left-color:' +
+                COLOR[d.color] +
+                '" data-text="' +
+                esc((d.name + ' ' + d.purpose + ' ' + (d.keyFiles || []).join(' ')).toLowerCase()) +
+                '"></div>',
+            );
+            card.appendChild(
+              el(
+                '<div class="hd"><div><h3>' +
+                  esc(d.name) +
+                  '</h3><div class="sub">' +
+                  esc(d.purpose) +
+                  '</div>' +
+                  '<div class="tagrow"><span class="chip risk" style="color:' +
+                  riskColor(d.risk) +
+                  '">Risk: ' +
+                  esc(d.risk) +
+                  '</span><span class="chip">Quality ' +
+                  d.quality +
+                  '/100</span></div></div><span class="chev">&#9656;</span></div>',
+              ),
+            );
+            var bd = el('<div class="bd"></div>');
+            bd.innerHTML =
+              '<div class="kv"><div class="k">Key files</div><div class="v">' +
+              (d.keyFiles || [])
+                .map(function (f) {
+                  return '<code>' + esc(f) + '</code>' + copyBtn(f);
+                })
+                .join('<br>') +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Depends on</div><div class="v muted">' +
+              esc((d.deps || []).join(', ')) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Upstream &rarr; Downstream</div><div class="v muted">' +
+              esc(d.upstream) +
+              ' &rarr; ' +
+              esc(d.downstream) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Failure modes</div><div class="v muted">' +
+              esc(d.failureModes) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Next actions</div>' +
+              list(d.actions) +
+              '</div>';
+            card.appendChild(bd);
+            grid.appendChild(card);
+          });
+          sec.appendChild(grid);
+        }
+
+        function badge(b) {
+          var c = COLOR[BADGE_COLOR[b] || 'gray'];
+          return (
+            '<span class="b" style="color:' + c + ';border-color:' + c + '">' + esc(b) + '</span>'
+          );
+        }
+
+        function renderFiles(sec) {
+          sec.appendChild(
+            el(
+              lead(
+                'The files that matter most — flagged with badges and a recommended action. Plain-English purpose first, technical detail second. Search filters this list and the System Map above.',
+              ),
+            ),
+          );
+          var tb = el(
+            '<div class="toolbar"><input type="search" id="fsearch" placeholder="Search files, badges, purpose…" /><span class="count" id="fcount"></span></div>',
+          );
+          sec.appendChild(tb);
+          var grid = el('<div class="grid" data-search="files"></div>');
+          D.files.forEach(function (f) {
+            var card = el(
+              '<div class="card" style="border-left-color:' +
+                COLOR[f.color] +
+                '" data-text="' +
+                esc(
+                  (
+                    f.path +
+                    ' ' +
+                    f.plain +
+                    ' ' +
+                    f.tech +
+                    ' ' +
+                    (f.badges || []).join(' ')
+                  ).toLowerCase(),
+                ) +
+                '"></div>',
+            );
+            card.appendChild(
+              el(
+                '<div class="hd"><div><h3><code>' +
+                  esc(f.path) +
+                  '</code></h3><div class="sub">' +
+                  esc(f.plain) +
+                  '</div>' +
+                  '<div class="badges">' +
+                  (f.badges || []).map(badge).join('') +
+                  '</div></div><span class="chev">&#9656;</span></div>',
+              ),
+            );
+            var bd = el('<div class="bd"></div>');
+            bd.innerHTML =
+              '<div class="kv"><div class="k">Technical purpose</div><div class="v muted">' +
+              esc(f.tech) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Exports</div><div class="v muted">' +
+              esc(f.exports) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Imported by</div><div class="v muted">' +
+              esc(f.importedBy) +
+              '</div></div>' +
+              '<div class="tagrow" style="margin-top:10px"><span class="chip risk" style="color:' +
+              riskColor(f.risk) +
+              '">Risk: ' +
+              esc(f.risk) +
+              '</span><span class="chip">Confidence: ' +
+              esc(f.confidence) +
+              '</span><span class="chip" style="color:' +
+              COLOR.gold +
+              '">Action: ' +
+              esc(f.action) +
+              '</span></div>';
+            card.appendChild(bd);
+            grid.appendChild(card);
+          });
+          sec.appendChild(grid);
+          var input = tb.querySelector('#fsearch'),
+            count = tb.querySelector('#fcount');
+          function filt() {
+            var q = input.value.trim().toLowerCase();
+            var targets = document.querySelectorAll(
+              '[data-search="files"] .card, [data-search="system"] .card',
+            );
+            var shown = 0;
+            targets.forEach(function (c) {
+              var ok = !q || c.getAttribute('data-text').indexOf(q) >= 0;
+              c.style.display = ok ? '' : 'none';
+              if (ok) shown++;
+            });
+            count.textContent = shown + ' shown';
+          }
+          input.addEventListener('input', filt);
+          filt();
+        }
+
+        function renderDeps(sec) {
+          var d = D.dependencies;
+          renderLiveMetrics(sec);
+          sec.appendChild(el(lead(d.notes)));
+          var godRows = d.godFiles
+            .map(function (g) {
+              return (
+                '<tr><td><code>' +
+                esc(g.path) +
+                '</code></td><td style="color:' +
+                (g.loc >= 1500 ? COLOR.red : COLOR.orange) +
+                '">' +
+                g.loc.toLocaleString() +
+                '</td><td class="muted">' +
+                esc(g.why) +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel"><h4>"God files" — too many responsibilities</h4><table class="tbl"><thead><tr><th>File</th><th>~LOC</th><th>Why it is a hotspot</th></tr></thead><tbody>' +
+                godRows +
+                '</tbody></table></div>',
+            ),
+          );
+          var hubRows = d.hubs
+            .map(function (h) {
+              return (
+                '<tr><td><code>' +
+                esc(h.path) +
+                '</code></td><td class="muted">' +
+                esc(h.role) +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel" style="margin-top:14px"><h4>Coupling hubs (high fan-in)</h4><table class="tbl"><thead><tr><th>File</th><th>Role</th></tr></thead><tbody>' +
+                hubRows +
+                '</tbody></table></div>',
+            ),
+          );
+          sec.appendChild(
+            el(
+              '<div class="panel" style="margin-top:14px;border-left:4px solid ' +
+                COLOR.yellow +
+                '"><h4>Orphan / unused note</h4><p class="lead" style="margin:0">' +
+                esc(d.orphansNote) +
+                '</p></div>',
+            ),
+          );
+        }
+
+        function renderFeatures(sec) {
+          sec.appendChild(
+            el(
+              lead(
+                'Product features detected in the code, with a completeness estimate and the missing UI states that most often cause bugs (loading / error / empty / offline / permission-denied).',
+              ),
+            ),
+          );
+          var grid = el('<div class="grid"></div>');
+          D.features.forEach(function (f) {
+            var card = el(
+              '<div class="card" style="border-left-color:' + COLOR[f.color] + '"></div>',
+            );
+            card.appendChild(
+              el(
+                '<div class="hd"><div><h3>' +
+                  esc(f.name) +
+                  '</h3><div class="sub">' +
+                  esc(f.plain) +
+                  '</div>' +
+                  '<div class="bar" style="margin-top:9px;max-width:200px"><i style="width:' +
+                  f.completeness +
+                  '%;background:' +
+                  scoreColor(f.completeness) +
+                  '"></i></div>' +
+                  '<div class="sub" style="margin-top:3px">~' +
+                  f.completeness +
+                  '% complete</div></div><span class="chev">&#9656;</span></div>',
+              ),
+            );
+            var bd = el('<div class="bd"></div>');
+            bd.innerHTML =
+              '<div class="kv"><div class="k">Screens</div><div class="v muted">' +
+              esc((f.screens || []).join(', ')) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Backend / data</div><div class="v muted">' +
+              esc((f.backend || []).join(', ')) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">State / hooks</div><div class="v muted">' +
+              esc((f.state || []).join(', ')) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">External</div><div class="v muted">' +
+              esc((f.external || []).join(', ')) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Missing states</div><div class="v" style="color:' +
+              COLOR.orange +
+              '">' +
+              esc((f.missingStates || []).join(' · ')) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Risks</div><div class="v" style="color:' +
+              COLOR.red +
+              '">' +
+              esc((f.risks || []).join(' · ')) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Suggested fixes</div>' +
+              list(f.fixes) +
+              '</div>';
+            card.appendChild(bd);
+            grid.appendChild(card);
+          });
+          sec.appendChild(grid);
+        }
+
+        function renderFlows(sec) {
+          sec.appendChild(
+            el(
+              lead(
+                'How data moves through the most important journeys — entry point through to the database — plus where each flow can fail.',
+              ),
+            ),
+          );
+          var grid = el(
+            '<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(420px,1fr))"></div>',
+          );
+          D.flows.forEach(function (f) {
+            var steps = f.steps
+              .map(function (s) {
+                return (
+                  '<div class="step"><span class="lyr">' +
+                  esc(s.layer) +
+                  '</span><span class="det">' +
+                  inlineCode(esc(s.detail)) +
+                  '</span></div>'
+                );
+              })
+              .join('');
+            var card = el(
+              '<div class="card open" style="border-left-color:' + COLOR.blue + '"></div>',
+            );
+            card.appendChild(el('<div class="hd"><div><h3>' + esc(f.name) + '</h3></div></div>'));
+            var bd = el('<div class="bd" style="display:block"></div>');
+            bd.innerHTML =
+              steps +
+              '<div class="kv"><div class="k">Failure points</div><div class="v" style="color:' +
+              COLOR.red +
+              '">' +
+              esc((f.failurePoints || []).join(' · ')) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Risks</div><div class="v muted">' +
+              esc((f.risks || []).join(' · ')) +
+              '</div></div>';
+            card.appendChild(bd);
+            grid.appendChild(card);
+          });
+          sec.appendChild(grid);
+        }
+
+        function renderBackend(sec) {
+          sec.appendChild(el(lead(D.backend.summary)));
+          var rows = D.backend.items
+            .map(function (it) {
+              return (
+                '<tr><td><code>' +
+                esc(it.name) +
+                '</code></td><td class="muted">' +
+                esc(it.purpose) +
+                '</td><td class="muted">' +
+                esc(it.auth) +
+                '</td><td style="color:' +
+                COLOR.orange +
+                '">' +
+                esc(it.risk) +
+                '</td><td class="muted">' +
+                esc(it.confidence) +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel"><table class="tbl"><thead><tr><th>Element</th><th>Purpose</th><th>Auth</th><th>Key risk</th><th>Confidence</th></tr></thead><tbody>' +
+                rows +
+                '</tbody></table></div>',
+            ),
+          );
+        }
+
+        function renderIntegrations(sec) {
+          sec.appendChild(
+            el(
+              lead(
+                'Every third-party service, where it is wired, and the environment-variable names it needs. Values are never shown — names only.',
+              ),
+            ),
+          );
+          var grid = el('<div class="grid"></div>');
+          D.integrations.forEach(function (it) {
+            var card = el(
+              '<div class="card" style="border-left-color:' + COLOR[it.color] + '"></div>',
+            );
+            card.appendChild(
+              el(
+                '<div class="hd"><div><h3>' +
+                  esc(it.name) +
+                  '</h3><div class="sub">' +
+                  esc(it.type) +
+                  '</div></div><span class="chev">&#9656;</span></div>',
+              ),
+            );
+            var bd = el('<div class="bd"></div>');
+            bd.innerHTML =
+              '<div class="kv"><div class="k">Configured at</div><div class="v"><code>' +
+              esc(it.configuredAt) +
+              '</code></div></div>' +
+              '<div class="kv"><div class="k">Used at</div><div class="v muted">' +
+              esc(it.usedAt) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Env vars (names only)</div><div class="v">' +
+              (it.envVars || [])
+                .map(function (v) {
+                  return '<code>' + esc(v) + '</code>';
+                })
+                .join(' ') +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Failure mode</div><div class="v" style="color:' +
+              COLOR.orange +
+              '">' +
+              esc(it.failureModes) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Hardening</div><div class="v muted">' +
+              esc(it.hardening) +
+              '</div></div>';
+            card.appendChild(bd);
+            grid.appendChild(card);
+          });
+          sec.appendChild(grid);
+        }
+
+        function renderDead(sec) {
+          sec.appendChild(
+            el(
+              lead(
+                'Suspected redundant, dead, or stale code. Analysis only — nothing here is deleted. Each row has evidence, a confidence level, and a recommended action. Note the large "unused files" count includes framework entry points that are Future/Unclear, not truly dead.',
+              ),
+            ),
+          );
+          var rows = D.deadCode
+            .map(function (x) {
+              return (
+                '<tr><td><code>' +
+                esc(x.path) +
+                '</code></td><td class="muted">' +
+                esc(x.evidence) +
+                '</td><td style="color:' +
+                (x.confidence === 'High'
+                  ? COLOR.green
+                  : x.confidence === 'Medium'
+                    ? COLOR.yellow
+                    : COLOR.gray) +
+                '">' +
+                esc(x.confidence) +
+                '</td><td class="muted">' +
+                esc(x.deletionRisk) +
+                '</td><td style="color:' +
+                COLOR.gold +
+                '">' +
+                esc(x.action) +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel"><table class="tbl"><thead><tr><th>Item</th><th>Evidence</th><th>Confidence</th><th>Deletion risk</th><th>Action</th></tr></thead><tbody>' +
+                rows +
+                '</tbody></table></div>',
+            ),
+          );
+        }
+
+        function renderQuality(sec) {
+          sec.appendChild(
+            el(
+              lead(
+                'Each major module graded 0–100. For anything under 90, the weakness, evidence, and the fix that would raise it.',
+              ),
+            ),
+          );
+          var grid = el('<div class="grid"></div>');
+          D.quality.forEach(function (q) {
+            var c = scoreColor(q.score);
+            var card = el('<div class="card" style="border-left-color:' + c + '"></div>');
+            card.appendChild(
+              el(
+                '<div class="hd"><div><h3>' +
+                  esc(q.module) +
+                  '</h3><div class="sub">' +
+                  esc(q.status) +
+                  '</div></div><span class="val" style="color:' +
+                  c +
+                  ';font-size:22px;font-weight:700">' +
+                  q.score +
+                  '</span></div>',
+              ),
+            );
+            var bd = el(
+              '<div class="bd" style="display:block;border-top:none;padding-top:0"></div>',
+            );
+            bd.innerHTML =
+              '<div class="kv"><div class="k">Why</div><div class="v muted">' +
+              esc(q.why) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Evidence</div><div class="v muted">' +
+              inlineCode(esc(q.evidence)) +
+              '</div></div>' +
+              '<div class="kv"><div class="k">Fix to reach 90+</div><div class="v" style="color:' +
+              COLOR.gold +
+              '">' +
+              esc(q.fix) +
+              '</div></div>';
+            card.appendChild(bd);
+            grid.appendChild(card);
+          });
+          sec.appendChild(grid);
+        }
+
+        function renderMissing(sec) {
+          sec.appendChild(
+            el(
+              lead(
+                'Gaps worth filling, prioritized by impact. "Urgent" items touch user trust, revenue, or zero-tolerance regressions.',
+              ),
+            ),
+          );
+          var rows = D.missing
+            .map(function (x) {
+              var pc =
+                x.priority === 'Urgent'
+                  ? COLOR.red
+                  : x.priority === 'Important'
+                    ? COLOR.orange
+                    : COLOR.gray;
+              return (
+                '<tr><td><b>' +
+                esc(x.area) +
+                '</b></td><td class="muted">' +
+                esc(x.impact) +
+                '</td><td style="color:' +
+                pc +
+                ';font-weight:700">' +
+                esc(x.priority) +
+                '</td><td class="muted">' +
+                inlineCode(esc(x.note)) +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel"><table class="tbl"><thead><tr><th>Area</th><th>Impact</th><th>Priority</th><th>Note</th></tr></thead><tbody>' +
+                rows +
+                '</tbody></table></div>',
+            ),
+          );
+        }
+
+        function renderRoadmap(sec) {
+          sec.appendChild(
+            el(
+              lead(
+                'A practical sequence from safe deletions to scale readiness. Complexity: S/M/L/XL.',
+              ),
+            ),
+          );
+          D.roadmap.forEach(function (p, i) {
+            var pc = [COLOR.green, COLOR.blue, COLOR.orange, COLOR.purple][i] || COLOR.gray;
+            var rows = p.items
+              .map(function (it) {
+                return (
+                  '<tr><td><b>' +
+                  esc(it.desc) +
+                  '</b><div class="sub" style="color:var(--muted2)"><code>' +
+                  esc(it.files) +
+                  '</code></div></td><td style="color:' +
+                  riskColor(it.risk) +
+                  '">' +
+                  esc(it.risk) +
+                  '</td><td>' +
+                  esc(it.complexity) +
+                  '</td><td class="muted">' +
+                  esc(it.benefit) +
+                  '</td><td class="muted">' +
+                  esc(it.validation) +
+                  '</td></tr>'
+                );
+              })
+              .join('');
+            sec.appendChild(
+              el(
+                '<div class="panel" style="margin-top:14px;border-left:4px solid ' +
+                  pc +
+                  '"><h4>' +
+                  esc(p.phase) +
+                  '</h4><table class="tbl"><thead><tr><th>Item</th><th>Risk</th><th>Effort</th><th>Benefit</th><th>Validation</th></tr></thead><tbody>' +
+                  rows +
+                  '</tbody></table></div>',
+              ),
+            );
+          });
+        }
+
+        function renderGlossary(sec) {
+          sec.appendChild(
+            el(
+              lead(
+                'Plain-English definitions of the technical terms in this codebase — and why each matters to the business.',
+              ),
+            ),
+          );
+          var grid = el('<div class="grid"></div>');
+          D.glossary.forEach(function (g) {
+            grid.appendChild(
+              el(
+                '<div class="panel"><h4 style="text-transform:none;color:var(--text);font-size:14px">' +
+                  esc(g.term) +
+                  '</h4><div class="v muted" style="font-size:13px">' +
+                  esc(g.plain) +
+                  '</div><div class="v" style="font-size:12.5px;color:' +
+                  COLOR.gold +
+                  ';margin-top:6px">Why it matters: ' +
+                  esc(g.why) +
+                  '</div></div>',
+              ),
+            );
+          });
+          sec.appendChild(grid);
+        }
+
+        // ---- live metrics (auto-refreshed by scripts/build-atlas.mjs each merge) ----
+        function renderLiveMetrics(sec) {
+          var mt = m.metrics;
+          if (!mt) return;
+          var fresh = '';
+          if (m.commit)
+            fresh += '<span class="chip">commit <code>' + esc(m.commit) + '</code></span>';
+          if (m.generated) fresh += '<span class="chip">refreshed ' + esc(m.generated) + '</span>';
+          var rows = [];
+          if (mt.knip)
+            rows.push([
+              'knip dead-code scan',
+              'files ' +
+                mt.knip.files +
+                ' · deps ' +
+                mt.knip.deps +
+                ' · exports ' +
+                mt.knip.exports +
+                ' · types ' +
+                mt.knip.types,
+            ]);
+          if (mt.anyCount != null) rows.push(['`any` usages in src/', mt.anyCount]);
+          if (mt.todoCount != null) rows.push(['TODO / FIXME / HACK markers', mt.todoCount]);
+          var statRows = rows
+            .map(function (r) {
+              return (
+                '<tr><td class="muted">' +
+                inlineCode(esc(r[0])) +
+                '</td><td><b>' +
+                esc(r[1]) +
+                '</b></td><td></td></tr>'
+              );
+            })
+            .join('');
+          var bundle = (mt.bundle || [])
+            .map(function (b) {
+              return (
+                '<tr><td><code>' +
+                esc(b.name) +
+                '</code></td><td><b style="color:' +
+                (b.kb >= 500 ? COLOR.red : b.kb >= 250 ? COLOR.orange : COLOR.gray) +
+                '">' +
+                b.kb +
+                ' kB</b></td><td class="muted">' +
+                (b.gzipKb != null ? b.gzipKb + ' kB gzip' : '') +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid ' +
+                COLOR.green +
+                '"><h4>Live metrics — auto-refreshed each merge</h4>' +
+                '<div class="tagrow" style="margin-bottom:8px">' +
+                (fresh ||
+                  '<span class="chip muted">static snapshot — run <code>npm run atlas</code> to refresh</span>') +
+                '</div>' +
+                '<table class="tbl"><thead><tr><th>Metric</th><th>Value</th><th>Note</th></tr></thead><tbody>' +
+                statRows +
+                (bundle
+                  ? '<tr><td colspan="3" class="muted" style="padding-top:12px"><b>Largest JS bundle chunks</b></td></tr>' +
+                    bundle
+                  : '') +
+                '</tbody></table></div>',
+            ),
+          );
+        }
+
+        // ---- footer ----
+        document.getElementById('foot').innerHTML =
+          'Generated ' +
+          esc(m.generated) +
+          ' · ' +
+          esc(m.repo) +
+          ' @ <code>' +
+          esc(m.branch) +
+          '</code>' +
+          (m.commit ? ' · commit <code>' + esc(m.commit) + '</code>' : '') +
+          '<br>Evidence sources: ' +
+          m.sources.map(esc).join(' · ') +
+          '<br>Analysis + artifact only — no production code was modified. Confidence labels reflect how directly each claim was verified.';
+
+        // ---- interactions ----
+        document.addEventListener('click', function (ev) {
+          var hd = ev.target.closest('.hd');
+          if (hd && !ev.target.classList.contains('copy')) {
+            var card = hd.closest('.card');
+            if (card) card.classList.toggle('open');
+          }
+          var cp = ev.target.closest('.copy');
+          if (cp) {
+            var t = cp.getAttribute('data-copy');
+            navigator.clipboard ? navigator.clipboard.writeText(t) : 0;
+            var o = cp.textContent;
+            cp.textContent = 'copied';
+            setTimeout(function () {
+              cp.textContent = o;
+            }, 1000);
+            ev.stopPropagation();
+          }
+        });
+        // scroll-spy
+        var navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
+        var obs = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (en) {
+              if (en.isIntersecting) {
+                navLinks.forEach(function (a) {
+                  a.classList.toggle('active', a.getAttribute('href') === '#' + en.target.id);
+                });
+              }
+            });
+          },
+          { rootMargin: '-10% 0px -80% 0px' },
+        );
+        SECTIONS.forEach(function (s) {
+          var n = document.getElementById(s.id);
+          if (n) obs.observe(n);
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -13,7 +13,8 @@ import { parseICSFile, ICSParsedEvent, ICSParseResult } from './calendarImport';
 import { formatLocalDate } from './dateHelpers';
 import { supabase } from '@/integrations/supabase/client';
 import { getSmartImportErrorMessage } from '@/utils/smartImportPaywall';
-import ExcelJS from 'exceljs';
+// exceljs (~950 kB) is dynamically imported inside parseExcelCalendar so it
+// only loads when a user actually imports a spreadsheet, not on calendar mount.
 
 export type ImportSourceFormat =
   | 'ics'
@@ -302,6 +303,7 @@ export async function parseCSVCalendar(file: File): Promise<SmartParseResult> {
 // ─── Excel Parser ────────────────────────────────────────────────────────────
 
 export async function parseExcelCalendar(file: File): Promise<SmartParseResult> {
+  const { default: ExcelJS } = await import('exceljs');
   const buffer = await file.arrayBuffer();
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer);

@@ -76,7 +76,7 @@ jobs:
       # Checkout
       # -----------------------------------------------------------------------
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -87,7 +87,7 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -108,7 +108,7 @@ jobs:
       # Cache
       # -----------------------------------------------------------------------
       - name: Cache CocoaPods
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ios/App/Pods
           key: ${{ env.CACHE_KEY }}-pods-${{ hashFiles('ios/App/Podfile.lock') }}
@@ -116,7 +116,7 @@ jobs:
             ${{ env.CACHE_KEY }}-pods-
 
       - name: Cache DerivedData
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ios-release/fastlane/build/DerivedData
           key: ${{ env.CACHE_KEY }}-derived-${{ github.sha }}
@@ -237,14 +237,14 @@ jobs:
       # Upload Artifact
       # -----------------------------------------------------------------------
       - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: chravel-ios-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_number }}
           path: ios-release/fastlane/build/Chravel.ipa
           retention-days: 14
 
       - name: Upload dSYM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: chravel-dsym-${{ steps.version.outputs.version }}-${{ steps.version.outputs.build_number }}
           path: ios-release/fastlane/build/*.dSYM.zip
@@ -264,7 +264,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -274,7 +274,7 @@ jobs:
           working-directory: ios-release/fastlane
 
       - name: Download IPA artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: chravel-ios-${{ needs.build.outputs.version }}-${{ needs.build.outputs.build_number }}
           path: ios-release/fastlane/build
@@ -310,7 +310,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -346,13 +346,13 @@ jobs:
 
     steps:
       - name: Download dSYM artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: chravel-dsym-${{ needs.build.outputs.version }}-${{ needs.build.outputs.build_number }}
           path: dsyms
 
       - name: Upload to Sentry
-        if: ${{ secrets.SENTRY_AUTH_TOKEN != '' }}
+        if: env.SENTRY_AUTH_TOKEN != ''
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
@@ -373,16 +373,16 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download IPA artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: chravel-ios-${{ needs.build.outputs.version }}-${{ needs.build.outputs.build_number }}
           path: release
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: v${{ needs.build.outputs.version }}
           body: |

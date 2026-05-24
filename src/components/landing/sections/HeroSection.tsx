@@ -32,37 +32,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
         </Button>
       </div>
 
-      {/* Top Section: Pain-First Headline + Subtitle + Brand */}
+      {/* Top Section: Brand + Headline + Subtitle */}
       <div className="flex-shrink-0 pt-4 tablet:pt-8">
-        {/* Pain-First Headline */}
-        <div className="w-full flex items-center justify-center px-2 tablet:px-4 mb-2 tablet:mb-3">
-          <h1
-            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight animate-fade-in text-center w-full"
-            style={{
-              textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
-            }}
-          >
-            Group Travel Made Easy
-          </h1>
-        </div>
-
-        {/* New Subtitle */}
-        <p
-          className="text-sm sm:text-base md:text-lg lg:text-xl text-white/80 font-medium max-w-3xl mx-auto mb-3 tablet:mb-4 animate-fade-in"
-          style={{
-            animationDelay: '0.05s',
-            textShadow: '0 2px 4px rgba(0,0,0,0.4)',
-          }}
-        >
-          Friends, Families, Sports, Tours, Work & More.
-          <br className="hidden sm:inline" />
-          Planning is Frustrating.{' '}
-          <span className="text-gold-primary font-semibold">Get UnFrustrated.</span>
-        </p>
-
         {/* Brand Name */}
         <div
-          className="inline-block animate-fade-in"
+          className="inline-block animate-fade-in mb-2 tablet:mb-3"
           style={{
             animationDelay: '0.05s',
           }}
@@ -80,7 +54,34 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             ChravelApp
           </h2>
         </div>
+
+        {/* Pain-First Headline */}
+        <div className="w-full flex items-center justify-center px-2 tablet:px-4 mb-2 tablet:mb-3">
+          <h1
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight animate-fade-in text-center w-full"
+            style={{
+              textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
+            }}
+          >
+            The Group Chat's Travel App
+          </h1>
+        </div>
+
+        {/* New Subtitle */}
+        <p
+          className="text-sm sm:text-base md:text-lg lg:text-xl text-white/80 font-medium max-w-3xl mx-auto mb-3 tablet:mb-4 animate-fade-in"
+          style={{
+            animationDelay: '0.05s',
+            textShadow: '0 2px 4px rgba(0,0,0,0.4)',
+          }}
+        >
+          Friends, Families, Sports, Tours, Work & More.
+          <br className="hidden sm:inline" />
+          Planning is Frustrating.{' '}
+          <span className="text-gold-primary font-semibold">ChravelApp Alleviates that Stress.</span>
+        </p>
       </div>
+
 
       {/* Demo Preview Image - fills the middle space */}
       <div className="flex-1 flex flex-col items-center justify-center py-2 tablet:py-3">

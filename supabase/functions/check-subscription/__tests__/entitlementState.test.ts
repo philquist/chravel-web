@@ -64,4 +64,44 @@ describe('check-subscription entitlementState', () => {
     expect(normalizeStripeStatus('incomplete')).toBe('inactive');
     expect(normalizeStripeStatus('unpaid')).toBe('inactive');
   });
+
+  it('webhook delayed scenario: stale local expired subscription triggers reconciliation', () => {
+    const now = new Date('2026-04-15T12:00:00.000Z');
+    const result = shouldReconcileFromStripe(
+      [
+        {
+          user_id: 'u1',
+          plan: 'explorer',
+          status: 'expired',
+          current_period_end: null,
+          purchase_type: 'subscription',
+          updated_at: new Date(now.getTime() - ENTITLEMENT_STALE_WINDOW_MS - 10_000).toISOString(),
+        },
+      ],
+      now,
+    );
+
+    expect(result.shouldReconcile).toBe(true);
+    expect(result.primary?.status).toBe('expired');
+  });
+
+  it('webhook success scenario: fresh active subscription does not re-reconcile', () => {
+    const now = new Date('2026-04-15T12:00:00.000Z');
+    const result = shouldReconcileFromStripe(
+      [
+        {
+          user_id: 'u1',
+          plan: 'frequent-chraveler',
+          status: 'active',
+          current_period_end: new Date(now.getTime() + 86_400_000).toISOString(),
+          purchase_type: 'subscription',
+          updated_at: new Date(now.getTime() - 30_000).toISOString(),
+        },
+      ],
+      now,
+    );
+
+    expect(result.shouldReconcile).toBe(false);
+    expect(result.primary?.plan).toBe('frequent-chraveler');
+  });
 });

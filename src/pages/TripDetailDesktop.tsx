@@ -272,9 +272,9 @@ export const TripDetailDesktop = () => {
   // 🔒 Handle other fetch errors - distinguish permission errors from generic failures
   if (tripError) {
     const isPermissionError =
+      tripError.message.includes('ACCESS_DENIED') ||
       tripError.message.includes('permission') ||
-      tripError.message.includes('403') ||
-      tripError.message.includes('not found');
+      tripError.message.includes('403');
 
     // If user is logged in but got a permission/not-found error, they're likely not a member
     if (isPermissionError && user && tripId) {
