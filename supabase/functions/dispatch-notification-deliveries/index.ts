@@ -5,13 +5,16 @@ import { sendFcmV1, toFcmData } from '../_shared/fcmV1.ts';
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   getMinutesUntilQuietHoursEnd,
-  isEmailEligible,
   isQuietHours,
-  isSmsEligible,
   normalizeCategory,
   type NotificationCategory,
   type NotificationPreferences,
 } from '../_shared/notificationUtils.ts';
+import {
+  computeRetryPolicy,
+  enforcePreferenceAtSendTime,
+  type DeliveryChannel,
+} from '../_shared/notificationDispatchPolicy.ts';
 import {
   formatTimeForTimezone,
   generateSmsMessage,
@@ -30,8 +33,6 @@ import {
   type TripContext,
 } from '../_shared/notificationContentBuilder.ts';
 import { resolveEmailProviderSecrets } from '../_shared/emailDelivery.ts';
-
-type DeliveryChannel = 'push' | 'email' | 'sms';
 
 interface DispatchRequest {
   deliveryIds?: string[];
@@ -88,9 +89,6 @@ const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
 const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
 const twilioMessagingServiceSid = Deno.env.get('TWILIO_MESSAGING_SERVICE_SID');
 const internalSecret = Deno.env.get('NOTIFICATION_DISPATCH_SECRET');
-
-const SMS_MAX_ATTEMPTS = 3;
-const SMS_RETRY_BACKOFF_MINUTES = [2, 10, 30];
 
 const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
 const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
@@ -631,7 +629,8 @@ serve(async req => {
 
       summary.processed++;
 
-      if (!isCategoryEnabled(category, prefs)) {
+      const basePreferenceDecision = enforcePreferenceAtSendTime(channel, category, prefs);
+      if (!basePreferenceDecision.allow && basePreferenceDecision.reason === 'category_disabled') {
         await markDelivery(supabase, delivery.id, {
           status: 'skipped',
           error: `category_disabled:${category || 'unknown'}`,
@@ -654,7 +653,7 @@ serve(async req => {
       }
 
       if (channel === 'push') {
-        if (!prefs.push_enabled) {
+        if (!basePreferenceDecision.allow) {
           await markDelivery(supabase, delivery.id, {
             status: 'skipped',
             error: 'push_disabled',
@@ -776,20 +775,10 @@ serve(async req => {
       }
 
       if (channel === 'email') {
-        if (!prefs.email_enabled) {
+        if (!basePreferenceDecision.allow) {
           await markDelivery(supabase, delivery.id, {
             status: 'skipped',
             error: 'email_disabled',
-            attempts: delivery.attempts + 1,
-          });
-          summary.skipped.email++;
-          continue;
-        }
-
-        if (category && !isEmailEligible(category)) {
-          await markDelivery(supabase, delivery.id, {
-            status: 'skipped',
-            error: `email_not_eligible:${category}`,
             attempts: delivery.attempts + 1,
           });
           summary.skipped.email++;
@@ -878,20 +867,10 @@ serve(async req => {
       }
 
       // SMS
-      if (!prefs.sms_enabled) {
+      if (!basePreferenceDecision.allow) {
         await markDelivery(supabase, delivery.id, {
           status: 'skipped',
           error: 'sms_disabled',
-          attempts: delivery.attempts + 1,
-        });
-        summary.skipped.sms++;
-        continue;
-      }
-
-      if (!category || !isSmsEligible(category)) {
-        await markDelivery(supabase, delivery.id, {
-          status: 'skipped',
-          error: `sms_not_eligible:${category || 'unknown'}`,
           attempts: delivery.attempts + 1,
         });
         summary.skipped.sms++;
@@ -1033,19 +1012,12 @@ serve(async req => {
         });
       } else {
         const newAttempts = delivery.attempts + 1;
-        // Retry on server errors (5xx), rate limits (429), or network failures (no status)
-        const isRetryable =
-          smsResult.httpStatus === undefined ||
-          smsResult.httpStatus >= 500 ||
-          smsResult.httpStatus === 429;
-        const shouldRetry = isRetryable && newAttempts < SMS_MAX_ATTEMPTS;
+        const retryPolicy = computeRetryPolicy('sms', newAttempts, smsResult.httpStatus);
 
-        if (shouldRetry) {
-          const backoffMinutes =
-            SMS_RETRY_BACKOFF_MINUTES[
-              Math.min(newAttempts - 1, SMS_RETRY_BACKOFF_MINUTES.length - 1)
-            ];
-          const nextAttemptAt = new Date(Date.now() + backoffMinutes * 60 * 1000).toISOString();
+        if (retryPolicy.retryable && retryPolicy.nextAttemptMinutes) {
+          const nextAttemptAt = new Date(
+            Date.now() + retryPolicy.nextAttemptMinutes * 60 * 1000,
+          ).toISOString();
           await markDelivery(supabase, delivery.id, {
             status: 'queued',
             error: `retry_${newAttempts}:${smsResult.error || 'transient_failure'}`,
@@ -1058,6 +1030,7 @@ serve(async req => {
             status: 'failed',
             error: smsResult.error || 'sms_delivery_failed',
             attempts: newAttempts,
+            dead_lettered_at: retryPolicy.deadLetter ? new Date().toISOString() : null,
           });
           summary.failed.sms++;
         }
@@ -1070,7 +1043,7 @@ serve(async req => {
           recipient: smsPhone,
           status: 'failed',
           error: smsResult.error,
-          metadata: { category, attempt: newAttempts, willRetry: shouldRetry },
+          metadata: { category, attempt: newAttempts, willRetry: retryPolicy.retryable },
         });
       }
     }
