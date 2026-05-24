@@ -44,7 +44,8 @@
     "qa:voice-model-guard": "node scripts/qa/voice-model-guard.cjs",
     "qa:chat-production-readiness": "node scripts/qa/run-chat-production-readiness-gate.cjs",
     "ops:check-stream-parity": "node scripts/check-stream-config-parity.cjs",
-    "qa:basecamps-casing": "node scripts/qa/check-basecamps-import-casing.cjs"
+    "qa:basecamps-casing": "node scripts/qa/check-basecamps-import-casing.cjs",
+    "lint:dal": "bash scripts/check-duplicate-service-wrappers.sh"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -52,6 +52,50 @@ interface ClassificationResult {
   }>;
 }
 
+type ArtifactInputKind = 'email' | 'pdf' | 'link';
+
+interface IngestValidationFailure {
+  code:
+    | 'MALFORMED_PAYLOAD'
+    | 'MISSING_TRIP_ID'
+    | 'MISSING_TEXT'
+    | 'MISSING_FILE_URL'
+    | 'UNSUPPORTED_SOURCE_TYPE';
+  message: string;
+}
+
+function redactForLog(value: string | null | undefined): string {
+  if (!value) return '';
+  return value
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[REDACTED_EMAIL]')
+    .replace(/\d{10,16}/g, '[REDACTED_NUMBER]');
+}
+
+function detectArtifactInputKind(sourceType: string | undefined): ArtifactInputKind {
+  if (sourceType === 'gmail_import') return 'email';
+  if (sourceType === 'upload') return 'pdf';
+  if (sourceType === 'link_extract') return 'link';
+  return 'email';
+}
+
+function validateIngestRequest(body: IngestRequest): IngestValidationFailure | null {
+  if (!body || typeof body !== 'object') {
+    return { code: 'MALFORMED_PAYLOAD', message: 'Invalid request body' };
+  }
+  if (!body.tripId) return { code: 'MISSING_TRIP_ID', message: 'tripId is required' };
+  const kind = detectArtifactInputKind(body.sourceType);
+  if (!['email', 'pdf', 'link'].includes(kind)) {
+    return { code: 'UNSUPPORTED_SOURCE_TYPE', message: 'Unsupported artifact source type' };
+  }
+  if ((kind === 'email' || kind === 'link') && !body.text && !body.fileUrl) {
+    return { code: 'MISSING_TEXT', message: 'Text is required for email/link artifacts' };
+  }
+  if (kind === 'pdf' && !body.fileUrl && !body.text) {
+    return { code: 'MISSING_FILE_URL', message: 'PDF artifacts require fileUrl or extracted text' };
+  }
+  return null;
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function parseJsonSafely(raw: string): Record<string, unknown> {
@@ -244,11 +288,19 @@ serve(async req => {
     const body: IngestRequest = await req.json();
     tripId = body.tripId;
 
-    if (!tripId) {
-      return new Response(JSON.stringify({ success: false, error: 'tripId is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const validationError = validateIngestRequest(body);
+    if (validationError) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: validationError.message,
+          code: validationError.code,
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -269,7 +321,7 @@ serve(async req => {
     }
 
     console.log(
-      `[artifact-ingest] Starting: trip=${tripId} source=${body.sourceType} file=${body.fileName || 'text'}`,
+      `[artifact-ingest] Starting: trip=${tripId} source=${body.sourceType} file=${redactForLog(body.fileName || 'text')}`,
     );
 
     // ── Step 1: Determine modality and extract text ──────────────────────
@@ -284,7 +336,9 @@ serve(async req => {
       extractedText = await extractTextFromPdfUrl(body.fileUrl);
     }
 
-    console.log(`[artifact-ingest] Extracted ${extractedText.length} chars, modality=${modality}`);
+    console.log(
+      `[artifact-ingest] Extracted ${extractedText.length} chars, modality=${modality}, preview=${redactForLog(extractedText.slice(0, 120))}`,
+    );
 
     // ── Step 2: Classify ─────────────────────────────────────────────────
     let classification: ClassificationResult;

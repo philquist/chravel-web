@@ -37,6 +37,7 @@ import {
   shouldUseOSMFallback,
 } from './openStreetMapFallback';
 import { toast } from 'sonner';
+import { telemetry } from '@/telemetry/service';
 
 let mapsApi: typeof google.maps | null = null;
 let loaderPromise: Promise<typeof google.maps> | null = null;
@@ -718,6 +719,10 @@ export async function autocomplete(
   // Check quota before making request
   const quotaCheck = apiQuotaMonitor.checkQuota();
   if (!quotaCheck.canProceed) {
+    telemetry.track('google_places_quota_blocked', {
+      surface: 'autocomplete',
+      reason: quotaCheck.reason ?? 'unknown',
+    });
     // Return cached results if available (even if expired)
     const expiredCache = apiQuotaMonitor.getCachedResult(clientCacheKey);
     if (expiredCache) {
@@ -783,6 +788,9 @@ export async function autocomplete(
 
     return results;
   } catch (error) {
+    telemetry.track('google_places_autocomplete_error', {
+      message: error instanceof Error ? error.message : 'unknown_error',
+    });
     if (import.meta.env.DEV) {
       console.error('[GooglePlacesNew] Autocomplete error:', error);
     }
