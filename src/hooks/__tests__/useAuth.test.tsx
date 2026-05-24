@@ -103,6 +103,23 @@ vi.mock('@/integrations/supabase/client', () => ({
   supabase: mockSupabaseClient,
 }));
 
+// Mock notification preferences so background enrichment (transformUser) is
+// instant and deterministic — the real service's variable-latency dynamic
+// import otherwise widens the auth-event race window under parallel test load.
+vi.mock('@/services/userPreferencesService', () => ({
+  userPreferencesService: {
+    getNotificationPreferences: vi.fn().mockResolvedValue({
+      push_enabled: false,
+      email_enabled: true,
+      sms_enabled: false,
+      chat_messages: true,
+      broadcasts: true,
+      calendar_reminders: true,
+    }),
+    updateNotificationPreferences: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 // Mock demo mode store
 vi.mock('@/store/demoModeStore', () => {
   const mockStore = vi.fn(selector => {
@@ -166,6 +183,20 @@ describe('AuthProvider', () => {
     expect(result.current.isAuthenticated).toBe(false);
   });
 
+  it('exposes isHydrated=false while loading and true once the bootstrap settles', async () => {
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
+
+    // Hydration gate: downstream auth-gated fetches wait on this to avoid
+    // Trip-Not-Found flashes during the session-hydration race.
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.isHydrated).toBe(false);
+
+    await waitFor(() => expect(result.current.isHydrated).toBe(true));
+    expect(result.current.isLoading).toBe(false);
+  });
+
   it('refreshes expired tokens during bootstrap', async () => {
     const expiredSession = {
       ...mockSession,
@@ -201,7 +232,11 @@ describe('AuthProvider', () => {
     });
 
     const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    // Wait until background enrichment (transformUser) has committed — the
+    // session-derived user has notificationSettings.messages === null, the
+    // enriched user has a boolean. This drains the init bootstrap's setState so
+    // it cannot race the logout sequence below.
+    await waitFor(() => expect(result.current.user?.notificationSettings.messages).not.toBeNull());
 
     act(() => {
       authListener?.('TOKEN_REFRESHED', mockSession);
@@ -223,7 +258,9 @@ describe('AuthProvider', () => {
     });
 
     const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
-    await waitFor(() => expect(result.current.authState).toBe('authenticated'));
+    // Wait until background enrichment has committed (boolean notification
+    // settings) so no in-flight init setState can race the sign-out below.
+    await waitFor(() => expect(result.current.user?.notificationSettings.messages).not.toBeNull());
 
     act(() => authListener?.('SIGNED_OUT', null));
 

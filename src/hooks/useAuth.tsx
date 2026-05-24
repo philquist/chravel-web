@@ -25,117 +25,10 @@ import { buildSessionDerivedUser } from '@/lib/sessionDerivedUser';
 import { generateSafeUuid } from '@/utils/uuid';
 import { openInstalledAuthBrowser } from '@/utils/installedAuthBrowser';
 import { errorTracking } from '@/services/errorTracking';
+import type { AuthUser as User, UserProfile, AuthContextType } from './auth/types';
+import { createDemoUser, getOAuthReturnTo, withTimeout } from './auth/authHelpers';
 
 const TRIPS_QUERY_KEY = 'trips';
-
-// Timeout utility to prevent indefinite hanging on database queries
-const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> => {
-  return Promise.race([
-    promise,
-    new Promise<T>(resolve => setTimeout(() => resolve(fallback), timeoutMs)),
-  ]);
-};
-
-interface UserProfile {
-  id: string;
-  user_id: string;
-  display_name: string | null;
-  real_name: string | null;
-  name_preference: 'real' | 'display' | null;
-  first_name: string | null;
-  last_name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  phone: string | null;
-  show_email: boolean;
-  show_phone: boolean;
-  job_title?: string | null;
-  show_job_title?: boolean;
-}
-
-interface User {
-  id: string;
-  email?: string;
-  phone?: string;
-  displayName: string;
-  realName?: string;
-  namePreference: 'real' | 'display';
-  hasCompletedProfileSetup: boolean;
-  firstName?: string;
-  lastName?: string;
-  avatar?: string;
-  bio?: string;
-  isPro: boolean;
-  showEmail: boolean;
-  showPhone: boolean;
-  jobTitle?: string;
-  showJobTitle?: boolean;
-  // Enhanced pro role system
-  proRole?:
-    | 'admin'
-    | 'staff'
-    | 'talent'
-    | 'player'
-    | 'crew'
-    | 'security'
-    | 'medical'
-    | 'producer'
-    | 'speakers'
-    | 'guests'
-    | 'coordinators'
-    | 'logistics'
-    | 'press';
-  organizationId?: string;
-  permissions: string[];
-  /** @deprecated Use useNotificationPreferences hook for notification preference reads/writes. */
-  notificationSettings: {
-    messages: boolean | null;
-    broadcasts: boolean | null;
-    tripUpdates: boolean | null;
-    email: boolean | null;
-    push: boolean | null;
-  };
-}
-
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  isLoading: boolean;
-  isHydrated: boolean;
-  signIn: (email: string, password: string) => Promise<{ error?: string }>;
-  signInWithGoogle: (returnToOverride?: string) => Promise<{ error?: string }>;
-  signInWithApple: (returnToOverride?: string) => Promise<{ error?: string }>;
-  signInWithPhone: (phone: string) => Promise<{ error?: string }>;
-  signUp: (
-    email: string,
-    password: string,
-    firstName: string,
-    lastName: string,
-  ) => Promise<{ error?: string; success?: string }>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error?: string }>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase error type is loosely typed
-  updateProfile: (updates: Partial<UserProfile>) => Promise<{ error?: any }>;
-  /** @deprecated Use useNotificationPreferences hook for notification preference reads/writes. */
-  updateNotificationSettings: (updates: Partial<User['notificationSettings']>) => Promise<void>;
-  switchRole: (role: string) => void;
-  authState: 'unauthenticated' | 'loading' | 'authenticated' | 'error';
-  authErrorReason: string | null;
-  isAuthenticated: boolean;
-}
-
-const getOAuthReturnTo = (returnToOverride?: string): string | null => {
-  if (returnToOverride && returnToOverride.startsWith('/') && !returnToOverride.startsWith('//')) {
-    return returnToOverride;
-  }
-
-  const queryReturnTo = new URLSearchParams(window.location.search).get('returnTo');
-  if (queryReturnTo && queryReturnTo.startsWith('/') && !queryReturnTo.startsWith('//')) {
-    return queryReturnTo;
-  }
-
-  return null;
-};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -181,37 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Generate a stable but non-predictable demo UUID per session
   const demoUserId = useMemo(() => generateSafeUuid(), []);
 
-  const demoUser: User = useMemo(
-    () => ({
-      id: demoUserId,
-      email: 'demo@chravel.com',
-      phone: undefined,
-      displayName: 'Demo User',
-      realName: undefined,
-      namePreference: 'display',
-      hasCompletedProfileSetup: true,
-      firstName: 'Demo',
-      lastName: 'User',
-      avatar: '',
-      bio: 'Exploring Chravel in app preview mode.',
-      // Demo user gets read-only guest access — no admin privileges.
-      // Server-side RLS and demo-mode gating prevent real mutations.
-      isPro: false,
-      showEmail: false,
-      showPhone: false,
-      proRole: 'guests',
-      organizationId: undefined,
-      permissions: ['read'],
-      notificationSettings: {
-        messages: true,
-        broadcasts: true,
-        tripUpdates: true,
-        email: false,
-        push: false,
-      },
-    }),
-    [demoUserId],
-  );
+  const demoUser: User = useMemo(() => createDemoUser(demoUserId), [demoUserId]);
 
   const shouldUseDemoUser = demoView === 'app-preview';
   const shouldUseDemoUserRef = useRef<boolean>(shouldUseDemoUser);
@@ -1408,6 +1271,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         authState,
         authErrorReason,
         isAuthenticated: authState === 'authenticated',
+        // Initial session bootstrap has settled (authenticated, signed-out, or error).
+        // Downstream auth-gated fetches should wait for this to avoid Trip-Not-Found
+        // flashes during the hydration race.
+        isHydrated: !isLoading,
       }}
     >
       {children}
