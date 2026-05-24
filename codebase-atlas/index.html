@@ -2067,6 +2067,28 @@
           purple: '#c084fc',
           gray: '#8b8b95',
         };
+        // Defined here (before the render loop) so renderFiles/badge can use it — var assignments are not hoisted.
+        var BADGE_COLOR = {
+          Core: 'blue',
+          'Well Designed': 'green',
+          Feature: 'purple',
+          Shared: 'blue',
+          Utility: 'gray',
+          Config: 'gray',
+          Database: 'blue',
+          API: 'blue',
+          Auth: 'orange',
+          UI: 'purple',
+          State: 'blue',
+          Test: 'green',
+          Legacy: 'yellow',
+          'Suspected Dead': 'red',
+          Duplicate: 'orange',
+          Risky: 'red',
+          'Needs Docs': 'yellow',
+          'Needs Tests': 'yellow',
+          AI: 'purple',
+        };
         function esc(s) {
           return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
@@ -2361,27 +2383,6 @@
           sec.appendChild(grid);
         }
 
-        var BADGE_COLOR = {
-          Core: 'blue',
-          'Well Designed': 'green',
-          Feature: 'purple',
-          Shared: 'blue',
-          Utility: 'gray',
-          Config: 'gray',
-          Database: 'blue',
-          API: 'blue',
-          Auth: 'orange',
-          UI: 'purple',
-          State: 'blue',
-          Test: 'green',
-          Legacy: 'yellow',
-          'Suspected Dead': 'red',
-          Duplicate: 'orange',
-          Risky: 'red',
-          'Needs Docs': 'yellow',
-          'Needs Tests': 'yellow',
-          AI: 'purple',
-        };
         function badge(b) {
           var c = COLOR[BADGE_COLOR[b] || 'gray'];
           return (
