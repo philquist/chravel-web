@@ -3,10 +3,13 @@ export type ImportPhase =
   | 'idle'
   | 'ingest'
   | 'parse'
+  | 'parsing'
   | 'extract'
   | 'validate'
+  | 'validating'
   | 'preview'
   | 'commit'
+  | 'importing'
   | 'done'
   | 'failed';
 
