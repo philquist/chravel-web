@@ -16,6 +16,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useEventPermissions } from '@/hooks/useEventPermissions';
 import { useDemoMode } from '@/hooks/useDemoMode';
+import { canRoleAccess } from '@/lib/permissionGuard';
+import type { PermissionRole } from '@/types/permissionMatrix.generated';
 
 type TripType = 'consumer' | 'pro' | 'event';
 
@@ -69,99 +71,47 @@ export function useMutationPermissions(tripId: string): MutationPermissions {
 
   const isLoading = typeLoading || rolePerms.isLoading || eventPerms.isLoading;
 
-  // Demo mode: everything allowed
-  if (isDemoMode) {
-    return {
-      isLoading: false,
-      tripType: 'consumer',
-      canCreateTask: true,
-      canEditTask: true,
-      canDeleteTask: true,
-      canCreatePoll: true,
-      canClosePoll: true,
-      canDeletePoll: true,
-      canCreateEvent: true,
-      canEditEvent: true,
-      canDeleteEvent: true,
-      canSetBasecamp: true,
-      canSaveLink: true,
-    };
-  }
+  const resolvedRole: PermissionRole = (() => {
+    if (isDemoMode) return 'demo';
+    if (tripType === 'consumer')
+      return rolePerms.isTripMember ? 'consumer_member' : 'consumer_guest';
+    if (tripType === 'event') return eventPerms.isOrganizer ? 'event_organizer' : 'event_attendee';
+    if (rolePerms.isAdmin) return 'pro_admin';
+    if (rolePerms.canEdit) return 'pro_editor';
+    return 'pro_viewer';
+  })();
 
-  // While permissions load, default to permissive — RLS enforces server-side.
-  // This prevents flashing "Permission Denied" toasts for legitimate users.
   if (isLoading) {
     return {
       isLoading: true,
       tripType,
-      canCreateTask: true,
-      canEditTask: true,
-      canDeleteTask: true,
-      canCreatePoll: true,
-      canClosePoll: true,
-      canDeletePoll: true,
-      canCreateEvent: true,
-      canEditEvent: true,
-      canDeleteEvent: true,
-      canSetBasecamp: true,
-      canSaveLink: true,
+      canCreateTask: false,
+      canEditTask: false,
+      canDeleteTask: false,
+      canCreatePoll: false,
+      canClosePoll: false,
+      canDeletePoll: false,
+      canCreateEvent: false,
+      canEditEvent: false,
+      canDeleteEvent: false,
+      canSetBasecamp: false,
+      canSaveLink: false,
     };
   }
 
-  // Consumer trips: all members can do everything
-  if (tripType === 'consumer') {
-    return {
-      isLoading,
-      tripType: 'consumer',
-      canCreateTask: true,
-      canEditTask: true,
-      canDeleteTask: true,
-      canCreatePoll: true,
-      canClosePoll: true,
-      canDeletePoll: true,
-      canCreateEvent: true,
-      canEditEvent: true,
-      canDeleteEvent: true,
-      canSetBasecamp: true,
-      canSaveLink: true,
-    };
-  }
-
-  // Event trips: organizer-only for most mutations
-  if (tripType === 'event') {
-    const { isOrganizer } = eventPerms;
-    return {
-      isLoading,
-      tripType: 'event',
-      canCreateTask: isOrganizer,
-      canEditTask: isOrganizer,
-      canDeleteTask: isOrganizer,
-      canCreatePoll: isOrganizer,
-      canClosePoll: isOrganizer,
-      canDeletePoll: isOrganizer,
-      canCreateEvent: isOrganizer,
-      canEditEvent: isOrganizer,
-      canDeleteEvent: isOrganizer,
-      canSetBasecamp: isOrganizer,
-      canSaveLink: isOrganizer,
-    };
-  }
-
-  // Pro trips: role-based permissions + admin-only basecamp
-  const { canPerformAction, isAdmin } = rolePerms;
   return {
-    isLoading,
-    tripType: 'pro',
-    canCreateTask: canPerformAction('tasks', 'can_create'),
-    canEditTask: canPerformAction('tasks', 'can_assign'), // closest to "edit"
-    canDeleteTask: canPerformAction('tasks', 'can_delete'),
-    canCreatePoll: true, // pro trips allow all members to create polls
-    canClosePoll: isAdmin,
-    canDeletePoll: isAdmin,
-    canCreateEvent: canPerformAction('calendar', 'can_create_events'),
-    canEditEvent: canPerformAction('calendar', 'can_edit_events'),
-    canDeleteEvent: canPerformAction('calendar', 'can_delete_events'),
-    canSetBasecamp: isAdmin,
-    canSaveLink: true, // all pro trip members can save links
+    isLoading: false,
+    tripType,
+    canCreateTask: canRoleAccess(resolvedRole, 'tasks', 'write'),
+    canEditTask: canRoleAccess(resolvedRole, 'tasks', 'write'),
+    canDeleteTask: canRoleAccess(resolvedRole, 'tasks', 'delete'),
+    canCreatePoll: canRoleAccess(resolvedRole, 'polls', 'write'),
+    canClosePoll: canRoleAccess(resolvedRole, 'polls', 'admin'),
+    canDeletePoll: canRoleAccess(resolvedRole, 'polls', 'delete'),
+    canCreateEvent: canRoleAccess(resolvedRole, 'calendar', 'write'),
+    canEditEvent: canRoleAccess(resolvedRole, 'calendar', 'write'),
+    canDeleteEvent: canRoleAccess(resolvedRole, 'calendar', 'delete'),
+    canSetBasecamp: canRoleAccess(resolvedRole, 'basecamp', 'admin'),
+    canSaveLink: canRoleAccess(resolvedRole, 'links', 'write'),
   };
 }

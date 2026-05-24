@@ -45,6 +45,8 @@
     "qa:chat-production-readiness": "node scripts/qa/run-chat-production-readiness-gate.cjs",
     "ops:check-stream-parity": "node scripts/check-stream-config-parity.cjs",
     "qa:basecamps-casing": "node scripts/qa/check-basecamps-import-casing.cjs",
+    "permissions:generate": "node scripts/generate-permission-matrix.mjs",
+    "permissions:drift": "node scripts/check-permission-matrix-drift.mjs"
     "lint:dal": "bash scripts/check-duplicate-service-wrappers.sh"
   },
   "dependencies": {
