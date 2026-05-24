@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { runtimePrompt } from './prompt.ts';
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { processInChunks } from './concurrency.ts';
+import { buildArtifactFingerprint, buildCandidateDedupeKey } from './importJobState.ts';
 import {
   getValidGmailAccessToken,
   GmailReconnectRequiredError,
@@ -674,31 +675,34 @@ serve(async req => {
         }
 
         for (const res of parsed.reservations) {
-          // Hardened dedupe key: includes date component to prevent key collapse
-          // when confirmation_code and booking_source are both absent
-          const dateSignal = (
-            (res.departure_time_local as string | undefined) ||
-            (res.check_in_local as string | undefined) ||
-            (res.reservation_time_local as string | undefined) ||
-            (res.start_time_local as string | undefined) ||
-            (res.pickup_time_local as string | undefined) ||
-            ''
-          ).substring(0, 10);
-
-          const dedupeKey = [
-            res.type,
-            (res.confirmation_code as string | undefined) ||
-              (res.flight_number as string | undefined) ||
-              (res.train_number as string | undefined) ||
-              '',
-            (res.booking_source as string | undefined) ||
-              (res.airline_code as string | undefined) ||
-              (res.ticket_provider as string | undefined) ||
-              '',
-            dateSignal,
-          ].join('_');
+          const artifactPayload = {
+            ...res,
+            _relevance_score: parsed.trip_relevance_score,
+            _relevance_reason: parsed.trip_relevance_reason,
+            _gmail_message_id: messageId,
+            _email_subject: subject,
+            is_cancellation: parsed.is_cancellation,
+            is_modification: parsed.is_modification,
+          };
+          const artifactFingerprint = await buildArtifactFingerprint(messageId, artifactPayload);
+          const dedupeKey = buildCandidateDedupeKey(messageId, artifactFingerprint);
 
           await withDedupeWriteLock(async () => {
+            await supabaseClient.from('gmail_import_artifacts').upsert(
+              {
+                job_id: job.id,
+                user_id: user.id,
+                trip_id: tripId,
+                gmail_message_id: messageId,
+                artifact_fingerprint: artifactFingerprint,
+                artifact_payload: artifactPayload,
+                source_subject: subject,
+                source_from: from,
+                source_sent_date: emailDate,
+              },
+              { onConflict: 'job_id,gmail_message_id,artifact_fingerprint' },
+            );
+
             const { data: existing } = await supabaseClient
               .from('smart_import_candidates')
               .select('id')
@@ -708,6 +712,12 @@ serve(async req => {
 
             if (existing && existing.length > 0) {
               stats.skipped++;
+              await supabaseClient
+                .from('gmail_import_artifacts')
+                .update({ apply_status: 'applied', updated_at: new Date().toISOString() })
+                .eq('job_id', job.id)
+                .eq('gmail_message_id', messageId)
+                .eq('artifact_fingerprint', artifactFingerprint);
               return;
             }
 
@@ -717,20 +727,23 @@ serve(async req => {
                 job_id: job.id,
                 user_id: user.id,
                 trip_id: tripId,
-                reservation_data: {
-                  ...res,
-                  _relevance_score: parsed.trip_relevance_score,
-                  _relevance_reason: parsed.trip_relevance_reason,
-                  _gmail_message_id: messageId,
-                  _email_subject: subject,
-                  is_cancellation: parsed.is_cancellation,
-                  is_modification: parsed.is_modification,
-                },
+                reservation_data: artifactPayload,
                 status: 'pending',
                 dedupe_key: dedupeKey,
               })
               .select()
               .single();
+
+            await supabaseClient
+              .from('gmail_import_artifacts')
+              .update({
+                apply_status: candidateError ? 'error' : 'applied',
+                apply_error: candidateError ? candidateError.message : null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('job_id', job.id)
+              .eq('gmail_message_id', messageId)
+              .eq('artifact_fingerprint', artifactFingerprint);
 
             if (!candidateError && candidate) {
               allCandidates.push(candidate);
