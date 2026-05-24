@@ -108,13 +108,12 @@ export default tseslint.config(
               message:
                 'Stream-enabled chat surfaces must not import legacy chatService mutation APIs. Use Stream mutation callbacks from transport hooks.',
             },
+          ],
+          // Depth-agnostic guard: catches the legacy service via any relative
+          // depth or alias so the Stream/legacy boundary cannot silently regress.
+          patterns: [
             {
-              name: '../services/chatService',
-              message:
-                'Stream-enabled chat surfaces must not import legacy chatService mutation APIs. Use Stream mutation callbacks from transport hooks.',
-            },
-            {
-              name: '../../services/chatService',
+              group: ['**/services/chatService', '**/services/chatService.*'],
               message:
                 'Stream-enabled chat surfaces must not import legacy chatService mutation APIs. Use Stream mutation callbacks from transport hooks.',
             },
