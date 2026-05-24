@@ -16,6 +16,41 @@ const PROMPT_INJECTION_PATTERNS: RegExp[] = [
 const SENSITIVE_KEYS = /token|secret|api[_-]?key|authorization|cookie|password|private[_-]?key/i;
 
 const TOOL_SCHEMA_BY_NAME = new Map(ALL_TOOL_DECLARATIONS.map(t => [t.name, t.parameters]));
+export const MUTATING_TOOL_ALLOWLIST = new Set([
+  'addToCalendar',
+  'createTask',
+  'createPoll',
+  'closePoll',
+  'savePlace',
+  'setBasecamp',
+  'addToAgenda',
+  'createBroadcast',
+  'createNotification',
+  'updateCalendarEvent',
+  'deleteCalendarEvent',
+  'bulkDeleteCalendarEvents',
+  'duplicateCalendarEvent',
+  'moveCalendarEvent',
+  'cloneActivity',
+  'updateTask',
+  'deleteTask',
+  'bulkMarkTasksDone',
+  'splitTaskAssignments',
+  'addExpense',
+  'settleExpense',
+  'updateTripDetails',
+  'generateTripImage',
+  'setTripHeaderImage',
+  'emitSmartImportPreview',
+  'emitReservationDraft',
+  'emitBulkDeletePreview',
+]);
+
+export const DESTRUCTIVE_MUTATION_ALLOWLIST = new Set([
+  'deleteCalendarEvent',
+  'bulkDeleteCalendarEvents',
+  'deleteTask',
+]);
 
 export type PromptRiskLevel = 'low' | 'medium' | 'high';
 
@@ -66,6 +101,45 @@ export function enforceToolSchema(
   }
 
   return sanitized;
+}
+
+export function validateToolArgsStrict(
+  toolName: string,
+  args: Record<string, unknown>,
+): {
+  ok: boolean;
+  errors: string[];
+} {
+  const schema = TOOL_SCHEMA_BY_NAME.get(toolName);
+  if (!schema) return { ok: false, errors: [`Unknown tool: ${toolName}`] };
+
+  const required = new Set(schema.required || []);
+  const properties = schema.properties || {};
+  const errors: string[] = [];
+
+  for (const key of required) {
+    const value = args[key];
+    if (value === undefined || value === null || value === '')
+      errors.push(`Missing required arg: ${key}`);
+  }
+
+  for (const [key, value] of Object.entries(args)) {
+    const prop = properties[key];
+    if (!prop) continue;
+    const expectedType = prop.type;
+    if (!expectedType || value === undefined || value === null) continue;
+
+    const actualType = Array.isArray(value) ? 'array' : typeof value;
+    if (actualType !== expectedType) {
+      errors.push(`Invalid type for ${key}: expected ${expectedType}, got ${actualType}`);
+    }
+  }
+
+  return { ok: errors.length === 0, errors };
+}
+
+export function toolMutationMode(toolName: string): 'read' | 'mutate' {
+  return MUTATING_TOOL_ALLOWLIST.has(toolName) ? 'mutate' : 'read';
 }
 
 export function buildUntrustedContextBlock(

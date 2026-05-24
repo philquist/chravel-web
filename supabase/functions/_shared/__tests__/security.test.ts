@@ -69,7 +69,7 @@ describe('Tool Router Security Air-Lock', () => {
     const token = await generateCapabilityToken({
       user_id: 'user_1',
       trip_id: 'trip_1', // Authorized trip
-      allowed_tools: ['getTask'],
+      allowed_tools: ['getTripInfo'],
     });
 
     vi.mocked(functionExecutor.executeFunctionCall).mockResolvedValue({
@@ -78,7 +78,7 @@ describe('Tool Router Security Air-Lock', () => {
     });
 
     // LLM maliciously attempts cross-trip access.
-    // Use 'getTask' (a read tool) to test trip_id enforcement and output
+    // Use 'getTripInfo' (a read tool) to test trip_id enforcement and output
     // redaction without triggering the pending-action gate that
     // normalizeToolResult enforces for mutation tools like 'createTask'.
     const maliciousArgs = {
@@ -86,13 +86,13 @@ describe('Tool Router Security Air-Lock', () => {
       trip_id: 'trip_999',
     };
 
-    const result = await executeToolSecurely(mockSupabase, token, 'getTask', maliciousArgs);
+    const result = await executeToolSecurely(mockSupabase, token, 'getTripInfo', maliciousArgs);
 
     // The functionExecutor should be called with the AUTHORIZED trip_id
     expect(functionExecutor.executeFunctionCall).toHaveBeenCalledWith(
       mockSupabase,
-      'getTask',
-      expect.objectContaining({ trip_id: 'trip_1', title: 'Hack' }), // Args were overridden
+      'getTripInfo',
+      expect.objectContaining({ trip_id: 'trip_1' }), // Args were overridden
       'trip_1',
       'user_1',
       undefined,
@@ -108,7 +108,7 @@ describe('Tool Router Security Air-Lock', () => {
     const token = await generateCapabilityToken({
       user_id: 'user_1',
       trip_id: 'trip_1',
-      allowed_tools: ['getUsers'],
+      allowed_tools: ['getTripInfo'],
     });
 
     vi.mocked(functionExecutor.executeFunctionCall).mockResolvedValue({
@@ -119,7 +119,7 @@ describe('Tool Router Security Air-Lock', () => {
       ],
     });
 
-    const result = await executeToolSecurely(mockSupabase, token, 'getUsers', {});
+    const result = await executeToolSecurely(mockSupabase, token, 'getTripInfo', {});
 
     expect(result.users[0].email).toBeUndefined();
     expect(result.users[0].phone).toBeUndefined();
@@ -127,5 +127,36 @@ describe('Tool Router Security Air-Lock', () => {
 
     expect(result.users[1].email).toBeUndefined();
     expect(result.users[1].display_name).toBe('Bob');
+  });
+
+  it('fails closed on destructive mutation without confirmation gate', async () => {
+    const token = await generateCapabilityToken({
+      user_id: 'user_1',
+      trip_id: 'trip_1',
+      allowed_tools: ['deleteTask'],
+    });
+
+    const result = await executeToolSecurely(mockSupabase, token, 'deleteTask', {
+      taskId: 'task_1',
+    });
+    expect(result.success).toBe(false);
+    expect(result.pending_confirmation).toBe(true);
+    expect(functionExecutor.executeFunctionCall).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed args before execution', async () => {
+    const token = await generateCapabilityToken({
+      user_id: 'user_1',
+      trip_id: 'trip_1',
+      allowed_tools: ['createTask'],
+    });
+
+    const result = await executeToolSecurely(mockSupabase, token, 'createTask', {
+      title: 123,
+      idempotency_key: 'id-1',
+    } as any);
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Invalid tool arguments');
+    expect(functionExecutor.executeFunctionCall).not.toHaveBeenCalled();
   });
 });

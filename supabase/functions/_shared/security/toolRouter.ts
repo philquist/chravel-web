@@ -1,7 +1,13 @@
 import { verifyCapabilityToken } from './capabilityTokens.ts';
 import { executeFunctionCall } from '../functionExecutor.ts';
 import { normalizeToolResult } from '../concierge/toolResultContracts.ts';
-import { enforceToolSchema, redactSensitiveFields } from './aiSecurityBoundary.ts';
+import {
+  DESTRUCTIVE_MUTATION_ALLOWLIST,
+  enforceToolSchema,
+  redactSensitiveFields,
+  toolMutationMode,
+  validateToolArgsStrict,
+} from './aiSecurityBoundary.ts';
 
 export async function executeToolSecurely(
   supabase: any,
@@ -10,6 +16,12 @@ export async function executeToolSecurely(
   args: Record<string, any>,
   locationContext?: any,
 ) {
+  const trace = {
+    promptVersion: 'concierge-security-v2',
+    toolName,
+    mode: toolMutationMode(toolName),
+  };
+
   // 1. Verify capability token signature + TTL
   const cap = await verifyCapabilityToken(capabilityToken);
 
@@ -23,6 +35,16 @@ export async function executeToolSecurely(
   // 3. Enforce argument constraints (trip_id immutability, IDs belong to trip, etc.)
   // Force the trip_id and user_id to match the capability token, ignoring whatever the model provided.
   const enforcedArgs = enforceToolSchema(toolName, { ...args });
+  const strictValidation = validateToolArgsStrict(toolName, enforcedArgs);
+  if (!strictValidation.ok) {
+    return {
+      success: false,
+      error: `Invalid tool arguments: ${strictValidation.errors.join('; ')}`,
+      confidence: 'low',
+      fail_closed: true,
+      trace,
+    };
+  }
 
   if (enforcedArgs.trip_id && enforcedArgs.trip_id !== cap.trip_id) {
     console.warn(
@@ -30,6 +52,20 @@ export async function executeToolSecurely(
     );
   }
   enforcedArgs.trip_id = cap.trip_id; // Explicitly override
+
+  // Destructive writes require explicit human confirmation gate.
+  if (DESTRUCTIVE_MUTATION_ALLOWLIST.has(toolName) && enforcedArgs.confirmation_gate !== true) {
+    return {
+      success: false,
+      error: `Tool "${toolName}" requires explicit confirmation before destructive mutation`,
+      pending_confirmation: true,
+      confidence: 'low',
+      fail_closed: true,
+      rollback_path:
+        'No mutation performed; request user confirmation and retry with confirmation_gate=true.',
+      trace,
+    };
+  }
 
   // 4. Execute the tool
   const result = await executeFunctionCall(
@@ -42,7 +78,15 @@ export async function executeToolSecurely(
   );
 
   // 5. Normalize + sanitize output before it is shown to users or fed back to the model.
-  return sanitizeToolOutput(toolName, normalizeToolResult(toolName, redactSensitiveFields(result)));
+  const normalized = normalizeToolResult(toolName, redactSensitiveFields(result));
+  return sanitizeToolOutput(toolName, {
+    ...normalized,
+    trace,
+    rollback_path:
+      normalized.success === true
+        ? 'For pending writes: reject in trip_pending_actions. For promoted/direct writes: revert via matching delete/update tool.'
+        : 'No mutation committed.',
+  });
 }
 
 function sanitizeToolOutput(toolName: string, result: any): any {
