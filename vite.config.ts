@@ -59,6 +59,8 @@ export default defineConfig(({ mode }) => ({
             '@radix-ui/react-tabs',
           ],
           supabase: ['@supabase/supabase-js'],
+          // stream-chat (~423 KB) — isolated into one stable, cacheable chunk
+          'stream-chat': ['stream-chat'],
           utils: ['date-fns', 'clsx', 'tailwind-merge'],
           charts: ['recharts'],
           pdf: ['jspdf', 'jspdf-autotable', 'html2canvas'],
