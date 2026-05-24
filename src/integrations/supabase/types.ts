@@ -3091,7 +3091,6 @@ export type Database = {
           end_time: string | null
           event_category: string | null
           id: string
-          idempotency_key: string | null
           include_in_itinerary: boolean | null
           is_all_day: boolean | null
           location: string | null
@@ -3110,7 +3109,6 @@ export type Database = {
           end_time?: string | null
           event_category?: string | null
           id?: string
-          idempotency_key?: string | null
           include_in_itinerary?: boolean | null
           is_all_day?: boolean | null
           location?: string | null
@@ -3129,7 +3127,6 @@ export type Database = {
           end_time?: string | null
           event_category?: string | null
           id?: string
-          idempotency_key?: string | null
           include_in_itinerary?: boolean | null
           is_all_day?: boolean | null
           location?: string | null
@@ -4917,6 +4914,12 @@ export type Database = {
         Returns: boolean
       }
       is_user_sms_entitled: { Args: { p_user_id: string }; Returns: boolean }
+      list_applied_migrations: {
+        Args: never
+        Returns: {
+          version: string
+        }[]
+      }
       log_basecamp_change: {
         Args: {
           p_action: string
@@ -5015,6 +5018,15 @@ export type Database = {
         Args: {
           p_current_version?: number
           p_option_id: string
+          p_poll_id: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      vote_on_poll_batch: {
+        Args: {
+          p_current_version?: number
+          p_option_ids: string[]
           p_poll_id: string
           p_user_id: string
         }
