@@ -39,6 +39,23 @@ export interface PendingAction {
   resolved_by: string | null;
 }
 
+type PendingActionToolName =
+  | 'createTask'
+  | 'createPoll'
+  | 'addToCalendar'
+  | 'duplicateCalendarEvent'
+  | 'bulkMarkTasksDone'
+  | 'cloneActivity'
+  | 'addExpense'
+  | 'updateTripDetails'
+  | 'createBroadcast'
+  | 'createNotification'
+  | 'settleExpense';
+
+function assertNeverToolName(toolName: never): never {
+  throw new Error(`Unknown tool: ${toolName}`);
+}
+
 export function usePendingActions(tripId: string) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -89,7 +106,8 @@ export function usePendingActions(tripId: string) {
 
       // Execute the original mutation based on tool_name.
       // trip_id always comes from the action row (server-verified), not user input.
-      switch (action.tool_name) {
+      const toolName = action.tool_name as PendingActionToolName;
+      switch (toolName) {
         case 'createTask': {
           // intentional: source_type column may not be in generated types yet
           const { data: taskRow, error } = await (supabase as any)
@@ -313,7 +331,7 @@ export function usePendingActions(tripId: string) {
         }
 
         default:
-          throw new Error(`Unknown tool: ${action.tool_name}`);
+          assertNeverToolName(toolName);
       }
 
       // Mark as confirmed — re-check status to prevent TOCTOU race
@@ -364,7 +382,7 @@ export function usePendingActions(tripId: string) {
       // Invalidate relevant queries — use exact: false for prefix matching
       // so ['tripTasks', tripId, isDemoMode] variants are also invalidated.
       queryClient.invalidateQueries({ queryKey });
-      switch (action.tool_name) {
+      switch (toolName) {
         case 'createTask':
           queryClient.invalidateQueries({ queryKey: ['tripTasks', tripId], exact: false });
           break;
@@ -397,7 +415,7 @@ export function usePendingActions(tripId: string) {
           queryClient.invalidateQueries({ queryKey: tripKeys.payments(tripId), exact: false });
           break;
         default:
-          break;
+          assertNeverToolName(toolName);
       }
     },
     onError: (error: Error) => {
