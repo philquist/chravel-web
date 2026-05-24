@@ -10,7 +10,7 @@ import { isSuperAdminEmail } from '@/utils/isSuperAdmin';
  * Provides permission levels (View, Edit, Admin) and feature-specific access control
  */
 export const useRolePermissions = (tripId: string) => {
-  const { user } = useAuth();
+  const { user, authState } = useAuth();
   const { isDemoMode } = useDemoMode();
   const [permissionLevel, setPermissionLevel] = useState<PermissionLevel>('view');
   const [featurePermissions, setFeaturePermissions] = useState<FeaturePermissions | null>(null);
@@ -82,7 +82,7 @@ export const useRolePermissions = (tripId: string) => {
       return;
     }
 
-    if (!user?.id || !tripId) {
+    if (authState !== 'authenticated' || !user?.id || !tripId) {
       setIsLoading(false);
       return;
     }
@@ -167,7 +167,7 @@ export const useRolePermissions = (tripId: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, user?.email, tripId, isDemoMode]);
+  }, [user?.id, user?.email, tripId, isDemoMode, authState]);
 
   useEffect(() => {
     loadPermissions();

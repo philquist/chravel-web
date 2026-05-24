@@ -93,6 +93,7 @@ const { mockSupabaseClient } = vi.hoisted(() => {
         subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() }),
       })),
       removeChannel: vi.fn(),
+      removeAllChannels: vi.fn().mockResolvedValue(undefined),
     },
   };
 });
@@ -152,6 +153,81 @@ describe('AuthProvider', () => {
 
     // Initially loading should be true
     expect(result.current.isLoading).toBe(true);
+    expect(result.current.authState).toBe('loading');
+  });
+
+  it('cold start settles to unauthenticated when no session is present', async () => {
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.authState).toBe('unauthenticated');
+    expect(result.current.isAuthenticated).toBe(false);
+  });
+
+  it('refreshes expired tokens during bootstrap', async () => {
+    const expiredSession = {
+      ...mockSession,
+      access_token: 'bad.token.payload',
+    };
+    mockSupabaseClient.auth.getSession.mockResolvedValue({
+      data: { session: expiredSession },
+      error: null,
+    });
+    mockSupabaseClient.auth.refreshSession.mockResolvedValue({
+      data: { session: mockSession },
+      error: null,
+    });
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(mockSupabaseClient.auth.refreshSession).toHaveBeenCalled();
+    expect(result.current.authState).toBe('authenticated');
+  });
+
+  it('handles logout race by ending in signed-out state', async () => {
+    let authListener: ((event: string, session: any) => void) | undefined;
+    mockSupabaseClient.auth.onAuthStateChange.mockImplementation(cb => {
+      authListener = cb;
+      return { data: { subscription: { unsubscribe: vi.fn() } } };
+    });
+    mockSupabaseClient.auth.getSession.mockResolvedValue({
+      data: { session: mockSession },
+      error: null,
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      authListener?.('TOKEN_REFRESHED', mockSession);
+      authListener?.('SIGNED_OUT', null);
+    });
+
+    await waitFor(() => expect(result.current.authState).toBe('unauthenticated'));
+  });
+
+  it('propagates multi-tab sign-out via auth subscription', async () => {
+    let authListener: ((event: string, session: any) => void) | undefined;
+    mockSupabaseClient.auth.onAuthStateChange.mockImplementation(cb => {
+      authListener = cb;
+      return { data: { subscription: { unsubscribe: vi.fn() } } };
+    });
+    mockSupabaseClient.auth.getSession.mockResolvedValue({
+      data: { session: mockSession },
+      error: null,
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.authState).toBe('authenticated'));
+
+    act(() => authListener?.('SIGNED_OUT', null));
+
+    await waitFor(() => expect(result.current.authState).toBe('unauthenticated'));
   });
 
   it('syncs auth metadata when updating display and real names', async () => {
