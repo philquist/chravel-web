@@ -516,8 +516,8 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
   };
 
   // Demo mode: use mock data (hook returns empty when isDemoMode)
-  const displayNotifications = useMemo(() => {
-    const mapped = isDemoMode
+  const displayNotifications = useMemo<Notification[]>(() => {
+    const mapped: Notification[] = isDemoMode
       ? mockNotifications.map(n => ({
           id: n.id,
           type: n.type as Notification['type'],
@@ -530,7 +530,7 @@ export const NotificationsDialog = ({ open, onOpenChange }: NotificationsDialogP
           isHighPriority: n.type === 'broadcast',
           data: { ...n.data, tripType: n.tripType },
         }))
-      : notifications;
+      : (notifications as unknown as Notification[]);
 
     if (!isDemoMode) {
       return mapped;
