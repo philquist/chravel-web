@@ -818,6 +818,16 @@ export function useConciergeStreaming(params: Params) {
                     timestamp: new Date().toISOString(),
                   },
                 ]);
+              } else {
+                // Mid-stream failure: previously this branch did nothing, leaving the
+                // typing indicator spinning forever on a half-rendered message with no
+                // signal. Stop typing, mark degraded, and append a non-destructive
+                // notice while preserving the partial content already shown.
+                setIsTyping(false);
+                setAiStatus('degraded');
+                updateStreamMsg(msg => ({
+                  content: `${msg.content ?? ''}\n\n_Response interrupted — please try again._`,
+                }));
               }
             },
             onDone: () => {

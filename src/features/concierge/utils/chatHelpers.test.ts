@@ -24,6 +24,7 @@ describe('generateFallbackResponse payments fallback', () => {
 
     expect(response).toContain('Outstanding Payments');
     expect(response).toContain('Dinner');
-    expect(response).toContain('Total Outstanding: $80.00');
+    // The fallback formats the total in bold markdown ("**Total Outstanding:** $80.00").
+    expect(response).toContain('**Total Outstanding:** $80.00');
   });
 });
