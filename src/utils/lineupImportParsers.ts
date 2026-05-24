@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { parseICSContent } from './calendarImport';
-import ExcelJS from 'exceljs';
+// exceljs (~950 kB) is dynamically imported inside parseExcelLineup so it only
+// loads when a user actually imports a spreadsheet, not on lineup mount.
 import { getSmartImportErrorMessage } from '@/utils/smartImportPaywall';
 
 export type LineupSourceFormat = 'url' | 'text' | 'ics' | 'csv' | 'excel' | 'pdf' | 'image';
@@ -174,6 +175,7 @@ async function parseCSVLineup(file: File): Promise<LineupParseResult> {
 }
 
 async function parseExcelLineup(file: File): Promise<LineupParseResult> {
+  const { default: ExcelJS } = await import('exceljs');
   const buffer = await file.arrayBuffer();
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer);
