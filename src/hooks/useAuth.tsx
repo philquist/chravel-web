@@ -118,6 +118,9 @@ interface AuthContextType {
   /** @deprecated Use useNotificationPreferences hook for notification preference reads/writes. */
   updateNotificationSettings: (updates: Partial<User['notificationSettings']>) => Promise<void>;
   switchRole: (role: string) => void;
+  authState: 'unauthenticated' | 'loading' | 'authenticated' | 'error';
+  authErrorReason: string | null;
+  isAuthenticated: boolean;
 }
 
 const getOAuthReturnTo = (returnToOverride?: string): string | null => {
@@ -140,7 +143,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authErrorReason, setAuthErrorReason] = useState<string | null>(null);
+  const authState: AuthContextType['authState'] = isLoading
+    ? 'loading'
+    : authErrorReason
+      ? 'error'
+      : user
+        ? 'authenticated'
+        : 'unauthenticated';
+  const setAuthTransition = useCallback(
+    (next: {
+      loading?: boolean;
+      user?: User | null;
+      session?: Session | null;
+      errorReason?: string | null;
+    }) => {
+      if (next.session !== undefined) setSession(next.session);
+      if (next.user !== undefined) setUser(next.user);
+      if (next.loading !== undefined) setIsLoading(next.loading);
+      if (next.errorReason !== undefined) setAuthErrorReason(next.errorReason);
+    },
+    [],
+  );
   const isLoadingRef = useRef(true);
+  const authEventCounterRef = useRef(0);
+  const activeSessionUserIdRef = useRef<string | null>(null);
 
   /**
    * App-preview mode should behave like "full demo access" even when there is no real auth session.
@@ -190,6 +217,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     isLoadingRef.current = isLoading;
   }, [isLoading]);
+  useEffect(() => {
+    activeSessionUserIdRef.current = session?.user?.id ?? null;
+  }, [session]);
 
   useEffect(() => {
     shouldUseDemoUserRef.current = shouldUseDemoUser;
@@ -543,21 +573,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               authDebug('init:getSession:retryTokenInvalid');
               const refreshed = await forceRefreshSession();
               if (refreshed) {
-                setSession(refreshed);
-                setUser(buildSessionDerivedUser(refreshed.user));
+                setAuthTransition({
+                  session: refreshed,
+                  user: buildSessionDerivedUser(refreshed.user),
+                  errorReason: null,
+                });
                 prefetchUserTrips(refreshed.user.id);
                 void transformUser(refreshed.user).then(u => {
-                  if (u) setUser(u);
+                  if (u && activeSessionUserIdRef.current === refreshed.user.id) setUser(u);
                 });
               }
               setIsLoading(false);
               return;
             }
-            setSession(retry.data.session);
-            setUser(buildSessionDerivedUser(retry.data.session.user));
+            setAuthTransition({
+              session: retry.data.session,
+              user: buildSessionDerivedUser(retry.data.session.user),
+              errorReason: null,
+            });
             prefetchUserTrips(retry.data.session.user.id);
             void transformUser(retry.data.session.user).then(u => {
-              if (u) setUser(u);
+              if (u && activeSessionUserIdRef.current === retry.data.session.user.id) setUser(u);
             });
             setIsLoading(false);
             return;
@@ -583,15 +619,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             authDebug('init:getSession:tokenInvalid:recoveredByRefresh', {
               hasExpiresAt: Boolean(refreshedSession.expires_at),
             });
-            setSession(refreshedSession);
-            setUser(buildSessionDerivedUser(refreshedSession.user));
+            setAuthTransition({
+              session: refreshedSession,
+              user: buildSessionDerivedUser(refreshedSession.user),
+              errorReason: null,
+            });
             prefetchUserTrips(refreshedSession.user.id);
             void transformUser(refreshedSession.user).then(u => {
-              if (u) setUser(u);
+              if (u && activeSessionUserIdRef.current === refreshedSession.user.id) setUser(u);
             });
           } else {
             authDebug('init:getSession:tokenInvalid:refreshFailed');
-            setUser(shouldUseDemoUserRef.current ? demoUser : null);
+            setAuthTransition({
+              user: shouldUseDemoUserRef.current ? demoUser : null,
+              errorReason: 'token_refresh_failed',
+            });
           }
           setIsLoading(false);
           return;
@@ -620,7 +662,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
 
-        setSession(session);
+        setAuthTransition({ session, errorReason: null });
 
         if (session?.user) {
           authDebug('init:sessionPresent', {
@@ -648,22 +690,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             });
           }
           try {
-            setUser(buildSessionDerivedUser(session.user));
+            setAuthTransition({ user: buildSessionDerivedUser(session.user), errorReason: null });
             prefetchUserTrips(session.user.id);
             void transformUser(session.user).then(u => {
-              if (u) setUser(u);
+              if (u && activeSessionUserIdRef.current === session.user.id) setUser(u);
             });
           } catch (err) {
             authDebug('init:transformUser:error', { error: String(err) });
             if (import.meta.env.DEV) {
               console.error('[Auth] Error transforming user on init:', err);
             }
-            setUser(null);
+            setAuthTransition({ user: null, errorReason: 'session_transform_failed' });
           }
         } else {
           authDebug('init:noSession');
           // App-preview: provide a demo user even when not authenticated.
-          setUser(shouldUseDemoUserRef.current ? demoUser : null);
+          setAuthTransition({
+            user: shouldUseDemoUserRef.current ? demoUser : null,
+            errorReason: null,
+          });
         }
         setIsLoading(false);
       } catch (error) {
@@ -680,6 +725,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      const authEventId = ++authEventCounterRef.current;
       // CRITICAL: Only synchronous state updates in callback to prevent deadlock
       authDebug('onAuthStateChange', {
         event,
@@ -687,7 +733,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         hasUser: Boolean(session?.user),
         hasExpiresAt: Boolean(session?.expires_at),
       });
-      setSession(session);
+      setAuthTransition({ session });
 
       if (session?.user) {
         // Invalidate auth cache on explicit sign in / session refresh
@@ -738,12 +784,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         // Defer async work with setTimeout(0) to avoid Supabase auth deadlock
         setTimeout(() => {
+          if (authEventId !== authEventCounterRef.current) return;
           setUser(buildSessionDerivedUser(session.user));
           prefetchUserTrips(session.user.id);
           setIsLoading(false);
 
           transformUser(session.user)
             .then(transformedUser => {
+              if (authEventId !== authEventCounterRef.current) return;
               authDebug('onAuthStateChange:transformUser:success');
               if (transformedUser) {
                 setUser(transformedUser);
@@ -773,7 +821,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         conciergeCacheService.clearAllCaches();
         void clearNotificationRealtimeStore();
         // App-preview: keep demo user when logged out.
-        setUser(shouldUseDemoUserRef.current ? demoUser : null);
+        setAuthTransition({
+          user: shouldUseDemoUserRef.current ? demoUser : null,
+          errorReason: event === 'SIGNED_OUT' ? null : 'session_missing',
+        });
         setIsLoading(false);
 
         // Reset analytics identity on explicit sign-out only (not initial page load)
@@ -807,8 +858,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 if (import.meta.env.DEV) {
                   console.warn('[Auth] Session refresh failed, user must re-authenticate');
                 }
-                setSession(null);
-                setUser(shouldUseDemoUserRef.current ? demoUser : null);
+                setAuthTransition({
+                  session: null,
+                  user: shouldUseDemoUserRef.current ? demoUser : null,
+                  errorReason: 'visibility_refresh_failed',
+                });
               });
             } else if (currentSession && currentSession.expires_at) {
               // Check if session is near expiry
@@ -1346,6 +1400,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         updateProfile,
         updateNotificationSettings,
         switchRole,
+        authState,
+        authErrorReason,
+        isAuthenticated: authState === 'authenticated',
       }}
     >
       {children}
