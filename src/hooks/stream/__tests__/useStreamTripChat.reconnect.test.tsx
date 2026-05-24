@@ -284,4 +284,41 @@ describe('useStreamTripChat – reconnect backfill', () => {
     expect(second.id).toBe('msg-a'); // 10:00
     expect(third.id).toBe('msg-b'); // 11:00
   });
+
+  it('runs a single reconnect backfill during reconnect storms', async () => {
+    watchMock.mockResolvedValue({
+      membership: { user_id: 'user-1' },
+      messages: [MSG_A],
+    });
+
+    const { result } = renderHook(() => useStreamTripChat('trip-1', { enabled: true }));
+
+    await waitFor(() => {
+      expect(result.current.messages).toHaveLength(1);
+    });
+
+    let resolveBackfill: ((value: { messages: (typeof MSG_B)[] }) => void) | null = null;
+    queryMock.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveBackfill = resolve;
+        }),
+    );
+
+    await act(async () => {
+      connectionStatusCallback(true);
+      connectionStatusCallback(true);
+      connectionStatusCallback(true);
+    });
+
+    expect(queryMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveBackfill?.({ messages: [MSG_B] });
+    });
+
+    await waitFor(() => {
+      expect(result.current.messages.map(m => m.id)).toEqual(['msg-a', 'msg-b']);
+    });
+  });
 });
