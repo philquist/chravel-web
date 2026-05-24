@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Crown, Globe, Sparkles, Building, TrendingUp, Shield } from 'lucide-react';
 import { useConsumerSubscription } from '../../hooks/useConsumerSubscription';
 import { CONSUMER_PRICING } from '../../types/consumer';
@@ -7,11 +7,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export const ConsumerBillingSection = () => {
-  const { subscription, tier, isSubscribed, upgradeToTier, isLoading, isSuperAdmin, proTier } =
-    useConsumerSubscription();
+  const {
+    subscription,
+    tier,
+    isSubscribed,
+    upgradeToTier,
+    isLoading,
+    isSuperAdmin,
+    proTier,
+    checkSubscription,
+  } = useConsumerSubscription();
   const [expandedPlan, setExpandedPlan] = useState<string | null>(tier);
   const [expandedProPlan, setExpandedProPlan] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+
+  useEffect(() => {
+    void checkSubscription();
+  }, [checkSubscription]);
   const isNativeIOS = false;
   const blockConsumerCheckoutOnIOS = false;
 
