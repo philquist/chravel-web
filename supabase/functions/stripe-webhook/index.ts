@@ -81,15 +81,12 @@ const PRODUCT_TO_TIER: Record<string, string> = {
   prod_U73W99ebeJvbLB: 'frequent-chraveler',
 };
 
-type StripeEntitlementStatus = 'active' | 'trialing' | 'past_due' | 'expired' | 'canceled';
-
-function mapStripeStatusToEntitlementStatus(status: string): StripeEntitlementStatus {
-  if (status === 'active') return 'active';
-  if (status === 'trialing') return 'trialing';
-  if (status === 'past_due') return 'past_due';
-  if (status === 'canceled') return 'canceled';
-  return 'expired';
-}
+import {
+  mapStripeStatusToEntitlementStatus,
+  normalizeSeatCount,
+  resolveCanceledTransition,
+  resolveEntitlementTransition,
+} from './entitlementTransitions.ts';
 
 /**
  * Log an entitlement change to the audit trail (best-effort — does not block).
@@ -183,6 +180,12 @@ serve(async req => {
       logStep('Webhook verified', { type: event.type, id: event.id });
     } catch (err) {
       logError('STRIPE_WEBHOOK', err);
+      await upsertWebhookFailure(supabaseClient, {
+        eventId: 'signature-verification-failed',
+        eventType: 'signature_verification',
+        failureStage: 'signature_verification',
+        errorMessage: err instanceof Error ? err.message : String(err),
+      });
       return createErrorResponse('Invalid signature', 400);
     }
 
@@ -201,10 +204,17 @@ serve(async req => {
       if (idempotencyError.code === '23505') {
         // Unique constraint violation = event already processed
         logStep('Duplicate event skipped (idempotency)', { eventId: event.id });
+        await resolveWebhookFailure(supabaseClient, event.id);
         return createSecureResponse({ received: true, duplicate: true, eventType: event.type });
       }
       // Any other DB error — log and continue (don't silently drop real events)
       console.warn('[STRIPE-WEBHOOK] Idempotency insert failed:', idempotencyError.message);
+      await upsertWebhookFailure(supabaseClient, {
+        eventId: event.id,
+        eventType: event.type,
+        failureStage: 'idempotency_insert',
+        errorMessage: idempotencyError.message,
+      });
     }
 
     // Handle different event types
@@ -256,6 +266,7 @@ serve(async req => {
         logStep('Unhandled event type', { type: event.type });
     }
 
+    await resolveWebhookFailure(supabaseClient, event.id);
     return createSecureResponse({ received: true, eventType: event.type });
   } catch (error) {
     logError('STRIPE_WEBHOOK', error);
@@ -263,6 +274,32 @@ serve(async req => {
   }
 });
 
+async function upsertWebhookFailure(
+  supabase: any,
+  params: { eventId: string; eventType: string; failureStage: string; errorMessage: string },
+) {
+  await supabase.from('billing_webhook_processing_failures').upsert(
+    {
+      provider: 'stripe',
+      event_id: params.eventId,
+      event_type: params.eventType,
+      failure_stage: params.failureStage,
+      error_message: params.errorMessage,
+      last_seen_at: new Date().toISOString(),
+      retry_count: 1,
+      resolved_at: null,
+    },
+    { onConflict: 'provider,event_id', ignoreDuplicates: false },
+  );
+}
+
+async function resolveWebhookFailure(supabase: any, eventId: string) {
+  await supabase
+    .from('billing_webhook_processing_failures')
+    .update({ resolved_at: new Date().toISOString() })
+    .eq('provider', 'stripe')
+    .eq('event_id', eventId);
+}
 async function handleCheckoutCompleted(
   session: Stripe.Checkout.Session,
   supabase: any,
@@ -366,7 +403,9 @@ async function handleSubscriptionUpdated(
   logStep('Processing subscription update', { id: subscription.id, status: subscription.status });
 
   const customerId = subscription.customer as string;
-  const productId = subscription.items.data[0]?.price.product as string;
+  const firstItem = subscription.items.data[0];
+  const productId = firstItem?.price.product as string;
+  const seatCount = normalizeSeatCount(firstItem?.quantity);
   const subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
   const tier = PRODUCT_TO_TIER[productId] || 'free';
 
@@ -410,34 +449,23 @@ async function handleSubscriptionUpdated(
     return;
   }
 
-  const entitlementStatus = mapStripeStatusToEntitlementStatus(subscription.status);
-
-  // FIX 3: For past_due, keep the current plan (grace period) — Stripe will retry payment.
-  // Only downgrade to free on terminal states (expired).
-  const entitlementPlan =
-    entitlementStatus === 'active' ||
-    entitlementStatus === 'trialing' ||
-    entitlementStatus === 'past_due'
-      ? tier
-      : 'free';
-
-  // FIX 3: For past_due, keep the current_period_end so user retains access during grace
-  const periodEnd =
-    entitlementStatus === 'active' ||
-    entitlementStatus === 'trialing' ||
-    entitlementStatus === 'past_due'
-      ? subscriptionEnd
-      : null;
+  const transition = resolveEntitlementTransition({
+    stripeStatus: subscription.status,
+    mappedTier: tier,
+    subscriptionPeriodEndIso: subscriptionEnd,
+    nowIso: new Date().toISOString(),
+  });
 
   // FIX 4: Upsert scoped to subscription purchase_type
   const { error: entitlementsError } = await supabase.from('user_entitlements').upsert(
     {
       user_id: userId,
       source: 'stripe',
-      plan: entitlementPlan,
-      status: entitlementStatus,
+      plan: transition.plan,
+      status: transition.status,
       purchase_type: 'subscription',
-      current_period_end: periodEnd,
+      current_period_end: transition.currentPeriodEnd,
+      entitlements: { seats: seatCount },
       updated_at: new Date().toISOString(),
     },
     { onConflict: USER_ENTITLEMENT_CONFLICT_TARGET },
@@ -451,9 +479,9 @@ async function handleSubscriptionUpdated(
   await logEntitlementChange(supabase, {
     userId,
     oldPlan: currentEnt?.plan,
-    newPlan: entitlementPlan,
+    newPlan: transition.plan,
     oldStatus: currentEnt?.status,
-    newStatus: entitlementStatus,
+    newStatus: transition.status,
     source: 'stripe',
     eventId,
     eventType,
@@ -479,8 +507,9 @@ async function handleSubscriptionUpdated(
     userId,
     tier,
     status: subscription.status,
-    entitlementStatus,
-    entitlementPlan,
+    entitlementStatus: transition.status,
+    entitlementPlan: transition.plan,
+    seatCount,
   });
 }
 
@@ -556,7 +585,11 @@ async function handleSubscriptionDeleted(
 
   // FIX 5: Keep the subscription_end so we know when access actually expires
   const subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-  const periodEndInFuture = new Date(subscription.current_period_end * 1000) > new Date();
+  const canceledTransition = resolveCanceledTransition({
+    mappedTier: tier,
+    subscriptionPeriodEndIso: subscriptionEnd,
+    nowIso: new Date().toISOString(),
+  });
 
   await supabase
     .from('profiles')
@@ -573,15 +606,15 @@ async function handleSubscriptionDeleted(
   const productId = subscription.items.data[0]?.price.product as string;
   const tier = PRODUCT_TO_TIER[productId] || 'free';
 
-  if (periodEndInFuture) {
+  if (canceledTransition.plan !== 'free') {
     await supabase.from('user_entitlements').upsert(
       {
         user_id: userId,
         source: 'stripe',
-        plan: tier,
-        status: 'canceled',
+        plan: canceledTransition.plan,
+        status: canceledTransition.status,
         purchase_type: 'subscription',
-        current_period_end: subscriptionEnd,
+        current_period_end: canceledTransition.currentPeriodEnd,
         updated_at: new Date().toISOString(),
       },
       { onConflict: USER_ENTITLEMENT_CONFLICT_TARGET },
@@ -596,8 +629,8 @@ async function handleSubscriptionDeleted(
       {
         user_id: userId,
         source: 'stripe',
-        plan: 'free',
-        status: 'canceled',
+        plan: canceledTransition.plan,
+        status: canceledTransition.status,
         purchase_type: 'subscription',
         current_period_end: null,
         updated_at: new Date().toISOString(),
@@ -611,16 +644,17 @@ async function handleSubscriptionDeleted(
   await logEntitlementChange(supabase, {
     userId,
     oldPlan: currentEnt?.plan,
-    newPlan: periodEndInFuture ? tier : 'free',
+    newPlan: canceledTransition.plan,
     oldStatus: currentEnt?.status,
     newStatus: 'canceled',
     source: 'stripe',
     eventId,
     eventType: 'customer.subscription.deleted',
     purchaseType: 'subscription',
-    reason: periodEndInFuture
-      ? `Canceled — access until ${subscriptionEnd}`
-      : 'Canceled — period expired',
+    reason:
+      canceledTransition.plan !== 'free'
+        ? `Canceled — access until ${subscriptionEnd}`
+        : 'Canceled — period expired',
   });
 
   // Notify the user
