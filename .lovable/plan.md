@@ -1,19 +1,20 @@
-## Landing Hero copy + brand reorder
+## Hero brand consistency pass
 
 File: `src/components/landing/sections/HeroSection.tsx`
 
-Reorder the top section so the ChravelApp wordmark sits above the headline, and refresh the headline + accent copy.
+### Changes
 
-New order (top → bottom):
-1. **ChravelApp** (gradient wordmark — currently lines 63–82, moved to top)
-2. **"The Group Chat's Travel App"** (replaces "Group Travel Made Easy", line 45)
-3. Subtitle: "Friends, Families, Sports, Tours, Work & More. Planning is Frustrating. **ChravelApp Alleviates that Stress.**" (replaces "Get UnFrustrated.", line 60)
+1. **"ChravelApp" wordmark (top)** — keep the existing gold→blue gradient, but boost contrast against the gold radial background behind it:
+   - Shift gradient to richer gold tones so it reads as gold-on-gold-with-pop (e.g. `#7ba4d9 → #8a5a1f → #c49746 → #feeaa5 → #c49746 → #7ba4d9`) — deeper midtone anchors the letterforms.
+   - Add a layered drop shadow via `filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6)) drop-shadow(0 4px 16px rgba(0,0,0,0.5))` so the gradient text lifts off the gold backdrop.
 
-Implementation:
-- Move the Brand Name `<div>` block (lines 63–82) above the headline `<div>` (lines 38–47).
-- Swap headline text → `The Group Chat's Travel App`.
-- Swap gold accent span text → `ChravelApp Alleviates that Stress.`
-- Keep all existing classes, gradients, animation delays, and text shadows untouched.
-- Tighten the bottom margin on the brand block (`mb-2 tablet:mb-3`) so it stacks cleanly above the headline, and drop the headline's own top spacing if needed for rhythm.
+2. **Subtitle paragraph** — change text color from `text-white/80` to `text-white` so "For Friends, Families…" and "Planning feeling Overwhelming?" match the brightness of the H1.
 
-No other files affected. No logic, routing, or asset changes.
+3. **Copy edits inside the subtitle:**
+   - Prepend `For ` → `For Friends, Families, Sports, Tours, Work & More.`
+   - Replace `Planning is Frustrating.` → `Planning feeling Overwhelming?`
+   - Replace gold accent `ChravelApp Alleviates that Stress.` → `Use ChravelApp for Less Stress & More Stories.`
+   - Remove `text-gold-primary` from that span; use plain bright white (keep `font-semibold` for emphasis).
+
+### Out of scope
+No layout, spacing, animation, or other section changes.

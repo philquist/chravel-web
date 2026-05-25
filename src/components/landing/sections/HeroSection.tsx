@@ -45,10 +45,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight"
             style={{
               background:
-                'linear-gradient(135deg, #7ba4d9 0%, #c49746 35%, #e8af48 50%, #c49746 65%, #7ba4d9 100%)',
+                'linear-gradient(135deg, #7ba4d9 0%, #8a5a1f 25%, #c49746 45%, #feeaa5 55%, #c49746 70%, #7ba4d9 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
+              filter:
+                'drop-shadow(0 2px 6px rgba(0,0,0,0.6)) drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
             }}
           >
             ChravelApp
@@ -69,17 +71,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
 
         {/* New Subtitle */}
         <p
-          className="text-sm sm:text-base md:text-lg lg:text-xl text-white/80 font-medium max-w-3xl mx-auto mb-3 tablet:mb-4 animate-fade-in"
+          className="text-sm sm:text-base md:text-lg lg:text-xl text-white font-medium max-w-3xl mx-auto mb-3 tablet:mb-4 animate-fade-in"
           style={{
             animationDelay: '0.05s',
             textShadow: '0 2px 4px rgba(0,0,0,0.4)',
           }}
         >
-          Friends, Families, Sports, Tours, Work & More.
+          For Friends, Families, Sports, Tours, Work & More.
           <br className="hidden sm:inline" />
-          Planning is Frustrating.{' '}
-          <span className="text-gold-primary font-semibold">
-            ChravelApp Alleviates that Stress.
+          Planning feeling Overwhelming?{' '}
+          <span className="text-white font-semibold">
+            Use ChravelApp for Less Stress & More Stories.
           </span>
         </p>
       </div>
