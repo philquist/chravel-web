@@ -1207,6 +1207,29 @@ async function _executeImpl(
       if (!agendaTitle) return { error: 'Agenda session title is required' };
       if (!eventId) return { error: 'Event ID is required for agenda items' };
 
+      // Idempotency: same (event_id,title,session_date,start_time) inside 10 min
+      // returns the existing row instead of inserting a duplicate.
+      const tenMinAgo = new Date(Date.now() - 10 * 60_000).toISOString();
+      const dedupeQuery = supabase
+        .from('event_agenda_items')
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('title', agendaTitle)
+        .gte('created_at', tenMinAgo);
+      if (sessionDate) dedupeQuery.eq('session_date', sessionDate);
+      if (startTime) dedupeQuery.eq('start_time', startTime);
+      const { data: existingAgenda } = await dedupeQuery.maybeSingle();
+
+      if (existingAgenda) {
+        return {
+          success: true,
+          agendaItem: existingAgenda,
+          actionType: 'add_to_agenda',
+          deduped: true,
+          message: `"${agendaTitle}" is already on the agenda.`,
+        };
+      }
+
       const { data, error } = await supabase
         .from('event_agenda_items')
         .insert({
@@ -1230,6 +1253,7 @@ async function _executeImpl(
         message: `Added "${agendaTitle}" to event agenda`,
       };
     }
+
 
     case 'searchFlights': {
       const { origin, destination, departureDate, returnDate, passengers } = args;
