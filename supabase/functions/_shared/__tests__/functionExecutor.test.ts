@@ -23,7 +23,18 @@ describe('functionExecutor idempotency', () => {
     const mockSingle = vi.fn().mockResolvedValue({ data: { id: 'pending-1' }, error: null });
     const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
     const mockInsert = vi.fn().mockReturnValue({ select: mockSelect });
-    const mockFrom = vi.fn().mockReturnValue({ insert: mockInsert });
+    const mockEq = vi.fn().mockResolvedValue({ data: null, error: null });
+    const mockUpdate = vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: mockEq }) });
+    const mockTripTaskSingle = vi.fn().mockResolvedValue({ data: { id: 'task-1' }, error: null });
+    const mockTripTaskSelect = vi.fn().mockReturnValue({ single: mockTripTaskSingle });
+    const mockTripTaskInsert = vi.fn().mockReturnValue({ select: mockTripTaskSelect });
+    const mockFrom = vi.fn((table: string) => {
+      if (table === 'trip_pending_actions') return { insert: mockInsert, update: mockUpdate };
+      if (table === 'trip_tasks') return { insert: mockTripTaskInsert };
+      if (table === 'task_assignments' || table === 'task_status')
+        return { insert: vi.fn().mockResolvedValue({ error: null }) };
+      return { insert: vi.fn() };
+    });
     const mockSupabase = { from: mockFrom };
 
     const result = await executeFunctionCall(
@@ -43,7 +54,7 @@ describe('functionExecutor idempotency', () => {
       }),
     );
     expect(result.success).toBe(true);
-    expect(result.pending).toBe(true);
+    expect(result.pending).toBe(false);
     expect(result.pendingActionId).toBe('pending-1');
   });
 
@@ -51,7 +62,18 @@ describe('functionExecutor idempotency', () => {
     const mockSingle = vi.fn().mockResolvedValue({ data: { id: 'pending-2' }, error: null });
     const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
     const mockInsert = vi.fn().mockReturnValue({ select: mockSelect });
-    const mockFrom = vi.fn().mockReturnValue({ insert: mockInsert });
+    const mockEq = vi.fn().mockResolvedValue({ data: null, error: null });
+    const mockUpdate = vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: mockEq }) });
+    const mockTripTaskSingle = vi.fn().mockResolvedValue({ data: { id: 'task-2' }, error: null });
+    const mockTripTaskSelect = vi.fn().mockReturnValue({ single: mockTripTaskSingle });
+    const mockTripTaskInsert = vi.fn().mockReturnValue({ select: mockTripTaskSelect });
+    const mockFrom = vi.fn((table: string) => {
+      if (table === 'trip_pending_actions') return { insert: mockInsert, update: mockUpdate };
+      if (table === 'trip_tasks') return { insert: mockTripTaskInsert };
+      if (table === 'task_assignments' || table === 'task_status')
+        return { insert: vi.fn().mockResolvedValue({ error: null }) };
+      return { insert: vi.fn() };
+    });
     const mockSupabase = { from: mockFrom };
 
     await executeFunctionCall(

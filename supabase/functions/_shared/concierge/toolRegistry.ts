@@ -30,6 +30,7 @@ export const MUTATING_TOOL_NAMES = new Set<string>([
   'createPoll',
   'closePoll',
   'savePlace',
+  'saveLink',
   'setBasecamp',
   'addToAgenda',
   'createBroadcast',
@@ -328,11 +329,18 @@ export const ALL_TOOL_DECLARATIONS: ToolDeclaration[] = [
       type: 'object',
       properties: {
         url: { type: 'string', description: 'The URL to save (required)' },
-        title: { type: 'string', description: 'Display title for the link (falls back to URL host)' },
-        description: { type: 'string', description: 'Optional note explaining why this link matters' },
+        title: {
+          type: 'string',
+          description: 'Display title for the link (falls back to URL host)',
+        },
+        description: {
+          type: 'string',
+          description: 'Optional note explaining why this link matters',
+        },
         category: {
           type: 'string',
-          description: 'Optional: attraction, accommodation, activity, appetite, or other (default: other)',
+          description:
+            'Optional: attraction, accommodation, activity, appetite, or other (default: other)',
         },
         idempotency_key: {
           type: 'string',
