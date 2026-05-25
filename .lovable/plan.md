@@ -1,86 +1,63 @@
-# Unify Concierge Confirm-Card Flow for Links, Tasks, Polls
+## Scope
 
-## Goal
-Every create/update concierge tool should follow the same pattern: insert into `trip_pending_actions` (audit trail + UI contract), fast-path write the real row, then mark the pending action `confirmed`. This gives the chat a consistent success card with a `pendingActionId`, action type, and promoted/pending booleans.
+Surgical content-only edit to two files in `src/components/conversion/`. No new components, no styling changes, no architecture changes.
 
-Today only `createTask` and `createPoll` follow that pattern. `saveLink`, `updateTask`, and `closePoll` write directly with no pending buffer, so the chat shows a plain text response instead of the action card.
+## Files changed
 
-## Scope (in this branch)
-1. `saveLink` (functionExecutor.ts ~L1047): wrap with pending-buffer + promote pattern.
-2. `updateTask` (functionExecutor.ts ~L1751): wrap with pending-buffer + promote pattern.
-3. `closePoll` (functionExecutor.ts ~L3820): wrap with pending-buffer + promote pattern.
-4. Client invalidation map (`src/lib/conciergeInvalidation.ts`): already covers `saveLink`; verify `updateTask` and `closePoll` invalidation entries remain correct (they do).
-5. Confirm-card renderer (`ConciergeActionCardGroup` / `ConciergeActionCard`): no UI change required — these already render any action with `actionType` + `success`. Verify the new `actionType` strings (`save_link`, `update_task`, `close_poll`) are styled; add minimal label/icon mappings if missing.
+1. **`src/components/conversion/ReplacesGrid.tsx`** — copy only
+   - Line 26: `"Tap below to see how ChravelApp consolidates your app stack"` → `"Tap below to see how ChravelApp brings together the trip chaos usually scattered across your app stack"`
+   - Lines 104 & 122: `"Consolidates:"` → `"Brings together the trip chaos usually scattered across:"`
+   - No layout/animation/chip-rendering changes.
 
-Out of scope: `deleteTask`, settle/add expense, calendar updates — explicitly deferred (separate follow-up).
+2. **`src/components/conversion/ReplacesGridData.ts`** — rewrite `CATEGORIES` array contents only (keep `AppItem` / `Category` interfaces intact)
+   - Same `hero` (visible first) vs `full` (expanded) split already supported by the component → use it as the "consumer-first cap at 6–8" mechanism. No variant prop added (architecture has no Pro/Events variant here; enterprise apps just get demoted into `full` or removed per spec).
+   - Update `benefit` strings to the new descriptions.
 
-## Technical Details
+### New category contents
 
-### Shared executor pattern (template)
-```ts
-const dedupeId = tool_call_id || idempotency_key || null;
+**chat** — benefit: "A private group chat built specifically for your trip."
+- hero: WhatsApp, iMessage/SMS, Facebook Messenger, Instagram DMs, GroupMe, Snapchat, Telegram, Discord
+- full: Slack, Microsoft Teams
+- (Signal removed)
 
-const { data: pending, error: pendingError } = await supabase
-  .from('trip_pending_actions')
-  .insert({
-    trip_id: tripId,
-    user_id: userId || '00000000-0000-0000-0000-000000000000',
-    tool_name: '<tool>',
-    ...(dedupeId ? { tool_call_id: dedupeId } : {}),
-    payload: { /* canonical args */ },
-    source_type: 'ai_concierge',
-  })
-  .select('id')
-  .single();
-if (pendingError) throw pendingError;
+**calendar** — benefit: "One shared schedule — updated live for everyone."
+- hero: Google Calendar, Apple Calendar, Outlook Calendar, Gmail, Outlook Email, Calendly, iCal
+- full: []
+- (Doodle moved to Polls)
 
-// fast-path real write
-let promoted = false;
-const { data: row, error: writeErr } = await supabase.from('<table>')...;
-if (!writeErr) {
-  promoted = true;
-  await supabase
-    .from('trip_pending_actions')
-    .update({ status: 'confirmed', resolved_at: new Date().toISOString(), resolved_by: userId })
-    .eq('id', pending.id)
-    .eq('status', 'pending');
-}
+**concierge** — benefit: "Your AI concierge — aware of your trip, preferences, and context."
+- hero: ChatGPT, Google Search, Gemini, Claude, Perplexity, Reddit, TikTok, Instagram
+- full: YouTube, Tripadvisor, Yelp
 
-return {
-  success: true,
-  pending: !promoted,
-  promoted,
-  pendingActionId: pending.id,
-  actionType: '<save_link|update_task|close_poll>',
-  message: promoted ? '<success>' : '<awaiting confirm>',
-  ...entityPayload,
-};
-```
+**media** — benefit: "Photos, videos, files, and confirmations — one hub for the whole group."
+- hero: Google Photos, Apple Photos, iCloud, Google Drive, Dropbox, Instagram, Snapchat Memories, WhatsApp Photos
+- full: WeTransfer, OneDrive, Box
+- (Apple Files removed)
 
-### Per-tool specifics
-- **saveLink**: keep existing idempotency short-circuit (`deduped: true`) — if existing row found, skip pending insert and return as today (no extra audit row for true dupes). Otherwise follow template. Add `idempotency_key` + `tool_call_id` params to registry schema.
-- **updateTask**: pending payload = `{ task_id, ...updatePayload }`. Fast-path = the existing `update().eq('id', taskId)` block. Return `task` row on success. Keep the "task not found in trip" guard before inserting the pending row so we don't pollute the audit log on bad input.
-- **closePoll**: pending payload = `{ poll_id }`. Same guard-then-buffer order. Return `poll` row on success.
+**payments** — benefit: "See who paid, who owes, and how everyone prefers to settle."
+- hero: Venmo, Zelle, PayPal, Cash App, Splitwise, Apple Cash, Google Sheets, Excel
+- full: []
+- (Tab, Settle Up, Google Pay removed — avoids implying Chravel is a payment rail)
 
-### Registry (`toolRegistry.ts`)
-- Add `idempotency_key` / `tool_call_id` to `saveLink` param schema if absent (mirror createTask).
-- No new tools, no schema removals.
+**places** — benefit: "Links, reservations, and locations saved once — found instantly."
+- hero: Google Maps, Apple Maps, Waze, Yelp, Tripadvisor, OpenTable, Resy, Airbnb
+- full: Booking.com, Vrbo, Apple Notes, Safari / Chrome Bookmarks
+- (MapQuest, Glympse, Citymapper, Find My, Roadtrippers removed)
 
-### Client (`conciergeInvalidation.ts`)
-- Already invalidates `tripTasks` for `updateTask`, `tripPolls` for `closePoll`, `tripPlaces` + `tripLinks` for `saveLink`. No edits required, but re-confirm during implementation.
+**polls** — benefit: "Make group decisions without endless debates or buried votes."
+- hero: Doodle, Google Forms, SurveyMonkey, When2Meet, Typeform, StrawPoll, WhatsApp Polls
+- full: []
+- (Slido, Poll Everywhere, PollForAll removed)
 
-### Confirm card (`ConciergeActionCard*`)
-- Verify label/icon mapping covers `save_link`, `update_task`, `close_poll`. Add minimal entries if missing (label + tab navigation target: Places for save_link, Tasks for update_task, Polls for close_poll).
+**tasks** — benefit: "The group to-do list — reminders and accountability for everyone."
+- hero: Apple Reminders, Google Tasks, Todoist, Google Keep, Apple Notes, Trello
+- full: Notion, Asana, Monday.com, Microsoft To Do
 
 ## Validation
-- `npm run typecheck && npm run lint && npm run build`
-- Targeted unit/integration: existing tests under `supabase/functions/_shared/__tests__` if any cover createTask buffer — extend for the three new cases (insert pending → fast-path → promoted=true; failed write → promoted=false).
-- Manual smoke in preview: ask concierge to "save this link: https://example.com/article", "mark task X done", "close the dinner poll" — confirm action card renders with success state and the relevant tab refreshes.
 
-## Risks
-- LOW: pattern is already proven for createTask/createPoll; we're replicating, not inventing.
-- Medium-edge: `updateTask` previously returned even when no rows updated; preserve the "No fields to update" early return *before* the pending insert.
-- RLS: `trip_pending_actions` insert already permitted for concierge writes — no policy change needed.
+- `npm run typecheck && npm run build`
+- Manual: load `/`, expand each category card, verify chips wrap cleanly on 689px viewport (current preview), tablet, and desktop. Verify chevron collapse still works.
 
-## Rollback
-Single-file revert of `supabase/functions/_shared/functionExecutor.ts` (and registry if param added). No DB migration, no client contract changes beyond additive action-card mappings.
+## Risk
+
+LOW — string/data edits only. No runtime, schema, or import changes. Rollback = git revert.
