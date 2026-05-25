@@ -1045,11 +1045,10 @@ async function _executeImpl(
     }
 
     case 'saveLink': {
-      const { url, title, description, category } = args;
+      const { url, title, description, category, idempotency_key, tool_call_id } = args;
       const rawUrl = String(url || '').trim();
       if (!rawUrl) return { error: 'url is required' };
 
-      // Basic URL validation
       let parsedHost = '';
       try {
         const parsed = new URL(rawUrl);
@@ -1070,8 +1069,9 @@ async function _executeImpl(
         'other',
       ]);
       const safeCategory = validCategories.has(String(category)) ? String(category) : 'other';
+      const safeDescription = description ? String(description).substring(0, 500) : null;
 
-      // Idempotency: same (trip_id,url) inside 10 min returns existing row.
+      // Idempotency: same (trip_id,url) inside 10 min returns existing row (no pending audit).
       const tenMinAgo = new Date(Date.now() - 10 * 60_000).toISOString();
       const { data: existing } = await supabase
         .from('trip_links')
@@ -1091,26 +1091,75 @@ async function _executeImpl(
         };
       }
 
-      const { data, error } = await supabase
+      // Buffered confirm-card flow (mirrors createTask/createPoll).
+      const dedupeId = tool_call_id || idempotency_key || null;
+      const { data: pending, error: pendingError } = await supabase
+        .from('trip_pending_actions')
+        .insert({
+          trip_id: tripId,
+          user_id: userId || '00000000-0000-0000-0000-000000000000',
+          tool_name: 'saveLink',
+          ...(dedupeId ? { tool_call_id: dedupeId } : {}),
+          payload: {
+            url: rawUrl,
+            title: linkTitle,
+            description: safeDescription,
+            category: safeCategory,
+            added_by: userId || '',
+          },
+          source_type: 'ai_concierge',
+        })
+        .select('id')
+        .single();
+      if (pendingError) throw pendingError;
+
+      let promoted = false;
+      let insertedLink: Record<string, unknown> | null = null;
+      const { data, error: writeErr } = await supabase
         .from('trip_links')
         .insert({
           trip_id: tripId,
           title: linkTitle,
           url: rawUrl,
-          description: description ? String(description).substring(0, 500) : null,
+          description: safeDescription,
           category: safeCategory,
           added_by: userId || '',
         })
         .select()
         .single();
-      if (error) throw error;
+
+      if (!writeErr && data) {
+        insertedLink = data;
+        promoted = true;
+        await supabase
+          .from('trip_pending_actions')
+          .update({
+            status: 'confirmed',
+            resolved_at: new Date().toISOString(),
+            resolved_by: userId,
+          })
+          .eq('id', pending.id)
+          .eq('status', 'pending');
+      } else if (writeErr) {
+        console.warn(
+          '[Tool] saveLink fast-path failed, falling back to client confirm:',
+          writeErr.message,
+        );
+      }
+
       return {
         success: true,
-        link: data,
+        pending: !promoted,
+        promoted,
+        pendingActionId: pending.id,
+        link: insertedLink,
         actionType: 'save_link',
-        message: `Saved link "${linkTitle}" to the trip.`,
+        message: promoted
+          ? `Saved link "${linkTitle}" to the trip.`
+          : `I'd like to save "${linkTitle}" to the trip. Please confirm in the trip chat.`,
       };
     }
+
 
 
     case 'setBasecamp': {
