@@ -61,6 +61,11 @@ export function usePendingActions(tripId: string) {
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
 
+  // In-flight confirm guard: prevents the same actionId from being confirmed
+  // twice when a user rapidly double-taps the confirm button before the
+  // mutation resolves. Auto-confirm has its own `autoConfirmedIds` guard.
+  const inFlightConfirms = useRef<Set<string>>(new Set());
+
   const queryKey = ['pendingActions', tripId];
 
   // Fetch pending actions for this trip
