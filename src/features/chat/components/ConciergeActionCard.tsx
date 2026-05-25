@@ -69,7 +69,26 @@ const ACTION_CONFIG: Record<
     tab: 'agenda',
     color: 'teal',
   },
+  save_link: {
+    icon: MapPin,
+    label: 'Saved Link',
+    tab: 'places',
+    color: 'orange',
+  },
+  update_task: {
+    icon: CheckSquare,
+    label: 'Task Updated',
+    tab: 'tasks',
+    color: 'green',
+  },
+  close_poll: {
+    icon: BarChart3,
+    label: 'Poll Closed',
+    tab: 'polls',
+    color: 'purple',
+  },
 };
+
 
 const COLOR_CLASSES: Record<string, { bg: string; border: string; icon: string; text: string }> = {
   blue: {
