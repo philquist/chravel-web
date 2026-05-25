@@ -1798,10 +1798,10 @@ async function _executeImpl(
     }
 
     case 'updateTask': {
-      const { taskId, title, description, assignee, dueDate, completed } = args;
+      const { taskId, title, description, assignee, dueDate, completed, idempotency_key, tool_call_id } = args;
       if (!taskId) return { error: 'taskId is required' };
 
-      // Verify task belongs to this trip
+      // Verify task belongs to this trip (guard before audit row)
       const { data: existing, error: fetchErr } = await supabase
         .from('trip_tasks')
         .select('id, trip_id, title')
@@ -1825,21 +1825,65 @@ async function _executeImpl(
         return { error: 'No fields to update' };
       }
 
-      const { data, error } = await supabase
+      // Buffered confirm-card flow
+      const dedupeId = tool_call_id || idempotency_key || null;
+      const { data: pending, error: pendingError } = await supabase
+        .from('trip_pending_actions')
+        .insert({
+          trip_id: tripId,
+          user_id: userId || '00000000-0000-0000-0000-000000000000',
+          tool_name: 'updateTask',
+          ...(dedupeId ? { tool_call_id: dedupeId } : {}),
+          payload: { task_id: taskId, assignee: assignee || null, ...updatePayload },
+          source_type: 'ai_concierge',
+        })
+        .select('id')
+        .single();
+      if (pendingError) throw pendingError;
+
+      let promoted = false;
+      let updatedRow: Record<string, unknown> | null = null;
+      const { data, error: writeErr } = await supabase
         .from('trip_tasks')
         .update(updatePayload)
         .eq('id', taskId)
         .eq('trip_id', tripId)
         .select()
         .single();
-      if (error) throw error;
+
+      if (!writeErr && data) {
+        updatedRow = data;
+        promoted = true;
+        await supabase
+          .from('trip_pending_actions')
+          .update({
+            status: 'confirmed',
+            resolved_at: new Date().toISOString(),
+            resolved_by: userId,
+          })
+          .eq('id', pending.id)
+          .eq('status', 'pending');
+      } else if (writeErr) {
+        console.warn(
+          '[Tool] updateTask fast-path failed, falling back to client confirm:',
+          writeErr.message,
+        );
+      }
+
+      const taskTitle = (updatedRow?.title as string) || existing.title;
       return {
         success: true,
-        task: data,
+        pending: !promoted,
+        promoted,
+        pendingActionId: pending.id,
+        task: updatedRow,
         actionType: 'update_task',
-        message: `Updated task "${data.title}"${completed ? ' (marked complete)' : ''}`,
+        message: promoted
+          ? `Updated task "${taskTitle}"${completed ? ' (marked complete)' : ''}`
+          : `I'd like to update task "${taskTitle}". Please confirm in the trip chat.`,
       };
     }
+
 
     case 'deleteTask': {
       const { taskId } = args;
