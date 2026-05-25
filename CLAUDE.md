@@ -147,6 +147,16 @@ npm run build     # runs lint + typecheck + production build
 
 For canonical ✅/❌ pattern examples (hooks, Supabase queries, Maps init, errors): load the `chravel-code-patterns` skill.
 
+## Codebase Atlas
+
+When the user references the **codebase atlas** ("codebase atlas", "architecture atlas", "refresh the atlas", "map the codebase"), **regenerate it with current data** — never just open the stale HTML:
+
+1. Invoke the `codebase-atlas` skill to refresh the judgment layer (`codebase-atlas/curated.json`).
+2. Run `npm run atlas` to recompute the metrics layer, merge it into `codebase-atlas/architecture-data.json`, and re-inject the inline `<script id="atlas-data">` block in `codebase-atlas/index.html`.
+3. Report the path to `codebase-atlas/index.html` and a short summary of what changed.
+
+The atlas lives outside `src/`, so it stays out of the lint/type/build toolchain — keep all JS inline in the HTML.
+
 ---
 
 **"If it doesn't build, it doesn't ship."**
