@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { FullPageLanding } from '@/components/landing/FullPageLanding';
-import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import { AuthProvider, useOptionalAuth } from '@/hooks/useAuth';
 import { AuthModal } from '@/components/AuthModal';
 
 /**
