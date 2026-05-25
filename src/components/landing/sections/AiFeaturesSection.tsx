@@ -20,9 +20,9 @@ export const AiFeaturesSection = () => {
     },
     {
       icon: <Bot className="text-accent" size={28} />,
-      title: 'Group-Aware Agent',
+      title: 'Chravel Agent',
       description:
-        'Takes action with the group in the loop: polls, broadcasts, calendars, expenses, and tasks — every write confirmable in chat.',
+        'Takes action with the group in the loop: polls, broadcasts, calendars, expenses, and tasks.',
     },
   ];
 
