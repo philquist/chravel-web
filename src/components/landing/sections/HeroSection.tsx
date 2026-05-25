@@ -119,13 +119,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
           }}
         >
           <h3
-            className="text-xl sm:text-2xl md:text-3xl lg:text-3xl font-bold leading-tight"
+            className="text-xl sm:text-2xl md:text-3xl lg:text-3xl font-bold leading-tight text-white"
             style={{
-              background:
-                'linear-gradient(135deg, #7ba4d9 0%, #c49746 35%, #e8af48 50%, #c49746 65%, #7ba4d9 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
             }}
           >
             Less Chaos, More Coordination
