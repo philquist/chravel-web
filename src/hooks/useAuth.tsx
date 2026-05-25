@@ -1271,10 +1271,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         authState,
         authErrorReason,
         isAuthenticated: authState === 'authenticated',
-        // Initial session bootstrap has settled (authenticated, signed-out, or error).
-        // Downstream auth-gated fetches should wait for this to avoid Trip-Not-Found
-        // flashes during the hydration race.
-        isHydrated: !isLoading,
       }}
     >
       {children}
