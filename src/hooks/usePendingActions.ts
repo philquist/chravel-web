@@ -346,9 +346,68 @@ export function usePendingActions(tripId: string) {
           break;
         }
 
+        case 'updateTask': {
+          const taskId = payload.task_id as string;
+          if (!taskId) throw new Error('No task_id in payload');
+          const updatePayload: Record<string, unknown> = {};
+          if (payload.title !== undefined) updatePayload.title = payload.title;
+          if (payload.description !== undefined) updatePayload.description = payload.description;
+          if (payload.due_at !== undefined) updatePayload.due_at = payload.due_at;
+          if (payload.completed !== undefined) {
+            updatePayload.completed = Boolean(payload.completed);
+            updatePayload.completed_at = payload.completed ? new Date().toISOString() : null;
+          }
+          if (Object.keys(updatePayload).length === 0) break;
+          const { error } = await (supabase as any)
+            .from('trip_tasks')
+            .update(updatePayload)
+            .eq('id', taskId)
+            .eq('trip_id', action.trip_id);
+          if (error) throw error;
+          break;
+        }
+
+        case 'deleteTask': {
+          const taskId = payload.task_id as string;
+          if (!taskId) throw new Error('No task_id in payload');
+          const { error } = await (supabase as any)
+            .from('trip_tasks')
+            .delete()
+            .eq('id', taskId)
+            .eq('trip_id', action.trip_id);
+          if (error) throw error;
+          break;
+        }
+
+        case 'closePoll': {
+          const pollId = payload.poll_id as string;
+          if (!pollId) throw new Error('No poll_id in payload');
+          const { error } = await (supabase as any)
+            .from('trip_polls')
+            .update({ status: 'closed' })
+            .eq('id', pollId)
+            .eq('trip_id', action.trip_id);
+          if (error) throw error;
+          break;
+        }
+
+        case 'saveLink': {
+          const { error } = await (supabase as any).from('trip_links').insert({
+            trip_id: action.trip_id,
+            title: payload.title as string,
+            url: payload.url as string,
+            description: (payload.description as string | null) || null,
+            category: (payload.category as string | null) || null,
+            added_by: (payload.added_by as string) || user.id,
+          });
+          if (error) throw error;
+          break;
+        }
+
         default:
           assertNeverToolName(toolName);
       }
+
 
       // Mark as confirmed — re-check status to prevent TOCTOU race
       // intentional: trip_pending_actions not yet in generated Supabase types
