@@ -64,7 +64,8 @@ export interface ToolDeclaration {
   };
 }
 
-// ── All 75 Tool Declarations (text-path, richest descriptions) ───────────────
+// ── All Tool Declarations (text-path, richest descriptions) ─────────────────
+// NOTE: count changes when tools are added/removed; do not hardcode in comments.
 
 export const ALL_TOOL_DECLARATIONS: ToolDeclaration[] = [
   {
