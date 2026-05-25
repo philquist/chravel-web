@@ -78,10 +78,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
           Friends, Families, Sports, Tours, Work & More.
           <br className="hidden sm:inline" />
           Planning is Frustrating.{' '}
-          <span className="text-gold-primary font-semibold">ChravelApp Alleviates that Stress.</span>
+          <span className="text-gold-primary font-semibold">
+            ChravelApp Alleviates that Stress.
+          </span>
         </p>
       </div>
-
 
       {/* Demo Preview Image - fills the middle space */}
       <div className="flex-1 flex flex-col items-center justify-center py-2 tablet:py-3">
