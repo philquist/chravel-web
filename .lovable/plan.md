@@ -1,63 +1,67 @@
-## Scope
+## Context
 
-Surgical content-only edit to two files in `src/components/conversion/`. No new components, no styling changes, no architecture changes.
+In the previous turn we already migrated `createTask`, `updateTask`, `createPoll`, and `closePoll` to the buffered "pending → real write → confirmed" flow, and added `create_task`, `update_task`, `create_poll`, `close_poll` (+ `save_link`) to `ConciergeActionCard`'s `ACTION_CONFIG`. Verified:
 
-## Files changed
+- `supabase/functions/_shared/functionExecutor.ts` — buffered writes at lines 193 (createTask), 278 (createPoll), 1835 (updateTask), 3933 (closePoll).
+- `src/features/chat/components/ConciergeActionCard.tsx` — config entries at lines 42, 48, 72, 78, 84.
+- `src/lib/conciergeInvalidation.ts` — `tripTasks` / `tripPolls` invalidation already wired.
+- `src/__tests__/conciergePendingActionCoverage.test.ts` — guards that every buffered tool has a `usePendingActions` case.
 
-1. **`src/components/conversion/ReplacesGrid.tsx`** — copy only
-   - Line 26: `"Tap below to see how ChravelApp consolidates your app stack"` → `"Tap below to see how ChravelApp brings together the trip chaos usually scattered across your app stack"`
-   - Lines 104 & 122: `"Consolidates:"` → `"Brings together the trip chaos usually scattered across:"`
-   - No layout/animation/chip-rendering changes.
+So create/update for tasks and polls already share the same confirm-card pipeline as `createTask` / `saveLink`. The gap is the remaining task/poll mutations that still write directly (no pending row → no confirm card → inconsistent UI feedback):
 
-2. **`src/components/conversion/ReplacesGridData.ts`** — rewrite `CATEGORIES` array contents only (keep `AppItem` / `Category` interfaces intact)
-   - Same `hero` (visible first) vs `full` (expanded) split already supported by the component → use it as the "consumer-first cap at 6–8" mechanism. No variant prop added (architecture has no Pro/Events variant here; enterprise apps just get demoted into `full` or removed per spec).
-   - Update `benefit` strings to the new descriptions.
+- `deleteTask` (toolRegistry line 633)
+- `splitTaskAssignments` (line 1163)
+- `bulkMarkTasksDone` (line 1253)
 
-### New category contents
+These are user-visible task mutations triggered through the same Concierge surface, so leaving them on the direct-write path is the actual remaining "consistent success UI feedback" gap.
 
-**chat** — benefit: "A private group chat built specifically for your trip."
-- hero: WhatsApp, iMessage/SMS, Facebook Messenger, Instagram DMs, GroupMe, Snapchat, Telegram, Discord
-- full: Slack, Microsoft Teams
-- (Signal removed)
+## Goal
 
-**calendar** — benefit: "One shared schedule — updated live for everyone."
-- hero: Google Calendar, Apple Calendar, Outlook Calendar, Gmail, Outlook Email, Calendly, iCal
-- full: []
-- (Doodle moved to Polls)
+Bring `deleteTask`, `splitTaskAssignments`, and `bulkMarkTasksDone` onto the same buffered confirm-card flow used by `createTask` / `updateTask` / `createPoll` / `closePoll`, so every task/poll tool renders a uniform success card.
 
-**concierge** — benefit: "Your AI concierge — aware of your trip, preferences, and context."
-- hero: ChatGPT, Google Search, Gemini, Claude, Perplexity, Reddit, TikTok, Instagram
-- full: YouTube, Tripadvisor, Yelp
+## Changes
 
-**media** — benefit: "Photos, videos, files, and confirmations — one hub for the whole group."
-- hero: Google Photos, Apple Photos, iCloud, Google Drive, Dropbox, Instagram, Snapchat Memories, WhatsApp Photos
-- full: WeTransfer, OneDrive, Box
-- (Apple Files removed)
+### 1. `supabase/functions/_shared/functionExecutor.ts`
+For each of the three tools, refactor to the standard pattern already used by `updateTask`:
 
-**payments** — benefit: "See who paid, who owes, and how everyone prefers to settle."
-- hero: Venmo, Zelle, PayPal, Cash App, Splitwise, Apple Cash, Google Sheets, Excel
-- full: []
-- (Tab, Settle Up, Google Pay removed — avoids implying Chravel is a payment rail)
+1. Validate inputs and that the target record(s) exist and belong to `trip_id` **before** any writes.
+2. Idempotency short-circuit on `tool_call_id` / `idempotency_key` against `trip_pending_actions` (10-minute window for `splitTaskAssignments` and `bulkMarkTasksDone`; `deleteTask` keyed on `task_id`).
+3. Insert `trip_pending_actions` row with `status: 'pending'`, `tool_name`, sanitized `payload`.
+4. Perform the real DB mutation (fast-path) — `trip_tasks` delete, assignment upsert/replace, or bulk status update.
+5. On success, mark the pending row `status: 'confirmed'` with `resolved_at`.
+6. Return `{ success, pending: true, promoted: true, pendingActionId, actionType, message }` — same shape as `updateTask`.
+7. On failure after the pending row is written, mark it `status: 'failed'` and surface the error.
 
-**places** — benefit: "Links, reservations, and locations saved once — found instantly."
-- hero: Google Maps, Apple Maps, Waze, Yelp, Tripadvisor, OpenTable, Resy, Airbnb
-- full: Booking.com, Vrbo, Apple Notes, Safari / Chrome Bookmarks
-- (MapQuest, Glympse, Citymapper, Find My, Roadtrippers removed)
+### 2. `src/features/chat/components/ConciergeActionCard.tsx`
+Add `ACTION_CONFIG` entries (icon + color, matching the existing task entries):
 
-**polls** — benefit: "Make group decisions without endless debates or buried votes."
-- hero: Doodle, Google Forms, SurveyMonkey, When2Meet, Typeform, StrawPoll, WhatsApp Polls
-- full: []
-- (Slido, Poll Everywhere, PollForAll removed)
+- `delete_task` → `Trash2`, destructive red theme
+- `split_task_assignments` → `Users`, task-blue theme
+- `bulk_mark_tasks_done` → `CheckCheck`, task-green theme
 
-**tasks** — benefit: "The group to-do list — reminders and accountability for everyone."
-- hero: Apple Reminders, Google Tasks, Todoist, Google Keep, Apple Notes, Trello
-- full: Notion, Asana, Monday.com, Microsoft To Do
+No layout changes; piggyback on the existing card renderer.
+
+### 3. `src/hooks/usePendingActions.ts`
+Add `case` branches for `deleteTask`, `splitTaskAssignments`, `bulkMarkTasksDone` in the confirm switch so the coverage test (`conciergePendingActionCoverage.test.ts`) passes. Each case re-runs the same DB mutation as the executor's fast path (idempotent against `pending_action_id`).
+
+### 4. `src/lib/conciergeInvalidation.ts`
+Already maps all three tools to `['tripTasks', tripId]` — no change.
+
+### 5. Tests
+- `src/__tests__/conciergePendingActionCoverage.test.ts` — passes automatically once the `usePendingActions` cases land.
+- Add lightweight unit coverage in `src/features/chat/components/__tests__/PendingActionCard.test.tsx` for one new tool (`deleteTask`) to confirm confirm/retry rendering.
 
 ## Validation
 
-- `npm run typecheck && npm run build`
-- Manual: load `/`, expand each category card, verify chips wrap cleanly on 689px viewport (current preview), tablet, and desktop. Verify chevron collapse still works.
+- `npm run lint && npm run typecheck && npm run build`
+- `npm run test:run` — focused on `conciergePendingActionCoverage` and `PendingActionCard`.
+- Manual: in Concierge, run "delete the welcome dinner task", "split the airport pickup task between Alex and Sam", and "mark all packing tasks done" — confirm a confirm card appears with the same styling family as `createTask`, task list invalidates, and a duplicate call within 10 min is short-circuited.
 
 ## Risk
 
-LOW — string/data edits only. No runtime, schema, or import changes. Rollback = git revert.
+LOW–MEDIUM. Edge-function-only refactor of three tools onto an already-proven pattern (the exact flow `updateTask` uses). No schema changes, no RLS changes, no client routing changes. Rollback = revert the executor cases; client `ACTION_CONFIG` additions are inert without server pending rows.
+
+## Out of scope (deferred, paste-ready)
+
+- Migrating non-task/poll direct-write tools (`setBasecamp`, `updateTripDetails`, `generateTripImage`, etc.) to the buffered flow — different domains, separate review.
+- Replacing the bespoke `bulkDeleteCalendarEvents` preview flow — already has its own confirm UX.
