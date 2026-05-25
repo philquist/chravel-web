@@ -42,15 +42,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
           }}
         >
           <h2
-            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight"
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight text-white"
             style={{
-              background:
-                'linear-gradient(135deg, #7ba4d9 0%, #8a5a1f 25%, #c49746 45%, #feeaa5 55%, #c49746 70%, #7ba4d9 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              filter:
-                'drop-shadow(0 2px 6px rgba(0,0,0,0.6)) drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
+              textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
             }}
           >
             ChravelApp
