@@ -204,6 +204,7 @@ const MUTATION_TOOLS = [
   'createTask',
   'createPoll',
   'savePlace',
+  'saveLink',
   'setBasecamp',
   'addToAgenda',
   'createBroadcast',

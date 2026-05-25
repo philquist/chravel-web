@@ -22,6 +22,7 @@ export const MUTATING_TOOL_ALLOWLIST = new Set([
   'createPoll',
   'closePoll',
   'savePlace',
+  'saveLink',
   'setBasecamp',
   'addToAgenda',
   'createBroadcast',
