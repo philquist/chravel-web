@@ -379,9 +379,11 @@ export function usePendingActions(tripId: string) {
       ].includes(label);
       toast.success(isVerb ? label : `${label} created`);
 
+      const toolName = action.tool_name as ToolName;
+      const tripId = action.trip_id;
+
       // Invalidate relevant queries — use exact: false for prefix matching
       // so ['tripTasks', tripId, isDemoMode] variants are also invalidated.
-      queryClient.invalidateQueries({ queryKey });
       switch (toolName) {
         case 'createTask':
           queryClient.invalidateQueries({ queryKey: ['tripTasks', tripId], exact: false });
@@ -415,7 +417,7 @@ export function usePendingActions(tripId: string) {
           queryClient.invalidateQueries({ queryKey: tripKeys.payments(tripId), exact: false });
           break;
         default:
-          assertNeverToolName(toolName);
+          assertNeverToolName(toolName as never);
       }
     },
     onError: (error: Error) => {
