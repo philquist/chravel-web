@@ -101,7 +101,8 @@ export const ReplacesGrid = () => {
                 {/* Mobile/Phone: Center-aligned chips (hidden on tablet+) */}
                 <div className="tablet:hidden">
                   <p className="text-xs text-white/60 uppercase tracking-wider mb-3 mt-1 font-semibold text-center">
-                    Consolidates:
+                    Brings together the trip chaos usually scattered across:
+
                   </p>
                   <div className="flex flex-wrap justify-center gap-2">
                     {allApps.map((app, index) => (
