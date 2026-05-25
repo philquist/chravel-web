@@ -41,7 +41,11 @@ export interface PendingAction {
 
 type PendingActionToolName =
   | 'createTask'
+  | 'updateTask'
+  | 'deleteTask'
   | 'createPoll'
+  | 'closePoll'
+  | 'saveLink'
   | 'addToCalendar'
   | 'duplicateCalendarEvent'
   | 'bulkMarkTasksDone'
@@ -51,6 +55,7 @@ type PendingActionToolName =
   | 'createBroadcast'
   | 'createNotification'
   | 'settleExpense';
+
 
 function assertNeverToolName(toolName: never): never {
   throw new Error(`Unknown tool: ${toolName}`);
