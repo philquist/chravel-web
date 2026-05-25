@@ -1886,9 +1886,10 @@ async function _executeImpl(
 
 
     case 'deleteTask': {
-      const { taskId } = args;
+      const { taskId, idempotency_key, tool_call_id } = args;
       if (!taskId) return { error: 'taskId is required' };
 
+      // Verify task belongs to this trip (guard before audit row)
       const { data: existing, error: fetchErr } = await supabase
         .from('trip_tasks')
         .select('id, title, trip_id')
@@ -1899,18 +1900,59 @@ async function _executeImpl(
         return { error: 'Task not found in this trip' };
       }
 
-      const { error } = await supabase
+      // Buffered confirm-card flow (mirrors updateTask).
+      const dedupeId = tool_call_id || idempotency_key || null;
+      const { data: pending, error: pendingError } = await supabase
+        .from('trip_pending_actions')
+        .insert({
+          trip_id: tripId,
+          user_id: userId || '00000000-0000-0000-0000-000000000000',
+          tool_name: 'deleteTask',
+          ...(dedupeId ? { tool_call_id: dedupeId } : {}),
+          payload: { task_id: taskId, title: existing.title },
+          source_type: 'ai_concierge',
+        })
+        .select('id')
+        .single();
+      if (pendingError) throw pendingError;
+
+      let promoted = false;
+      const { error: writeErr } = await supabase
         .from('trip_tasks')
         .delete()
         .eq('id', taskId)
         .eq('trip_id', tripId);
-      if (error) throw error;
+
+      if (!writeErr) {
+        promoted = true;
+        await supabase
+          .from('trip_pending_actions')
+          .update({
+            status: 'confirmed',
+            resolved_at: new Date().toISOString(),
+            resolved_by: userId,
+          })
+          .eq('id', pending.id)
+          .eq('status', 'pending');
+      } else {
+        console.warn(
+          '[Tool] deleteTask fast-path failed, falling back to client confirm:',
+          writeErr.message,
+        );
+      }
+
       return {
         success: true,
+        pending: !promoted,
+        promoted,
+        pendingActionId: pending.id,
         actionType: 'delete_task',
-        message: `Deleted task "${existing.title}"`,
+        message: promoted
+          ? `Deleted task "${existing.title}"`
+          : `I'd like to delete task "${existing.title}". Please confirm in the trip chat.`,
       };
     }
+
 
     // ========== UNIFIED TRIP SEARCH ==========
 
