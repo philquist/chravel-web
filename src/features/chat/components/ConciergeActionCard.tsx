@@ -136,7 +136,14 @@ const COLOR_CLASSES: Record<string, { bg: string; border: string; icon: string; 
     icon: 'text-teal-400',
     text: 'text-teal-300',
   },
+  red: {
+    bg: 'bg-red-500/10',
+    border: 'border-red-500/30',
+    icon: 'text-red-400',
+    text: 'text-red-300',
+  },
 };
+
 
 /** Derive the effective status from the action result */
 function getEffectiveStatus(action: ConciergeActionResult): ActionResultStatus {
