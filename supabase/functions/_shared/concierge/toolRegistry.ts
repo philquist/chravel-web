@@ -64,7 +64,8 @@ export interface ToolDeclaration {
   };
 }
 
-// ── All 75 Tool Declarations (text-path, richest descriptions) ───────────────
+// ── All Tool Declarations (text-path, richest descriptions) ─────────────────
+// NOTE: count changes when tools are added/removed; do not hardcode in comments.
 
 export const ALL_TOOL_DECLARATIONS: ToolDeclaration[] = [
   {
@@ -317,6 +318,28 @@ export const ALL_TOOL_DECLARATIONS: ToolDeclaration[] = [
         },
       },
       required: ['name', 'idempotency_key'],
+    },
+  },
+  {
+    name: 'saveLink',
+    description:
+      'Save a web link, article, reservation confirmation, or any URL resource to the trip Places/Links tab. Use when the user says "save this link", "add this article to the trip", "bookmark this", or shares a non-place URL worth keeping. For physical venues/restaurants/hotels prefer savePlace. For flight deeplinks use savePlace with category="activity".',
+    parameters: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'The URL to save (required)' },
+        title: { type: 'string', description: 'Display title for the link (falls back to URL host)' },
+        description: { type: 'string', description: 'Optional note explaining why this link matters' },
+        category: {
+          type: 'string',
+          description: 'Optional: attraction, accommodation, activity, appetite, or other (default: other)',
+        },
+        idempotency_key: {
+          type: 'string',
+          description: 'Unique string to prevent duplicate tool execution',
+        },
+      },
+      required: ['url', 'idempotency_key'],
     },
   },
   {

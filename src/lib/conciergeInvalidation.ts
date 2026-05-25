@@ -37,6 +37,7 @@ const CONCIERGE_WRITE_ACTIONS = new Set<string>([
   'closePoll',
   // Places / Reservations
   'savePlace',
+  'saveLink',
   'emitReservationDraft',
   'makeReservation',
   // Payments / Expenses
@@ -92,8 +93,9 @@ export function getConciergeInvalidationKeys(
     case 'closePoll':
       return [['tripPolls', tripId]];
 
-    // Places / Reservations — also invalidate tripLinks (shared explore tab)
+    // Places / Reservations / Links — also invalidate tripLinks (shared explore tab)
     case 'savePlace':
+    case 'saveLink':
     case 'emitReservationDraft':
     case 'makeReservation':
       return [

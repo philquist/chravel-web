@@ -61,6 +61,11 @@ export function usePendingActions(tripId: string) {
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
 
+  // In-flight confirm guard: prevents the same actionId from being confirmed
+  // twice when a user rapidly double-taps the confirm button before the
+  // mutation resolves. Auto-confirm has its own `autoConfirmedIds` guard.
+  const inFlightConfirms = useRef<Set<string>>(new Set());
+
   const queryKey = ['pendingActions', tripId];
 
   // Fetch pending actions for this trip
@@ -89,6 +94,12 @@ export function usePendingActions(tripId: string) {
   const confirmMutation = useMutation({
     mutationFn: async (actionId: string) => {
       if (!user?.id) throw new Error('Not authenticated');
+
+      // Double-confirm guard: bail out if this id is already being confirmed.
+      if (inFlightConfirms.current.has(actionId)) {
+        throw new Error('Confirmation already in progress');
+      }
+      inFlightConfirms.current.add(actionId);
 
       // Fetch the pending action
       const { data: action, error: fetchError } = await supabase
@@ -421,7 +432,14 @@ export function usePendingActions(tripId: string) {
       }
     },
     onError: (error: Error) => {
+      // Suppress the noisy toast for the deliberate double-tap guard.
+      if (error.message === 'Confirmation already in progress') return;
       toast.error(error.message || 'Failed to confirm action');
+    },
+    onSettled: (_data, _error, actionId) => {
+      // Release the in-flight guard whether the confirm succeeded or failed
+      // so a legitimate retry after a real failure isn't permanently blocked.
+      if (typeof actionId === 'string') inFlightConfirms.current.delete(actionId);
     },
   });
 

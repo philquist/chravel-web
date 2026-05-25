@@ -1000,6 +1000,29 @@ async function _executeImpl(
       ]);
       const safeCategory = validCategories.has(String(category)) ? String(category) : 'other';
 
+      // Idempotency: if an identical (trip_id,url,title) row exists in the last
+      // 10 minutes, return it instead of inserting a duplicate. Handles rapid
+      // double-calls from retry loops or the LLM re-emitting the same tool call.
+      const tenMinAgo = new Date(Date.now() - 10 * 60_000).toISOString();
+      const { data: existing } = await supabase
+        .from('trip_links')
+        .select('*')
+        .eq('trip_id', tripId)
+        .eq('url', placeUrl)
+        .eq('title', placeName)
+        .gte('created_at', tenMinAgo)
+        .maybeSingle();
+
+      if (existing) {
+        return {
+          success: true,
+          link: existing,
+          actionType: 'save_place',
+          deduped: true,
+          message: `"${placeName}" is already saved to this trip.`,
+        };
+      }
+
       const { data, error } = await supabase
         .from('trip_links')
         .insert({
@@ -1020,6 +1043,75 @@ async function _executeImpl(
         message: `Saved "${placeName}" to trip places (${safeCategory})`,
       };
     }
+
+    case 'saveLink': {
+      const { url, title, description, category } = args;
+      const rawUrl = String(url || '').trim();
+      if (!rawUrl) return { error: 'url is required' };
+
+      // Basic URL validation
+      let parsedHost = '';
+      try {
+        const parsed = new URL(rawUrl);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          return { error: 'Only http(s) URLs can be saved' };
+        }
+        parsedHost = parsed.hostname.replace(/^www\./, '');
+      } catch {
+        return { error: 'Invalid URL format' };
+      }
+
+      const linkTitle = String(title || '').trim() || parsedHost || rawUrl;
+      const validCategories = new Set([
+        'attraction',
+        'accommodation',
+        'activity',
+        'appetite',
+        'other',
+      ]);
+      const safeCategory = validCategories.has(String(category)) ? String(category) : 'other';
+
+      // Idempotency: same (trip_id,url) inside 10 min returns existing row.
+      const tenMinAgo = new Date(Date.now() - 10 * 60_000).toISOString();
+      const { data: existing } = await supabase
+        .from('trip_links')
+        .select('*')
+        .eq('trip_id', tripId)
+        .eq('url', rawUrl)
+        .gte('created_at', tenMinAgo)
+        .maybeSingle();
+
+      if (existing) {
+        return {
+          success: true,
+          link: existing,
+          actionType: 'save_link',
+          deduped: true,
+          message: `This link is already saved to the trip.`,
+        };
+      }
+
+      const { data, error } = await supabase
+        .from('trip_links')
+        .insert({
+          trip_id: tripId,
+          title: linkTitle,
+          url: rawUrl,
+          description: description ? String(description).substring(0, 500) : null,
+          category: safeCategory,
+          added_by: userId || '',
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return {
+        success: true,
+        link: data,
+        actionType: 'save_link',
+        message: `Saved link "${linkTitle}" to the trip.`,
+      };
+    }
+
 
     case 'setBasecamp': {
       const { scope, name, address, lat, lng } = args;
@@ -1115,6 +1207,29 @@ async function _executeImpl(
       if (!agendaTitle) return { error: 'Agenda session title is required' };
       if (!eventId) return { error: 'Event ID is required for agenda items' };
 
+      // Idempotency: same (event_id,title,session_date,start_time) inside 10 min
+      // returns the existing row instead of inserting a duplicate.
+      const tenMinAgo = new Date(Date.now() - 10 * 60_000).toISOString();
+      const dedupeQuery = supabase
+        .from('event_agenda_items')
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('title', agendaTitle)
+        .gte('created_at', tenMinAgo);
+      if (sessionDate) dedupeQuery.eq('session_date', sessionDate);
+      if (startTime) dedupeQuery.eq('start_time', startTime);
+      const { data: existingAgenda } = await dedupeQuery.maybeSingle();
+
+      if (existingAgenda) {
+        return {
+          success: true,
+          agendaItem: existingAgenda,
+          actionType: 'add_to_agenda',
+          deduped: true,
+          message: `"${agendaTitle}" is already on the agenda.`,
+        };
+      }
+
       const { data, error } = await supabase
         .from('event_agenda_items')
         .insert({
@@ -1138,6 +1253,7 @@ async function _executeImpl(
         message: `Added "${agendaTitle}" to event agenda`,
       };
     }
+
 
     case 'searchFlights': {
       const { origin, destination, departureDate, returnDate, passengers } = args;
