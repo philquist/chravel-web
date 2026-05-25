@@ -430,7 +430,11 @@ export function usePendingActions(tripId: string) {
     onSuccess: action => {
       const toolLabelMap: Record<string, string> = {
         createTask: 'Task',
+        updateTask: 'Task updated',
+        deleteTask: 'Task deleted',
         createPoll: 'Poll',
+        closePoll: 'Poll closed',
+        saveLink: 'Link saved',
         addToCalendar: 'Calendar event',
         duplicateCalendarEvent: 'Event duplicated',
         bulkMarkTasksDone: 'Tasks marked complete',
@@ -443,6 +447,10 @@ export function usePendingActions(tripId: string) {
       };
       const label = toolLabelMap[action.tool_name] || 'Action confirmed';
       const isVerb = [
+        'Task updated',
+        'Task deleted',
+        'Poll closed',
+        'Link saved',
         'Event duplicated',
         'Tasks marked complete',
         'Activity cloned',
@@ -461,18 +469,23 @@ export function usePendingActions(tripId: string) {
       // so ['tripTasks', tripId, isDemoMode] variants are also invalidated.
       switch (toolName) {
         case 'createTask':
+        case 'updateTask':
+        case 'deleteTask':
+        case 'bulkMarkTasksDone':
           queryClient.invalidateQueries({ queryKey: ['tripTasks', tripId], exact: false });
           break;
         case 'createPoll':
+        case 'closePoll':
           queryClient.invalidateQueries({ queryKey: ['tripPolls', tripId], exact: false });
+          break;
+        case 'saveLink':
+          queryClient.invalidateQueries({ queryKey: ['tripLinks', tripId], exact: false });
+          queryClient.invalidateQueries({ queryKey: ['tripPlaces', tripId], exact: false });
           break;
         case 'addToCalendar':
         case 'duplicateCalendarEvent':
         case 'cloneActivity':
           queryClient.invalidateQueries({ queryKey: tripKeys.calendar(tripId), exact: false });
-          break;
-        case 'bulkMarkTasksDone':
-          queryClient.invalidateQueries({ queryKey: ['tripTasks', tripId], exact: false });
           break;
         case 'addExpense':
           queryClient.invalidateQueries({ queryKey: tripKeys.payments(tripId), exact: false });
@@ -494,6 +507,7 @@ export function usePendingActions(tripId: string) {
         default:
           assertNeverToolName(toolName as never);
       }
+
     },
     onError: (error: Error) => {
       // Suppress the noisy toast for the deliberate double-tap guard.
