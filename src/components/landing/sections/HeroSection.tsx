@@ -72,11 +72,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
           }}
         >
           For Friends, Families, Sports, Tours, Work & More.
-          <br className="hidden sm:inline" />
-          Planning feeling Overwhelming?{' '}
-          <span className="text-white font-semibold">
-            Use ChravelApp for Less Stress & More Stories.
-          </span>
         </p>
       </div>
 
