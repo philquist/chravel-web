@@ -37,6 +37,7 @@ const CONCIERGE_WRITE_ACTIONS = new Set<string>([
   'closePoll',
   // Places / Reservations
   'savePlace',
+  'saveLink',
   'emitReservationDraft',
   'makeReservation',
   // Payments / Expenses
