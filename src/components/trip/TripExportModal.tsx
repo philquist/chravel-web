@@ -291,20 +291,20 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
         {/* Footer - Always visible with safe area padding for PWA/mobile */}
         {hasAccess && (
           <div
-            className="flex items-center justify-end gap-2 p-3 border-t border-gray-700 flex-shrink-0 bg-gray-900"
-            style={{ paddingBottom: 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 12px))' }}
+            className="flex items-center justify-end gap-2 px-3 py-2 border-t border-gray-700 flex-shrink-0 bg-gray-900"
+            style={{ paddingBottom: 'max(8px, calc(env(safe-area-inset-bottom, 0px) + 8px))' }}
           >
             <button
               onClick={onClose}
               disabled={isExporting}
-              className="px-4 py-2.5 text-sm rounded-lg text-gray-300 hover:text-white transition-colors disabled:opacity-50 min-h-[44px]"
+              className="px-4 py-2 text-sm rounded-lg text-gray-300 hover:text-white transition-colors disabled:opacity-50 min-h-[44px]"
             >
               Cancel
             </button>
             <button
               onClick={handleExport}
               disabled={isExporting || selectedSections.length === 0}
-              className="bg-gradient-to-r from-[#e8af48] via-[#c49746] to-[#a07a32] hover:from-[#f0b850] hover:via-[#d4a74f] hover:to-[#b08a3e] text-black font-semibold px-4 py-2.5 text-sm rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] shadow-[0_0_12px_rgba(196,151,70,0.3)] hover:shadow-[0_0_16px_rgba(196,151,70,0.45)]"
+              className="bg-gradient-to-r from-[#e8af48] via-[#c49746] to-[#a07a32] hover:from-[#f0b850] hover:via-[#d4a74f] hover:to-[#b08a3e] text-black font-semibold px-4 py-2 text-sm rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] shadow-[0_0_12px_rgba(196,151,70,0.3)] hover:shadow-[0_0_16px_rgba(196,151,70,0.45)]"
             >
               {isExporting ? (
                 <>
