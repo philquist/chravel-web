@@ -35,7 +35,6 @@ const AIConciergeChat = lazy(() =>
 const PaymentsTab = lazy(() =>
   import('./payments/PaymentsTab').then(m => ({ default: m.PaymentsTab })),
 );
-const AddLinkModal = lazy(() => import('./AddLinkModal').then(m => ({ default: m.AddLinkModal })));
 import { FeatureErrorBoundary } from './FeatureErrorBoundary';
 import { useTripVariant } from '../contexts/TripVariantContext';
 import { useFeatureToggle } from '../hooks/useFeatureToggle';
@@ -43,7 +42,6 @@ import { useSuperAdmin } from '../hooks/useSuperAdmin';
 import { usePrefetchTrip } from '../hooks/usePrefetchTrip';
 import { CalendarSkeleton, PlacesSkeleton, ChatSkeleton } from './loading';
 import { TripPreferences as TripPreferencesType } from '../types/consumer';
-import type { NormalizedUrl } from '@/services/chatUrlExtractor';
 
 interface TripTabsProps {
   activeTab: string;
@@ -74,16 +72,6 @@ export const TripTabs = ({
   tripData,
 }: TripTabsProps) => {
   const [activeTab, setActiveTab] = useState(parentActiveTab || 'chat');
-  const [isAddLinkModalOpen, setIsAddLinkModalOpen] = useState(false);
-  const [linkPrefill, setLinkPrefill] = useState<
-    | {
-        url?: string;
-        title?: string;
-        category?: 'restaurant' | 'hotel' | 'attraction' | 'activity' | 'other';
-        note?: string;
-      }
-    | undefined
-  >(undefined);
 
   useTripVariant();
   const features = useFeatureToggle(tripData || {});
@@ -166,21 +154,6 @@ export const TripTabs = ({
       prefetchAdjacentTabs(tripId, activeTab, tabOrder);
     }
   }, [activeTab, visitedTabs, tripId, prefetchAdjacentTabs]);
-
-  // Handler for saving chat links to Explore Links (trip_links table)
-  const handlePromoteToTripLink = useCallback((urlData: NormalizedUrl) => {
-    setLinkPrefill({
-      url: urlData.url,
-      title: urlData.title || urlData.domain,
-      note: `Shared in chat on ${new Date(urlData.lastSeenAt).toLocaleDateString()}`,
-    });
-    setIsAddLinkModalOpen(true);
-  }, []);
-
-  const handleCloseLinkModal = useCallback(() => {
-    setIsAddLinkModalOpen(false);
-    setLinkPrefill(undefined);
-  }, []);
 
   // 🆕 Updated tab order: Chat, Calendar, Concierge, Media, Payments, Places, Polls, Tasks
   // Super admins always have all features enabled (no lock icons)
@@ -273,7 +246,7 @@ export const TripTabs = ({
         case 'media':
           return (
             <FeatureErrorBoundary featureName="Media Hub">
-              <UnifiedMediaHub tripId={tripId} onPromoteToTripLink={handlePromoteToTripLink} />
+              <UnifiedMediaHub tripId={tripId} allowPromoteToTripLink />
             </FeatureErrorBoundary>
           );
         case 'payments':
@@ -307,7 +280,7 @@ export const TripTabs = ({
           );
       }
     },
-    [tripId, tripName, basecamp, tripPreferences, isDemoMode, handlePromoteToTripLink],
+    [tripId, tripName, basecamp, tripPreferences, isDemoMode],
   );
 
   // ⚡ PERFORMANCE: Prefetch tab data on hover
@@ -320,15 +293,6 @@ export const TripTabs = ({
 
   return (
     <>
-      {/* Add Link Modal */}
-      <Suspense fallback={null}>
-        <AddLinkModal
-          isOpen={isAddLinkModalOpen}
-          onClose={handleCloseLinkModal}
-          prefill={linkPrefill}
-        />
-      </Suspense>
-
       {/* Tab Navigation - Responsive max-width container */}
       <div className="w-full flex justify-center mb-2">
         <div className="w-full max-w-7xl overflow-x-auto scrollbar-hidden scroll-smooth px-2">

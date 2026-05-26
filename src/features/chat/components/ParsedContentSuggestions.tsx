@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Calendar, CheckSquare, Receipt, X, Sparkles } from 'lucide-react';
+import { Calendar, Receipt, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ParsedContent, applySuggestion } from '@/services/chatContentParser';
@@ -50,8 +50,6 @@ export const ParsedContentSuggestions: React.FC<ParsedContentSuggestionsProps> =
     switch (action) {
       case 'create_calendar_event':
         return <Calendar className="w-4 h-4" />;
-      case 'create_todo':
-        return <CheckSquare className="w-4 h-4" />;
       case 'extract_receipt':
         return <Receipt className="w-4 h-4" />;
       default:

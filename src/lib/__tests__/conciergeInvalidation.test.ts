@@ -1,25 +1,25 @@
 import { describe, expect, it } from 'vitest';
 
-import { getConciergeInvalidationQueryKey, isConciergeWriteAction } from '../conciergeInvalidation';
+import { getConciergeInvalidationKeys, isConciergeWriteAction } from '../conciergeInvalidation';
 
 describe('conciergeInvalidation', () => {
   it('returns trip-scoped query keys for standard write actions', () => {
-    expect(getConciergeInvalidationQueryKey('createTask', 'trip-123')).toEqual([
+    expect(getConciergeInvalidationKeys('createTask', 'trip-123')[0]).toEqual([
       'tripTasks',
       'trip-123',
     ]);
-    expect(getConciergeInvalidationQueryKey('createPoll', 'trip-123')).toEqual([
+    expect(getConciergeInvalidationKeys('createPoll', 'trip-123')[0]).toEqual([
       'tripPolls',
       'trip-123',
     ]);
-    expect(getConciergeInvalidationQueryKey('addToCalendar', 'trip-123')).toEqual([
+    expect(getConciergeInvalidationKeys('addToCalendar', 'trip-123')[0]).toEqual([
       'calendarEvents',
       'trip-123',
     ]);
   });
 
   it('invalidates the shared trips cache for setTripHeaderImage', () => {
-    expect(getConciergeInvalidationQueryKey('setTripHeaderImage', 'trip-123')).toEqual(['trips']);
+    expect(getConciergeInvalidationKeys('setTripHeaderImage', 'trip-123')[0]).toEqual(['trips']);
   });
 
   it('identifies concierge write tools correctly', () => {
@@ -27,7 +27,7 @@ describe('conciergeInvalidation', () => {
     expect(isConciergeWriteAction('searchPlaces')).toBe(false);
   });
 
-  it('returns null for tools with no invalidation mapping', () => {
-    expect(getConciergeInvalidationQueryKey('searchPlaces', 'trip-123')).toBeNull();
+  it('returns no invalidation keys for tools with no mapping', () => {
+    expect(getConciergeInvalidationKeys('searchPlaces', 'trip-123')).toHaveLength(0);
   });
 });

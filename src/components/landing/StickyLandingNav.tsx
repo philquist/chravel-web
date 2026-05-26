@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { DemoModeSelector } from '../DemoModeSelector';
 import { HeaderAuthButton } from '../HeaderAuthButton';
 import { Link } from 'react-router-dom';
 
@@ -40,7 +39,6 @@ export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
   const [isVisible, setIsVisible] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const user = null;
-  const isSuperAdmin = false;
 
   useEffect(() => {
     if (scrollRoot === null) return;
@@ -169,11 +167,8 @@ export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
           {sections.find(s => s.id === activeSection)?.label || 'Home'}
         </div>
 
-        {/* Right: Demo Selector + Log In for non-authenticated users */}
-        <div className="flex items-center gap-2">
-          {isSuperAdmin && <DemoModeSelector />}
-          {!user && <HeaderAuthButton />}
-        </div>
+        {/* Right: Log In for non-authenticated users */}
+        <div className="flex items-center gap-2">{!user && <HeaderAuthButton />}</div>
       </div>
     </nav>
   );

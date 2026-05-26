@@ -50,16 +50,6 @@ export interface ParsedItinerary {
   confidence_overall: number;
 }
 
-export interface ParsedTodo {
-  title: string;
-  description?: string;
-  category: 'booking' | 'packing' | 'documentation' | 'preparation' | 'logistics';
-  priority: 'high' | 'medium' | 'low';
-  due_date?: string; // YYYY-MM-DD
-  estimated_duration?: number; // minutes
-  confidence: number;
-}
-
 export interface ExtractedEntities {
   dates?: Array<{ value: string; confidence: number }>;
   times?: Array<{ value: string; confidence: number }>;
@@ -75,10 +65,9 @@ export interface ExtractedEntities {
 }
 
 export interface ParsedContent {
-  type: 'receipt' | 'itinerary' | 'link' | 'message' | 'todo';
+  type: 'receipt' | 'itinerary' | 'link' | 'message';
   receipt?: ParsedReceipt;
   itinerary?: ParsedItinerary;
-  todos?: ParsedTodo[];
   entities?: ExtractedEntities;
   linkPreview?: {
     title?: string;
@@ -88,7 +77,7 @@ export interface ParsedContent {
   };
   confidence: number;
   suggestions?: Array<{
-    action: 'create_calendar_event' | 'create_todo' | 'extract_receipt' | 'none';
+    action: 'create_calendar_event' | 'extract_receipt' | 'none';
     data?: Record<string, unknown>;
     message: string;
   }>;
@@ -347,35 +336,9 @@ export async function parseMessage(messageText: string, tripId: string): Promise
       });
     }
 
-    // Also check for todo items
-    const { data: todoData, error: todoError } = await invokeEnhancedAiParser({
-      messageText,
-      extractionType: 'todo',
-      tripId,
-    });
-
-    if (todoError) {
-      throw new Error(`Failed to parse todos: ${todoError.message}`);
-    }
-
-    const todos: ParsedTodo[] = todoData?.todos || [];
-
-    if (todos.length > 0) {
-      todos.forEach(todo => {
-        if (todo.confidence > 0.7) {
-          suggestions.push({
-            action: 'create_todo',
-            data: todo as unknown as Record<string, unknown>,
-            message: `Create todo: "${todo.title}"`,
-          });
-        }
-      });
-    }
-
     return {
       type: 'message',
       entities,
-      todos: todos.length > 0 ? todos : undefined,
       confidence: extractedData?.confidence_overall || 0.7,
       suggestions,
     };
@@ -463,10 +426,6 @@ export async function applySuggestion(
         const result = await calendarService.createEvent(eventData);
         return result.event?.id || null;
       }
-
-      case 'create_todo':
-        // TODO: Implement todo creation service
-        return null;
 
       case 'extract_receipt': {
         if (!suggestion.data) return null;
