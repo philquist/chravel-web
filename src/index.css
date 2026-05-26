@@ -569,6 +569,42 @@
   color: hsl(var(--ink-on-accent));
 }
 
+/* ─── Media overlay opt-out ─────────────────────────────────
+   Any container marked `.on-media` (cover photos, hero images,
+   gradient overlays) keeps its text white in BOTH themes so
+   copy stays legible over imagery. Opts out of the .light
+   text-ink remapping above. */
+.light .on-media .text-white,
+.light .on-media .hover\:text-white:hover,
+.light .on-media .text-slate-50,
+.light .on-media .text-slate-100,
+.light .on-media .text-slate-200,
+.light .on-media .text-neutral-50,
+.light .on-media .text-neutral-100,
+.light .on-media .text-neutral-200,
+.light .on-media .text-zinc-50,
+.light .on-media .text-zinc-100,
+.light .on-media .text-zinc-200,
+.light .on-media .text-gray-200 {
+  color: hsl(0 0% 100%);
+}
+.light .on-media .text-gray-300,
+.light .on-media .text-gray-400,
+.light .on-media .text-slate-300,
+.light .on-media .text-slate-400,
+.light .on-media .text-neutral-300,
+.light .on-media .text-neutral-400,
+.light .on-media .text-zinc-300,
+.light .on-media .text-zinc-400 {
+  color: hsl(0 0% 100% / 0.85);
+}
+.light .on-media .text-white\/80 {
+  color: hsl(0 0% 100% / 0.8);
+}
+.light .on-media .text-white\/60 {
+  color: hsl(0 0% 100% / 0.6);
+}
+
 /* Chat overlays — explicit light treatment */
 .light .chat-search-input {
   color: hsl(var(--ink-1));
