@@ -269,7 +269,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
               </div>
 
               {error && (
-                <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-2 mb-3 md:mb-4">
+                <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-2 mb-2 md:mb-3">
                   <p className="text-red-200 text-xs">{error}</p>
                 </div>
               )}
