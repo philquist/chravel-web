@@ -122,10 +122,14 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm max-sm:pb-[env(safe-area-inset-bottom,0px)] sm:items-center sm:p-2">
       <div
         data-testid="trip-export-modal-panel"
-        className="flex max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-0.75rem)] min-h-0 w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-gray-700 bg-gray-900 shadow-2xl md:max-w-xl sm:max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-2rem)] sm:rounded-xl"
+        className="flex max-h-[100svh] min-h-0 w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-gray-700 bg-gray-900 shadow-2xl md:max-w-xl sm:max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-2rem)] sm:rounded-xl"
+        style={{
+          maxHeight:
+            'calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))',
+        }}
       >
         {/* Header — safe top inset without stacking extra padding on top of large notches */}
-        <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-700/50 px-3 pb-2.5 pt-[max(10px,calc(env(safe-area-inset-top,0px)+8px))]">
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-700/50 px-3 pb-2 pt-[max(8px,calc(env(safe-area-inset-top,0px)+6px))]">
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-br from-[#e8af48] via-[#c49746] to-[#a07a32] p-1.5 rounded-lg shadow-[0_0_8px_rgba(196,151,70,0.3)]">
               <FileText size={16} className="text-black" />
@@ -144,10 +148,10 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
         {/* Content */}
         <div
           data-testid="trip-export-modal-scroll"
-          className="min-h-0 min-w-0 flex-1 overflow-y-auto px-3 pt-2"
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto px-3 pt-1.5"
           style={{
             paddingBottom: hasAccess
-              ? 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 12px))'
+              ? '8px'
               : 'max(16px, calc(env(safe-area-inset-bottom, 0px) + 16px))',
           }}
         >
@@ -218,7 +222,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
                 </div>
               )}
 
-              <div className="mb-3 md:mb-4">
+              <div className="mb-2 md:mb-3">
                 <h3 className="text-white font-semibold text-sm mb-1">
                   {isEvent ? 'Event' : 'Trip'}: {tripName}
                 </h3>
@@ -226,13 +230,13 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
               </div>
 
               {/* Section Selection */}
-              <div className="grid grid-cols-2 gap-2 mb-3 md:mb-4">
+              <div className="grid grid-cols-2 gap-2 mb-2 md:mb-3">
                 {sections.map(section => {
                   const isSelected = selectedSections.includes(section.id);
                   return (
                     <label
                       key={section.id}
-                      className={`group flex items-center gap-2 py-2 px-2.5 rounded-lg border transition-all min-h-[44px] cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-[#e8af48]/80 focus-within:ring-offset-2 focus-within:ring-offset-gray-900 ${
+                      className={`group flex items-center gap-2 py-1.5 px-2.5 rounded-lg border transition-all min-h-[40px] cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-[#e8af48]/80 focus-within:ring-offset-2 focus-within:ring-offset-gray-900 ${
                         isSelected
                           ? 'bg-[#c49746]/20 border-[#c49746]/70 hover:border-[#e8af48] hover:bg-[#c49746]/25'
                           : 'bg-gray-800/60 border-gray-700/60 hover:border-gray-500 hover:bg-gray-800/90'
@@ -265,7 +269,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
               </div>
 
               {error && (
-                <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-2 mb-3 md:mb-4">
+                <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-2 mb-2 md:mb-3">
                   <p className="text-red-200 text-xs">{error}</p>
                 </div>
               )}
@@ -287,20 +291,20 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
         {/* Footer - Always visible with safe area padding for PWA/mobile */}
         {hasAccess && (
           <div
-            className="flex items-center justify-end gap-2 p-3 border-t border-gray-700 flex-shrink-0 bg-gray-900"
-            style={{ paddingBottom: 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 12px))' }}
+            className="flex items-center justify-end gap-2 px-3 py-2 border-t border-gray-700 flex-shrink-0 bg-gray-900"
+            style={{ paddingBottom: 'max(8px, calc(env(safe-area-inset-bottom, 0px) + 8px))' }}
           >
             <button
               onClick={onClose}
               disabled={isExporting}
-              className="px-4 py-2.5 text-sm rounded-lg text-gray-300 hover:text-white transition-colors disabled:opacity-50 min-h-[44px]"
+              className="px-4 py-2 text-sm rounded-lg text-gray-300 hover:text-white transition-colors disabled:opacity-50 min-h-[44px]"
             >
               Cancel
             </button>
             <button
               onClick={handleExport}
               disabled={isExporting || selectedSections.length === 0}
-              className="bg-gradient-to-r from-[#e8af48] via-[#c49746] to-[#a07a32] hover:from-[#f0b850] hover:via-[#d4a74f] hover:to-[#b08a3e] text-black font-semibold px-4 py-2.5 text-sm rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] shadow-[0_0_12px_rgba(196,151,70,0.3)] hover:shadow-[0_0_16px_rgba(196,151,70,0.45)]"
+              className="bg-gradient-to-r from-[#e8af48] via-[#c49746] to-[#a07a32] hover:from-[#f0b850] hover:via-[#d4a74f] hover:to-[#b08a3e] text-black font-semibold px-4 py-2 text-sm rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] shadow-[0_0_12px_rgba(196,151,70,0.3)] hover:shadow-[0_0_16px_rgba(196,151,70,0.45)]"
             >
               {isExporting ? (
                 <>
