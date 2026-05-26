@@ -222,7 +222,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
                 </div>
               )}
 
-              <div className="mb-3 md:mb-4">
+              <div className="mb-2 md:mb-3">
                 <h3 className="text-white font-semibold text-sm mb-1">
                   {isEvent ? 'Event' : 'Trip'}: {tripName}
                 </h3>
@@ -230,7 +230,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
               </div>
 
               {/* Section Selection */}
-              <div className="grid grid-cols-2 gap-2 mb-3 md:mb-4">
+              <div className="grid grid-cols-2 gap-2 mb-2 md:mb-3">
                 {sections.map(section => {
                   const isSelected = selectedSections.includes(section.id);
                   return (
