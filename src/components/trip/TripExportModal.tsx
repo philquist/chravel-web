@@ -148,10 +148,10 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
         {/* Content */}
         <div
           data-testid="trip-export-modal-scroll"
-          className="min-h-0 min-w-0 flex-1 overflow-y-auto px-3 pt-2"
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto px-3 pt-1.5"
           style={{
             paddingBottom: hasAccess
-              ? 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 12px))'
+              ? '8px'
               : 'max(16px, calc(env(safe-area-inset-bottom, 0px) + 16px))',
           }}
         >
