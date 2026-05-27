@@ -59,7 +59,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
               textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
             }}
           >
-            The Group Chat's Travel App
+            The Group Chat Travel App
           </h1>
         </div>
 
