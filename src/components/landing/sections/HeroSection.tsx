@@ -131,7 +131,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
           }}
         >
-          Plans, Photos, Places & Payments — one shared space.
+          Plans, photos, places, and payments — one private place for every trip.
         </p>
       </div>
     </div>
