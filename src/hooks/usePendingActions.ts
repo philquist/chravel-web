@@ -56,7 +56,6 @@ type PendingActionToolName =
   | 'createNotification'
   | 'settleExpense';
 
-
 function assertNeverToolName(toolName: never): never {
   throw new Error(`Unknown tool: ${toolName}`);
 }
@@ -408,7 +407,6 @@ export function usePendingActions(tripId: string) {
           assertNeverToolName(toolName);
       }
 
-
       // Mark as confirmed — re-check status to prevent TOCTOU race
       // intentional: trip_pending_actions not yet in generated Supabase types
       const { error: updateError } = await (supabase as any)
@@ -507,7 +505,6 @@ export function usePendingActions(tripId: string) {
         default:
           assertNeverToolName(toolName as never);
       }
-
     },
     onError: (error: Error) => {
       // Suppress the noisy toast for the deliberate double-tap guard.

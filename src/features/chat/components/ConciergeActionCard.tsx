@@ -12,7 +12,6 @@ import {
   Trash2,
 } from 'lucide-react';
 
-
 export type ActionResultStatus = 'success' | 'failure' | 'duplicate' | 'skipped';
 
 export interface ConciergeActionResult {
@@ -95,9 +94,7 @@ const ACTION_CONFIG: Record<
     tab: 'tasks',
     color: 'red',
   },
-
 };
-
 
 const COLOR_CLASSES: Record<string, { bg: string; border: string; icon: string; text: string }> = {
   blue: {
@@ -143,7 +140,6 @@ const COLOR_CLASSES: Record<string, { bg: string; border: string; icon: string; 
     text: 'text-red-300',
   },
 };
-
 
 /** Derive the effective status from the action result */
 function getEffectiveStatus(action: ConciergeActionResult): ActionResultStatus {

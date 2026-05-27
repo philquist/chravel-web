@@ -1160,8 +1160,6 @@ async function _executeImpl(
       };
     }
 
-
-
     case 'setBasecamp': {
       const { scope, name, address, lat, lng } = args;
       const basecampName = String(name || '').trim();
@@ -1302,7 +1300,6 @@ async function _executeImpl(
         message: `Added "${agendaTitle}" to event agenda`,
       };
     }
-
 
     case 'searchFlights': {
       const { origin, destination, departureDate, returnDate, passengers } = args;
@@ -1798,7 +1795,16 @@ async function _executeImpl(
     }
 
     case 'updateTask': {
-      const { taskId, title, description, assignee, dueDate, completed, idempotency_key, tool_call_id } = args;
+      const {
+        taskId,
+        title,
+        description,
+        assignee,
+        dueDate,
+        completed,
+        idempotency_key,
+        tool_call_id,
+      } = args;
       if (!taskId) return { error: 'taskId is required' };
 
       // Verify task belongs to this trip (guard before audit row)
@@ -1884,7 +1890,6 @@ async function _executeImpl(
       };
     }
 
-
     case 'deleteTask': {
       const { taskId, idempotency_key, tool_call_id } = args;
       if (!taskId) return { error: 'taskId is required' };
@@ -1952,7 +1957,6 @@ async function _executeImpl(
           : `I'd like to delete task "${existing.title}". Please confirm in the trip chat.`,
       };
     }
-
 
     // ========== UNIFIED TRIP SEARCH ==========
 
@@ -4022,7 +4026,6 @@ async function _executeImpl(
           : `I'd like to close the poll "${existing.question}". Please confirm in the trip chat.`,
       };
     }
-
 
     case 'getRecentActivity': {
       const limit = Math.min(Number(args.limit || 20), 50);
