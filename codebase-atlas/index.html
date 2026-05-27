@@ -2172,6 +2172,23 @@
           );
         });
 
+        // Scroll to sections via JS instead of relying on default #fragment
+        // navigation. Some HTML-preview proxies inject a <base href> pointing at
+        // the raw source; that makes a bare "#id" link resolve to the raw file
+        // URL and navigate away from the rendered page. Handling the click here
+        // keeps navigation working under any host (preview proxy, Pages, file://).
+        nav.addEventListener('click', function (ev) {
+          var a = ev.target.closest('a');
+          if (!a) return;
+          var href = a.getAttribute('href') || '';
+          if (href.charAt(0) !== '#') return;
+          var target = document.getElementById(href.slice(1));
+          if (target) {
+            ev.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+
         // ---- sections ----
         var root = document.getElementById('sections');
         SECTIONS.forEach(function (s, i) {
