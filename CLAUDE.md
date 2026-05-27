@@ -67,6 +67,10 @@ User → Vercel SPA → Supabase JS client with user JWT (RLS filters at DB) for
 
 Never claim "fixed" without proof. Never skip reproduction. Never refactor as a substitute for diagnosis.
 
+### Pre-push semantic review (mandatory)
+
+typecheck/lint/tests catch *mechanical* errors (compile, format, broken assertions) — not *semantic* ones (right types, wrong behavior; reinvented utilities). Before the first `git push` of a session, run `/code-review` (or `/code-review --fix`) on the branch diff and address what it surfaces. This is the point where logic errors have historically escaped to post-merge cleanup. A `Stop` hook (`stop-test-gate.sh`) also runs vitest tests *related* to your changed `src/**` files before each turn ends, and a `PreToolUse` hook (`pre-push-review-reminder.sh`) reminds you at push time.
+
 ## Deferral Discipline
 
 **If you see something, say something — then plan to do something.**
