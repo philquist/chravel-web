@@ -64,7 +64,7 @@ Evidence-grounded, not generic. Sources:
 ### Caveats
 - The "unused files" count from knip includes framework entry points it can't resolve (Vercel `api/*`, Remotion compositions, `scripts/*`) — these are **Future/Unclear, not confirmed dead**. Verify per-file before deleting anything.
 - No formal cycle scan (madge/dpdm) was run; circular-dependency claims are Low confidence.
-- LOC for `AIConciergeChat.tsx` (~2.5k) is taken from `tech_debt_report.md`.
+- All god-file LOC figures are computed directly from the working tree by `scripts/build-atlas.mjs`. Note `AIConciergeChat.tsx` — historically the #1 god component at ~2.5k LOC in `tech_debt_report.md` — has since been decomposed to ~510 LOC.
 
 ## Regenerate
 
