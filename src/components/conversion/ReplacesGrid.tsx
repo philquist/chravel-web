@@ -23,7 +23,8 @@ export const ReplacesGrid = () => {
           className="text-base sm:text-lg md:text-xl text-white font-semibold mt-4"
           style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)' }}
         >
-          Tap below to see how ChravelApp brings together the trip chaos usually scattered across your app stack
+          Tap below to see how ChravelApp brings together the trip chaos usually scattered across
+          your app stack
         </p>
 
         {/* Placeholder for ChravelTabs screenshot */}
@@ -102,7 +103,6 @@ export const ReplacesGrid = () => {
                 <div className="tablet:hidden">
                   <p className="text-xs text-white/60 uppercase tracking-wider mb-3 mt-1 font-semibold text-center">
                     Brings together the trip chaos usually scattered across:
-
                   </p>
                   <div className="flex flex-wrap justify-center gap-2">
                     {allApps.map((app, index) => (
