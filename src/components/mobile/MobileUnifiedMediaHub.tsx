@@ -621,8 +621,12 @@ export const MobileUnifiedMediaHub = ({ tripId }: MobileUnifiedMediaHubProps) =>
         <StorageQuotaBar tripId={tripId} showDetails={true} />
       </div>
 
-      {/* Filter Tabs with Counters */}
-      <div className="flex gap-2 px-4 py-3 border-b border-white/10 safe-container overflow-x-auto native-scroll scrollbar-hide">
+      {/* Filter Tabs with Counters — match media grid horizontal inset (px-2); equal-width slots so all five fit on narrow PWA / TestFlight */}
+      <div
+        className="flex w-full gap-1 py-3 border-b border-white/10 ps-[max(0.5rem,env(safe-area-inset-left,0px))] pe-[max(0.5rem,env(safe-area-inset-right,0px))]"
+        role="tablist"
+        aria-label="Media filters"
+      >
         {(
           [
             { id: 'all', label: 'All', count: allCount },
@@ -634,12 +638,17 @@ export const MobileUnifiedMediaHub = ({ tripId }: MobileUnifiedMediaHubProps) =>
         ).map(tab => (
           <button
             key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={selectedTab === tab.id}
             onClick={async () => {
               await hapticService.light();
               setSelectedTab(tab.id);
             }}
             className={`
-              native-tab px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap flex-shrink-0
+              native-tab flex flex-1 min-w-0 basis-0 flex-col items-center justify-center gap-0.5
+              rounded-md px-1 py-1.5 text-center text-[11px] font-medium leading-tight
+              sm:text-xs sm:px-1.5 sm:py-2
               ${
                 selectedTab === tab.id
                   ? 'bg-gold-primary text-black shadow-md'
@@ -647,9 +656,13 @@ export const MobileUnifiedMediaHub = ({ tripId }: MobileUnifiedMediaHubProps) =>
               }
             `}
           >
-            {tab.label}{' '}
+            <span className="truncate max-w-full">{tab.label}</span>
             {tab.count > 0 && (
-              <span className={selectedTab === tab.id ? 'text-black/60' : 'text-gray-500'}>
+              <span
+                className={`text-[10px] leading-none sm:text-[11px] ${
+                  selectedTab === tab.id ? 'text-black/60' : 'text-gray-500'
+                }`}
+              >
                 ({tab.count})
               </span>
             )}
