@@ -38,6 +38,10 @@
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/memory-primer.sh",
             "background": true
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-baseline.sh\""
           }
         ]
       }
@@ -71,8 +75,8 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/protect-sensitive-files.sh\""
           },
           {
-            "type": "prompt",
-            "prompt": "If the file being edited is a critical path file (useAuth, useTrip, trip loading pages, Supabase client, RLS policies, payment hooks, or auth guards), remind Claude to verify this change won't cause Trip Not Found, auth desync, or RLS leaks. Otherwise approve silently."
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/critical-path-reminder.sh\""
           }
         ]
       },
@@ -83,6 +87,15 @@
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-pr-tests.sh\"",
             "timeout": 300000
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-push-review-reminder.sh\""
           }
         ]
       }
@@ -111,6 +124,27 @@
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/log-command.sh\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-test-gate.sh\"",
+            "timeout": 180
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/impl-discipline.sh\""
           }
         ]
       }
