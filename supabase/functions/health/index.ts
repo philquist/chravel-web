@@ -7,31 +7,43 @@ serve(async req => {
     return new Response(null, { headers: getCorsHeaders(req) });
   }
 
+  const authHeader = req.headers.get('Authorization') ?? '';
+  const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  const isPrivileged = !!serviceRoleKey && bearer === serviceRoleKey;
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
-        JSON.stringify({
-          status: 'error',
-          timestamp: new Date().toISOString(),
-          message: 'Missing required Supabase configuration',
-        }),
+        JSON.stringify({ status: 'error', timestamp: new Date().toISOString() }),
         { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
       );
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Test database connectivity with timing
     const dbStart = Date.now();
-    const { data, error } = await supabase.from('trips').select('id').limit(1);
+    const { error } = await supabase.from('trips').select('id').limit(1);
     const dbResponseMs = Date.now() - dbStart;
-
     const dbHealthy = !error;
 
-    // Read feature flags status
+    // Unauthenticated callers get a minimal payload (no SHA, flags, or timing).
+    if (!isPrivileged) {
+      return new Response(
+        JSON.stringify({
+          status: dbHealthy ? 'healthy' : 'degraded',
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          status: dbHealthy ? 200 : 503,
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
     let flagsStatus: Record<string, boolean> = {};
     try {
       const { data: flags } = await supabase.from('feature_flags').select('key, enabled');
@@ -41,7 +53,7 @@ serve(async req => {
         );
       }
     } catch {
-      // Feature flags table may not exist yet — non-blocking
+      // non-blocking
     }
 
     const health = {
@@ -66,10 +78,7 @@ serve(async req => {
   } catch (error) {
     console.error('Health check failed:', error instanceof Error ? error.message : error);
     return new Response(
-      JSON.stringify({
-        status: 'error',
-        timestamp: new Date().toISOString(),
-      }),
+      JSON.stringify({ status: 'error', timestamp: new Date().toISOString() }),
       { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
     );
   }

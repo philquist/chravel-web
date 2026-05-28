@@ -28,6 +28,8 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { truncateUrl, getDomain } from '@/services/urlUtils';
 import { toast } from '@/hooks/use-toast';
+import { getEffectiveUserId } from '@/utils/demoUser';
+
 import { createTripLink } from '@/services/tripLinksService';
 import { insertLinkIndex, fetchOpenGraphData } from '@/services/linkService';
 import { useAuth } from '@/hooks/useAuth';
