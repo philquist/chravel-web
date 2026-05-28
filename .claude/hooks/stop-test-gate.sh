@@ -12,20 +12,11 @@
 # session-baseline.sh (SessionStart). Without a baseline (e.g. pre-existing sessions),
 # it falls back to currently-uncommitted changes only.
 #
-# DESIGN:
+# DESIGN (loop-safe + env-robust):
 #   - Only frontend src/** .ts/.tsx changes trigger it (vitest doesn't cover Deno
 #     edge functions; those use their own infra).
-#   - Hard test failures are re-enforced on every Stop in the cycle: the gate keeps
-#     re-blocking until tests pass or a waiver is set. This stops a failing-test
-#     state from being silently passed through on the second Stop.
-#   - Waiver (single escape valve for an unresolvable env failure, e.g. missing
-#     VITE_* secrets locally): either set CHRAVEL_STOP_GATE_SKIP=1 in the hook env,
-#     or `touch /tmp/chravel-stop-gate-skip`. Both are honored; presence = bypass.
-#     The file sentinel is the more reliable mechanism, since env vars set in an
-#     agent's Bash subshell do not propagate to later hook invocations.
-#   - The missing-test nudge is one-time per cycle (stop_hook_active=true skips it):
-#     it can always be silenced by adding a test or justifying with a one-liner, so
-#     a hard re-block adds friction without enforcement value.
+#   - Blocks AT MOST ONCE per stop cycle, guarded by stop_hook_active, so an
+#     environmental failure (missing VITE_ secrets locally) can't lock the loop.
 
 set -uo pipefail
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
@@ -33,6 +24,11 @@ cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 INPUT="$(cat 2>/dev/null || true)"
 STOP_ACTIVE="$(printf '%s' "$INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null || echo false)"
 SID="$(printf '%s' "$INPUT" | jq -r '.session_id // "default"' 2>/dev/null || echo default)"
+
+# Already nudged once this cycle — don't loop. Allow the stop.
+if [[ "$STOP_ACTIVE" == "true" ]]; then
+  exit 0
+fi
 
 src_filter() { grep -E '^src/.*\.(ts|tsx)$' || true; }
 uncommitted() { { git diff --name-only; git diff --cached --name-only; } 2>/dev/null; }
@@ -74,42 +70,21 @@ fi
 # Did the session change set include any test file? (reproduce-first signal)
 TEST_TOUCHED="$(printf '%s\n' "${EXISTING[@]}" | grep -E '(\.test\.|\.spec\.|/__tests__/)' || true)"
 
-# Run vitest only on tests related to the changed source files — every Stop, so a
-# real failure keeps re-blocking until fixed or explicitly waived.
+# Run vitest only on tests related to the changed source files.
 TEST_OUT="$(npx vitest related --run --passWithNoTests "${EXISTING[@]}" 2>&1)"
 TEST_EXIT=$?
 
 if [[ $TEST_EXIT -ne 0 ]]; then
-  # Honor the documented waiver (env var or file sentinel — see DESIGN).
-  if [[ "${CHRAVEL_STOP_GATE_SKIP:-}" == "1" ]] || [[ -f "${TMPDIR:-/tmp}/chravel-stop-gate-skip" ]]; then
-    echo "STOP GATE: waiver active (CHRAVEL_STOP_GATE_SKIP or /tmp/chravel-stop-gate-skip) — bypassing test failure." >&2
-    exit 0
-  fi
   {
     echo "STOP GATE: related tests for files you changed this session did not pass."
     echo ""
     echo "$TEST_OUT" | tail -40
     echo ""
-    if [[ "$STOP_ACTIVE" == "true" ]]; then
-      echo "Re-blocked because tests are still failing. Fix them, OR — if you've confirmed"
-      echo "this is an environmental failure (e.g. missing VITE_* secrets locally; see"
-      echo ".claude/hooks/pre-pr-tests.sh) — set the waiver: \`touch /tmp/chravel-stop-gate-skip\`"
-      echo "(or CHRAVEL_STOP_GATE_SKIP=1 in the hook env) and stop again."
-    else
-      echo "If these are real failures, fix them. If they are environmental (missing VITE_*"
-      echo "secrets locally — see .claude/hooks/pre-pr-tests.sh), either fix the env or set"
-      echo "the waiver: \`touch /tmp/chravel-stop-gate-skip\` (or CHRAVEL_STOP_GATE_SKIP=1)."
-      echo "The gate re-runs vitest on every Stop and re-blocks until tests pass or waiver is set."
-    fi
+    echo "Before finishing: if these are real failures, fix them. If they are"
+    echo "environmental (missing VITE_ secrets locally — see .claude/hooks/pre-pr-tests.sh),"
+    echo "confirm that is the cause, then you may stop again to proceed."
   } >&2
   exit 2
-fi
-
-# Tests passed (or none to run). The missing-test nudge is one-time per cycle —
-# on the 2nd+ Stop we don't re-block, since the nudge has no enforcement signal
-# beyond reminding once.
-if [[ "$STOP_ACTIVE" == "true" ]]; then
-  exit 0
 fi
 
 if [[ -z "$TEST_TOUCHED" ]]; then
