@@ -1,25 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createOptionsResponse, createErrorResponse } from '../_shared/securityHeaders.ts';
 import { getCorsHeaders } from '../_shared/cors.ts';
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-
-async function requireAuthedUser(req: Request): Promise<boolean> {
-  const authHeader = req.headers.get('Authorization') ?? '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-  if (!token || !SUPABASE_URL || !SUPABASE_ANON_KEY) return false;
-  try {
-    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: false },
-    });
-    const { data, error } = await client.auth.getUser(token);
-    return !error && !!data.user;
-  } catch {
-    return false;
-  }
-}
 
 
 const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY');
@@ -93,9 +75,6 @@ serve(async req => {
   if (req.method === 'OPTIONS') return createOptionsResponse(req);
   if (req.method !== 'GET') return createErrorResponse('Method not allowed', 405, req);
 
-  // Require authenticated caller for all proxy modes (prevents bandwidth/quota abuse).
-  const authed = await requireAuthedUser(req);
-  if (!authed) return createErrorResponse('Unauthorized', 401, req);
 
 
   const url = new URL(req.url);
