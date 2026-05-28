@@ -81,6 +81,12 @@ function ensureSubscription(userId: string, callbacks: SubscriptionCallbacks) {
     };
   }
 
+  // Scope by user_id, NOT trip_id. This is the global notification feed (the bell):
+  // a user must receive their notifications across ALL trips, so user_id is the
+  // correct partition key here. The channel name (`notifications:${userId}`) plus the
+  // `user_id=eq` filter mean this subscription only ever receives this user's rows —
+  // it is not an unfiltered global channel. (Memory #20's trip_id rule applies to
+  // trip-scoped channels like chat/reactions, not to a per-user inbox.)
   const channel = supabase
     .channel(`notifications:${userId}`)
     .on(

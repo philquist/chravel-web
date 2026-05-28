@@ -651,106 +651,120 @@
     {
       "name": "Trips & Membership",
       "color": "blue",
-      "completeness": 90,
+      "completeness": 92,
       "plain": "Create trips, invite people, manage who's in.",
       "screens": ["TripDetail / MobileTripDetail", "ProTripDetail", "EventDetail"],
-      "backend": ["trips, trip_members tables", "tripService"],
+      "backend": ["trips, trip_members tables", "tripService", "trip_membership_audit_events"],
       "state": ["useTrips", "useTripMembers"],
       "external": ["Supabase"],
-      "missingStates": ["edge cases on invite expiry"],
-      "risks": ["existence vs membership confusion"],
-      "fixes": ["test access guards"]
+      "missingStates": ["invite-expiry edge cases"],
+      "risks": [],
+      "fixes": ["DONE: membership state machine + access-guard tests (existence != access)"]
     },
     {
       "name": "Unified Messaging",
       "color": "orange",
-      "completeness": 80,
+      "completeness": 92,
       "plain": "Group chat, channels, and broadcasts.",
       "screens": ["TripChat", "channel views"],
       "backend": ["Stream Chat", "trip_chat_messages", "Supabase Realtime"],
       "state": ["useStreamTripChat", "unifiedMessagingService"],
       "external": ["Stream (GetStream)"],
-      "missingStates": ["reconnect/backfill", "offline queue"],
-      "risks": ["message loss on reconnect"],
-      "fixes": ["backfill on reconnect + tests"]
+      "missingStates": [],
+      "risks": [],
+      "fixes": [
+        "DONE: backfillMissedMessages on reconnect/visibility + reconnect tests; offline queue via Stream SDK + idempotency keys"
+      ]
     },
     {
       "name": "AI Concierge",
       "color": "purple",
-      "completeness": 75,
+      "completeness": 90,
       "plain": "AI helper that plans trips and can take actions, by text or voice.",
       "screens": ["AIConciergeChat", "voice UI"],
       "backend": ["conciergeGateway", "ai_queries", "Gemini/Vertex"],
-      "state": ["useGeminiLive", "useConciergeStreaming", "useVoiceToolHandler"],
+      "state": ["useConciergeStreaming", "useConciergeVoice", "useWebSpeechVoice"],
       "external": ["Gemini", "Vertex AI Live"],
-      "missingStates": ["voice WebSocket drop recovery", "audio cleanup"],
-      "risks": ["tool hallucination writing shared state", "prompt injection"],
-      "fixes": ["pending-actions buffer for all writes", "decompose god component"]
+      "missingStates": ["full-duplex Gemini Live voice not yet client-wired (dictation path only)"],
+      "risks": ["prompt injection (mitigated: tool writes gated by pending-actions buffer)"],
+      "fixes": [
+        "DONE: pending-actions buffer covers every write tool (coverage test) + AIConciergeChat decomposed (~507 LOC) + dictation lifecycle cleanup; TODO: wire full-duplex voice over LiveKit"
+      ]
     },
     {
       "name": "Payments & Subscriptions",
       "color": "orange",
-      "completeness": 82,
+      "completeness": 90,
       "plain": "Subscriptions and splitting costs.",
       "screens": ["billing/", "paywall"],
-      "backend": ["paymentService", "user_subscriptions", "webhooks"],
+      "backend": ["paymentService", "user_entitlements", "billing_webhook_ops_dashboard"],
       "state": ["usePayments", "useConsumerSubscription"],
       "external": ["Stripe (web)", "RevenueCat (iOS)"],
-      "missingStates": ["webhook retry surfacing"],
-      "risks": ["SDK mismatch per platform", "client billing bypass"],
-      "fixes": ["server-side entitlement checks", "split state machine"]
+      "missingStates": [],
+      "risks": ["platform SDK boundary (Stripe web / RevenueCat iOS) must not mix"],
+      "fixes": [
+        "DONE: server-side entitlement (user_entitlements source of truth) + ops-layer webhook failure surfacing (failures table + dashboard view + replay script); TODO: richer split state machine (pending/confirmed/settled per participant)"
+      ]
     },
     {
       "name": "Calendar & Events",
       "color": "green",
-      "completeness": 85,
+      "completeness": 90,
       "plain": "Shared calendar that syncs with Google.",
       "screens": ["calendar/"],
-      "backend": ["calendarService", "calendar-sync edge fn", "calendar_events"],
+      "backend": ["calendarSyncService", "calendar_event_mappings", "trip_events"],
       "state": ["calendar hooks"],
       "external": ["Google Calendar"],
-      "missingStates": ["sync-token expiry UX"],
-      "risks": ["duplicate events from replay"],
-      "fixes": ["dedupe by external id"]
+      "missingStates": ["mount Google sync UI (reauth_required state ready, not yet wired)"],
+      "risks": [],
+      "fixes": [
+        "DONE: idempotent dedupe by immutable external-id correlation (calendar_event_mappings, tested) + sync-token-expiry reauth UX state"
+      ]
     },
     {
       "name": "Smart Import",
       "color": "orange",
-      "completeness": 65,
+      "completeness": 90,
       "plain": "Pulls reservations out of emails and PDFs automatically.",
       "screens": ["smart-import/"],
-      "backend": ["gmail-import-worker", "artifact-ingest", "artifacts/import_runs"],
+      "backend": ["gmail-import-worker", "gmail_import_artifacts", "durable checkpoints"],
       "state": ["useArtifactIngest"],
       "external": ["Gmail", "Gemini"],
-      "missingStates": ["partial-import rollback", "import progress UX"],
-      "risks": ["dropping parsed items on retry"],
-      "fixes": ["state machine + persist partial state"]
+      "missingStates": ["progress-phase indicator on PDF/URL path (Gmail path done)"],
+      "risks": [],
+      "fixes": [
+        "DONE: checkpoint state machine + durable checkpoints + per-artifact apply_status (partial-state/rollback) + fingerprint dedupe + ImportPhaseIndicator progress UX (Gmail)"
+      ]
     },
     {
       "name": "Media Gallery",
       "color": "green",
-      "completeness": 85,
+      "completeness": 90,
       "plain": "Upload and view trip photos/videos.",
       "screens": ["media/"],
       "backend": ["mediaService", "image-upload edge fn", "Supabase Storage"],
-      "state": ["media hooks"],
+      "state": ["media hooks", "useStorageQuota"],
       "external": ["Supabase Storage", "Gemini tagging"],
-      "missingStates": ["quota-exceeded UX"],
-      "risks": ["tagging errors ignored"],
-      "fixes": ["signed URLs + cleanup triggers"]
+      "missingStates": [],
+      "risks": ["Gemini auto-tagging is best-effort (failures are non-blocking)"],
+      "fixes": [
+        "DONE: orphan-variant cleanup function + quota-exceeded upload guard (blocks before silent failure, tested)"
+      ]
     },
     {
       "name": "Notifications",
       "color": "green",
-      "completeness": 88,
+      "completeness": 92,
       "plain": "Push, email, SMS, and in-app alerts.",
       "screens": ["notifications/"],
-      "backend": ["notificationService", "notifications table"],
+      "backend": ["notificationService", "notifications table", "notification_deliveries"],
       "state": ["useNotificationRealtime", "notificationRealtimeStore"],
       "external": ["APNS", "Resend", "Twilio"],
-      "missingStates": ["badge reconcile on reconnect"],
-      "risks": ["dual-path duplicates"],
-      "fixes": ["preserve dedup pattern; filter by trip_id"]
+      "missingStates": [],
+      "risks": [],
+      "fixes": [
+        "DONE: race-safe dedupe (stream_message_id unique index) + badge reconcile on reconnect; per-user channel scoping is correct for the global feed (documented in useNotificationRealtime)"
+      ]
     }
   ],
   "flows": [

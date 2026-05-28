@@ -22,6 +22,7 @@ import { useDemoMode } from '@/hooks/useDemoMode';
 import { toast } from 'sonner';
 import { useResolvedTripMediaUrl } from '@/hooks/useResolvedTripMediaUrl';
 import { getMediaCategory } from '@/utils/mediaUtils';
+import { useStorageQuota } from '@/hooks/useStorageQuota';
 
 interface MediaItem {
   id: string;
@@ -141,6 +142,7 @@ export const MediaSubTabs = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
+  const { quota, canUpload, refresh: refreshQuota } = useStorageQuota(tripId);
   const resolvedActiveVideoUrl = useResolvedTripMediaUrl({
     url: activeVideoItem?.media_url ?? null,
     metadata: activeVideoItem?.metadata,
@@ -199,6 +201,19 @@ export const MediaSubTabs = ({
 
     if (!user) {
       toast.error('Please sign in to upload files');
+      return;
+    }
+
+    // Quota-exceeded guard: block before uploading instead of failing silently mid-stream.
+    // `canUpload` is false once usage is already at/over the tier limit; we additionally
+    // reject when the incoming batch would push usage past the quota.
+    const incomingMB = Array.from(files).reduce((sum, file) => sum + file.size, 0) / (1024 * 1024);
+    const remainingMB = Math.max(quota.quotaMB - quota.usedMB, 0);
+    if (!canUpload || incomingMB > remainingMB) {
+      toast.error(
+        `Storage limit reached — ${quota.usedMB.toFixed(0)}MB of ${quota.quotaMB}MB used. ` +
+          'Delete some media or upgrade your plan to upload more.',
+      );
       return;
     }
 
@@ -261,6 +276,8 @@ export const MediaSubTabs = ({
         // Small delay to ensure DB write propagates before callback
         await new Promise(resolve => setTimeout(resolve, 600));
         onMediaUploaded?.();
+        // Keep the storage bar / quota guard in sync with what was just uploaded.
+        void refreshQuota();
       }
     } catch (error) {
       console.error('Upload error:', error);

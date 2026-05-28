@@ -12,7 +12,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { RefreshCw, CheckCircle2, XCircle, ExternalLink, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export type GoogleCalendarSyncStatus = 'disconnected' | 'connected' | 'syncing' | 'error';
+/**
+ * `reauth_required` is distinct from `error`: it means the stored Google sync token
+ * expired or was revoked (Google returns 410 GONE / invalid_grant on the next sync).
+ * A retry of Sync cannot recover it — the user must re-authorize, so the UI must offer
+ * Reconnect rather than a no-op Sync button. (Memory #9: sync tokens drive idempotent
+ * bi-directional sync; an expired token requires a fresh consent, not another sync.)
+ */
+export type GoogleCalendarSyncStatus =
+  | 'disconnected'
+  | 'connected'
+  | 'syncing'
+  | 'error'
+  | 'reauth_required';
 
 interface GoogleCalendarSyncProps {
   tripId: string;
@@ -74,6 +86,8 @@ export const GoogleCalendarSync = ({
         return <div className="h-5 w-5 animate-spin gold-gradient-spinner" />;
       case 'error':
         return <AlertTriangle className="h-5 w-5 text-yellow-400" />;
+      case 'reauth_required':
+        return <AlertTriangle className="h-5 w-5 text-destructive" />;
       default:
         return <XCircle className="h-5 w-5 text-muted-foreground" />;
     }
@@ -84,6 +98,7 @@ export const GoogleCalendarSync = ({
     connected: 'Connected',
     syncing: 'Syncing...',
     error: 'Sync error',
+    reauth_required: 'Sync expired — reconnect to resume',
   };
 
   return (
@@ -134,7 +149,17 @@ export const GoogleCalendarSync = ({
           </div>
 
           <div className="flex gap-2 flex-shrink-0">
-            {status === 'connected' || status === 'error' ? (
+            {status === 'reauth_required' ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleConnect}
+                className="gap-1.5 border-destructive/60 text-destructive hover:text-destructive"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Reconnect
+              </Button>
+            ) : status === 'connected' || status === 'error' ? (
               <>
                 <Button
                   variant="outline"
