@@ -59,7 +59,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
               textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
             }}
           >
-            The Group Chat's Travel App
+            The Group Chat Travel App
           </h1>
         </div>
 
@@ -71,7 +71,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             textShadow: '0 2px 4px rgba(0,0,0,0.4)',
           }}
         >
-          For Friends, Families, Sports, Tours, Work & More.
+          For friend trips, family vacations, team travel, tours, and work offsites.
         </p>
       </div>
 
@@ -131,7 +131,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
           }}
         >
-          Plans, Photos, Places & Payments — one shared space.
+          Plans, photos, places, and payments — one private place for every trip.
         </p>
       </div>
     </div>

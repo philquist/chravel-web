@@ -1,0 +1,8 @@
+Provider,Included Egress/Transfer,Overage Price USD/GB,Activities That Drive It,Low Case GB/mo,Base Case GB/mo,High Case GB/mo,Base Case Cost USD,Notes
+Supabase egress,250 GB,0.09,Media downloads + API reads + realtime fan-out,300,5000,50000,427.50,"Formula MAX(0,GB-250)*0.09; 10k MAU base. No client-side compression = ~2x bytes"
+Supabase cached egress,250 GB,0.03,CDN-cached asset reads,100,1000,10000,22.50,Cheaper tier; depends on cache hit rate
+Supabase storage,100 GB,0.021,Uncompressed media uploads,200,2000,20000,39.90,Grows with retention; compression is highest-leverage fix
+Vercel data transfer,1024 GB (1TB),0.15,SPA shell + image opt + function responses,60,600,6000,0.00,"Base under 1TB = $0; 100k MAU ~6TB = $750"
+GetStream media,0,0.12,Chat image/video transfer,10,400,4000,48.00,Plus ~$0.05/GB storage
+LiveKit egress,50 GB (Build tier),tier-based,Voice audio streams,0,0,500,0.00,Only if voice enabled; Build incl 50GB
+OpenAI Realtime,0,n/a (per audio token),Voice concierge audio in/out,0,0,0,0.00,Billed per token not GB; ~$0.18-0.46/min is the real meter
