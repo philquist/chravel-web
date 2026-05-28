@@ -40,7 +40,11 @@ if [[ -f "$BASELINE" ]]; then
   # Session changes = (uncommitted ∪ committed-since-baseline) − files already dirty at start.
   CHANGED="$( {
       uncommitted
-      [[ -n "$BASE_HEAD" ]] && git diff --name-only "$BASE_HEAD" HEAD 2>/dev/null
+      # Attribute committed changes only while BASE_HEAD is still an ancestor of HEAD.
+      # A rebase/amend rewrites SHAs and orphans BASE_HEAD; diffing it then surfaces
+      # unrelated commits (e.g. main's, pulled in by a rebase) as false session changes.
+      [[ -n "$BASE_HEAD" ]] && git merge-base --is-ancestor "$BASE_HEAD" HEAD 2>/dev/null \
+        && git diff --name-only "$BASE_HEAD" HEAD 2>/dev/null
     } | sort -u | src_filter \
       | { grep -vxF -f <(tail -n +2 "$BASELINE" 2>/dev/null | sort -u) 2>/dev/null || cat; } )"
 else
