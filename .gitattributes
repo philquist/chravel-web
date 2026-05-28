@@ -5,3 +5,7 @@ LESSONS.md merge=union
 TEST_GAPS.md merge=union
 agent_memory.jsonl merge=union
 claude-progress.txt merge=union
+
+# Atlas generated outputs — always defer to main's version on merge conflicts
+codebase-atlas/index.html              merge=ours
+codebase-atlas/architecture-data.json merge=ours
