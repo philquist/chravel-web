@@ -1,0 +1,19 @@
+Control,Current Status,Needed for Enterprise,Needed for HIPAA,Vendor Support,One-Time Cost USD,Monthly Cost USD,Implementation Complexity,Risk if Absent
+App-user SSO (SAML/OIDC),Absent (only Google OAuth login),Yes,Recommended,Supabase Auth SSO / Vercel SAML,0,300,Medium,Blocks B2B/enterprise deals
+Admin/dashboard SSO,Absent,Yes,Yes,Vercel SAML $300/mo,0,300,Medium,Audit finding; admin takeover risk
+MFA internal accounts,Absent,Yes,Yes,Supabase MFA (TOTP) built-in,0,0,Low,HIPAA/SOC2 blocker; FREE QUICK WIN
+MFA customer admins,Absent,Yes,Yes,Supabase MFA,0,0,Low,Account takeover
+RBAC / role management,Present (permissionMatrix.generated.ts roleChannels.ts RLS),Yes,Yes,In-house + RLS,0,0,Done,OK
+Audit logging,Partial (payment_audit_log security_audit_log only),Yes (comprehensive),Yes,In-house + log drains,5000,60,Medium,Compliance gap; no comprehensive activity audit
+SCIM provisioning,Absent,Yes (large orgs),No,Vendor/enterprise,0,0,High,Deferable
+Data retention/deletion policy,Partial (GDPR export UI; retention unclear),Yes,Yes,In-house,2000,0,Medium,GDPR/CCPA gap
+Leaked-password protection,Disabled (live advisor),Yes,Yes,Supabase (HaveIBeenPwned) toggle,0,0,Low,FREE QUICK WIN; weak-credential risk
+Public bucket access,4 buckets allow listing (live advisor),Fix required,Required (no PHI in public),Supabase RLS/bucket policy,0,0,Low-Medium,Data exposure / breach
+RLS always-true policies,2 policies effective allow-all (live advisor),Fix required,Required,Supabase RLS rewrite,0,0,Low,RLS bypass; zero-tolerance class
+App-level encryption,Absent (relies on Supabase managed),Recommended,Recommended,App + Supabase,3000,0,Medium,PHI-at-rest assurance
+PITR backups,Absent,Recommended,Required,Supabase add-on,0,100,Low,Data recovery / HIPAA
+Log drains / observability,Absent,Yes,Yes,Supabase $60 + Vercel $0.50/GB,0,200,Medium,No external log retention
+HIPAA BAAs (vendor-by-vendor),None signed,No,Yes,Supabase/Vercel/Google/OpenAI/Stream/Sentry/PostHog/AWS,15000,1500,High,Legal exposure if PHI handled
+SOC 2,Not started (marketing label only),Yes,Recommended,Auditor + tooling (Vanta/Drata),15000,500,High,Enterprise procurement blocker
+HIPAA total (deferred - separate enterprise case),Aspirational label only,n/a,Required,Multi-vendor,20000-40000,1500-3000,High,Deferred until PHI/healthcare deal; modeled as scenario 8 not base; cannot target healthcare/PHI customers until funded
+Hardcoded fallback creds in client.ts,Present (flagged),Fix required,Fix required,In-house,0,0,Low,Secret hygiene; manifesto violation

@@ -1,0 +1,27 @@
+Vendor,Product,Current Plan,Monthly List Price (USD),Pricing Unit / Overage,Fixed/Variable/Step,Confidence,Source URL,Notes
+Supabase,Postgres+Auth+Storage+Realtime+Edge,Pro,25,"$0.09/GB egress, $0.021/GB storage, $0.00325/MAU over 100k, $0.125/GB disk",Step then Variable,High,https://supabase.com/pricing,"Live-confirmed Pro via MCP. Incl 100k MAU/8GB disk/100GB storage/250GB egress/500 realtime conn"
+Supabase,PITR add-on,Pro+,100,per 7 days,Fixed add-on,High,https://supabase.com/pricing,Required for HIPAA; currently absent
+Supabase,Log drains,Pro+,60,per drain per project,Fixed add-on,Medium,https://supabase.com/pricing,Currently absent; needed for observability/HIPAA
+Supabase,Team plan,Team,599,plus usage,Step,High,https://supabase.com/pricing,Needed for HIPAA add-on + longer log retention + SOC2 collateral
+Vercel,Frontend hosting,Pro,20,per seat; $20 usage credit; 1TB transfer,Step then Variable,Medium,https://vercel.com/pricing,Team has 2+ members; bandwidth overage $0.15/GB
+Vercel,SAML SSO,Pro add-on,300,flat,Fixed add-on,High,https://vercel.com/pricing,Not configured today (saml empty); included on Enterprise
+Vercel,HIPAA BAA,Pro add-on,350,flat,Fixed add-on,High,https://vercel.com/pricing,Included on Enterprise
+Vercel,Log drains,Pro,0,$0.50 per GB,Variable,High,https://vercel.com/changelog/lower-pricing-for-log-drains,Needed as we scale
+Google Gemini,Gemini 3 Flash (in-use),Pay-as-you-go,0,$0.50/1M in + $3.00/1M out,Variable,High,https://ai.google.dev/gemini-api/docs/pricing,env default gemini-3.1-flash
+Google Gemini,Gemini 2.5 Flash-Lite,Pay-as-you-go,0,$0.10/1M in + $0.40/1M out,Variable,High,https://ai.google.dev/gemini-api/docs/pricing,Cheapest tier for routing
+Google Gemini,Gemini Live native audio,Pay-as-you-go,0,per audio token (~32 tok/sec),Variable,Medium,https://ai.google.dev/gemini-api/docs/pricing,Cheaper voice path than OpenAI
+OpenAI,gpt-realtime-2 voice,Pay-as-you-go,0,"$32/1M audio in, $0.40 cached, $64/1M out (~$0.18-0.46/min)",Variable,High,https://openai.com/api/pricing/,COST BOMB: ~$11-28 per voice hour
+Google Maps,Geocoding,Pay-as-you-go,0,$5.00/1k after 10k free,Variable,High,https://developers.google.com/maps/billing-and-pricing/pricing,Client cap 10k/day + 30-day cache
+Google Maps,Places/Text/Nearby,Pay-as-you-go,0,$2-7/1k (Essentials 10k free/SKU),Variable,Medium,https://developers.google.com/maps/billing-and-pricing/pricing,Autocomplete free if session completes
+Google Vision,Receipt OCR,Pay-as-you-go,0,~$1.50/1k images (1k free),Variable,Low,https://cloud.google.com/vision/pricing,Feature-gated; confirm in GCP billing
+GetStream,Chat,Startup,399,billed annually; 10k MAU,Step,Medium,https://getstream.io/chat/pricing/,Likely largest line in $466 baseline; Elevate $599 adds HIPAA
+GetStream,Media transfer/storage,Usage,0,~$0.12/GB transfer + ~$0.05/GB storage,Variable,Medium,https://getstream.io/chat/pricing/,Chat image/video
+LiveKit,WebRTC voice,Build/Ship/Scale,0,$0.0004/min WebRTC + $0.01/min per agent,Variable,High,https://livekit.com/pricing,Build free: 5k min + 50GB egress; Ship $50; Scale $500
+RevenueCat,iOS subscriptions,Free/Pro,0,~1% of monthly tracked revenue over ~$2.5k,Variable,Medium,https://www.revenuecat.com/pricing,Confirm current tier
+Stripe,Payment processing,Standard,0,2.9% + $0.30 per txn,Variable,High,https://stripe.com/pricing,Pass-through COGS not infra
+Resend,Transactional email,Free/Pro,20,Free 3k/mo; Pro $20 = 50k,Step,Medium,https://resend.com/pricing,
+Sentry,Error tracking,Team,26,50k errors / 5M spans,Fixed then Step,Medium,https://sentry.io/pricing/,Business $80
+PostHog,Analytics,Free/PAYG,0,1M events free; $0.00005/event after,Variable,High,https://posthog.com/pricing,Pre-launch well under free tier
+APNs/FCM/VAPID,Push notifications,n/a,0,free (Apple/Google infra),Fixed,High,https://developer.apple.com/notifications/,No direct cost
+AWS,S3 + Textract,Pay-as-you-go,0,metered (S3 storage/egress + Textract per page),Variable,Low,https://aws.amazon.com/textract/pricing/,Env-referenced; confirm if live
+Firecrawl,Web scraping/unfurl,unknown,0,credit-based,Variable,Low,https://www.firecrawl.dev/pricing,Env-referenced; confirm if live
