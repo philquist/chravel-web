@@ -1,6 +1,9 @@
 # Supabase CLI temp files
 supabase/.temp/
 
+# Internal cost/compliance modeling artifact — NOT for the public repo or Pages site
+cost-model/
+
 # Logs
 logs
 *.log

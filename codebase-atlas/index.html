@@ -523,7 +523,7 @@
           "app": "Chravel",
           "tagline": "The AI-native operating system for group travel, touring, and events.",
           "repo": "chravel-inc/chravel-web",
-          "branch": "claude/codebase-atlas-prompt-Wb9CF",
+          "branch": "claude/eager-bell-CGZ4q",
           "stack": [
             "React 18 + Vite 5 (SWC) + TypeScript (strict OFF)",
             "TanStack Query 5 (server state) + Zustand 5 (client state)",
@@ -545,35 +545,35 @@
             "Static analysis: file counts, LOC ranking, import graph (this session)"
           ],
           "stats": {
-            "Source files (.ts/.tsx)": 1129,
-            "React components": 354,
-            "Custom hooks": 143,
-            "Service modules": 138,
+            "Source files (.ts/.tsx)": 1165,
+            "React components": 356,
+            "Custom hooks": 150,
+            "Service modules": 151,
             "Route pages": 36,
             "Feature modules": 6,
-            "Test files": 274,
+            "Test files": 298,
             "Supabase edge functions": 96,
-            "DB migrations": 378
+            "DB migrations": 388
           },
-          "generated": "2026-05-24",
-          "commit": "6a316fb",
-          "commitUrl": "https://github.com/chravel-inc/chravel-web/commit/6a316fb",
+          "generated": "2026-05-27",
+          "commit": "6d39dc9",
+          "commitUrl": "https://github.com/chravel-inc/chravel-web/commit/6d39dc9",
           "metrics": {
             "knip": {
-              "files": 265,
-              "deps": 5,
-              "devDeps": 1,
-              "exports": 383,
-              "types": 378
+              "files": 268,
+              "deps": 1,
+              "devDeps": 0,
+              "exports": 400,
+              "types": 408
             },
             "bundle": [
               {
-                "name": "useDeferredPaidAccess",
-                "kb": 923,
-                "gzipKb": 267
+                "name": "exceljs",
+                "kb": 917,
+                "gzipKb": 265
               },
               {
-                "name": "pdf-BfBsdCw-",
+                "name": "pdf",
                 "kb": 611,
                 "gzipKb": 183
               },
@@ -583,32 +583,32 @@
                 "gzipKb": 129
               },
               {
-                "name": "streamTripMemberInlineActivity",
-                "kb": 414,
-                "gzipKb": 110
-              },
-              {
                 "name": "native",
                 "kb": 388,
                 "gzipKb": 80
               },
               {
+                "name": "stream-chat",
+                "kb": 295,
+                "gzipKb": 87
+              },
+              {
                 "name": "TripChat",
-                "kb": 232,
+                "kb": 233,
                 "gzipKb": 75
               },
               {
                 "name": "index",
                 "kb": 232,
-                "gzipKb": 74
+                "gzipKb": 75
               },
               {
                 "name": "SettingsMenu",
-                "kb": 188,
-                "gzipKb": 45
+                "kb": 184,
+                "gzipKb": 44
               }
             ],
-            "anyCount": 362,
+            "anyCount": 393,
             "todoCount": 7
           }
         },
@@ -617,25 +617,25 @@
             "key": "overall",
             "label": "Overall Codebase Health",
             "score": 68,
-            "rationale": "Mature, feature-complete product with unusually strong documentation (SYSTEM_MAP, audits, DEBUG_PATTERNS) and a clear critical path. Pulled down by accumulated debt: several 'god files' (1k-2.5k LOC), 300+ `any` usages, ~1,200 ESLint warnings, and a large dead-code surface. Solid foundation, needs consolidation before scale."
+            "rationale": "Mature, feature-complete product with unusually strong documentation (SYSTEM_MAP, audits, DEBUG_PATTERNS) and a clear critical path. Pulled down by accumulated debt: several 'god files' (1k–1.6k LOC of real logic, plus a 5.2k-LOC generated types file), ~390 `any` usages, ~1,200 ESLint warnings, and a large dead-code surface. Solid foundation, needs consolidation before scale. Recent cleanups have landed (stray root scripts removed, state dirs consolidated, the top AI god-component decomposed)."
           },
           {
             "key": "clarity",
             "label": "Architecture Clarity",
             "score": 74,
-            "rationale": "Feature-module convention (src/features/*) and documented critical path are real strengths. Weakened by a 354-component src/components/ that absorbs domain logic, two parallel state dirs (src/store/ and src/stores/), and mock/demo data living inside the service layer."
+            "rationale": "Feature-module convention (src/features/*) and documented critical path are real strengths. Weakened by a 356-component src/components/ that absorbs domain logic and by mock/demo data living inside the service layer. The previously-duplicated state dirs have been consolidated into a single src/store/."
           },
           {
             "key": "maintainability",
             "label": "Maintainability",
             "score": 60,
-            "rationale": "Hot spots are concentrated and well-known: AIConciergeChat.tsx (~2.5k LOC), useAuth.tsx (1,366), TripChat.tsx (1,246), useStreamTripChat.ts (1,215), demoModeService.ts (1,313). 300+ `any` at boundaries and ~1,200 lint warnings add daily DX drag."
+            "rationale": "Hot spots are concentrated and well-known: Index.tsx (1,430), demoModeService.ts (1,314), useTripTasks.ts (1,294), useAuth.tsx (1,291), TripChat.tsx (1,259), useStreamTripChat.ts (1,202); raw LOC is dominated by generated types.ts (5,199) and mock data (polls.ts 3,150, tripSpecificMockDataService.ts 1,612). AIConciergeChat.tsx — formerly the #1 god component — has been decomposed from ~2.5k to ~510 LOC. ~390 `any` at boundaries and ~1,200 lint warnings add daily DX drag."
           },
           {
             "key": "scalability",
             "label": "Scalability",
             "score": 70,
-            "rationale": "Supabase + 96 edge functions + RLS scale horizontally and the realtime patterns are documented. Bundle is the ceiling: paidAccess chunk ~924K, revenuecat-web ~616K, pdf ~612K, livekit ~464K are eagerly reachable and hurt first paint / mobile."
+            "rationale": "Supabase + 96 edge functions + RLS scale horizontally and the realtime patterns are documented. Bundle is the ceiling: the heaviest chunks are exceljs ~917K, pdf ~611K, charts ~491K, native ~388K, and stream-chat ~295K — lazy-loading the export/reporting libs would cut first-paint weight on mobile."
           },
           {
             "key": "security",
@@ -647,13 +647,13 @@
             "key": "tests",
             "label": "Test Coverage Confidence",
             "score": 55,
-            "rationale": "274 test files exist, but TEST_GAPS.md tracks 17 untested critical areas — chat WebSocket reconnect/backfill, read-receipt write amplification, integration idempotency, export authorization. Coverage is broad but thin on the highest-risk paths."
+            "rationale": "298 test files exist, but TEST_GAPS.md tracks 17 untested critical areas — chat WebSocket reconnect/backfill, read-receipt write amplification, integration idempotency, export authorization. Coverage is broad but thin on the highest-risk paths."
           },
           {
             "key": "deadcode",
             "label": "Dead Code Risk (higher = worse)",
             "score": 58,
-            "rationale": "knip reports 285 unused files, 376 unused exports, 325 unused exported types, 8 unused deps. BUT a large share are framework entry points knip can't resolve (Vercel api/, Remotion compositions, scripts/) — those are Future/Unclear, not dead. Genuine stale artifacts (root patch_tripchat*.py, resolver3.js) inflate perceived risk."
+            "rationale": "knip reports 268 unused files, 400 unused exports, 408 unused exported types, 1 unused dep. BUT a large share are framework entry points knip can't resolve (Vercel api/, Remotion compositions, scripts/) — those are Future/Unclear, not dead. The stray root artifacts (patch_tripchat*.py, resolver3.js, output.md, etc.) that previously inflated perceived risk have since been removed."
           }
         ],
         "executive": {
@@ -688,7 +688,7 @@
           "highestLeverage": [
             "src/integrations/supabase/client.ts — the single data gateway every read/write flows through",
             "src/hooks/useAuth.tsx — gates the entire critical path; a bug here cascades everywhere",
-            "src/services/* (138 modules) — the de-facto API layer between UI and Supabase",
+            "src/services/* (151 modules) — the de-facto API layer between UI and Supabase",
             "supabase RLS policies (756) — the real security boundary, not the client",
             "src/lib/queryKeys.ts — cache-invalidation contract for all server state"
           ],
@@ -696,19 +696,19 @@
             "Auth hydration race → 'Trip Not Found' flash (the #1 documented regression)",
             "Chat message loss on WebSocket reconnect (no replay/backfill in some paths)",
             "Client-side permission checks diverging from RLS (privilege-escalation surface)",
-            "God files (AIConciergeChat, useAuth, TripChat) concentrate risk and merge conflicts",
-            "Bundle weight (paidAccess/revenuecat/pdf/livekit chunks) degrades mobile first paint"
+            "God files (Index.tsx, useTripTasks, useAuth, TripChat) concentrate risk and merge conflicts",
+            "Bundle weight (exceljs/pdf/charts/native chunks) degrades mobile first paint"
           ],
           "topCleanups": [
-            "Remove stray root artifacts: patch_tripchat*.py (repo is 'No Python'), resolver3.js, output.md, claude-progress.txt",
-            "Prune 8 unused dependencies + 1 unused devDependency reported by knip",
-            "Delete confirmed-dead exports/types after manual verification (knip: 376 exports, 325 types)",
-            "Consolidate src/store/ and src/stores/ into one state directory",
-            "Lazy-load heavy chunks (revenuecat-web, jspdf, livekit, recharts) per tech_debt_report"
+            "Triage the 268 knip-flagged unused files — delete confirmed-dead, label framework entry points (api/, remotion/, scripts/) as Future/Unclear",
+            "Prune the 1 remaining unused dependency reported by knip (down from 8)",
+            "Delete confirmed-dead exports/types after manual verification (knip: 400 exports, 408 types)",
+            "Reduce ~390 `any` usages at Supabase boundaries by adopting generated Database types",
+            "Lazy-load heavy chunks (exceljs, pdf, recharts/charts, native) per tech_debt_report"
           ],
           "topMissing": [
             "Tests for chat reconnect/backfill, read receipts, and integration idempotency (TEST_GAPS.md)",
-            "Strong typing at boundaries — 300+ `any` usages remain",
+            "Strong typing at boundaries — ~390 `any` usages remain",
             "State machine for Smart Import (partial-import rollback / UX surfacing)",
             "Bundle/code-split discipline enforced in CI",
             "A single canonical mock/demo-data boundary separate from live service code"
@@ -727,7 +727,7 @@
             "upstream": "—",
             "downstream": "All subsystems",
             "actions": [
-              "Split useAuth.tsx (1,366 LOC) into session/identity/role hooks",
+              "Split useAuth.tsx (1,291 LOC) into session/identity/role hooks",
               "Add explicit hydrated-before-fetch guard tests"
             ],
             "failureModes": "Hydration race → Trip Not Found flash; token refresh failure; demo/auth crossover"
@@ -771,7 +771,7 @@
             "downstream": "Notifications",
             "actions": [
               "Add reconnect backfill + tests",
-              "Decompose TripChat.tsx (1,246 LOC)",
+              "Decompose TripChat.tsx (1,259 LOC)",
               "Honor eslint ban on legacy chatService in Stream surfaces"
             ],
             "failureModes": "Message loss on reconnect; read-receipt write amplification; reaction refetch storm"
@@ -794,7 +794,7 @@
             "upstream": "Trips",
             "downstream": "Chat, Calendar, Payments (via pending actions)",
             "actions": [
-              "Break up AIConciergeChat.tsx (~2.5k LOC)",
+              "Keep AIConciergeChat.tsx modular (now ~510 LOC, decomposed from ~2.5k)",
               "Keep tool declarations single-source (toolRegistry.ts)",
               "Route all writes through pending-actions buffer"
             ],
@@ -995,20 +995,15 @@
             "risk": "Medium",
             "quality": 68,
             "purpose": "TanStack Query (server) + Zustand (client) + Realtime + feature flags.",
-            "keyFiles": [
-              "src/lib/queryKeys.ts",
-              "src/stores/",
-              "src/store/",
-              "src/lib/featureFlags.ts"
-            ],
+            "keyFiles": ["src/lib/queryKeys.ts", "src/store/", "src/lib/featureFlags.ts"],
             "deps": ["TanStack Query", "Zustand"],
             "upstream": "—",
             "downstream": "All UI",
             "actions": [
-              "Merge src/store/ and src/stores/",
-              "Centralize invalidation footprints in queryKeys"
+              "Centralize invalidation footprints in queryKeys",
+              "Keep client state in the single src/store/ (the duplicate src/stores/ has been removed)"
             ],
-            "failureModes": "Two store dirs cause confusion; ad-hoc invalidation drift"
+            "failureModes": "Ad-hoc invalidation drift across query keys"
           },
           {
             "id": "mobile",
@@ -1071,7 +1066,7 @@
             "badges": ["Core", "Auth", "Risky", "Needs Tests"],
             "color": "orange",
             "plain": "Controls who is logged in and what they can do. The most safety-critical file in the app.",
-            "tech": "1,366 LOC auth/session/role hook. Gates the entire critical path; hydration timing here causes the Trip-Not-Found flash.",
+            "tech": "1,291 LOC auth/session/role hook. Gates the entire critical path; hydration timing here causes the Trip-Not-Found flash.",
             "exports": "useAuth, AuthProvider",
             "importedBy": "App shell + every gated route",
             "risk": "Highest — auth desync cascades",
@@ -1080,22 +1075,22 @@
           },
           {
             "path": "src/components/AIConciergeChat.tsx",
-            "badges": ["Feature", "AI", "Risky"],
-            "color": "orange",
-            "plain": "The AI assistant's chat screen. So large it's hard to change safely.",
-            "tech": "~2,500 LOC 'god component' (tech_debt_report.md #1). Monolithic; high merge-conflict and AI-edit-confusion risk.",
+            "badges": ["Feature", "AI", "Well Designed"],
+            "color": "green",
+            "plain": "The AI assistant's chat screen. Recently slimmed down so it's far easier to change safely.",
+            "tech": "~510 LOC — decomposed from the ~2,500-LOC 'god component' that was tech_debt_report.md #1. That top maintainability risk is now resolved; logic extracted into hooks/sub-components.",
             "exports": "AIConciergeChat",
             "importedBy": "Concierge routes/panels",
-            "risk": "High",
+            "risk": "Low",
             "confidence": "High",
-            "action": "refactor — extract sub-components \u0026 hooks"
+            "action": "keep modular — guard against re-accreting responsibilities"
           },
           {
             "path": "src/features/chat/components/TripChat.tsx",
             "badges": ["Feature", "UI", "Risky"],
             "color": "orange",
             "plain": "The trip chat screen. Big and re-renders more than it should.",
-            "tech": "1,246 LOC; tech_debt_report flags over-fetching/memoization. Stream-enabled surface (eslint bans legacy chatService import).",
+            "tech": "1,259 LOC; tech_debt_report flags over-fetching/memoization. Stream-enabled surface (eslint bans legacy chatService import).",
             "exports": "TripChat",
             "importedBy": "Trip detail surfaces",
             "risk": "Medium-High",
@@ -1107,7 +1102,7 @@
             "badges": ["Feature", "State", "Needs Tests"],
             "color": "yellow",
             "plain": "Wires the chat to the Stream messaging service.",
-            "tech": "1,215 LOC transport hook for Stream Chat; reconnect/backfill correctness is critical (TEST_GAPS.md).",
+            "tech": "1,202 LOC transport hook for Stream Chat; reconnect/backfill correctness is critical (TEST_GAPS.md).",
             "exports": "useStreamTripChat",
             "importedBy": "Chat components",
             "risk": "Medium-High",
@@ -1200,19 +1195,19 @@
           },
           {
             "path": "patch_tripchat*.py / resolver3.js / output.md / claude-progress.txt",
-            "badges": ["Suspected Dead", "Legacy"],
-            "color": "red",
-            "plain": "Stray helper/scratch files left in the project root.",
-            "tech": "Python patch scripts in a declared 'No Python' repo, plus scratch JS/markdown at root — not referenced by the app.",
+            "badges": ["Legacy"],
+            "color": "green",
+            "plain": "Stray helper/scratch files that used to sit in the project root — now removed.",
+            "tech": "Resolved: the Python patch scripts (in a declared 'No Python' repo) plus scratch JS/markdown at root have been deleted from the tree.",
             "exports": "—",
             "importedBy": "None",
-            "risk": "Very low to remove",
+            "risk": "—",
             "confidence": "High",
-            "action": "delete (after a glance)"
+            "action": "done — removed"
           }
         ],
         "dependencies": {
-          "notes": "Coupling concentrates in three places: the Supabase client (imported almost everywhere — intentional gateway), the service layer (138 modules acting as the API), and a handful of god files. No formal cycle scan was run this session; treat cycle claims as Low confidence pending a madge/dpdm run.",
+          "notes": "Coupling concentrates in three places: the Supabase client (imported almost everywhere — intentional gateway), the service layer (151 modules acting as the API), and a handful of god files. No formal cycle scan was run this session; treat cycle claims as Low confidence pending a madge/dpdm run.",
           "hubs": [
             {
               "path": "src/integrations/supabase/client.ts",
@@ -1227,11 +1222,11 @@
               "role": "Type hub for all typed queries"
             }
           ],
-          "orphansNote": "knip lists 285 'unused files', but many are framework entry points it cannot resolve: Vercel api/*.ts, Remotion compositions under remotion/, and scripts/*. These are Future/Unclear, not confirmed dead. Verify per-file before any deletion.",
+          "orphansNote": "knip lists 268 'unused files', but many are framework entry points it cannot resolve: Vercel api/*.ts, Remotion compositions under remotion/, and scripts/*. These are Future/Unclear, not confirmed dead. Verify per-file before any deletion.",
           "godFileNotes": {
-            "src/components/AIConciergeChat.tsx": "Monolithic AI chat — too many responsibilities",
+            "src/mockData/polls.ts": "Large static mock dataset — dev/demo only, gate out of prod bundles",
             "src/services/tripSpecificMockDataService.ts": "Giant mock dataset in service layer",
-            "src/pages/Index.tsx": "Heavy landing page",
+            "src/pages/Index.tsx": "Heavy landing/route page — decomposition candidate",
             "src/hooks/useAuth.tsx": "Auth + session + roles in one hook",
             "src/services/demoModeService.ts": "Demo data generation, contamination risk",
             "src/hooks/useTripTasks.ts": "Task logic concentration",
@@ -1241,13 +1236,13 @@
           "godFiles": [
             {
               "path": "src/integrations/supabase/types.ts",
-              "loc": 5184,
-              "why": "Generated types (5184 LOC) — keep generated-only, do not hand-edit"
+              "loc": 5199,
+              "why": "Generated types (5199 LOC) — keep generated-only, do not hand-edit"
             },
             {
               "path": "src/mockData/polls.ts",
               "loc": 3150,
-              "why": "Mock/data file (3150 LOC) — large but low logic; gate behind dev/demo"
+              "why": "Large static mock dataset — dev/demo only, gate out of prod bundles"
             },
             {
               "path": "src/services/tripSpecificMockDataService.ts",
@@ -1257,12 +1252,7 @@
             {
               "path": "src/pages/Index.tsx",
               "loc": 1431,
-              "why": "Heavy landing page"
-            },
-            {
-              "path": "src/hooks/useAuth.tsx",
-              "loc": 1367,
-              "why": "Auth + session + roles in one hook"
+              "why": "Heavy landing/route page — decomposition candidate"
             },
             {
               "path": "src/services/demoModeService.ts",
@@ -1275,13 +1265,18 @@
               "why": "Task logic concentration"
             },
             {
+              "path": "src/hooks/useAuth.tsx",
+              "loc": 1292,
+              "why": "Auth + session + roles in one hook"
+            },
+            {
               "path": "src/features/chat/components/TripChat.tsx",
-              "loc": 1247,
+              "loc": 1259,
               "why": "Chat screen doing too much"
             },
             {
               "path": "src/hooks/stream/useStreamTripChat.ts",
-              "loc": 1216,
+              "loc": 1203,
               "why": "Stream transport + state"
             },
             {
@@ -1711,41 +1706,41 @@
         "deadCode": [
           {
             "path": "patch_tripchat.py, patch_tripchat2.py, patch_tripchat_import.py, patch_tripchat_receipts.py, patch_tripchat_receipts2.py",
-            "evidence": "Python scripts at repo root; CLAUDE.md states 'No Python'. Not referenced by the app.",
+            "evidence": "Python scripts at repo root in a 'No Python' repo — verified removed from the tree.",
             "confidence": "High",
-            "deletionRisk": "Very low",
-            "action": "delete"
+            "deletionRisk": "—",
+            "action": "done — removed"
           },
           {
             "path": "resolver3.js, output.md, claude-progress.txt, validation-report.json, plan_refactoring.md",
-            "evidence": "Scratch/output artifacts at root, not imported by the build.",
-            "confidence": "Medium",
-            "deletionRisk": "Low",
-            "action": "investigate then delete"
+            "evidence": "Scratch/output artifacts at root — verified removed from the tree.",
+            "confidence": "High",
+            "deletionRisk": "—",
+            "action": "done — removed"
           },
           {
             "path": "src/services/enhancedTripContextService*",
-            "evidence": "Deprecated; eslint.config.js blocks all import paths in favor of TripContextAggregator.",
+            "evidence": "Deprecated in favor of TripContextAggregator — verified removed from src/ (only a doc reference remains).",
             "confidence": "High",
-            "deletionRisk": "Low (verify zero imports)",
-            "action": "delete after grep-verify"
+            "deletionRisk": "—",
+            "action": "done — removed"
           },
           {
-            "path": "8 unused dependencies + 1 unused devDependency",
-            "evidence": "knip_output.txt 'Unused dependencies (8)' / 'Unused devDependencies (1)'.",
+            "path": "1 unused dependency (down from 8)",
+            "evidence": "knip 'Unused dependencies (1)'; the prior 8 deps + 1 devDep have largely been pruned.",
             "confidence": "Medium",
-            "deletionRisk": "Low-Medium (confirm not used in scripts/edge)",
-            "action": "remove from package.json after verification"
+            "deletionRisk": "Low (confirm not used in scripts/edge)",
+            "action": "remove the last one from package.json after verification"
           },
           {
-            "path": "376 unused exports / 325 unused exported types",
+            "path": "400 unused exports / 408 unused exported types",
             "evidence": "knip_output.txt. Many are intentional public surfaces or framework-resolved.",
             "confidence": "Medium",
             "deletionRisk": "Medium",
             "action": "triage in batches; investigate manually"
           },
           {
-            "path": "285 'unused files' (knip)",
+            "path": "268 'unused files' (knip)",
             "evidence": "Includes Vercel api/*.ts, Remotion compositions, scripts/* that knip can't resolve as entry points.",
             "confidence": "Low (as a blanket claim)",
             "deletionRisk": "High if deleted blindly",
@@ -1757,8 +1752,8 @@
             "module": "AI Concierge",
             "score": 58,
             "status": "Fragile",
-            "why": "~2,500 LOC god component; tool-calling can mutate shared state; voice lifecycle edge cases.",
-            "evidence": "AIConciergeChat.tsx; SYSTEM_MAP #4; DEBUG_PATTERNS (voice tool silent fail).",
+            "why": "Tool-calling can mutate shared state; voice lifecycle edge cases remain. The ~2,500-LOC god component has been decomposed (AIConciergeChat.tsx now ~510 LOC), reducing edit risk.",
+            "evidence": "AIConciergeChat.tsx (~510 LOC); SYSTEM_MAP #4; DEBUG_PATTERNS (voice tool silent fail).",
             "fix": "Decompose component; enforce pending-actions buffer; single-source tool registry."
           },
           {
@@ -1766,7 +1761,7 @@
             "score": 64,
             "status": "Fragile",
             "why": "Reconnect can lose messages; large components; write amplification.",
-            "evidence": "TripChat.tsx 1,246 LOC; TEST_GAPS chat reconnect; SYSTEM_MAP #3.",
+            "evidence": "TripChat.tsx 1,259 LOC; TEST_GAPS chat reconnect; SYSTEM_MAP #3.",
             "fix": "Backfill on reconnect + tests; decompose TripChat."
           },
           {
@@ -1774,7 +1769,7 @@
             "score": 72,
             "status": "Good",
             "why": "Heavily guarded but oversized and timing-sensitive.",
-            "evidence": "useAuth.tsx 1,366 LOC; Trip-Not-Found flash pattern.",
+            "evidence": "useAuth.tsx 1,291 LOC; Trip-Not-Found flash pattern.",
             "fix": "Split hook; add hydration-before-fetch tests."
           },
           {
@@ -1813,9 +1808,9 @@
             "module": "Build / Bundle",
             "score": 62,
             "status": "Fragile",
-            "why": "Several 400K-924K chunks eagerly reachable; hurts mobile first paint.",
+            "why": "Several 388K–917K chunks eagerly reachable (exceljs, pdf, charts, native); hurts mobile first paint.",
             "evidence": "tech_debt_report bundle table; BUNDLE_SIZE_BASELINE.md.",
-            "fix": "Lazy-load revenuecat-web, jspdf, livekit, recharts."
+            "fix": "Lazy-load exceljs, pdf, recharts, and the native bridge where possible."
           }
         ],
         "missing": [
@@ -1841,7 +1836,7 @@
             "area": "Bundle/code-split CI gate",
             "impact": "Mobile performance / conversion",
             "priority": "Important",
-            "note": "Prevent regressions of the 924K paidAccess chunk."
+            "note": "Prevent regressions of the ~917K exceljs chunk (largest)."
           },
           {
             "area": "Mock/demo data boundary",
@@ -1867,7 +1862,7 @@
             "phase": "Phase 1 — Safe Cleanup",
             "items": [
               {
-                "desc": "Delete stray root artifacts (patch_tripchat*.py, resolver3.js, output.md, claude-progress.txt)",
+                "desc": "[DONE] Stray root artifacts removed (patch_tripchat*.py, resolver3.js, output.md, claude-progress.txt)",
                 "files": "repo root",
                 "risk": "Very low",
                 "complexity": "S",
@@ -1875,7 +1870,7 @@
                 "validation": "build gate green"
               },
               {
-                "desc": "Remove 8 unused deps + 1 devDep (knip)",
+                "desc": "Remove the last unused dep (knip now reports 1, down from 8+1)",
                 "files": "package.json",
                 "risk": "Low",
                 "complexity": "S",
@@ -1883,7 +1878,7 @@
                 "validation": "build + smoke"
               },
               {
-                "desc": "Grep-verify and delete enhancedTripContextService",
+                "desc": "[DONE] enhancedTripContextService removed (TripContextAggregator is the path)",
                 "files": "src/services/",
                 "risk": "Low",
                 "complexity": "S",
@@ -1896,7 +1891,7 @@
             "phase": "Phase 2 — Consolidation",
             "items": [
               {
-                "desc": "Merge src/store/ and src/stores/ into one directory",
+                "desc": "[DONE] src/store/ and src/stores/ merged into a single src/store/",
                 "files": "src/store*, imports",
                 "risk": "Medium",
                 "complexity": "M",
@@ -1933,8 +1928,8 @@
                 "validation": "integration test simulating reconnect"
               },
               {
-                "desc": "Decompose god files (AIConciergeChat, useAuth, TripChat)",
-                "files": "those 3",
+                "desc": "Decompose remaining god files (Index.tsx, useTripTasks, useAuth, TripChat) — AIConciergeChat already done",
+                "files": "Index.tsx, useTripTasks.ts, useAuth.tsx, TripChat.tsx",
                 "risk": "High",
                 "complexity": "XL",
                 "benefit": "Maintainability + safer AI edits",
@@ -1954,7 +1949,7 @@
             "phase": "Phase 4 — Product / Scale Readiness",
             "items": [
               {
-                "desc": "Lazy-load heavy chunks (revenuecat-web, jspdf, livekit, recharts)",
+                "desc": "Lazy-load heavy chunks (exceljs, pdf, recharts, native bridge)",
                 "files": "import sites + routes",
                 "risk": "Medium",
                 "complexity": "M",
@@ -2175,6 +2170,23 @@
                 '</a>',
             ),
           );
+        });
+
+        // Scroll to sections via JS instead of relying on default #fragment
+        // navigation. Some HTML-preview proxies inject a <base href> pointing at
+        // the raw source; that makes a bare "#id" link resolve to the raw file
+        // URL and navigate away from the rendered page. Handling the click here
+        // keeps navigation working under any host (preview proxy, Pages, file://).
+        nav.addEventListener('click', function (ev) {
+          var a = ev.target.closest('a');
+          if (!a) return;
+          var href = a.getAttribute('href') || '';
+          if (href.charAt(0) !== '#') return;
+          var target = document.getElementById(href.slice(1));
+          if (target) {
+            ev.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
         });
 
         // ---- sections ----

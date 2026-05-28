@@ -114,6 +114,29 @@ Full rules, template, and carve-outs: `DEFERRAL_DISCIPLINE.md`.
 - Clean up all event listeners in `useEffect` return.
 - Type coordinates as `{ lat: number; lng: number }`.
 
+## Claude Code Automations
+
+This repo already enforces several agent guardrails via `.claude/settings.json`
+hooks and CI. **Don't re-add these** — they exist:
+
+- **SessionStart:** `npm install` on remote/web sessions (`.claude/hooks/session-start.sh`) + memory primer — deps ready before typecheck/tests.
+- **PostToolUse (every edit):** Prettier `--write` → ESLint `--fix` (`auto-lint.sh`) → `npm run typecheck` → command log. Formatting and types are checked on every edit. Full Vitest (~249 specs) runs at the pre-PR hook + CI, **not** per-edit — too slow to gate each save.
+- **PreToolUse:** dangerous-command guard (`block-dangerous-commands.sh`), sensitive-file guard (`protect-sensitive-files.sh`), and a pre-PR test/typecheck gate (`pre-pr-tests.sh`).
+- Husky `lint-staged` + CI (`auto-format.yml`, `secret-scan.yml`, CodeQL) back these up.
+
+Rules layered on top:
+
+1. **Credential files are off-limits — read AND write.** The secret guard blocks `.env*`, `*secret*`, lockfiles, `.git/`, hook scripts, and Supabase `config.toml`. Treat signing/key material the same and **never read or edit** it: `*.p8`, `*.p12`, `*.pem`, `*.key`, `*.jks`, `*-service-account*.json`, `*.mobileprovision`. (iOS release signing and Firebase admin keys use these formats and are not otherwise gitignored.)
+
+2. **Coordinate cross-boundary contracts — change the paired artifact in the same diff.** CI fails if these drift:
+   - DB schema (`supabase/migrations/`) → regenerate `src/integrations/supabase/types.ts` (`scripts/check-schema-drift.ts`).
+   - Permission rules → `permissionMatrix.generated.ts` (`scripts/check-permission-matrix-drift.mjs`).
+   - Stream chat config → parity check (`scripts/check-stream-config-parity.cjs`).
+   - Edge-function env usage → `scripts/check-env-coverage.ts`.
+   - New AI concierge tool → the 5-file sync anchored on `supabase/functions/_shared/concierge/toolRegistry.ts` (memory #23, #26).
+
+3. **Security review is an *additive* gate, never authoritative.** For changes to auth, RLS, the CORS allowlist (`_shared/cors.ts`), edge functions, secret validation, or `superAdmins`, run the built-in `/security-review` and/or the `chravel-supabase-rls` skill before finishing. They supplement — they do not override — CLAUDE.md, AGENTS.md, and DEFERRAL_DISCIPLINE.md.
+
 ## Output Format (code responses)
 
 ```
