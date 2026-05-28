@@ -100,16 +100,17 @@ serve(async (req): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { persistSession: false } },
     );
-    let ensureInvite = false;
-    if (requestedEnsureInvite) {
-      const authHeader = req.headers.get('Authorization') ?? '';
-      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-
-      if (token) {
-        const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-        ensureInvite = !userError && !!userData.user;
+    // Authenticate caller (required for invite code disclosure and creation)
+    let authedUserId: string | null = null;
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+    if (token) {
+      const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+      if (!userError && userData.user) {
+        authedUserId = userData.user.id;
       }
     }
+
 
     const { data: tripRow, error: tripError } = await supabaseClient
       .from('trips')
@@ -143,28 +144,47 @@ serve(async (req): Promise<Response> => {
       description: tripRow.description,
     };
 
-    const nowIso = new Date().toISOString();
-    const { data: inviteRow } = await supabaseClient
-      .from('trip_invites')
-      .select('code')
-      .eq('trip_id', tripId)
-      .eq('is_active', true)
-      .or(`expires_at.is.null,expires_at.gte.${nowIso}`)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    let activeInviteCode = inviteRow?.code ?? null;
-
-    if (!activeInviteCode && ensureInvite) {
-      activeInviteCode = await createActiveInviteForTrip(
-        supabaseClient,
-        tripId,
-        tripRow.created_by,
-      );
+    // Verify trip membership (only members/admins/creator may see or create invite codes)
+    let isTripMember = false;
+    if (authedUserId) {
+      if (tripRow.created_by === authedUserId) {
+        isTripMember = true;
+      } else {
+        const { data: memberRow } = await supabaseClient
+          .from('trip_members')
+          .select('user_id')
+          .eq('trip_id', tripId)
+          .eq('user_id', authedUserId)
+          .maybeSingle();
+        isTripMember = !!memberRow;
+      }
     }
 
-    trip.active_invite_code = activeInviteCode;
+    if (isTripMember) {
+      const nowIso = new Date().toISOString();
+      const { data: inviteRow } = await supabaseClient
+        .from('trip_invites')
+        .select('code')
+        .eq('trip_id', tripId)
+        .eq('is_active', true)
+        .or(`expires_at.is.null,expires_at.gte.${nowIso}`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let activeInviteCode = inviteRow?.code ?? null;
+
+      if (!activeInviteCode && requestedEnsureInvite) {
+        activeInviteCode = await createActiveInviteForTrip(
+          supabaseClient,
+          tripId,
+          tripRow.created_by,
+        );
+      }
+
+      trip.active_invite_code = activeInviteCode;
+    }
+
 
     return new Response(JSON.stringify({ success: true, trip }), {
       status: 200,
