@@ -132,15 +132,3 @@ export function getConciergeInvalidationKeys(
       return [];
   }
 }
-
-/**
- * @deprecated Use getConciergeInvalidationKeys (returns array) instead.
- * Kept for backward compatibility with tests.
- */
-export function getConciergeInvalidationQueryKey(
-  name: string,
-  tripId: string,
-): ConciergeInvalidationQueryKey | null {
-  const keys = getConciergeInvalidationKeys(name, tripId);
-  return keys.length > 0 ? keys[0] : null;
-}

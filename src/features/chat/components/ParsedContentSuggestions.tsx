@@ -12,6 +12,7 @@ import { Calendar, CheckSquare, Receipt, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ParsedContent, applySuggestion } from '@/services/chatContentParser';
+import { useTripTasks } from '@/hooks/useTripTasks';
 import { toast } from 'sonner';
 
 interface ParsedContentSuggestionsProps {
@@ -27,13 +28,32 @@ export const ParsedContentSuggestions: React.FC<ParsedContentSuggestionsProps> =
   onSuggestionApplied,
   onDismiss,
 }) => {
+  // Todo creation reuses the canonical task mutation (handles demo/offline/permissions/cache).
+  const { createTaskMutation } = useTripTasks(tripId);
+
   if (!parsedContent || !parsedContent.suggestions || parsedContent.suggestions.length === 0) {
     return null;
   }
 
+  const applyCreateTodo = async (suggestion: ParsedContent['suggestions'][0]): Promise<boolean> => {
+    const data = suggestion.data ?? {};
+    const title = typeof data.title === 'string' ? data.title.trim() : '';
+    if (!title) return false;
+    await createTaskMutation.mutateAsync({
+      title,
+      description: typeof data.description === 'string' ? data.description : undefined,
+      due_at: typeof data.due_date === 'string' ? data.due_date : undefined,
+      is_poll: false,
+    });
+    return true;
+  };
+
   const handleApplySuggestion = async (suggestion: ParsedContent['suggestions'][0]) => {
     try {
-      const result = await applySuggestion(suggestion, tripId);
+      const result =
+        suggestion.action === 'create_todo'
+          ? await applyCreateTodo(suggestion)
+          : await applySuggestion(suggestion, tripId);
       if (result) {
         toast.success(suggestion.message);
         onSuggestionApplied?.();

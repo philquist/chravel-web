@@ -75,10 +75,9 @@ export interface ExtractedEntities {
 }
 
 export interface ParsedContent {
-  type: 'receipt' | 'itinerary' | 'link' | 'message' | 'todo';
+  type: 'receipt' | 'itinerary' | 'link' | 'message';
   receipt?: ParsedReceipt;
   itinerary?: ParsedItinerary;
-  todos?: ParsedTodo[];
   entities?: ExtractedEntities;
   linkPreview?: {
     title?: string;
@@ -347,35 +346,28 @@ export async function parseMessage(messageText: string, tripId: string): Promise
       });
     }
 
-    // Also check for todo items
+    // Extract actionable to-dos; high-confidence ones become "Create todo" suggestions.
+    // A todo-extraction failure is non-fatal — keep any calendar suggestions already found.
     const { data: todoData, error: todoError } = await invokeEnhancedAiParser({
       messageText,
       extractionType: 'todo',
       tripId,
     });
 
-    if (todoError) {
-      throw new Error(`Failed to parse todos: ${todoError.message}`);
-    }
-
-    const todos: ParsedTodo[] = todoData?.todos || [];
-
-    if (todos.length > 0) {
-      todos.forEach(todo => {
-        if (todo.confidence > 0.7) {
-          suggestions.push({
-            action: 'create_todo',
-            data: todo as unknown as Record<string, unknown>,
-            message: `Create todo: "${todo.title}"`,
-          });
-        }
-      });
-    }
+    const todos: ParsedTodo[] = todoError ? [] : todoData?.todos || [];
+    todos.forEach(todo => {
+      if (todo.confidence > 0.7) {
+        suggestions.push({
+          action: 'create_todo',
+          data: todo as unknown as Record<string, unknown>,
+          message: `Create todo: "${todo.title}"`,
+        });
+      }
+    });
 
     return {
       type: 'message',
       entities,
-      todos: todos.length > 0 ? todos : undefined,
       confidence: extractedData?.confidence_overall || 0.7,
       suggestions,
     };
@@ -463,10 +455,6 @@ export async function applySuggestion(
         const result = await calendarService.createEvent(eventData);
         return result.event?.id || null;
       }
-
-      case 'create_todo':
-        // TODO: Implement todo creation service
-        return null;
 
       case 'extract_receipt': {
         if (!suggestion.data) return null;

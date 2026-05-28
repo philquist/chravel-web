@@ -5,6 +5,7 @@ import { BasecampSelector } from '../BasecampSelector';
 import { basecampService, PersonalBasecamp } from '@/services/basecampService';
 import { demoModeService } from '@/services/demoModeService';
 import { useAuth } from '@/hooks/useAuth';
+import { getEffectiveUserId } from '@/utils/demoUser';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { useBasecamp } from '@/contexts/BasecampContext';
 import { useUpdateTripBasecamp, useClearTripBasecamp } from '@/hooks/useTripBasecamp';
@@ -162,17 +163,7 @@ export const BasecampsPanel: React.FC<BasecampsPanelProps> = ({
     externalPersonalBasecamp !== undefined ? externalPersonalBasecamp : internalPersonalBasecamp;
   const setPersonalBasecamp = onPersonalBasecampUpdate || setInternalPersonalBasecamp;
 
-  // Generate a consistent demo user ID for the session
-  const getDemoUserId = () => {
-    let demoId = sessionStorage.getItem('demo-user-id');
-    if (!demoId) {
-      demoId = `demo-user-${Date.now()}`;
-      sessionStorage.setItem('demo-user-id', demoId);
-    }
-    return demoId;
-  };
-
-  const effectiveUserId = user?.id || getDemoUserId();
+  const effectiveUserId = getEffectiveUserId(user?.id);
 
   // Load personal basecamp (only if not provided externally)
   useEffect(() => {

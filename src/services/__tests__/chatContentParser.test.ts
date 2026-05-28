@@ -200,6 +200,24 @@ describe('chatContentParser', () => {
       expect(result.entities?.suggested_events).toBeDefined();
       expect(result.suggestions?.length).toBeGreaterThan(0);
     });
+
+    it('should emit a create_todo suggestion for high-confidence todos', async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+
+      supabase.functions.invoke
+        .mockResolvedValueOnce({
+          data: { extracted_data: { events: [], confidence_overall: 0.5 } },
+        })
+        .mockResolvedValueOnce({
+          data: { todos: [{ title: 'Book the rental car', confidence: 0.9 }] },
+        });
+
+      const result = await parseMessage('We still need to book the rental car', 'trip-123');
+
+      const todoSuggestion = result.suggestions?.find(s => s.action === 'create_todo');
+      expect(todoSuggestion).toBeDefined();
+      expect(todoSuggestion?.message).toContain('Book the rental car');
+    });
   });
 
   describe('autoParseContent', () => {

@@ -1272,13 +1272,6 @@ export const useTripTasks = (
     // Task assignment
     assignTask,
     bulkAssign,
-    autoAssignByRole: async (_taskId: string, _role: string) => {
-      // TODO: Get participants from trip roster
-      // const roleUsers = participants.filter(p => p.role === role).map(p => p.id);
-      // if (roleUsers.length > 0) {
-      //   await bulkAssign({ taskId, userIds: roleUsers });
-      // }
-    },
 
     // Mutations
     createTaskMutation,

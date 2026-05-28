@@ -453,22 +453,6 @@ export class NotificationService {
   }
 
   /**
-   * Chat message notifications are permanently disabled.
-   * Chat volume is too high for push/email/SMS delivery.
-   * In-app chat continues to work normally.
-   * @deprecated No longer sends notifications. Kept for API compatibility.
-   */
-  async notifyNewMessage(
-    _tripId: string,
-    _senderName: string,
-    _messagePreview: string,
-    _messageId: string,
-    _excludeUserId?: string,
-  ): Promise<boolean> {
-    return false;
-  }
-
-  /**
    * Send notification for itinerary update
    */
   async notifyItineraryUpdate(

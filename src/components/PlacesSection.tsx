@@ -7,6 +7,7 @@ import { LinksPanel } from './places/LinksPanel';
 import { BasecampLocation } from '../types/basecamp';
 import { useTripVariant } from '../contexts/TripVariantContext';
 import { useAuth } from '@/hooks/useAuth';
+import { getEffectiveUserId } from '@/utils/demoUser';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { useTripBasecamp, tripBasecampKeys } from '@/hooks/useTripBasecamp';
 import { personalBasecampKeys, usePersonalBasecamp } from '@/hooks/usePersonalBasecamp';
@@ -42,17 +43,7 @@ export const PlacesSection = ({
   // State (only the small UI bits — data state lives in TanStack Query)
   const [activeTab, setActiveTab] = useState<TabView>('basecamps');
 
-  // Generate demo user ID
-  const getDemoUserId = () => {
-    let demoId = sessionStorage.getItem('demo-user-id');
-    if (!demoId) {
-      demoId = `demo-user-${Date.now()}`;
-      sessionStorage.setItem('demo-user-id', demoId);
-    }
-    return demoId;
-  };
-
-  const effectiveUserId = user?.id || getDemoUserId();
+  const effectiveUserId = getEffectiveUserId(user?.id);
 
   const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: tripBasecampKeys.trip(tripId) });

@@ -42,6 +42,7 @@ import {
 } from '@/services/tripLinksService';
 import { calendarService } from '@/services/calendarService';
 import { useAuth } from '@/hooks/useAuth';
+import { getEffectiveUserId } from '@/utils/demoUser';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { tripKeys } from '@/lib/queryKeys';
 import { toast } from 'sonner';
@@ -225,17 +226,7 @@ export const TripLinksDisplay: React.FC<TripLinksDisplayProps> = ({ tripId }) =>
     }),
   );
 
-  // Generate demo user ID
-  const getDemoUserId = () => {
-    let demoId = sessionStorage.getItem('demo-user-id');
-    if (!demoId) {
-      demoId = `demo-user-${Date.now()}`;
-      sessionStorage.setItem('demo-user-id', demoId);
-    }
-    return demoId;
-  };
-
-  const effectiveUserId = user?.id || getDemoUserId();
+  const effectiveUserId = getEffectiveUserId(user?.id);
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;

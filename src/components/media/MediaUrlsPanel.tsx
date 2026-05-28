@@ -34,7 +34,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import type { NormalizedUrl } from '@/services/chatUrlExtractor';
 
 type LinkIndexRow = Database['public']['Tables']['trip_link_index']['Row'];
 
@@ -51,10 +50,11 @@ interface MediaLink {
 
 interface MediaUrlsPanelProps {
   tripId: string;
-  onPromoteToTripLink?: (url: NormalizedUrl) => void;
+  // Opt-in gate for the "Save to Explore" button; only consumer trips enable promotion.
+  allowPromoteToTripLink?: boolean;
 }
 
-export const MediaUrlsPanel = ({ tripId, onPromoteToTripLink }: MediaUrlsPanelProps) => {
+export const MediaUrlsPanel = ({ tripId, allowPromoteToTripLink = false }: MediaUrlsPanelProps) => {
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
   const [links, setLinks] = useState<MediaLink[]>([]);
@@ -281,22 +281,13 @@ export const MediaUrlsPanel = ({ tripId, onPromoteToTripLink }: MediaUrlsPanelPr
   };
 
   const handlePromote = async (link: MediaLink) => {
-    if (!tripId || !onPromoteToTripLink) return;
+    if (!tripId) return;
 
-    const getDemoUserId = () => {
-      let demoId = sessionStorage.getItem('demo-user-id');
-      if (!demoId) {
-        demoId = `demo-user-${Date.now()}`;
-        sessionStorage.setItem('demo-user-id', demoId);
-      }
-      return demoId;
-    };
-
-    const effectiveUserId = user?.id || getDemoUserId();
+    const effectiveUserId = getEffectiveUserId(user?.id);
 
     setPromotingLinkId(link.id);
     try {
-      const result = await createTripLink(
+      await createTripLink(
         {
           tripId,
           url: link.url,
@@ -307,21 +298,6 @@ export const MediaUrlsPanel = ({ tripId, onPromoteToTripLink }: MediaUrlsPanelPr
         },
         isDemoMode,
       );
-
-      if (result) {
-        const urlData: NormalizedUrl = {
-          url: link.url,
-          rawUrl: link.url,
-          domain: link.domain,
-          firstSeenAt: link.createdAt,
-          lastSeenAt: link.createdAt,
-          messageId: link.id,
-          title: link.title,
-          description: link.description,
-          image: link.image,
-        };
-        onPromoteToTripLink(urlData);
-      }
     } catch (err) {
       if (import.meta.env.DEV) console.error('[MediaUrlsPanel] Failed to promote URL:', err);
     } finally {
@@ -474,7 +450,7 @@ export const MediaUrlsPanel = ({ tripId, onPromoteToTripLink }: MediaUrlsPanelPr
               formatDate={formatDate}
               onCopy={handleCopyUrl}
               onDelete={handleDeleteLink}
-              onPromote={onPromoteToTripLink ? () => handlePromote(link) : undefined}
+              onPromote={allowPromoteToTripLink ? () => handlePromote(link) : undefined}
               isPromoting={promotingLinkId === link.id}
               isDeleting={deletingLinkId === link.id}
             />
@@ -498,7 +474,7 @@ export const MediaUrlsPanel = ({ tripId, onPromoteToTripLink }: MediaUrlsPanelPr
               formatDate={formatDate}
               onCopy={handleCopyUrl}
               onDelete={handleDeleteLink}
-              onPromote={onPromoteToTripLink ? () => handlePromote(link) : undefined}
+              onPromote={allowPromoteToTripLink ? () => handlePromote(link) : undefined}
               isPromoting={promotingLinkId === link.id}
               isDeleting={deletingLinkId === link.id}
             />

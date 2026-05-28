@@ -11,17 +11,16 @@ import { MediaSearchBar } from './media/MediaSearchBar';
 import { supabase } from '@/integrations/supabase/client';
 import { mediaService } from '@/services/mediaService';
 import { toast } from 'sonner';
-import type { NormalizedUrl } from '@/services/chatUrlExtractor';
 import type { MediaSearchResult } from '@/services/mediaSearchService';
 import { filterMediaByAITags } from '@/services/mediaAITagging';
 
 interface UnifiedMediaHubProps {
   tripId: string;
-  onPromoteToTripLink?: (url: NormalizedUrl) => void;
+  allowPromoteToTripLink?: boolean;
 }
 
 export const UnifiedMediaHub = React.memo(
-  ({ tripId, onPromoteToTripLink }: UnifiedMediaHubProps) => {
+  ({ tripId, allowPromoteToTripLink }: UnifiedMediaHubProps) => {
     const [activeTab, setActiveTab] = useState('all');
     const [urlsCount, setUrlsCount] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
@@ -300,7 +299,7 @@ export const UnifiedMediaHub = React.memo(
           </TabsContent>
 
           <TabsContent value="urls" className="mt-6">
-            <MediaUrlsPanel tripId={tripId} onPromoteToTripLink={onPromoteToTripLink} />
+            <MediaUrlsPanel tripId={tripId} allowPromoteToTripLink={allowPromoteToTripLink} />
           </TabsContent>
         </Tabs>
       </div>

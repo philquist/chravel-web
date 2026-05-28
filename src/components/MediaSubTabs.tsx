@@ -3,7 +3,6 @@ import {
   Camera,
   Video,
   FileText,
-  Link,
   Play,
   Download,
   MessageCircle,
@@ -18,7 +17,6 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { PaymentMethodIcon } from './receipts/PaymentMethodIcon';
 import { generatePaymentDeeplink } from '../utils/paymentDeeplinks';
-import { AddLinkModal } from './AddLinkModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { toast } from 'sonner';
@@ -37,21 +35,9 @@ interface MediaItem {
   mime_type?: string;
 }
 
-interface LinkItem {
-  id: string;
-  url: string;
-  title: string;
-  description: string;
-  domain: string;
-  image_url?: string;
-  created_at: string;
-  source: 'chat' | 'manual' | 'places';
-  tags?: string[];
-}
-
 interface MediaSubTabsProps {
-  items: MediaItem[] | LinkItem[];
-  type: 'photos' | 'videos' | 'files' | 'urls';
+  items: MediaItem[];
+  type: 'photos' | 'videos' | 'files';
   searchQuery?: string;
 }
 
@@ -147,7 +133,6 @@ export const MediaSubTabs = ({
   onMediaUploaded,
   onDeleteItem,
 }: MediaSubTabsExtendedProps) => {
-  const [isAddLinkModalOpen, setIsAddLinkModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [activeVideoItem, setActiveVideoItem] = useState<MediaItem | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
@@ -315,121 +300,6 @@ export const MediaSubTabs = ({
       }
     }
   };
-
-  if (type === 'urls') {
-    const linkItems = items as LinkItem[];
-
-    return (
-      <div className="space-y-4">
-        {/* Header with Add Link Button */}
-        <div className="flex justify-between items-center p-4 bg-muted/30 rounded-lg">
-          <h3 className="text-lg font-semibold text-foreground">All Links ({linkItems.length})</h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsAddLinkModalOpen(true)}
-            className="text-xs"
-          >
-            <Link className="w-4 h-4 mr-1" />+ Add Link
-          </Button>
-        </div>
-
-        {/* Links Display */}
-        {linkItems.length === 0 ? (
-          <div className="text-center py-8">
-            <Link className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-muted-foreground text-sm">
-              Links shared in chat will appear here automatically
-            </p>
-          </div>
-        ) : null}
-
-        {/* Links Display */}
-        {linkItems.length > 0 &&
-          linkItems.map(item => (
-            <div
-              key={item.id}
-              className="bg-card border rounded-lg p-4 hover:bg-card/80 transition-colors"
-            >
-              <div className="flex gap-4">
-                {item.image_url && (
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
-                  />
-                )}
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-foreground font-medium text-sm mb-1 truncate">
-                    {item.title}
-                  </h4>
-                  <p className="text-muted-foreground text-xs mb-2 line-clamp-2">
-                    {item.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>{item.domain}</span>
-                      <span>{formatDate(item.created_at)}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {item.source === 'chat'
-                          ? 'From chat'
-                          : item.source === 'places'
-                            ? 'From Places'
-                            : 'Manual'}
-                      </Badge>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(item.url, '_blank')}
-                      className="text-xs"
-                    >
-                      <ExternalLink className="w-3 h-3 mr-1" />
-                      Open
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-
-        <AddLinkModal isOpen={isAddLinkModalOpen} onClose={() => setIsAddLinkModalOpen(false)} />
-
-        {/* Video Player Modal */}
-        {activeVideoItem && (
-          <div
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
-            onClick={() => setActiveVideoItem(null)}
-          >
-            <button
-              className="absolute top-4 right-4 z-10 text-white bg-white/20 rounded-full p-2 hover:bg-white/30 transition-colors"
-              onClick={() => setActiveVideoItem(null)}
-            >
-              <X className="w-6 h-6" />
-            </button>
-            {/* iOS CRITICAL: muted required for autoplay, user can unmute via controls */}
-            <video
-              src={resolvedActiveVideoUrl ?? activeVideoItem.media_url}
-              controls
-              autoPlay
-              playsInline
-              muted
-              controlsList="nodownload"
-              preload="metadata"
-              className="max-w-full max-h-full"
-              style={{
-                maxWidth: '90vw',
-                maxHeight: '90vh',
-                width: 'auto',
-                height: 'auto',
-              }}
-              onClick={e => e.stopPropagation()}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
 
   const mediaItems = items as MediaItem[];
 

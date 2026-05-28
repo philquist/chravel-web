@@ -61,10 +61,6 @@ vi.mock('../payments/PaymentsTab', () => ({
   PaymentsTab: () => <div>payments-panel</div>,
 }));
 
-vi.mock('../AddLinkModal', () => ({
-  AddLinkModal: () => null,
-}));
-
 describe('TripTabs concierge mounting and parent sync', () => {
   it('does not mount concierge until concierge tab is selected, and notifies parent on tab change', async () => {
     const onTabChange = vi.fn();

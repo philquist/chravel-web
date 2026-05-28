@@ -381,3 +381,13 @@ Lets you flip back to the previous endpoint without touching UI state logic.
 
 ### Explicit `reconnecting` state prevents misleading voice UX
 "Connected" + "Disconnected" is a false dichotomy; the third state is real.
+
+---
+
+## Auditing & Dead-Code Removal
+
+### Before "completing" a no-op stub, trace the live call path — a sibling may already persist
+A stubbed submit that looks like data loss can be redundant: e.g. AddLinkModal's empty submit was opened only after MediaUrlsPanel.handlePromote already called `createTripLink`, so wiring it would have double-inserted `trip_links`. Confirm who calls the stub and whether the write already happened before deciding delete-vs-complete.
+
+### A "broken stub" can be unreachable — grep every caller before classifying it
+MediaSubTabs' entire `type==='urls'` branch (with its Add Link button) was dead because no caller passes `type="urls"`; UnifiedMediaHub routes URLs to MediaUrlsPanel instead. Reachability, not just the TODO comment, decides the fix.
