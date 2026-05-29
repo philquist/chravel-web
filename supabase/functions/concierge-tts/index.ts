@@ -6,8 +6,9 @@ import { parseServiceAccountKey, createVertexAccessToken } from '../_shared/vert
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-const VOICE_TTS_FREE_FOR_ALL = (Deno.env.get('VOICE_TTS_FREE_FOR_ALL') ?? 'true') !== 'false';
+const VOICE_TTS_FREE_FOR_ALL = Deno.env.get('VOICE_TTS_FREE_FOR_ALL') === 'true';
 
 /** Hardcoded fallback voices — only used if DB lookup fails. */
 const HARDCODED_PRIMARY_VOICE = 'en-US-Chirp3-HD-Charon';
@@ -62,10 +63,14 @@ const mapPlanToDailyLimit = (plan?: string | null): number | null => {
 
 async function getAppSetting(key: string): Promise<string | null> {
   try {
-    const serviceClient = createClient(
-      SUPABASE_URL,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || SUPABASE_ANON_KEY,
-    );
+    if (!SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn(
+        '[concierge-tts] SUPABASE_SERVICE_ROLE_KEY missing; skipping app_settings lookup',
+      );
+      return null;
+    }
+
+    const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data, error } = await serviceClient
       .from('app_settings')
       .select('value')

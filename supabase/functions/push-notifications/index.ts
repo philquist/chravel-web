@@ -10,10 +10,9 @@ import {
 import { isSuperAdminEmail } from '../_shared/superAdmins.ts';
 import { resolveEmailProviderSecrets } from '../_shared/emailDelivery.ts';
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-);
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY ?? '');
 
 const SMS_DAILY_LIMIT = 10;
 const SMS_ENTITLED_PLANS = new Set([
@@ -69,6 +68,13 @@ serve(async req => {
   }
 
   try {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      return new Response(JSON.stringify({ error: 'Notification service is not configured' }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Authenticate the caller via JWT
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {

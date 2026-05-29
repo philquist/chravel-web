@@ -5,11 +5,12 @@ import { pickPrimaryEntitlement } from '../_shared/entitlementSelection.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const GEMINI_API_KEY = Deno.env.get('GEMINI_TTS_API_KEY') || Deno.env.get('GEMINI_API_KEY');
 const GEMINI_TTS_MODEL = (
   Deno.env.get('GEMINI_TTS_MODEL') || 'gemini-3.1-flash-tts-preview'
 ).trim();
-const VOICE_TTS_FREE_FOR_ALL = (Deno.env.get('VOICE_TTS_FREE_FOR_ALL') ?? 'true') !== 'false';
+const VOICE_TTS_FREE_FOR_ALL = Deno.env.get('VOICE_TTS_FREE_FOR_ALL') === 'true';
 
 const HARDCODED_PRIMARY_VOICE = 'Charon';
 const HARDCODED_FALLBACK_VOICE = 'Puck';
@@ -70,10 +71,12 @@ const toGeminiVoiceName = (rawVoice: string): string => {
 
 async function getAppSetting(key: string): Promise<string | null> {
   try {
-    const serviceClient = createClient(
-      SUPABASE_URL,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || SUPABASE_ANON_KEY,
-    );
+    if (!SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn('[gemini-tts] SUPABASE_SERVICE_ROLE_KEY missing; skipping app_settings lookup');
+      return null;
+    }
+
+    const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data, error } = await serviceClient
       .from('app_settings')
       .select('value')
