@@ -15,10 +15,13 @@ export const ChravelRecsPage = () => {
   const [searchCity, setSearchCity] = useState('');
   const [appliedCityFilter, setAppliedCityFilter] = useState('');
 
-  // Use the new async hook passing city for backend filtering when appropriate
+  // Recs is an internal/admin preview on the bundled mock feed during MVP, so we
+  // request mock data here (no live Supabase / RLS dependency). City filtering is
+  // applied client-side below.
   const { recommendations, isLoading, error } = useRecommendations({
     type: activeFilter as import('@/data/recommendations/types').Recommendation['type'] | 'all',
     city: appliedCityFilter || undefined,
+    useMockData: true,
   });
 
   const { toggleSave } = useSavedRecommendations();

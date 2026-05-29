@@ -4,6 +4,7 @@ import {
   RecommendationFilters,
   SponsoredFilters,
 } from '@/services/recommendationService';
+import { getRecommendationsByType } from '@/data/recommendations';
 import type { Recommendation } from '@/data/recommendations/types';
 
 interface UseRecommendationsOptions {
@@ -13,6 +14,12 @@ interface UseRecommendationsOptions {
   sponsoredRatio?: number;
   location?: string;
   tripType?: string;
+  /**
+   * Serve the bundled mock feed (src/data/recommendations) instead of querying
+   * live Supabase. Used by the admin/demo-only Recs preview, which is mock-based
+   * during MVP. City filtering is applied by the caller.
+   */
+  useMockData?: boolean;
 }
 
 export const useRecommendations = (options: UseRecommendationsOptions | string = 'all') => {
@@ -27,6 +34,7 @@ export const useRecommendations = (options: UseRecommendationsOptions | string =
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: [
       'recommendations',
+      opts.useMockData ? 'mock' : 'live',
       activeFilter,
       cityFilter,
       opts.location,
@@ -35,6 +43,14 @@ export const useRecommendations = (options: UseRecommendationsOptions | string =
       opts.sponsoredRatio,
     ],
     queryFn: async () => {
+      // Mock-data path: return the bundled feed (sponsored items are already
+      // interleaved). No network/RLS dependency, so it works for unauthenticated
+      // app-preview sessions too.
+      if (opts.useMockData) {
+        const items = getRecommendationsByType(activeFilter ?? 'all');
+        return opts.limit ? items.slice(0, opts.limit) : items;
+      }
+
       const organicFilters: RecommendationFilters = {
         city: cityFilter,
         type: typeFilter,
