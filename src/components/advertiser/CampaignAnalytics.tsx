@@ -20,19 +20,15 @@ import {
 import { CampaignWithTargeting, CampaignStats } from '@/types/advertiser';
 import { AdvertiserService } from '@/services/advertiserService';
 
-const LineChart = lazy(() => import('recharts').then(module => ({ default: module.LineChart })));
-const Line = lazy(() => import('recharts').then(module => ({ default: module.Line })));
-const BarChart = lazy(() => import('recharts').then(module => ({ default: module.BarChart })));
-const Bar = lazy(() => import('recharts').then(module => ({ default: module.Bar })));
-const XAxis = lazy(() => import('recharts').then(module => ({ default: module.XAxis })));
-const YAxis = lazy(() => import('recharts').then(module => ({ default: module.YAxis })));
-const CartesianGrid = lazy(() =>
-  import('recharts').then(module => ({ default: module.CartesianGrid })),
+const CampaignPerformanceChart = lazy(() =>
+  import('./charts/CampaignPerformanceChart').then(module => ({
+    default: module.CampaignPerformanceChart,
+  })),
 );
-const Tooltip = lazy(() => import('recharts').then(module => ({ default: module.Tooltip })));
-const Legend = lazy(() => import('recharts').then(module => ({ default: module.Legend })));
-const ResponsiveContainer = lazy(() =>
-  import('recharts').then(module => ({ default: module.ResponsiveContainer })),
+const CampaignEngagementChart = lazy(() =>
+  import('./charts/CampaignEngagementChart').then(module => ({
+    default: module.CampaignEngagementChart,
+  })),
 );
 
 interface CampaignAnalyticsProps {
@@ -237,28 +233,7 @@ export const CampaignAnalytics = ({ campaigns }: CampaignAnalyticsProps) => {
               <Suspense
                 fallback={<div className="h-full w-full bg-muted/20 rounded-md animate-pulse" />}
               >
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={performanceData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="date" stroke="#9ca3af" />
-                    <YAxis stroke="#9ca3af" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '8px',
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="impressions"
-                      stroke="hsl(42, 92%, 56%)"
-                      name="Impressions"
-                    />
-                    <Line type="monotone" dataKey="clicks" stroke="#3b82f6" name="Clicks" />
-                  </LineChart>
-                </ResponsiveContainer>
+                <CampaignPerformanceChart data={performanceData} />
               </Suspense>
             </CardContent>
           </Card>
@@ -273,23 +248,7 @@ export const CampaignAnalytics = ({ campaigns }: CampaignAnalyticsProps) => {
               <Suspense
                 fallback={<div className="h-full w-full bg-muted/20 rounded-md animate-pulse" />}
               >
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={performanceData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="date" stroke="#9ca3af" />
-                    <YAxis stroke="#9ca3af" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '8px',
-                      }}
-                    />
-                    <Legend />
-                    <Bar dataKey="saves" fill="hsl(42, 92%, 56%)" name="Saves" />
-                    <Bar dataKey="conversions" fill="#10b981" name="Conversions" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <CampaignEngagementChart data={performanceData} />
               </Suspense>
             </CardContent>
           </Card>
