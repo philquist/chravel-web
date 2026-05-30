@@ -70,6 +70,10 @@ type TripGridProps = TripGridBaseProps & {
   pendingRequestCards?: PendingRequestTripCard[];
   /** Active mobile tab; switching tabs must exit reorder mode. */
   activeTab?: TabId;
+  /** Free-text city/place query from the recs filter bar (travelRecs only). */
+  recsSearchQuery?: string;
+  /** Lets recs empty-states switch the active recs category (e.g. Saved → All). */
+  onRecsFilterChange?: (filter: string) => void;
 };
 
 export const TripGrid = React.memo(
@@ -85,10 +89,12 @@ export const TripGrid = React.memo(
     onCancelDashboardRequest,
     onTripStateChange,
     activeTab,
+    recsSearchQuery = '',
+    onRecsFilterChange,
   }: TripGridProps) => {
     const isMobile = useIsMobile();
     const [manualLocation, setManualLocation] = useState<string>('');
-    const { toggleSave } = useSavedRecommendations();
+    const { toggleSave, isSaved: isRecSaved } = useSavedRecommendations();
     const { user } = useAuth();
     const { toast } = useToast();
     const queryClient = useQueryClient();
@@ -415,15 +421,40 @@ export const TripGrid = React.memo(
       [isDemoMode, onCancelDashboardRequest, toast, user?.id],
     );
 
-    // Get location-filtered recommendations for travel recs view
+    // Get location-filtered recommendations for travel recs view.
+    // The "saved" pseudo-category isn't a real type — request all types, then
+    // narrow to saved below.
+    const isSavedView = viewMode === 'travelRecs' && activeFilter === 'saved';
     const {
-      recommendations: filteredRecommendations,
+      recommendations: locationFilteredRecommendations,
       activeLocation,
       isBasecampLocation,
     } = useLocationFilteredRecommendations(
-      viewMode === 'travelRecs' ? activeFilter : 'all',
+      viewMode === 'travelRecs' ? (isSavedView ? 'all' : activeFilter) : 'all',
+      // Only the explicit map-based location narrows the feed here. The free-text
+      // query is applied below so it can match title/tags too — the location hook
+      // matches city/location only and would otherwise drop name/tag searches.
       viewMode === 'travelRecs' ? manualLocation : undefined,
     );
+
+    // Apply the saved filter + free-text query on top of the location-filtered feed.
+    const filteredRecommendations = useMemo(() => {
+      let list = locationFilteredRecommendations;
+      if (isSavedView) {
+        list = list.filter(rec => isRecSaved(rec.id));
+      }
+      const q = recsSearchQuery.trim().toLowerCase();
+      if (q) {
+        list = list.filter(
+          rec =>
+            rec.title.toLowerCase().includes(q) ||
+            rec.city?.toLowerCase().includes(q) ||
+            rec.location?.toLowerCase().includes(q) ||
+            rec.tags?.some(tag => tag.toLowerCase().includes(q)),
+        );
+      }
+      return list;
+    }, [locationFilteredRecommendations, isSavedView, isRecSaved, recsSearchQuery]);
 
     // Show loading skeleton
     if (loading) {
@@ -507,6 +538,16 @@ export const TripGrid = React.memo(
               onAction: onCreateTrip,
             };
           case 'travelRecs':
+            if (isSavedView) {
+              return {
+                icon: Compass,
+                title: 'No saved places yet',
+                description:
+                  'Tap the bookmark on a recommendation to save it. Your saved places will appear here.',
+                actionLabel: onRecsFilterChange ? 'Browse recommendations' : undefined,
+                onAction: onRecsFilterChange ? () => onRecsFilterChange('all') : undefined,
+              };
+            }
             return {
               icon: Compass,
               title: activeLocation
@@ -708,6 +749,7 @@ export const TripGrid = React.memo(
                 <RecommendationCard
                   key={recommendation.id}
                   recommendation={recommendation}
+                  isSaved={isRecSaved(recommendation.id)}
                   onSaveToTrip={async id => {
                     const rec = filteredRecommendations.find(r => r.id === id);
                     if (rec) {

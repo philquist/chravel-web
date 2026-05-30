@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { useDemoModeStore } from '@/store/demoModeStore';
 import type { Recommendation } from '@/data/recommendations';
 
 export interface SavedRecommendationRow {
@@ -31,8 +32,38 @@ const mapRecommendationToRow = (
   data: rec,
 });
 
+/**
+ * App-preview / demo mode has a stable demo user id but no real Supabase session,
+ * so writes to `saved_recommendations` fail RLS. To keep the save/bookmark flow
+ * working in demos (and to persist across reload within the session), we transparently
+ * fall back to a per-user localStorage store. Real authenticated users always use Supabase.
+ */
+const isDemo = () => useDemoModeStore.getState().isDemoMode;
+const demoKey = (userId: string) => `chravel_saved_recs_demo_${userId}`;
+
+const demoStore = {
+  read(userId: string): SavedRecommendationRow[] {
+    try {
+      const raw = localStorage.getItem(demoKey(userId));
+      return raw ? (JSON.parse(raw) as SavedRecommendationRow[]) : [];
+    } catch {
+      return [];
+    }
+  },
+  write(userId: string, rows: SavedRecommendationRow[]): void {
+    try {
+      localStorage.setItem(demoKey(userId), JSON.stringify(rows));
+    } catch {
+      // Non-critical: demo persistence is best-effort.
+    }
+  },
+};
+
 export const savedRecommendationsService = {
   async list(userId: string): Promise<SavedRecommendationRow[]> {
+    if (isDemo()) {
+      return demoStore.read(userId).sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+    }
     const { data, error } = await supabase
       .from('saved_recommendations')
       .select('*')
@@ -43,6 +74,9 @@ export const savedRecommendationsService = {
   },
 
   async isSaved(userId: string, recId: number): Promise<boolean> {
+    if (isDemo()) {
+      return demoStore.read(userId).some(r => r.rec_id === recId);
+    }
     const { data, error } = await supabase
       .from('saved_recommendations')
       .select('id')
@@ -55,9 +89,22 @@ export const savedRecommendationsService = {
 
   async save(userId: string, rec: Recommendation): Promise<SavedRecommendationRow | null> {
     const payload = mapRecommendationToRow(rec, userId);
+    if (isDemo()) {
+      const rows = demoStore.read(userId);
+      if (rows.some(r => r.rec_id === rec.id)) return null;
+      const now = new Date().toISOString();
+      const row: SavedRecommendationRow = {
+        ...payload,
+        id: `demo-${rec.id}`,
+        created_at: now,
+        updated_at: now,
+      };
+      demoStore.write(userId, [row, ...rows]);
+      return row;
+    }
     const { data, error } = await supabase
       .from('saved_recommendations')
-      .insert(payload as any)
+      .insert(payload as never)
       .select('*')
       .maybeSingle();
     if (error && error.code !== '23505') {
@@ -68,6 +115,13 @@ export const savedRecommendationsService = {
   },
 
   async remove(userId: string, recId: number): Promise<void> {
+    if (isDemo()) {
+      demoStore.write(
+        userId,
+        demoStore.read(userId).filter(r => r.rec_id !== recId),
+      );
+      return;
+    }
     const { error } = await supabase
       .from('saved_recommendations')
       .delete()
@@ -95,7 +149,7 @@ export const savedRecommendationsService = {
       added_by: userId,
       trip_id: String(tripId),
       title: saved.title,
-      url: saved.external_link || ((saved.data as any)?.externalLink ?? ''),
+      url: saved.external_link || ((saved.data as { externalLink?: string })?.externalLink ?? ''),
       description: saved.location || saved.city || null,
       category: typeof saved.rec_type === 'string' ? saved.rec_type : 'recommendation',
     });

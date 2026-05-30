@@ -153,8 +153,6 @@ const OfflineIndicatorGate = () => {
     pathname.startsWith('/j/') ||
     pathname.startsWith('/accept-invite') ||
     pathname.startsWith('/teams') ||
-    pathname.startsWith('/recs') ||
-    pathname.startsWith('/advertiser') ||
     pathname.startsWith('/privacy') ||
     pathname.startsWith('/support') ||
     pathname.startsWith('/terms') ||
@@ -586,7 +584,9 @@ const App = () => {
                         path="/recs"
                         element={
                           <LazyRoute>
-                            <ChravelRecsPage />
+                            <InternalAdminRoute allowDemoPreview>
+                              <ChravelRecsPage />
+                            </InternalAdminRoute>
                           </LazyRoute>
                         }
                       />
@@ -594,7 +594,9 @@ const App = () => {
                         path="/advertiser"
                         element={
                           <LazyRoute>
-                            <AdvertiserDashboard />
+                            <InternalAdminRoute allowDemoPreview>
+                              <AdvertiserDashboard />
+                            </InternalAdminRoute>
                           </LazyRoute>
                         }
                       />

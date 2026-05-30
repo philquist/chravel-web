@@ -47,6 +47,7 @@ import { RecommendationFilters } from '../components/home/RecommendationFilters'
 import { useAuth } from '../hooks/useAuth';
 import { useIsMobile } from '../hooks/use-mobile';
 import { useDemoMode } from '../hooks/useDemoMode';
+import { useRecsAccess } from '../hooks/useRecsAccess';
 import { useNotificationRealtime } from '../hooks/useNotificationRealtime';
 import { useDemoModeStore } from '../store/demoModeStore';
 import { useTrips } from '../hooks/useTrips';
@@ -97,6 +98,7 @@ const AuthIndex = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string>('');
   const [recsFilter, setRecsFilter] = useState('all');
+  const [recsSearch, setRecsSearch] = useState('');
   const [settingsInitialConsumerSection, setSettingsInitialConsumerSection] = useState<
     string | undefined
   >(undefined);
@@ -117,6 +119,7 @@ const AuthIndex = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { demoView, isDemoMode, setDemoView } = useDemoMode();
+  const { canAccessRecs } = useRecsAccess();
   const isMobilePortrait = useMobilePortrait();
 
   // Notification unread count for mobile tab bar badge
@@ -840,6 +843,8 @@ const AuthIndex = () => {
                     activeFilter={recsFilter}
                     onFilterChange={setRecsFilter}
                     showInlineSearch={true}
+                    searchValue={recsSearch}
+                    onSearchChange={setRecsSearch}
                   />
                 </div>
               )}
@@ -859,6 +864,8 @@ const AuthIndex = () => {
                   onCancelDashboardRequest={cancelPendingRequest}
                   onTripStateChange={handleTripStateChange}
                   activeTab={activeTab}
+                  recsSearchQuery={recsSearch}
+                  onRecsFilterChange={setRecsFilter}
                 />
               </div>
             </div>
@@ -964,7 +971,7 @@ const AuthIndex = () => {
                     : 'myTrips'
             }
             onSelectType={handleTripTypeSelect}
-            showRecsOption={isDemoMode}
+            showRecsOption={canAccessRecs}
             recsDisabled={false}
           />
         </div>
@@ -999,7 +1006,7 @@ const AuthIndex = () => {
               <TripViewToggle
                 viewMode={viewMode}
                 onViewModeChange={handleViewModeChange}
-                showRecsTab={isDemoMode}
+                showRecsTab={canAccessRecs}
                 recsTabDisabled={false}
                 className="w-full h-12 sm:h-16"
               />
@@ -1029,6 +1036,8 @@ const AuthIndex = () => {
                   activeFilter={recsFilter}
                   onFilterChange={setRecsFilter}
                   showInlineSearch={true}
+                  searchValue={recsSearch}
+                  onSearchChange={setRecsSearch}
                 />
               </div>
             )}
@@ -1048,6 +1057,8 @@ const AuthIndex = () => {
                 onCancelDashboardRequest={cancelPendingRequest}
                 onTripStateChange={handleTripStateChange}
                 activeTab={activeTab}
+                recsSearchQuery={recsSearch}
+                onRecsFilterChange={setRecsFilter}
               />
             </div>
           </div>
@@ -1155,7 +1166,7 @@ const AuthIndex = () => {
                   : 'myTrips'
           }
           onSelectType={handleTripTypeSelect}
-          showRecsOption={isDemoMode}
+          showRecsOption={canAccessRecs}
           recsDisabled={false}
         />
       </div>
@@ -1212,7 +1223,7 @@ const AuthIndex = () => {
           <TripViewToggle
             viewMode={viewMode}
             onViewModeChange={handleViewModeChange}
-            showRecsTab={isDemoMode}
+            showRecsTab={canAccessRecs}
             recsTabDisabled={false}
             className="w-full h-12 sm:h-16"
           />
@@ -1250,6 +1261,8 @@ const AuthIndex = () => {
               activeFilter={recsFilter}
               onFilterChange={setRecsFilter}
               showInlineSearch={true}
+              searchValue={recsSearch}
+              onSearchChange={setRecsSearch}
             />
           </div>
         )}
@@ -1285,13 +1298,15 @@ const AuthIndex = () => {
             events={filteredData.events}
             loading={tripsLoading}
             onCreateTrip={handleCreateTrip}
-            activeFilter={activeFilter}
+            activeFilter={viewMode === 'travelRecs' ? recsFilter : activeFilter}
             {...(activeFilter === 'requests'
               ? { pendingRequestCards: scopedPendingRequestCards }
               : {})}
             onCancelDashboardRequest={cancelPendingRequest}
             onTripStateChange={handleTripStateChange}
             activeTab={activeTab}
+            recsSearchQuery={recsSearch}
+            onRecsFilterChange={setRecsFilter}
           />
         </div>
       </div>
@@ -1376,7 +1391,7 @@ const AuthIndex = () => {
                 : 'myTrips'
         }
         onSelectType={handleTripTypeSelect}
-        showRecsOption={isDemoMode}
+        showRecsOption={canAccessRecs}
         recsDisabled={false}
       />
     </div>

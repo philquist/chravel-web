@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Search, Compass, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { hapticService } from '@/services/hapticService';
-import { useDemoMode } from '@/hooks/useDemoMode';
+import { useRecsAccess } from '@/hooks/useRecsAccess';
 
 interface MobileBottomNavProps {
   className?: string;
@@ -13,8 +13,7 @@ interface MobileBottomNavProps {
 export const MobileBottomNav = ({ className, onSettingsPress }: MobileBottomNavProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { demoView } = useDemoMode();
-  const isAppPreview = demoView === 'app-preview';
+  const { canAccessRecs } = useRecsAccess();
 
   const tabs = [
     {
@@ -39,7 +38,7 @@ export const MobileBottomNav = ({ className, onSettingsPress }: MobileBottomNavP
       icon: Compass,
       path: '/recs',
       isActive: location.pathname.includes('/recs'),
-      comingSoon: !isAppPreview,
+      comingSoon: false,
     },
     {
       id: 'settings',
@@ -50,6 +49,9 @@ export const MobileBottomNav = ({ className, onSettingsPress }: MobileBottomNavP
       comingSoon: false,
     },
   ];
+
+  // Hide the Recs tab entirely for non-eligible users (no "Coming Soon" teaser).
+  const visibleTabs = canAccessRecs ? tabs : tabs.filter(tab => tab.id !== 'recs');
 
   const handleTabPress = async (tab: (typeof tabs)[0]) => {
     if (tab.comingSoon) return; // Don't navigate for coming soon tabs
@@ -85,7 +87,7 @@ export const MobileBottomNav = ({ className, onSettingsPress }: MobileBottomNavP
       }}
     >
       <div className="flex items-center justify-around px-2 pt-2 pb-1">
-        {tabs.map(tab => {
+        {visibleTabs.map(tab => {
           const Icon = tab.icon;
           return (
             <button

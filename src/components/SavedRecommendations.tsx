@@ -81,12 +81,12 @@ export const SavedRecommendations = () => {
                   </div>
                 </div>
 
-                <div className="mt-3 flex items-center gap-2">
+                <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2">
                   <Select
                     onValueChange={val => setSelectedTrip(prev => ({ ...prev, [item.id]: val }))}
                     value={selectedTrip[item.id]}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-11 w-full">
                       <SelectValue placeholder="Select a trip" />
                     </SelectTrigger>
                     <SelectContent className="bg-background border border-border z-50">
@@ -100,6 +100,7 @@ export const SavedRecommendations = () => {
                     </SelectContent>
                   </Select>
                   <Button
+                    className="h-11 w-full sm:w-auto shrink-0"
                     disabled={!selectedTrip[item.id]}
                     onClick={() => handleAdd(item.id, selectedTrip[item.id])}
                   >
