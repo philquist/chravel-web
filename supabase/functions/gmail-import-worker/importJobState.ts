@@ -46,3 +46,22 @@ export function nextPhase({
   if (!hasAppliedArtifacts) return 'artifacts_stored';
   return 'applied_reviewed';
 }
+
+export interface GmailImportStats {
+  parsed?: number;
+  skipped?: number;
+  errors?: number;
+}
+
+export type GmailImportTerminalStatus = 'completed' | 'completed_partial' | 'failed';
+
+export function resolveTerminalImportStatus(stats: GmailImportStats): GmailImportTerminalStatus {
+  const parsed = stats.parsed ?? 0;
+  const skipped = stats.skipped ?? 0;
+  const errors = stats.errors ?? 0;
+  const successfulOrSkipped = parsed + skipped;
+
+  if (errors > 0 && successfulOrSkipped > 0) return 'completed_partial';
+  if (errors > 0) return 'failed';
+  return 'completed';
+}

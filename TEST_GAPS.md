@@ -49,6 +49,7 @@
 - **Suggested tests:** End-to-end integration suite with deterministic replay payloads, duplicate-run attempts, and partial-step failures asserting `completed_partial` semantics.
 - **Priority:** high
 - **Provenance:** March 2026 integrations/import-export audit
+- **Partial coverage added:** 2026-05 AHS-14/15 added unit coverage for file parser replay keys/cached payloads and Gmail import terminal status (`completed`, `completed_partial`, `failed`). Full integration replay tests are still needed for database-level concurrency and provider out-of-order events.
 
 ## Export completeness + authorization manifest tests
 - **Area:** `supabase/functions/export-user-data/index.ts`, `supabase/functions/export-trip/index.ts`
@@ -58,6 +59,8 @@
 - **Suggested tests:** Integration tests validating manifest row counts, enforced auth checks, and blocked access for non-members/non-admins.
 - **Priority:** high
 - **Provenance:** March 2026 integrations/import-export audit
+- **Partial coverage added:** 2026-05 AHS-11/12/13 added unit coverage for export manifest hard-failure policy and trip PDF membership/default-section authorization policy. Full integration tests with live Supabase fixtures are still needed for row-count completeness and role matrix enforcement.
+
 ## Migration compatibility window regression suite
 - **Area:** `supabase/migrations/` + app DB access layer
 - **Why this gap matters:** Current migration history shows repeated modification of high-risk tables and policies; without compatibility testing, rolling deploy windows can break old/new app versions.

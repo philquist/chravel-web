@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildArtifactFingerprint, buildCandidateDedupeKey, nextPhase } from '../importJobState.ts';
+import {
+  buildArtifactFingerprint,
+  buildCandidateDedupeKey,
+  nextPhase,
+  resolveTerminalImportStatus,
+} from '../importJobState.ts';
 
 describe('import job durable state helpers', () => {
   it('fingerprint is stable and dedupe key includes message id', async () => {
@@ -27,5 +32,13 @@ describe('import job durable state helpers', () => {
     expect(
       nextPhase({ hasFetchedSource: true, hasStoredArtifacts: true, hasAppliedArtifacts: true }),
     ).toBe('applied_reviewed');
+  });
+
+  it('marks mixed Gmail import failures as completed_partial', () => {
+    expect(resolveTerminalImportStatus({ parsed: 4, skipped: 1, errors: 0 })).toBe('completed');
+    expect(resolveTerminalImportStatus({ parsed: 4, skipped: 1, errors: 2 })).toBe(
+      'completed_partial',
+    );
+    expect(resolveTerminalImportStatus({ parsed: 0, skipped: 0, errors: 2 })).toBe('failed');
   });
 });

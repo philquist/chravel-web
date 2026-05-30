@@ -1,0 +1,19 @@
+
+2026-05-28 — Atlas health score remediation kickoff
+- Created `docs/atlas-health-score-remediation.md` with AHS-01..AHS-19 task definitions so each Atlas issue has a complete DoD + verification plan.
+- Started low-blast-radius implementation on AHS-08/AHS-09/AHS-17: lazy org-chart export dependency, chart-panel lazy boundaries, and fail-closed privileged edge-function defaults.
+- Merge preflight before edits attempted on branch `work`; fetch of `origin/main` failed in the environment, so rerun/report before commit.
+
+2026-05-29 — AHS-11/12/13 export trust-boundary hardening
+- Added manifest policy helper/tests for `export-user-data`: required profile/settings/membership/file tables now produce hard-failure manifest entries instead of silent success when fetches fail.
+- Added trip PDF export authorization policy helper/tests: authenticated user must match a trip membership; existing pro default sensitive sections are explicit and covered.
+- `npm run merge:preflight` still fails at fetching `origin/main` in this environment; rerun in a networked checkout before merge.
+
+2026-05-30 — AHS-14/15 import idempotency + partial status
+- Added file-ai-parser idempotency helpers/tests and return cached file/extraction_type results before Smart Import usage increments, preventing sequential duplicate parses from double-charging.
+- Added Gmail import terminal-status policy/tests and worker wiring so mixed parsed/skipped + errors persist and return `completed_partial`; all-error batches persist `failed`.
+- Added migration for `gmail_import_job_status = completed_partial`; merge preflight still fails at fetching `origin/main` in this environment.
+
+2026-05-30 — Travel Atlas refresh
+- Re-scored `codebase-atlas/curated.json` for the recent AHS remediation slices: lazy Recharts/html2canvas boundaries, export manifest/auth hardening, import idempotency, Gmail completed_partial status, and edge secret defaults.
+- Ran `npm run build` and `npm run atlas` so `architecture-data.json` and `index.html` now include current counts, knip metrics, bundle top chunks, and commit f1d5c4e.

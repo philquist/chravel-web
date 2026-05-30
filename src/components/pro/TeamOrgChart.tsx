@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import html2canvas from 'html2canvas';
 import { Button } from '../ui/button';
 import { ZoomIn, ZoomOut, Maximize2, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ProParticipant } from '../../types/pro';
@@ -37,18 +36,21 @@ export const TeamOrgChart = ({ roster, category, onMemberClick }: TeamOrgChartPr
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 10, 50));
   const handleResetZoom = () => setZoom(100);
 
-  const handleExportChart = () => {
+  const handleExportChart = async () => {
     const chartEl = document.querySelector('[data-org-chart-container]');
-    if (chartEl) {
-      html2canvas(chartEl as HTMLElement)
-        .then(canvas => {
-          const link = document.createElement('a');
-          link.download = 'org-chart.png';
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-        })
-        .catch(() => window.print());
-    } else {
+    if (!chartEl) {
+      window.print();
+      return;
+    }
+
+    try {
+      const { default: html2canvas } = await import('html2canvas');
+      const canvas = await html2canvas(chartEl as HTMLElement);
+      const link = document.createElement('a');
+      link.download = 'org-chart.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch {
       window.print();
     }
   };

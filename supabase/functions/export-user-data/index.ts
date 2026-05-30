@@ -10,6 +10,11 @@
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { getCorsHeaders } from '../_shared/cors.ts';
+import {
+  createManifestEntry,
+  hasRequiredExportFailures,
+  type UserDataTableManifestEntry,
+} from './manifest.ts';
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -197,9 +202,7 @@ async function fetchTableData(
       .range(offset, offset + pageSize - 1);
 
     if (error) {
-      // Table might not exist or user might not have access - skip silently
-      logStep(`Skipping table ${tableName}`, { error: error.message });
-      break;
+      throw new Error(error.message);
     }
 
     if (data && data.length > 0) {
@@ -343,6 +346,7 @@ serve(async req => {
         appVersion: 'ChravelApp 2025',
         exportFormat: 'JSON',
         tablesIncluded: USER_DATA_TABLES.map(t => t.table),
+        exportManifestVersion: '1.0.0',
         dataRetentionNote:
           'This export contains all personal data associated with your account as of the export timestamp.',
         legalBasis: 'GDPR Article 20 - Right to data portability',
@@ -350,24 +354,47 @@ serve(async req => {
       _tableDescriptions: Object.fromEntries(USER_DATA_TABLES.map(t => [t.table, t.description])),
     };
 
-    // Fetch data from each table
+    // Fetch data from each table and record a table-level manifest.
+    // Required table failures are hard failures so privacy exports cannot be reported as complete
+    // when core profile, membership, file, or settings data was omitted.
     logStep('Fetching user data from tables');
     let totalRecords = 0;
+    const exportManifest: UserDataTableManifestEntry[] = [];
 
-    for (const { table, userColumn } of USER_DATA_TABLES) {
+    for (const { table, userColumn, description } of USER_DATA_TABLES) {
       try {
         const data = await fetchTableData(userClient, table, userColumn, userId);
+        exportManifest.push(createManifestEntry({ table, description, rowCount: data.length }));
         if (data.length > 0) {
           exportData[table] = data;
           totalRecords += data.length;
           logStep(`Fetched ${table}`, { count: data.length });
         }
       } catch (error) {
-        logStep(`Error fetching ${table}`, {
-          error: error instanceof Error ? error.message : String(error),
-        });
-        // Continue with other tables
+        const message = error instanceof Error ? error.message : String(error);
+        exportManifest.push(createManifestEntry({ table, description, error: message }));
+        logStep(`Error fetching ${table}`, { error: message });
       }
+    }
+
+    exportData._exportManifest = exportManifest;
+
+    if (hasRequiredExportFailures(exportManifest)) {
+      const failedRequiredTables = exportManifest.filter(
+        entry => entry.status === 'failed_required',
+      );
+      logStep('Export failed because required tables could not be fetched', {
+        failedRequiredTables: failedRequiredTables.map(entry => entry.table),
+      });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Data export incomplete',
+          message: 'Required export sections could not be collected. Please try again later.',
+          exportManifest,
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     logStep('Data collection complete', { totalRecords });
@@ -450,6 +477,7 @@ serve(async req => {
         totalRecords,
         fileSizeBytes: jsonBytes.length,
         tablesExported: Object.keys(exportData).filter(k => !k.startsWith('_')).length,
+        exportManifest,
       }),
       {
         status: 200,

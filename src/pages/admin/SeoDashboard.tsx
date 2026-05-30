@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,18 +21,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-  Legend,
-} from 'recharts';
 import { ArrowDown, ArrowUp, ExternalLink, RefreshCw, Search, TrendingUp } from 'lucide-react';
 import { SeoHead } from '@/components/seo/SeoHead';
+
+const SeoTrendChart = lazy(() =>
+  import('./SeoTrendChart').then(module => ({ default: module.SeoTrendChart })),
+);
 
 interface Keyword {
   query: string;
@@ -390,42 +384,13 @@ export default function SeoDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={ov.trend} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                      <YAxis yAxisId="left" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                      <YAxis
-                        yAxisId="right"
-                        orientation="right"
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          background: 'hsl(var(--popover))',
-                          border: '1px solid hsl(var(--border))',
-                        }}
-                      />
-                      <Legend />
-                      <Line
-                        yAxisId="left"
-                        type="monotone"
-                        dataKey="clicks"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                      <Line
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="impressions"
-                        stroke="hsl(var(--muted-foreground))"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <Suspense
+                    fallback={
+                      <div className="h-full w-full animate-pulse rounded-md bg-muted/30" />
+                    }
+                  >
+                    <SeoTrendChart data={ov.trend} />
+                  </Suspense>
                 </div>
               </CardContent>
             </Card>

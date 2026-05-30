@@ -22,51 +22,52 @@
       "knip_output.txt (dead-code scan)",
       "CLAUDE.md, AUDIT_INDEX.md, DEBUG_PATTERNS.md, LESSONS.md, TEST_GAPS.md",
       "eslint.config.js (encoded deprecation rules)",
-      "Static analysis: file counts, LOC ranking, import graph (this session)"
+      "Static analysis: file counts, LOC ranking, import graph (this session)",
+      "AHS remediation commits through 2026-05-30 (export/import hardening, lazy chart/export boundaries, edge secret defaults)"
     ]
   },
   "scores": [
     {
       "key": "overall",
       "label": "Overall Codebase Health",
-      "score": 68,
-      "rationale": "Mature, feature-complete product with unusually strong documentation (SYSTEM_MAP, audits, DEBUG_PATTERNS) and a clear critical path. Pulled down by accumulated debt: several 'god files' (1k–1.6k LOC of real logic, plus a 5.2k-LOC generated types file), ~390 `any` usages, ~1,200 ESLint warnings, and a large dead-code surface. Solid foundation, needs consolidation before scale. Recent cleanups have landed (stray root scripts removed, state dirs consolidated, the top AI god-component decomposed)."
+      "score": 74,
+      "rationale": "Mature, feature-complete product with strong repo memory, remediation tracking, and several recent hardening slices landed. Export privacy paths now emit table-level manifests and hard-fail required omissions; trip PDF export membership policy is tested; file AI parsing short-circuits cached file/type replays before usage increments; Gmail imports now distinguish completed/completed_partial/failed; chart and org-chart export dependencies moved behind lazy/user-intent boundaries. Still pulled down by concentrated god files (Index, demoModeService, useTripTasks, useAuth, TripChat, useStreamTripChat), hundreds of production `any` usages, a large mock/demo data surface, and dead-code findings that require careful triage."
     },
     {
       "key": "clarity",
       "label": "Architecture Clarity",
-      "score": 74,
-      "rationale": "Feature-module convention (src/features/*) and documented critical path are real strengths. Weakened by a 356-component src/components/ that absorbs domain logic and by mock/demo data living inside the service layer. The previously-duplicated state dirs have been consolidated into a single src/store/."
+      "score": 76,
+      "rationale": "Feature-module convention (src/features/*), a single src/store/, and the new AHS-01..AHS-19 remediation registry make the critical path clearer. Recent extraction of chart panels, export manifest policy, trip export authorization policy, file-parser idempotency helpers, and Gmail terminal-status policy moved several rules out of long handlers/components. Clarity is still weakened by a 350+ component src/components/ surface, mock/demo data living near service code, and several 1k+ LOC route/hook/chat modules that still mix orchestration, data shaping, and UI."
     },
     {
       "key": "maintainability",
       "label": "Maintainability",
-      "score": 60,
-      "rationale": "Hot spots are concentrated and well-known: Index.tsx (1,430), demoModeService.ts (1,314), useTripTasks.ts (1,294), useAuth.tsx (1,291), TripChat.tsx (1,259), useStreamTripChat.ts (1,202); raw LOC is dominated by generated types.ts (5,199) and mock data (polls.ts 3,150, tripSpecificMockDataService.ts 1,612). AIConciergeChat.tsx — formerly the #1 god component — has been decomposed from ~2.5k to ~510 LOC. ~390 `any` at boundaries and ~1,200 lint warnings add daily DX drag."
+      "score": 63,
+      "rationale": "Maintainability improved from focused policy extraction and tests: export-user-data manifest logic, export-trip authorization/default sections, file-ai-parser idempotency, and Gmail terminal status now live in small tested helpers. The main drag remains unchanged: Index.tsx (~1.4k), demoModeService.ts (~1.3k), useTripTasks.ts (~1.3k), useAuth.tsx (~1.3k), TripChat.tsx, useStreamTripChat.ts, generated Supabase types, and large mock datasets. Production `any` usage and the baseline ESLint warning count still add daily DX drag."
     },
     {
       "key": "scalability",
       "label": "Scalability",
-      "score": 70,
-      "rationale": "Supabase + 96 edge functions + RLS scale horizontally and the realtime patterns are documented. Bundle is the ceiling: the heaviest chunks are exceljs ~917K, pdf ~611K, charts ~491K, native ~388K, and stream-chat ~295K — lazy-loading the export/reporting libs would cut first-paint weight on mobile."
+      "score": 75,
+      "rationale": "Supabase + edge functions + RLS remain horizontally scalable, and recent client changes moved Recharts chart panels and html2canvas org-chart export behind lazy/user-intent boundaries. The bundle ceiling is still real: exceljs, pdf/jsPDF/html2canvas, native, stream-chat, and chart chunks remain large, and Stream/client boot plus spreadsheet import parsing still need tighter intent boundaries and CI budgets for mobile first-paint protection."
     },
     {
       "key": "security",
       "label": "Security / Posture",
-      "score": 78,
-      "rationale": "756 RLS policies, requireAuth on every edge function, secret validation, and a March-2026 permissions hardening pass. Tempered by documented fail-open patterns (CronGuard, capability-token default secret) and misleading client-side super-admin dead code — all catalogued in DEBUG_PATTERNS.md, which is itself a good sign."
+      "score": 84,
+      "rationale": "Security posture improved materially: export-user-data now records table-level manifests and fails closed on required data omissions; export-trip auth/member policy is centralized and tested; file-ai-parser checks cached extractions before usage increments; Gmail imports persist completed_partial/failed terminal states; TTS free-for-all is explicit opt-in; privileged app-settings/push paths no longer silently downgrade service-role work to anon. Remaining risks are service-role seed functions, live Supabase integration coverage for export/import replay and role matrices, DB-level uniqueness for concurrent file extraction retries, and continued role/RLS drift vigilance."
     },
     {
       "key": "tests",
       "label": "Test Coverage Confidence",
-      "score": 55,
-      "rationale": "298 test files exist, but TEST_GAPS.md tracks 17 untested critical areas — chat WebSocket reconnect/backfill, read-receipt write amplification, integration idempotency, export authorization. Coverage is broad but thin on the highest-risk paths."
+      "score": 62,
+      "rationale": "Test confidence improved with new focused Vitest coverage for edge-function secret defaults, export manifests, trip export authorization/default sections, file parser idempotency helpers, and Gmail import terminal status. Coverage remains broad but thin on the highest-risk live paths: chat reconnect/backfill, read-receipt write amplification, export/import live Supabase row-count/replay tests, calendar-sync idempotency, DB-level concurrency, and authenticated Stream/Gmail staging E2E."
     },
     {
       "key": "deadcode",
       "label": "Dead Code Risk (higher = worse)",
-      "score": 58,
-      "rationale": "knip reports 268 unused files, 400 unused exports, 408 unused exported types, 1 unused dep. BUT a large share are framework entry points knip can't resolve (Vercel api/, Remotion compositions, scripts/) — those are Future/Unclear, not dead. The stray root artifacts (patch_tripchat*.py, resolver3.js, output.md, etc.) that previously inflated perceived risk have since been removed."
+      "score": 56,
+      "rationale": "Dead-code risk improved slightly because remediation work documents what is intentional and no new scratch cleanup scripts were introduced, but no meaningful knip triage batch has landed. knip still reports large unused-file/export/type surfaces, with many likely false positives from Vercel API routes, Remotion compositions, and scripts. claude-progress.txt is now an intentional agent breadcrumb file, not a scratch artifact. Risk stays elevated until findings are classified and deleted/kept in batches."
     }
   ],
   "executive": {
@@ -635,7 +636,7 @@
         "role": "Type hub for all typed queries"
       }
     ],
-    "orphansNote": "knip lists 268 'unused files', but many are framework entry points it cannot resolve: Vercel api/*.ts, Remotion compositions under remotion/, and scripts/*. These are Future/Unclear, not confirmed dead. Verify per-file before any deletion.",
+    "orphansNote": "knip lists current knip 'unused files', but many are framework entry points it cannot resolve: Vercel api/*.ts, Remotion compositions under remotion/, and scripts/*. These are Future/Unclear, not confirmed dead. Verify per-file before any deletion.",
     "godFileNotes": {
       "src/mockData/polls.ts": "Large static mock dataset — dev/demo only, gate out of prod bundles",
       "src/services/tripSpecificMockDataService.ts": "Giant mock dataset in service layer",
@@ -1083,8 +1084,8 @@
       "action": "done — removed"
     },
     {
-      "path": "resolver3.js, output.md, claude-progress.txt, validation-report.json, plan_refactoring.md",
-      "evidence": "Scratch/output artifacts at root — verified removed from the tree.",
+      "path": "resolver3.js, output.md, validation-report.json, plan_refactoring.md",
+      "evidence": "Scratch/output artifacts at root — verified removed from the tree. claude-progress.txt is now intentionally retained as agent breadcrumb memory.",
       "confidence": "High",
       "deletionRisk": "—",
       "action": "done — removed"
@@ -1153,19 +1154,19 @@
     },
     {
       "module": "Data layer / Services",
-      "score": 70,
+      "score": 74,
       "status": "Good",
-      "why": "Clean gateway, but mock/demo data mixed into services and 300+ `any`.",
-      "evidence": "demoModeService.ts; tech_debt_report #2/#5.",
-      "fix": "Hard mock/live boundary; type the boundaries."
+      "why": "Service gateway is cleaner in high-risk export/import paths after policy helper extraction, but demo/mock data and boundary `any` usage remain.",
+      "evidence": "export-user-data manifest.ts; export-trip authorization.ts; file-ai-parser idempotency.ts; gmail-import-worker importJobState.ts.",
+      "fix": "Continue helper extraction, hard mock/live boundary, type service edges."
     },
     {
       "module": "Permissions & Roles",
-      "score": 80,
+      "score": 83,
       "status": "Good",
-      "why": "RLS-backed and recently hardened; main risk is client/RLS divergence.",
-      "evidence": "SYSTEM_MAP #12; LESSONS role propagation.",
-      "fix": "Keep DB→RLS→hook→UI flow; tier-gate tests."
+      "why": "RLS-backed and recently hardened; trip PDF export membership policy is now tested, but seed functions and live role-matrix tests still need hardening.",
+      "evidence": "export-trip authorization tests; SYSTEM_MAP #12; LESSONS role propagation.",
+      "fix": "Add seed-function guards and live role-matrix integration tests."
     },
     {
       "module": "Calendar / Media / Maps / Notifications",
@@ -1177,11 +1178,11 @@
     },
     {
       "module": "Build / Bundle",
-      "score": 62,
-      "status": "Fragile",
-      "why": "Several 388K–917K chunks eagerly reachable (exceljs, pdf, charts, native); hurts mobile first paint.",
-      "evidence": "tech_debt_report bundle table; BUNDLE_SIZE_BASELINE.md.",
-      "fix": "Lazy-load exceljs, pdf, recharts, and the native bridge where possible."
+      "score": 70,
+      "status": "Improving",
+      "why": "Recharts dashboards and org-chart screenshot export are now behind lazy/user-intent boundaries; exceljs, pdf, native, and Stream chunks still need tighter intent boundaries and CI budgets.",
+      "evidence": "CampaignAnalytics chart panels, SeoTrendChart, TeamOrgChart dynamic html2canvas import; build bundle table.",
+      "fix": "Finish lazy-loading exceljs/pdf/native/Stream paths and add bundle-size CI gate."
     }
   ],
   "missing": [
@@ -1201,13 +1202,13 @@
       "area": "Smart Import state machine",
       "impact": "Data integrity",
       "priority": "Important",
-      "note": "Partial-import rollback + UX surfacing."
+      "note": "Partial: file parser sequential idempotency and Gmail completed_partial status landed; still needs DB concurrency/replay tests and calendar-sync idempotency."
     },
     {
       "area": "Bundle/code-split CI gate",
       "impact": "Mobile performance / conversion",
       "priority": "Important",
-      "note": "Prevent regressions of the ~917K exceljs chunk (largest)."
+      "note": "Partial: Recharts chart panels and html2canvas export are lazy; exceljs/pdf/native/Stream and CI budget remain."
     },
     {
       "area": "Mock/demo data boundary",
@@ -1320,12 +1321,12 @@
       "phase": "Phase 4 — Product / Scale Readiness",
       "items": [
         {
-          "desc": "Lazy-load heavy chunks (exceljs, pdf, recharts, native bridge)",
+          "desc": "[PARTIAL] Lazy-load heavy chunks (Recharts chart panels + html2canvas export done; exceljs/pdf/native/Stream remain)",
           "files": "import sites + routes",
           "risk": "Medium",
           "complexity": "M",
-          "benefit": "Faster first paint, better mobile",
-          "validation": "bundle baseline diff"
+          "benefit": "Faster route shells on chart/export surfaces; remaining chunks still need mobile budget work",
+          "validation": "build + bundle diff + route smoke"
         },
         {
           "desc": "Add bundle-size CI gate",
@@ -1336,12 +1337,12 @@
           "validation": "CI fails on oversize"
         },
         {
-          "desc": "Smart Import state machine + partial-state persistence",
+          "desc": "[PARTIAL] Smart Import idempotency + Gmail partial terminal status landed; full replay/concurrency suite remains",
           "files": "smart-import + edge fns",
           "risk": "Medium",
           "complexity": "L",
-          "benefit": "Reliable imports",
-          "validation": "retry/idempotency tests"
+          "benefit": "Prevents sequential file-parser double-charge and makes mixed Gmail failures explicit",
+          "validation": "unit tests + future live replay/idempotency tests"
         }
       ]
     }

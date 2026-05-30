@@ -10,6 +10,7 @@ import { validateExternalUrlBeforeFetch } from '../_shared/validation.ts';
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { requireAuth } from '../_shared/requireAuth.ts';
 import { checkAndIncrementSmartImportUsage } from '../_shared/smartImportUsage.ts';
+import { buildFileExtractionIdempotencyKey, createCachedExtractionPayload } from './idempotency.ts';
 
 // Security model:
 // 1. requireAuth validates the caller's JWT — no unauthenticated access
@@ -260,6 +261,31 @@ serve(async req => {
       );
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
         status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const idempotencyKey = buildFileExtractionIdempotencyKey(fileId, extractionType);
+    const { data: existingExtraction, error: existingExtractionError } = await supabase
+      .from('file_ai_extractions')
+      .select('*')
+      .eq('file_id', fileId)
+      .eq('extraction_type', extractionType)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingExtractionError) {
+      console.error('[file-ai-parser] Existing extraction lookup failed:', existingExtractionError);
+      return new Response(JSON.stringify({ error: 'Failed to check existing extraction' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (existingExtraction) {
+      console.log('[file-ai-parser] Returning cached extraction', { idempotencyKey });
+      return new Response(JSON.stringify(createCachedExtractionPayload(existingExtraction)), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

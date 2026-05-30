@@ -13,6 +13,7 @@ import { renderTemplate } from './template.ts';
 import { slug, formatTimestamp } from './util.ts';
 import type { ExportRequest, ExportLayout, ExportSection } from './types.ts';
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { canExportTripPdf, resolveDefaultTripExportSections } from './authorization.ts';
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -116,15 +117,30 @@ serve(async req => {
 
     logStep('Request parsed', { tripId, sections, layout, privacyRedaction, paper });
 
-    // Verify user is a member of the trip before proceeding
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseClient.auth.getUser();
+
+    if (userError || !user) {
+      logStep('Unauthorized - invalid auth token', { error: userError?.message });
+      return new Response(JSON.stringify({ error: 'Authentication failed' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Verify user is a member of the trip before proceeding.
+    // This intentionally preserves the existing contract: any trip member may export the default
+    // PDF sections, while non-members are blocked before trip data is fetched.
     const { data: membershipCheck, error: membershipError } = await supabaseClient
       .from('trip_members')
-      .select('user_id')
+      .select('user_id, role')
       .eq('trip_id', tripId)
-      .eq('user_id', (await supabaseClient.auth.getUser()).data.user?.id)
+      .eq('user_id', user.id)
       .maybeSingle();
 
-    if (membershipError || !membershipCheck) {
+    if (membershipError || !canExportTripPdf({ userId: user.id, membership: membershipCheck })) {
       logStep('Forbidden - not a trip member', { tripId, error: membershipError?.message });
       return new Response(
         JSON.stringify({ error: 'Forbidden - you must be a member of this trip to export it' }),
@@ -197,19 +213,7 @@ serve(async req => {
 
     // Default sections if none provided
     if (sections.length === 0) {
-      sections =
-        layout === 'pro'
-          ? [
-              'calendar',
-              'payments',
-              'places',
-              'tasks',
-              'polls',
-              'roster',
-              'broadcasts',
-              'attachments',
-            ]
-          : ['calendar', 'payments', 'places', 'tasks', 'polls'];
+      sections = resolveDefaultTripExportSections(layout);
       logStep('Using default sections', { sections });
     }
 
