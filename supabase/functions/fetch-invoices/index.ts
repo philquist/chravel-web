@@ -66,11 +66,13 @@ serve(async req => {
     const user = userData.user;
     logStep('User authenticated', { userId: user.id });
 
-    // Get user's Stripe customer ID from private_profiles
+    // Get user's Stripe customer ID from profiles (keyed by user_id).
+    // NOTE: the `private_profiles` PII-separation table is not deployed; billing
+    // identifiers live on `profiles`. See PAYMENTS_AUDIT.md.
     const { data: profile, error: profileError } = await supabaseClient
-      .from('private_profiles')
+      .from('profiles')
       .select('stripe_customer_id')
-      .eq('id', user.id)
+      .eq('user_id', user.id)
       .single();
 
     if (profileError || !profile?.stripe_customer_id) {

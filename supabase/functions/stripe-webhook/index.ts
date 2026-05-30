@@ -317,11 +317,10 @@ async function handleCheckoutCompleted(
     return;
   }
 
-  // Update private_profiles with customer ID
-  await supabase
-    .from('private_profiles')
-    .upsert({ id: userId, stripe_customer_id: customerId })
-    .select();
+  // Link the Stripe customer to the user on their profile (keyed by user_id).
+  // NOTE: the `private_profiles` PII-separation table is not deployed; billing
+  // identifiers live on `profiles`. See PAYMENTS_AUDIT.md.
+  await supabase.from('profiles').update({ stripe_customer_id: customerId }).eq('user_id', userId);
 
   // Handle Trip Pass purchase
   if (purchaseType === 'pass') {
@@ -409,30 +408,30 @@ async function handleSubscriptionUpdated(
   const subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
   const tier = PRODUCT_TO_TIER[productId] || 'free';
 
-  // Find user by customer ID
+  // Find user by customer ID (billing identifiers live on `profiles`, keyed by user_id)
   const { data: profiles } = await supabase
-    .from('private_profiles')
-    .select('id')
+    .from('profiles')
+    .select('user_id')
     .eq('stripe_customer_id', customerId)
     .limit(1);
 
   if (!profiles || profiles.length === 0) {
-    logStep('Customer not found in private_profiles', { customerId });
+    logStep('Customer not found in profiles', { customerId });
     return;
   }
 
-  const userId = profiles[0].id;
+  const userId = profiles[0].user_id;
 
   // Read current entitlement for audit trail
   const currentEnt = await getCurrentEntitlement(supabase, userId, 'subscription');
 
-  // Update private_profiles with subscription details
+  // Persist the subscription id on the profile
   await supabase
-    .from('private_profiles')
+    .from('profiles')
     .update({
       stripe_subscription_id: subscription.id,
     })
-    .eq('id', userId);
+    .eq('user_id', userId);
 
   // Update public profile with subscription status
   const { error: profileError } = await supabase
@@ -561,8 +560,8 @@ async function handleSubscriptionDeleted(
   const customerId = subscription.customer as string;
 
   const { data: profiles } = await supabase
-    .from('private_profiles')
-    .select('id')
+    .from('profiles')
+    .select('user_id')
     .eq('stripe_customer_id', customerId)
     .limit(1);
 
@@ -571,17 +570,17 @@ async function handleSubscriptionDeleted(
     return;
   }
 
-  const userId = profiles[0].id;
+  const userId = profiles[0].user_id;
 
   // Read current entitlement for audit trail
   const currentEnt = await getCurrentEntitlement(supabase, userId, 'subscription');
 
   await supabase
-    .from('private_profiles')
+    .from('profiles')
     .update({
       stripe_subscription_id: null,
     })
-    .eq('id', userId);
+    .eq('user_id', userId);
 
   // FIX 5: Keep the subscription_end so we know when access actually expires.
   // The period end is honored: if it's in the future the user keeps access until
@@ -683,14 +682,14 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice, supabase: any
   const customerId = invoice.customer as string;
 
   const { data: profiles } = await supabase
-    .from('private_profiles')
-    .select('id')
+    .from('profiles')
+    .select('user_id')
     .eq('stripe_customer_id', customerId)
     .limit(1);
 
   if (!profiles || profiles.length === 0) return;
 
-  const userId = profiles[0].id;
+  const userId = profiles[0].user_id;
 
   // Read current entitlement for audit trail
   const currentEnt = await getCurrentEntitlement(supabase, userId, 'subscription');
@@ -748,8 +747,8 @@ async function handleChargeRefunded(charge: Stripe.Charge, supabase: any, eventI
   }
 
   const { data: profiles } = await supabase
-    .from('private_profiles')
-    .select('id')
+    .from('profiles')
+    .select('user_id')
     .eq('stripe_customer_id', customerId)
     .limit(1);
 
@@ -758,7 +757,7 @@ async function handleChargeRefunded(charge: Stripe.Charge, supabase: any, eventI
     return;
   }
 
-  const userId = profiles[0].id;
+  const userId = profiles[0].user_id;
 
   // Check if this user has a Trip Pass — expire it on refund
   const { data: passEntitlement } = await supabase

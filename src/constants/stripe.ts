@@ -217,7 +217,7 @@ export const STRIPE_PRODUCTS = {
     product_id: PRO_PLANS.enterprise.product_id,
     price_id: PRO_PLANS.enterprise.price_id,
     name: 'Pro Enterprise',
-    price: 199,
+    price: 0, // Custom Pricing - Contact Sales. Matches billing/config.ts (source of truth).
     member_limit: 250,
   },
 } as const;

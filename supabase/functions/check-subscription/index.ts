@@ -285,10 +285,13 @@ serve(async req => {
 
     logStep('Found Stripe customer', { customerId });
 
+    // Cache the resolved Stripe customer id on the profile (keyed by user_id).
+    // NOTE: the `private_profiles` PII-separation table is not deployed; billing
+    // identifiers live on `profiles`. See PAYMENTS_AUDIT.md.
     await supabaseClient
-      .from('private_profiles')
-      .upsert({ id: user.id, stripe_customer_id: customerId })
-      .select();
+      .from('profiles')
+      .update({ stripe_customer_id: customerId })
+      .eq('user_id', user.id);
 
     const subscriptions = customerId
       ? await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 20 })

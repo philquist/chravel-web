@@ -259,8 +259,11 @@ export const FEATURE_LIMITS: Record<FeatureName, Partial<Record<SubscriptionTier
     'pro-enterprise': -1,
   },
   media_upload: {
-    free: 500, // MB
-    explorer: 2000,
+    // Values in MB. MUST stay aligned with FREEMIUM_LIMITS.*.storageAccountMB in
+    // src/utils/featureTiers.ts — that map drives actual upload enforcement
+    // (useMediaLimits, services/uploadService). Explorer = 50 GB. See PAYMENTS_AUDIT.md.
+    free: 500,
+    explorer: 50000,
     'frequent-chraveler': -1,
     'pro-starter': -1,
     'pro-growth': -1,
