@@ -36,7 +36,7 @@ const BASE_TRIP_TYPES: TripTypeOption[] = [
 
 const RECS_OPTION: TripTypeOption = {
   id: 'travelRecs',
-  label: 'ChravelApp Recs',
+  label: 'Chravel Recs',
   sublabel: 'Travel recommendations',
   icon: <Compass size={24} />,
 };
