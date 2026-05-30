@@ -77,9 +77,9 @@ serve(async req => {
     });
   } catch (error) {
     console.error('Health check failed:', error instanceof Error ? error.message : error);
-    return new Response(
-      JSON.stringify({ status: 'error', timestamp: new Date().toISOString() }),
-      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ status: 'error', timestamp: new Date().toISOString() }), {
+      status: 500,
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+    });
   }
 });
