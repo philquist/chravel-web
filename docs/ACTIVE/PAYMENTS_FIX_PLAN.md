@@ -189,3 +189,8 @@ RLS blocks client entitlement mutation.
    and wire `stripePriceIdAnnual`, or drop `priceAnnual` for Pro tiers."
 7. **Collapse hardcoded UI price strings.** "Replace literal prices in `UpgradeModal.tsx` / `ProUpgradeModal.tsx`
    with values derived from `billing/config.ts`; extend `pricingParity.test.ts` to assert the rendered values."
+8. **Harden customer→user lookup (#1 follow-up).** "Add a partial `UNIQUE (stripe_customer_id)` index on
+   `profiles` (nullable) and clear/reassign the id on customer change in `create-checkout`, so the webhook's
+   `.eq('stripe_customer_id', …).limit(1)` lookups can never resolve to the wrong user if an id is ever duplicated."
+9. **Repoint remaining `private_profiles` reference.** "Update `process-account-deletions` (and the `join-trip`
+   comment) off `private_profiles` as part of the PII-model decision in B2."
