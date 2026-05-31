@@ -61,7 +61,9 @@ describe('trip link source-aware deletion', () => {
 
   it('deletes explicit trip_link_index targets even when semantic source is manual', async () => {
     await expect(
-      deleteTripLinkFromTable('link-1', 'trip-1', 'trip_link_index', false, { suppressToast: true }),
+      deleteTripLinkFromTable('link-1', 'trip-1', 'trip_link_index', false, {
+        suppressToast: true,
+      }),
     ).resolves.toBe(true);
 
     expect(fromMock).toHaveBeenCalledWith('trip_link_index');

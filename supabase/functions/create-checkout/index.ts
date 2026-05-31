@@ -13,7 +13,10 @@ import {
   createErrorResponse,
   createOptionsResponse,
 } from '../_shared/securityHeaders.ts';
-import { normalizeSubscriptionTierForCheckout } from './checkoutTier.ts';
+import {
+  normalizeSubscriptionTierForCheckout,
+  shouldBlockConsumerStripeCheckout,
+} from './checkoutTier.ts';
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -84,8 +87,10 @@ serve(async req => {
       tier,
       billing_cycle = 'monthly',
       purchase_type = 'subscription',
-      platform = 'web',
+      platform: rawPlatform,
     } = await req.json();
+    const platform = typeof rawPlatform === 'string' ? rawPlatform : 'unknown';
+    const userAgent = req.headers.get('User-Agent') || '';
     logStep('Request parsed', { tier, billing_cycle, purchase_type, platform });
 
     const isPass = purchase_type === 'pass';
@@ -159,9 +164,9 @@ serve(async req => {
       logStep('Normalized tier', { original: tier, normalized: normalizedTier });
 
       if (normalizedTier === 'explorer' || normalizedTier === 'frequent-chraveler') {
-        if (platform === 'ios') {
+        if (shouldBlockConsumerStripeCheckout(platform, userAgent)) {
           return createErrorResponse(
-            'Consumer subscriptions on iOS must be purchased using Apple In-App Purchase.',
+            'Consumer subscriptions in the native app must be purchased using platform billing.',
             400,
           );
         }

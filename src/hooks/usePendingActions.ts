@@ -290,10 +290,11 @@ export function usePendingActions(tripId: string, options: UsePendingActionsOpti
         }
 
         case 'addExpense': {
-          const splitParticipants = (payload.split_participants as string[] | undefined) || [
-            user.id,
-          ];
-          const splitCount = (payload.split_count as number | undefined) || splitParticipants.length;
+          const rawParticipants = Array.isArray(payload.split_participants)
+            ? (payload.split_participants as string[])
+            : [];
+          const splitParticipants = rawParticipants.length > 0 ? rawParticipants : [user.id];
+          const splitCount = splitParticipants.length;
           const { error } = await (supabase.rpc as any)('create_payment_with_splits_v2', {
             p_trip_id: action.trip_id,
             p_amount: payload.amount as number,
@@ -600,13 +601,16 @@ export function usePendingActions(tripId: string, options: UsePendingActionsOpti
     });
     void Promise.all(
       selfPending.map(a =>
-        confirmMutation.mutateAsync(a.id).catch(err => {
-          // Allow re-attempt on next tick if the confirm failed (e.g. transient RLS race)
-          globalAutoConfirmedIds.delete(a.id);
-          if (import.meta.env.DEV) console.warn('[usePendingActions] auto-confirm failed', err);
-        }).finally(() => {
-          globalAutoConfirmInFlightIds.delete(a.id);
-        }),
+        confirmMutation
+          .mutateAsync(a.id)
+          .catch(err => {
+            // Allow re-attempt on next tick if the confirm failed (e.g. transient RLS race)
+            globalAutoConfirmedIds.delete(a.id);
+            if (import.meta.env.DEV) console.warn('[usePendingActions] auto-confirm failed', err);
+          })
+          .finally(() => {
+            globalAutoConfirmInFlightIds.delete(a.id);
+          }),
       ),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps

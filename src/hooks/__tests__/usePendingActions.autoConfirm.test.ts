@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  type PendingAction,
-  selectAutoConfirmPendingActions,
-} from '../usePendingActions';
+import { type PendingAction, selectAutoConfirmPendingActions } from '../usePendingActions';
 
 function pendingAction(overrides: Partial<PendingAction>): PendingAction {
   return {
@@ -43,7 +40,12 @@ describe('selectAutoConfirmPendingActions', () => {
 
   it('does not select actions when there is no current user', () => {
     expect(
-      selectAutoConfirmPendingActions([pendingAction({ id: 'mine' })], undefined, new Set(), new Set()),
+      selectAutoConfirmPendingActions(
+        [pendingAction({ id: 'mine' })],
+        undefined,
+        new Set(),
+        new Set(),
+      ),
     ).toEqual([]);
   });
 });

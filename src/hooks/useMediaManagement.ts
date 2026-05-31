@@ -97,7 +97,9 @@ export const useMediaManagement = (tripId: string) => {
           tripTier === 'consumer' &&
           TripSpecificMockDataService.getTripLinkItems(parseInt(tripId)).length > 0
         ) {
-          return withDemoDeleteTable(TripSpecificMockDataService.getTripLinkItems(parseInt(tripId)));
+          return withDemoDeleteTable(
+            TripSpecificMockDataService.getTripLinkItems(parseInt(tripId)),
+          );
         }
         if (tripTier === 'pro' && proTripMockData[tripId]) {
           return withDemoDeleteTable(proTripMockData[tripId].links || []);

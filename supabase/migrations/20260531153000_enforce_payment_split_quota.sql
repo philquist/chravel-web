@@ -155,6 +155,23 @@ BEGIN
     RAISE EXCEPTION 'Not a member of this trip';
   END IF;
 
+  IF NEW.split_count IS NULL OR NEW.split_count <= 0 THEN
+    RAISE EXCEPTION 'Payment split count must be greater than zero';
+  END IF;
+
+  IF jsonb_typeof(NEW.split_participants) <> 'array'
+    OR jsonb_array_length(NEW.split_participants) <> NEW.split_count THEN
+    RAISE EXCEPTION 'Split participants must match split count';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements_text(NEW.split_participants) AS participant_id(user_id)
+    WHERE NOT public.is_active_trip_member(participant_id.user_id::uuid, NEW.trip_id)
+  ) THEN
+    RAISE EXCEPTION 'All split participants must be trip members';
+  END IF;
+
   PERFORM pg_advisory_xact_lock(hashtext(NEW.trip_id), hashtext(v_auth_uid::text));
 
   SELECT COALESCE(ue.plan, 'free')

@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  getPriceId,
-  PRO_PLANS,
-  STRIPE_PRODUCTS,
-  SUBSCRIPTION_TIER_MAP,
-} from '../stripe';
+import { getPriceId, PRO_PLANS, STRIPE_PRODUCTS, SUBSCRIPTION_TIER_MAP } from '../stripe';
 
 describe('Stripe constants', () => {
   it('maps Pro Growth UI selection to the checkout tier priced by create-checkout', () => {
