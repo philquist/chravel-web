@@ -924,6 +924,25 @@
   }
 }
 
+/* AI Concierge: keep assistant markdown inside the mobile chat rail. */
+.ai-markdown-content {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ai-markdown-content * {
+  max-width: 100%;
+}
+
+.ai-markdown-content a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ai-markdown-content pre {
+  overflow-x: auto;
+}
+
 /* AI Concierge: inline image grid (Gemini-like) when multiple images in markdown */
 .ai-markdown-content > a:has(img) {
   display: inline-block;

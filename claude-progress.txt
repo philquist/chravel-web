@@ -17,3 +17,8 @@
 2026-05-30 — Travel Atlas refresh
 - Re-scored `codebase-atlas/curated.json` for the recent AHS remediation slices: lazy Recharts/html2canvas boundaries, export manifest/auth hardening, import idempotency, Gmail completed_partial status, and edge secret defaults.
 - Ran `npm run build` and `npm run atlas` so `architecture-data.json` and `index.html` now include current counts, knip metrics, bundle top chunks, and commit f1d5c4e.
+
+2026-05-31 — Concierge mobile overflow/tab recovery
+- Fixed mobile Concierge horizontal overflow by clamping the active tab pane to vertical-only scrolling, adding `min-w-0`/`overflow-x-hidden` through the Concierge chat shell and message rows, and forcing AI markdown/links to wrap inside the bubble.
+- Added regression tests for long assistant markdown containment and leaving Concierge for Payments; targeted tests, typecheck, lint:check, and build pass. Screenshot capture was attempted but Playwright browser install was blocked by CDN 403 in the environment.
+- Merge preflight still cannot fetch `origin/main` in this environment; rerun in a networked checkout before merge.
