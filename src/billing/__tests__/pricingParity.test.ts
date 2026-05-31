@@ -21,8 +21,14 @@ import { CONSUMER_PLANS, PRO_PLANS, TRIP_PASS_PLANS, STRIPE_PRODUCTS } from '@/c
 import { REVENUECAT_PRICING, ENTITLEMENT_TO_TIER } from '@/constants/revenuecat';
 import { FREEMIUM_LIMITS } from '@/utils/featureTiers';
 import { FEATURE_LIMITS } from '@/billing/entitlements';
+import { CONSUMER_PRICING } from '@/types/consumer';
+import { SUBSCRIPTION_TIERS } from '@/types/pro';
+import { CONSUMER_PRICE_DISPLAY } from '@/billing/pricingDisplay';
 
 const dollarsToCents = (usd: number): number => Math.round(usd * 100);
+
+// Mirror of formatUsd in pricingDisplay (whole -> "$99", fractional -> "$9.99")
+const formatExpected = (n: number): string => (Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`);
 
 describe('pricing parity — constants/stripe.ts mirrors billing/config.ts', () => {
   it('consumer Explorer matches (product IDs, price IDs, amounts)', () => {
@@ -148,6 +154,62 @@ describe('limit parity — FEATURE_LIMITS aligns with FREEMIUM_LIMITS storage', 
     // Frequent Chraveler is unlimited on both sides (-1)
     expect(FEATURE_LIMITS.media_upload['frequent-chraveler']).toBe(
       FREEMIUM_LIMITS['frequent-chraveler'].storageAccountMB,
+    );
+  });
+
+  it('event_creation: events folded into Frequent Chraveler (Free/Explorer 3, FC unlimited)', () => {
+    // Events are an FC benefit. Free + Explorer get 3 events total; FC/Pro unlimited (-1).
+    expect(FEATURE_LIMITS.event_creation.free).toBe(3);
+    expect(FEATURE_LIMITS.event_creation.explorer).toBe(3);
+    expect(FEATURE_LIMITS.event_creation['frequent-chraveler']).toBe(-1);
+    expect(FEATURE_LIMITS.event_creation['pro-starter']).toBe(-1);
+    // FEATURE_LIMITS and FREEMIUM_LIMITS must agree on the event caps.
+    expect(FREEMIUM_LIMITS.free.eventsLimit).toBe(FEATURE_LIMITS.event_creation.free);
+    expect(FREEMIUM_LIMITS.explorer.eventsLimit).toBe(FEATURE_LIMITS.event_creation.explorer);
+    expect(FREEMIUM_LIMITS['frequent-chraveler'].eventsLimit).toBe(
+      FEATURE_LIMITS.event_creation['frequent-chraveler'],
+    );
+  });
+});
+
+describe('pricing parity — secondary numeric tables derive from billing/config.ts', () => {
+  it('CONSUMER_PRICING matches config (no hardcoded consumer prices)', () => {
+    expect(CONSUMER_PRICING.explorer.monthly).toBe(
+      BILLING_PRODUCTS['consumer-explorer'].priceMonthly,
+    );
+    expect(CONSUMER_PRICING.explorer.annual).toBe(
+      BILLING_PRODUCTS['consumer-explorer'].priceAnnual,
+    );
+    expect(CONSUMER_PRICING['frequent-chraveler'].monthly).toBe(
+      BILLING_PRODUCTS['consumer-frequent-chraveler'].priceMonthly,
+    );
+    expect(CONSUMER_PRICING['frequent-chraveler'].annual).toBe(
+      BILLING_PRODUCTS['consumer-frequent-chraveler'].priceAnnual,
+    );
+    expect(CONSUMER_PRICING.explorer.tripPass).toBe(TRIP_PASS_PRODUCTS['pass-explorer-45'].price);
+    expect(CONSUMER_PRICING['frequent-chraveler'].tripPass).toBe(
+      TRIP_PASS_PRODUCTS['pass-frequent-90'].price,
+    );
+  });
+
+  it('SUBSCRIPTION_TIERS (Pro) matches config (no hardcoded pro prices)', () => {
+    expect(SUBSCRIPTION_TIERS.starter.price).toBe(BILLING_PRODUCTS['pro-starter'].priceMonthly);
+    expect(SUBSCRIPTION_TIERS.growing.price).toBe(BILLING_PRODUCTS['pro-growth'].priceMonthly);
+    expect(SUBSCRIPTION_TIERS.enterprise.price).toBe(
+      BILLING_PRODUCTS['pro-enterprise'].priceMonthly,
+    );
+  });
+
+  it('pricingDisplay renders config-derived labels', () => {
+    expect(CONSUMER_PRICE_DISPLAY.explorer.monthly).toBe(
+      formatExpected(BILLING_PRODUCTS['consumer-explorer'].priceMonthly),
+    );
+    expect(CONSUMER_PRICE_DISPLAY.explorer.annual).toBe(
+      formatExpected(BILLING_PRODUCTS['consumer-explorer'].priceAnnual!),
+    );
+    // annual-per-month is always 2dp
+    expect(CONSUMER_PRICE_DISPLAY.explorer.annualPerMonth).toBe(
+      `$${(BILLING_PRODUCTS['consumer-explorer'].priceAnnual! / 12).toFixed(2)}`,
     );
   });
 });

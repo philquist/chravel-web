@@ -1,3 +1,6 @@
+// Prices are derived from billing/config.ts (the single numeric source of truth).
+import { BILLING_PRODUCTS } from '@/billing/config';
+
 // Media metadata interface for photos, videos, audio, and files
 export interface MediaMetadata {
   size?: number;
@@ -444,7 +447,7 @@ export interface ProTripData {
 export const SUBSCRIPTION_TIERS = {
   starter: {
     name: 'Starter Pro',
-    price: 49,
+    price: BILLING_PRODUCTS['pro-starter'].priceMonthly,
     seatLimit: 50,
     features: [
       'Up to 50 team members',
@@ -458,7 +461,7 @@ export const SUBSCRIPTION_TIERS = {
   },
   growing: {
     name: 'Growth Pro',
-    price: 99,
+    price: BILLING_PRODUCTS['pro-growth'].priceMonthly,
     seatLimit: 100,
     features: [
       'Up to 100 team members',
@@ -472,7 +475,7 @@ export const SUBSCRIPTION_TIERS = {
   },
   enterprise: {
     name: 'Enterprise',
-    price: 0, // Custom Pricing - Contact Sales (billing@chravelapp.com)
+    price: BILLING_PRODUCTS['pro-enterprise'].priceMonthly, // 0 = Custom Pricing - Contact Sales
     priceLabel: 'Custom Pricing',
     seatLimit: 250,
     features: [

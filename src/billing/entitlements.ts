@@ -294,8 +294,11 @@ export const FEATURE_LIMITS: Record<FeatureName, Partial<Record<SubscriptionTier
     'pro-enterprise': -1,
   },
   event_creation: {
-    free: 0,
-    explorer: 0,
+    // Events are a Frequent Chraveler benefit. Free + Explorer get 3 events total
+    // (lifetime), then upgrade to Frequent Chraveler for unlimited. Must stay aligned
+    // with FREEMIUM_LIMITS.*.eventsLimit in src/utils/featureTiers.ts. See PAYMENTS_AUDIT.md.
+    free: 3,
+    explorer: 3,
     'frequent-chraveler': -1,
     'pro-starter': -1,
     'pro-growth': -1,
