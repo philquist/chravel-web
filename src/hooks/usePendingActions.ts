@@ -294,11 +294,15 @@ export function usePendingActions(tripId: string, options: UsePendingActionsOpti
           const rawParticipants = Array.isArray(payload.split_participants)
             ? (payload.split_participants as string[])
             : [];
-          const splitParticipants =
+          if (
             rawParticipants.length > 0 &&
-            rawParticipants.every(participant => uuidPattern.test(participant))
-              ? rawParticipants
-              : [user.id];
+            !rawParticipants.every(participant => uuidPattern.test(participant))
+          ) {
+            throw new Error(
+              'Expense split participants must be member IDs. Please retry with a member selection.',
+            );
+          }
+          const splitParticipants = rawParticipants.length > 0 ? rawParticipants : [user.id];
           const splitCount = splitParticipants.length;
           const { error } = await (supabase.rpc as any)('create_payment_with_splits_v2', {
             p_trip_id: action.trip_id,

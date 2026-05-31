@@ -14,6 +14,7 @@ import {
   createOptionsResponse,
 } from '../_shared/securityHeaders.ts';
 import {
+  isConsumerDigitalGoodsCheckout,
   normalizeSubscriptionTierForCheckout,
   shouldBlockConsumerStripeCheckout,
 } from './checkoutTier.ts';
@@ -94,6 +95,13 @@ serve(async req => {
     logStep('Request parsed', { tier, billing_cycle, purchase_type, platform });
 
     const isPass = purchase_type === 'pass';
+
+    if (isConsumerDigitalGoodsCheckout(tier, purchase_type)) {
+      return createErrorResponse(
+        'Consumer checkout is temporarily unavailable while platform billing is enforced.',
+        400,
+      );
+    }
 
     // Cross-provider dedupe guard: block overlapping active paid access before creating checkout.
     // This prevents double-billing paths (e.g., active Apple/RevenueCat user starting Stripe checkout).
