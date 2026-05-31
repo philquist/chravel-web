@@ -7,13 +7,3 @@ export function shouldBlockConsumerStripeCheckout(platform: string, userAgent: s
   const nativeShellUserAgent = /ChravelNative\/|; wv\)|Capacitor/i.test(userAgent);
   return platform !== 'web' || nativeShellUserAgent;
 }
-
-export function isConsumerDigitalGoodsCheckout(tier: string, purchaseType: string): boolean {
-  return (
-    purchaseType === 'pass' ||
-    tier === 'explorer' ||
-    tier === 'frequent-chraveler' ||
-    tier === 'consumer-explorer' ||
-    tier === 'consumer-frequent-chraveler'
-  );
-}

@@ -233,7 +233,9 @@ export const MessageActions: React.FC<MessageActionsComponentProps> = ({
     }
   };
 
-  const canDeleteMessage = isOwnMessage ? canDeleteOwnMessage : canDeleteAnyMessage;
+  const canDeleteMessage = isOwnMessage
+    ? canDeleteOwnMessage || canDeleteAnyMessage
+    : canDeleteAnyMessage;
 
   return (
     <>

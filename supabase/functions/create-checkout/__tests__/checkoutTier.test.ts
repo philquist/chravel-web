@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  isConsumerDigitalGoodsCheckout,
   normalizeSubscriptionTierForCheckout,
   shouldBlockConsumerStripeCheckout,
 } from '../checkoutTier';
@@ -25,12 +24,5 @@ describe('normalizeSubscriptionTierForCheckout', () => {
     expect(shouldBlockConsumerStripeCheckout('android', 'Mozilla/5.0')).toBe(true);
     expect(shouldBlockConsumerStripeCheckout('web', 'ChravelNative/1')).toBe(true);
     expect(shouldBlockConsumerStripeCheckout('web', 'Mozilla/5.0 (; wv)')).toBe(true);
-  });
-
-  it('classifies consumer subscriptions and trip passes as digital goods checkout', () => {
-    expect(isConsumerDigitalGoodsCheckout('consumer-explorer', 'subscription')).toBe(true);
-    expect(isConsumerDigitalGoodsCheckout('frequent-chraveler', 'subscription')).toBe(true);
-    expect(isConsumerDigitalGoodsCheckout('pass-explorer-45', 'pass')).toBe(true);
-    expect(isConsumerDigitalGoodsCheckout('pro-growth', 'subscription')).toBe(false);
   });
 });

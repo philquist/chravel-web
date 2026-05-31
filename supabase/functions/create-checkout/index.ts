@@ -14,7 +14,6 @@ import {
   createOptionsResponse,
 } from '../_shared/securityHeaders.ts';
 import {
-  isConsumerDigitalGoodsCheckout,
   normalizeSubscriptionTierForCheckout,
   shouldBlockConsumerStripeCheckout,
 } from './checkoutTier.ts';
@@ -96,13 +95,6 @@ serve(async req => {
 
     const isPass = purchase_type === 'pass';
 
-    if (isConsumerDigitalGoodsCheckout(tier, purchase_type)) {
-      return createErrorResponse(
-        'Consumer checkout is temporarily unavailable while platform billing is enforced.',
-        400,
-      );
-    }
-
     // Cross-provider dedupe guard: block overlapping active paid access before creating checkout.
     // This prevents double-billing paths (e.g., active Apple/RevenueCat user starting Stripe checkout).
     const nowIso = new Date().toISOString();
@@ -164,6 +156,12 @@ serve(async req => {
     // Build price ID key
     let priceIdKey: string;
     if (isPass) {
+      if (shouldBlockConsumerStripeCheckout(platform, userAgent)) {
+        return createErrorResponse(
+          'Consumer purchases in the native app must use platform billing.',
+          400,
+        );
+      }
       // Trip Pass: tier is already the pass key like 'pass-explorer-45'
       priceIdKey = tier;
     } else {

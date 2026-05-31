@@ -392,7 +392,7 @@ export const TripChat = React.memo(
           throw new Error('You can only delete your own messages');
         }
 
-        if (isOwnMessage && !canDeleteOwnMessage) {
+        if (isOwnMessage && !canDeleteOwnMessage && !canDeleteAnyMessage) {
           throw new Error('You don’t have permission to delete this message');
         }
 

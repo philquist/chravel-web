@@ -290,6 +290,22 @@ describe('TripChat delete message', () => {
     expect(mockDeleteMessage).toHaveBeenCalledWith('msg-123');
   });
 
+  it('allows deleting own message with Stream delete-any grant even without delete-own grant', async () => {
+    mockOwnCapabilities = ['delete-any-message', 'update-own-message'];
+    mockMessageAuthorId = 'user-1';
+    mockGetStreamClient.mockReturnValue({
+      deleteMessage: mockDeleteMessage,
+      userID: 'user-1',
+    } as any);
+    mockDeleteMessage.mockResolvedValue(undefined);
+
+    renderSubject();
+    fireEvent.click(screen.getByTestId('delete-msg-123'));
+
+    expect(mockDeleteMessage).toHaveBeenCalledTimes(1);
+    expect(mockDeleteMessage).toHaveBeenCalledWith('msg-123');
+  });
+
   it('keeps TripChat on Stream transport when Stream client is unavailable', async () => {
     mockGetStreamClient.mockReturnValue(null);
 
