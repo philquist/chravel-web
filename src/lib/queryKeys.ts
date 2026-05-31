@@ -50,6 +50,7 @@ export const tripKeys = {
   payments: (tripId: string) => ['tripPayments', tripId] as const,
   paymentBalances: (tripId: string, userId: string) =>
     ['tripPaymentBalances', tripId, userId] as const,
+  paymentAttachments: (tripId: string) => ['paymentAttachments', tripId] as const,
   broadcasts: (tripId: string) => ['tripBroadcasts', tripId] as const,
 
   // Pro-specific

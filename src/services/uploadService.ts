@@ -157,7 +157,9 @@ export async function uploadToStorage(
 
 export async function insertMediaIndex(params: {
   tripId: string;
-  mediaType: MediaType;
+  // 'document' is accepted for non-image/video assets (e.g. PDFs) that still belong in the
+  // unified media index. The exported `MediaType` stays image|video for existing callers.
+  mediaType: MediaType | 'document';
   url: string;
   uploadPath?: string;
   filename?: string;
@@ -170,6 +172,8 @@ export async function insertMediaIndex(params: {
   height?: number;
   durationSeconds?: number;
   tags?: string[];
+  /** Extra source-context fields merged into the stored metadata (e.g. payment provenance). */
+  extraMetadata?: Record<string, unknown>;
 }) {
   const normalizedMimeType =
     params.mimeType && params.mimeType.length > 0 ? params.mimeType : undefined;
@@ -183,15 +187,18 @@ export async function insertMediaIndex(params: {
       file_size: params.fileSize ?? null,
       mime_type: normalizedMimeType ?? null,
       message_id: params.messageId ?? null,
-      metadata: normalizeMediaMetadata({
-        ownerUserId: params.uploadedBy ?? 'unknown',
-        checksum: params.checksum ?? '',
-        uploadPath: params.uploadPath,
-        width: params.width,
-        height: params.height,
-        durationSeconds: params.durationSeconds,
-        tags: params.tags,
-      }),
+      metadata: {
+        ...normalizeMediaMetadata({
+          ownerUserId: params.uploadedBy ?? 'unknown',
+          checksum: params.checksum ?? '',
+          uploadPath: params.uploadPath,
+          width: params.width,
+          height: params.height,
+          durationSeconds: params.durationSeconds,
+          tags: params.tags,
+        }),
+        ...(params.extraMetadata ?? {}),
+      },
       caption: null,
       tags: [],
     })

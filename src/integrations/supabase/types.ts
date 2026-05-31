@@ -1941,6 +1941,62 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_attachments: {
+        Row: {
+          attachment_type: string
+          created_at: string
+          file_name: string | null
+          file_size: number | null
+          id: string
+          metadata: Json
+          mime_type: string | null
+          payment_message_id: string
+          storage_path: string | null
+          title: string | null
+          trip_id: string
+          uploaded_by: string
+          url: string | null
+        }
+        Insert: {
+          attachment_type: string
+          created_at?: string
+          file_name?: string | null
+          file_size?: number | null
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          payment_message_id: string
+          storage_path?: string | null
+          title?: string | null
+          trip_id: string
+          uploaded_by: string
+          url?: string | null
+        }
+        Update: {
+          attachment_type?: string
+          created_at?: string
+          file_name?: string | null
+          file_size?: number | null
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          payment_message_id?: string
+          storage_path?: string | null
+          title?: string | null
+          trip_id?: string
+          uploaded_by?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_attachments_payment_message_id_fkey"
+            columns: ["payment_message_id"]
+            isOneToOne: false
+            referencedRelation: "trip_payment_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_splits: {
         Row: {
           amount_owed: number

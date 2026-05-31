@@ -11,6 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { PaymentErrorHandler } from '@/services/paymentErrors';
 import { formatCurrency } from '@/services/currencyService';
 import { CURRENCIES } from '@/constants/currencies';
+import { useFeatureFlag } from '@/lib/featureFlags';
+import { usePaymentAttachmentDraft } from '@/features/payments/hooks/usePaymentAttachmentDraft';
+import { PaymentAttachmentPicker } from '@/features/payments/components/PaymentAttachmentPicker';
 
 interface CreatePaymentModalProps {
   isOpen: boolean;
@@ -47,6 +50,8 @@ export const CreatePaymentModal = ({
 }: CreatePaymentModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const attachmentsEnabled = useFeatureFlag('payment_attachments', true);
+  const attachmentDraft = usePaymentAttachmentDraft();
 
   const {
     amount,
@@ -65,6 +70,9 @@ export const CreatePaymentModal = ({
     getPaymentData,
     resetForm,
   } = usePaymentSplits(tripMembers);
+
+  // Attachments are only available for real (non-demo) trips with the kill switch on.
+  const showAttachments = attachmentsEnabled && !demoActive;
 
   if (!isOpen) return null;
 
@@ -120,6 +128,22 @@ export const CreatePaymentModal = ({
           createdAt: new Date().toISOString(),
           isSettled: false,
         };
+
+        // Attach staged proof/context AFTER the payment exists. The draft hook handles per-item
+        // failures, cache invalidation, and clearing itself; failures never block the payment.
+        if (showAttachments && attachmentDraft.count > 0) {
+          await attachmentDraft.commit({
+            tripId,
+            paymentId: result.paymentId,
+            uploadedBy: userId,
+            context: {
+              description: paymentData.description,
+              amount: paymentData.amount,
+              currency: paymentData.currency,
+            },
+          });
+        }
+
         resetForm();
         onPaymentCreated?.(newPayment);
         onClose();
@@ -333,6 +357,17 @@ export const CreatePaymentModal = ({
                 })}
               </div>
             </div>
+
+            {/* Optional attachments */}
+            {showAttachments && (
+              <PaymentAttachmentPicker
+                pending={attachmentDraft.pending}
+                onAddFiles={attachmentDraft.addFiles}
+                onAddUrl={attachmentDraft.addUrl}
+                onRemove={attachmentDraft.remove}
+                disabled={isSubmitting}
+              />
+            )}
 
             {/* Actions */}
             <div className="flex gap-3 pt-2">
