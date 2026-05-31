@@ -13,6 +13,7 @@ import {
   createErrorResponse,
   createOptionsResponse,
 } from '../_shared/securityHeaders.ts';
+import { normalizeSubscriptionTierForCheckout } from './checkoutTier.ts';
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -154,7 +155,7 @@ serve(async req => {
       priceIdKey = tier;
     } else {
       // Subscription: normalize tier
-      const normalizedTier = tier.replace('consumer-', '');
+      const normalizedTier = normalizeSubscriptionTierForCheckout(tier);
       logStep('Normalized tier', { original: tier, normalized: normalizedTier });
 
       if (normalizedTier === 'explorer' || normalizedTier === 'frequent-chraveler') {
