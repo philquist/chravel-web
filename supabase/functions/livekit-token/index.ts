@@ -17,6 +17,8 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import { requireSecrets } from '../_shared/validateSecrets.ts';
 import { getBearerToken } from '../_shared/authHeaders.ts';
 import { generateAgentAssertion } from '../_shared/security/agentAssertions.ts';
+import { isFeatureEnabled } from '../_shared/featureFlags.ts';
+import { realtimeVoiceDisabledPayload } from '../_shared/voiceProductPath.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -35,6 +37,13 @@ serve(async req => {
 
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  if (!(await isFeatureEnabled('realtime_voice', false))) {
+    return new Response(JSON.stringify(realtimeVoiceDisabledPayload()), {
+      status: 410,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   // Validate required secrets — requireSecrets() throws on missing keys

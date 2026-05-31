@@ -45,8 +45,8 @@ export interface MessageBubbleProps {
   messageType?: 'channel' | 'trip';
   transportMode?: 'legacy' | 'stream';
   isDeleted?: boolean;
-  onEdit?: (messageId: string, newContent: string) => void;
-  onDelete?: (messageId: string) => void;
+  onEdit?: (messageId: string, newContent: string) => void | Promise<void>;
+  onDelete?: (messageId: string) => void | Promise<void>;
   // Thread support
   replyCount?: number;
   threadPreviewSnippet?: string;

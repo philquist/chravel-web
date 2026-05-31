@@ -16,7 +16,10 @@ export const tripKeys = {
 
   // Trip detail
   detail: (tripId: string) => ['trip', tripId] as const,
+  detailForUser: (tripId: string, userId: string) => [...tripKeys.detail(tripId), userId] as const,
   members: (tripId: string) => ['trip-members', tripId] as const,
+  membersWithRevision: (tripId: string, revision: number) =>
+    [...tripKeys.members(tripId), revision] as const,
 
   // Tab-specific data
   chat: (tripId: string) => ['tripChat', tripId] as const,

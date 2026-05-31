@@ -29,9 +29,15 @@ export class MediaCountExceededError extends Error {
  * Resolve the user's freemium tier from their profile.
  * Returns 'free' if lookup fails (safe default — most restrictive).
  */
+export function mapEntitlementTierToFreemiumTier(tier: string): FreemiumTier {
+  if (tier === 'free') return 'free';
+  if (tier === 'explorer') return 'explorer';
+  return 'frequent-chraveler';
+}
+
 async function resolveUserTier(userId: string): Promise<FreemiumTier> {
   const tier = await resolveEffectiveTier(userId);
-  return tier === 'free' ? 'free' : tier === 'explorer' ? 'explorer' : 'frequent-chraveler';
+  return mapEntitlementTierToFreemiumTier(tier);
 }
 
 /**

@@ -58,7 +58,7 @@ describe('useTripMembersQuery', () => {
     vi.mocked(tripService.getTripMembersWithCreator).mockResolvedValue({
       members: [
         { id: 'user-1', name: 'Creator', avatar: undefined, isCreator: true },
-        { id: 'user-2', name: 'Member', avatar: undefined, isCreator: false },
+        { id: 'user-2', name: 'Member', avatar: undefined, isCreator: false, role: 'admin' },
       ],
       creatorId: 'user-1',
     });
@@ -73,6 +73,7 @@ describe('useTripMembersQuery', () => {
 
     expect(result.current.tripMembers).toHaveLength(2);
     expect(result.current.tripMembers[0].name).toBe('Creator');
+    expect(result.current.tripMembers[1].role).toBe('admin');
     expect(result.current.hadMembersError).toBe(false);
   });
 

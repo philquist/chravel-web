@@ -10,6 +10,7 @@ import { BaseBillingProvider } from './base';
 import { BILLING_PRODUCTS, getProductByTier } from '../config';
 import { getEntitlements } from '../entitlements';
 import { openExternalUrl } from '@/platform/navigation';
+import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
 import type {
   BillingPlatform,
   Product,
@@ -83,10 +84,15 @@ export class StripeProvider extends BaseBillingProvider {
       }
 
       // Call create-checkout Edge Function
+      const billingPlatform =
+        typeof navigator === 'undefined'
+          ? 'web'
+          : detectNativeBillingPlatform(navigator.userAgent || '', isNativeWebView());
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           tier: tierKey,
           billing_cycle: request.billingCycle,
+          platform: billingPlatform,
         },
       });
 

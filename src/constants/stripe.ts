@@ -206,6 +206,13 @@ export const STRIPE_PRODUCTS = {
     price: 49,
     member_limit: 50,
   },
+  'pro-growth': {
+    product_id: PRO_PLANS.growth.product_id,
+    price_id: PRO_PLANS.growth.price_id,
+    name: 'Pro Growth',
+    price: 99,
+    member_limit: 100,
+  },
   'pro-growing': {
     product_id: PRO_PLANS.growth.product_id,
     price_id: PRO_PLANS.growth.price_id,
@@ -226,7 +233,7 @@ export type StripeTier = keyof typeof STRIPE_PRODUCTS;
 
 export const SUBSCRIPTION_TIER_MAP = {
   starter: 'pro-starter',
-  growing: 'pro-growing',
+  growing: 'pro-growth',
   enterprise: 'pro-enterprise',
   'enterprise-plus': 'pro-enterprise',
 } as const;

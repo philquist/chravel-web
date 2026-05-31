@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  detectNativeBillingPlatform,
   isCapacitorNativeShell,
   isChravelNativeShell,
   isInstalledApp,
@@ -132,5 +133,22 @@ describe('platformDetection', () => {
 
     expect(isCapacitorNativeShell()).toBe(false);
     expect(isNativeWebView()).toBe(false);
+  });
+
+  it('resolves native billing platform without falling back to web checkout', () => {
+    expect(
+      detectNativeBillingPlatform(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 ChravelNative/1',
+        true,
+      ),
+    ).toBe('ios');
+    expect(
+      detectNativeBillingPlatform(
+        'Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/UP1A; wv) AppleWebKit/537.36',
+        true,
+      ),
+    ).toBe('android');
+    expect(detectNativeBillingPlatform('CustomNativeShell/1', true)).toBe('android');
+    expect(detectNativeBillingPlatform('Mozilla/5.0 Safari/605.1.15', false)).toBe('web');
   });
 });
