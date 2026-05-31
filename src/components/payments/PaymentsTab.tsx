@@ -95,7 +95,8 @@ export const PaymentsTab = React.memo(({ tripId }: PaymentsTabProps) => {
     await Promise.all([refreshPayments(), refreshBalanceSummary()]);
   }, [refreshPayments, refreshBalanceSummary]);
 
-  // Handle payment submission. Returns true on success so PaymentInput only resets form when payment persists.
+  // Handle payment submission. Returns the new payment id on success so PaymentInput can attach
+  // staged proof/context and only resets the form when the payment persists.
   const handlePaymentSubmit = async (paymentData: {
     amount: number;
     currency: string;
@@ -103,7 +104,7 @@ export const PaymentsTab = React.memo(({ tripId }: PaymentsTabProps) => {
     splitCount: number;
     splitParticipants: string[];
     paymentMethods: string[];
-  }): Promise<boolean> => {
+  }): Promise<{ success: boolean; paymentId?: string }> => {
     const result = await createPaymentMessage(paymentData);
 
     if (result.success && result.paymentId) {
@@ -116,7 +117,7 @@ export const PaymentsTab = React.memo(({ tripId }: PaymentsTabProps) => {
           description: `${paymentData.description} - ${formatCurrency(paymentData.amount, paymentData.currency)}`,
         });
       }
-      return true;
+      return { success: true, paymentId: result.paymentId };
     }
 
     if (result.error) {
@@ -127,7 +128,7 @@ export const PaymentsTab = React.memo(({ tripId }: PaymentsTabProps) => {
         variant: 'destructive',
       });
     }
-    return false;
+    return { success: false };
   };
 
   // ⚡ PROGRESSIVE LOADING: Only block on payment data (fast from cache).
