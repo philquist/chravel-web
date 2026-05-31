@@ -16,7 +16,9 @@ Branch `claude/brave-maxwell-G6N6z`, PR #664.
   `PricingSection`, `TripExportModal` (and `PlusUpsellModal` already used `CONSUMER_PRICING`).
 - **RevenueCat collapse** — deleted dead `src/config/revenuecat.ts` (+test); web=Stripe, RC native-only.
   `constants/revenuecat.ts` + `integrations/revenuecat/revenuecatClient.ts` are the single integration.
-- **Events fold-in (config + copy):** removed the paid Events tab + $29/$199 cards from `UpgradeModal`.
+- **Events fold-in (config + copy):** removed the paid Events tab, the dead/unreachable
+  "Chravel Events" else-branch, and the $29/$199 Events pricing cards from `UpgradeModal` entirely
+  (file 571→384 lines).
   `FEATURE_LIMITS.event_creation` and `FREEMIUM_LIMITS.*.eventsLimit` now agree: **Free 3 / Explorer 3 /
   Frequent Chraveler -1 (unlimited) / Pro -1**. Copy reads "Up to 3 events" (Free/Explorer) and
   "Unlimited events" (Frequent Chraveler). Parity test asserts these invariants.
