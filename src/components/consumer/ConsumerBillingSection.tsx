@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Crown, Globe, Sparkles, Building, TrendingUp, Shield } from 'lucide-react';
 import { useConsumerSubscription } from '../../hooks/useConsumerSubscription';
 import { CONSUMER_PRICING } from '../../types/consumer';
+import { CONSUMER_PRICE_DISPLAY } from '@/billing/pricingDisplay';
+import { BILLING_PRODUCTS } from '@/billing/config';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -295,9 +297,17 @@ export const ConsumerBillingSection = () => {
         </div>
         <div className="text-sm text-gray-400 mb-4">
           {billingCycle === 'monthly' ? (
-            <span>Explorer: $9.99/mo • Frequent Chraveler: $19.99/mo</span>
+            <span>
+              Explorer: {CONSUMER_PRICE_DISPLAY.explorer.monthly}/mo • Frequent Chraveler:{' '}
+              {CONSUMER_PRICE_DISPLAY['frequent-chraveler'].monthly}/mo
+            </span>
           ) : (
-            <span>Explorer: $99/yr ($8.25/mo) • Frequent Chraveler: $199/yr ($16.58/mo)</span>
+            <span>
+              Explorer: {CONSUMER_PRICE_DISPLAY.explorer.annual}/yr (
+              {CONSUMER_PRICE_DISPLAY.explorer.annualPerMonth}/mo) • Frequent Chraveler:{' '}
+              {CONSUMER_PRICE_DISPLAY['frequent-chraveler'].annual}/yr (
+              {CONSUMER_PRICE_DISPLAY['frequent-chraveler'].annualPerMonth}/mo)
+            </span>
           )}
         </div>
       </div>
@@ -469,7 +479,7 @@ export const ConsumerBillingSection = () => {
 const proPlans = {
   'pro-starter': {
     name: 'Starter Pro',
-    price: 49,
+    price: BILLING_PRODUCTS['pro-starter'].priceMonthly,
     icon: Building,
     features: [
       'Up to 50 team members',
@@ -484,7 +494,7 @@ const proPlans = {
   },
   'pro-growth': {
     name: 'Growth Pro',
-    price: 99,
+    price: BILLING_PRODUCTS['pro-growth'].priceMonthly,
     icon: TrendingUp,
     features: [
       'Up to 100 team members',

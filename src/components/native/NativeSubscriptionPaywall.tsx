@@ -11,6 +11,7 @@ import {
 } from '@/integrations/revenuecat/revenuecatClient';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { toast } from 'sonner';
+import { CONSUMER_PRICE_DISPLAY } from '@/billing/pricingDisplay';
 
 interface PlanFeature {
   text: string;
@@ -37,10 +38,10 @@ const PLANS: PricingPlan[] = [
     id: 'explorer',
     name: 'Explorer',
     subtitle: 'Perfect for casual travelers',
-    monthlyPrice: '$9.99',
-    yearlyPrice: '$99',
-    yearlyPerMonth: '$8.25',
-    savings: 'Save 17%',
+    monthlyPrice: CONSUMER_PRICE_DISPLAY.explorer.monthly,
+    yearlyPrice: CONSUMER_PRICE_DISPLAY.explorer.annual,
+    yearlyPerMonth: CONSUMER_PRICE_DISPLAY.explorer.annualPerMonth,
+    savings: `Save ${CONSUMER_PRICE_DISPLAY.explorer.annualSavingsPct}%`,
     packageId: '$rc_monthly',
     icon: <Sparkles size={24} />,
     gradient: 'from-primary to-primary/80',
@@ -51,6 +52,7 @@ const PLANS: PricingPlan[] = [
       { text: 'Smart Calendar Import', included: true },
       { text: 'Location-aware AI suggestions', included: true },
       { text: 'Calendar sync', included: true },
+      { text: 'Up to 3 events', included: true },
       { text: 'Unlimited AI queries', included: false },
       { text: 'Pro trip creation', included: false },
     ],
@@ -59,10 +61,10 @@ const PLANS: PricingPlan[] = [
     id: 'frequent-chraveler',
     name: 'Frequent Chraveler',
     subtitle: 'For the avid traveler',
-    monthlyPrice: '$19.99',
-    yearlyPrice: '$199',
-    yearlyPerMonth: '$16.58',
-    savings: 'Save 17%',
+    monthlyPrice: CONSUMER_PRICE_DISPLAY['frequent-chraveler'].monthly,
+    yearlyPrice: CONSUMER_PRICE_DISPLAY['frequent-chraveler'].annual,
+    yearlyPerMonth: CONSUMER_PRICE_DISPLAY['frequent-chraveler'].annualPerMonth,
+    savings: `Save ${CONSUMER_PRICE_DISPLAY['frequent-chraveler'].annualSavingsPct}%`,
     popular: true,
     packageId: '$rc_annual',
     icon: <Crown size={24} />,

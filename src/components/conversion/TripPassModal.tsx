@@ -6,6 +6,7 @@ import { Badge } from '../ui/badge';
 import { Check, Globe, Sparkles, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
 
 interface TripPassModalProps {
   open: boolean;
@@ -17,8 +18,8 @@ const passes = [
     id: 'pass-explorer-45',
     tier: 'explorer',
     name: 'Explorer Trip Pass',
-    duration: '45 days',
-    price: '$39.99',
+    duration: `${TRIP_PASS_DISPLAY.explorer.durationDays} days`,
+    price: TRIP_PASS_DISPLAY.explorer.price,
     icon: <Globe size={24} />,
     description: 'Full Explorer features for one trip window',
     features: [
@@ -30,14 +31,14 @@ const passes = [
       'Location-aware AI recommendations',
       'Search past trips and memories',
     ],
-    nudge: 'Annual Explorer ($99/yr) pays for itself after ~3 trips',
+    nudge: `Annual Explorer (${CONSUMER_PRICE_DISPLAY.explorer.annual}/yr) pays for itself after ~3 trips`,
   },
   {
     id: 'pass-frequent-90',
     tier: 'frequent-chraveler',
     name: 'Frequent Chraveler Trip Pass',
-    duration: '90 days',
-    price: '$74.99',
+    duration: `${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays} days`,
+    price: TRIP_PASS_DISPLAY['frequent-chraveler'].price,
     icon: <Sparkles size={24} />,
     description: 'Full Frequent Chraveler features for multi-city trips',
     features: [
@@ -48,7 +49,7 @@ const passes = [
       'Custom trip categories',
       'Early feature access',
     ],
-    nudge: 'Annual Frequent ($199/yr) pays for itself after ~3 trips',
+    nudge: `Annual Frequent (${CONSUMER_PRICE_DISPLAY['frequent-chraveler'].annual}/yr) pays for itself after ~3 trips`,
   },
 ];
 

@@ -1,44 +1,44 @@
-# Pricing Unification — Handoff / Verification Needed
+# Pricing Unification — Status
 
-Branch `claude/brave-maxwell-G6N6z`, PR #664. Last commit observed: `42b9fe4`
-("feat(pricing): single-source pricing display, collapse RevenueCat config, fold events into Frequent Chraveler").
+Branch `claude/brave-maxwell-G6N6z`, PR #664.
 
-The work session ended with **corrupted terminal output**, so the committed state of the UI
-components below could NOT be confirmed. **Verify these before trusting the branch.**
+## ✅ Done (verified: tsc 0 errors, build green, pricingParity 15/15, eslint clean)
 
-## CONFIRMED done (typecheck + build + 15 parity tests passed at least once)
-- `src/billing/pricingDisplay.ts` — NEW: formats all prices from `billing/config.ts` (CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY, monthlyPriceLabel).
-- `src/types/consumer.ts` `CONSUMER_PRICING` — derives prices from `BILLING_PRODUCTS`/`TRIP_PASS_PRODUCTS`.
-- `src/types/pro.ts` `SUBSCRIPTION_TIERS` — `price` derives from `BILLING_PRODUCTS`.
-- `src/billing/entitlements.ts` `FEATURE_LIMITS.event_creation` = Free 3 / Explorer 3 / FC -1 / Pro -1.
-- `src/utils/featureTiers.ts` — free `eventsLimit:3`+`freeEventsLimit:3`, explorer `eventsLimit:3`, FC `eventsLimit:-1`; removed a duplicate `canCreateEvents` key in FC.
-- Deleted dead `src/config/revenuecat.ts` + `src/config/revenuecat.test.ts` (RevenueCat collapse; web=Stripe, RC native-only). No production importers existed.
-- `src/billing/__tests__/pricingParity.test.ts` — extended (15 tests) to lock CONSUMER_PRICING/SUBSCRIPTION_TIERS/pricingDisplay + event-limit invariants.
+**Single source of truth = `src/billing/config.ts`.** All pricing now derives from it.
 
-## ⚠️ MUST VERIFY (state uncertain due to corrupted output)
-Run: `git show HEAD:src/components/UpgradeModal.tsx | grep -nE "CONSUMER_PRICE_DISPLAY|'9.99'|'events'|setSelectedPlan\('events'\)"`
+- `src/billing/pricingDisplay.ts` — formats every price label (monthly/annual/annual-per-month/
+  savings/savings-%/trip-pass) from `BILLING_PRODUCTS` / `TRIP_PASS_PRODUCTS`. No hardcoded numbers.
+- `src/types/consumer.ts` `CONSUMER_PRICING` and `src/types/pro.ts` `SUBSCRIPTION_TIERS` — prices
+  derive from `BILLING_PRODUCTS` (no literals).
+- **No hardcoded consumer price strings remain** in the UI (swept `src/**`, excluding the canonical
+  config files + the `iap.ts` scaffold → 0 hits). Components converted:
+  `UpgradeModal`, `ConsumerBillingSection`, `TripPassModal`, `NativeSubscriptionPaywall`,
+  `PricingSection`, `TripExportModal` (and `PlusUpsellModal` already used `CONSUMER_PRICING`).
+- **RevenueCat collapse** — deleted dead `src/config/revenuecat.ts` (+test); web=Stripe, RC native-only.
+  `constants/revenuecat.ts` + `integrations/revenuecat/revenuecatClient.ts` are the single integration.
+- **Events fold-in (config + copy):** removed the paid Events tab + $29/$199 cards from `UpgradeModal`.
+  `FEATURE_LIMITS.event_creation` and `FREEMIUM_LIMITS.*.eventsLimit` now agree: **Free 3 / Explorer 3 /
+  Frequent Chraveler -1 (unlimited) / Pro -1**. Copy reads "Up to 3 events" (Free/Explorer) and
+  "Unlimited events" (Frequent Chraveler). Parity test asserts these invariants.
 
-Expected AFTER my edits (if they committed):
-- imports `CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY` from `@/billing/pricingDisplay`
-- NO hardcoded `'9.99'/'19.99'/'8.25'/'16.58'/'Save $20'/'$39.99 for 45 days'` — all replaced with `CONSUMER_PRICE_DISPLAY[selectedPlan].*` / `TRIP_PASS_DISPLAY[selectedPlan].label`
-- `activeTab` type is `'plans' | 'pro'` (Events TAB removed); the paid Events pricing block (Events Free $0 / Plus $29 / Pro $199) removed
-- FC features include "Unlimited events"; Explorer features include "Up to 3 events"
+## ⚠️ Remaining follow-up — event-count ENFORCEMENT (not just display)
 
-If the committed UpgradeModal still shows hardcoded values / an `'events'` tab, **the edits did not persist and must be re-applied.** Same check for these other components (should import from `@/billing/pricingDisplay` and have NO `$9.99`-style literals):
-- `src/components/conversion/PricingSection.tsx`
-- `src/components/conversion/TripPassModal.tsx`
-- `src/components/consumer/ConsumerBillingSection.tsx`
-- `src/components/native/NativeSubscriptionPaywall.tsx`
-- `src/components/trip/TripExportModal.tsx`
+`useUnifiedEntitlements.canCreateEvent = canUse('event_creation')` is called WITHOUT a usage count, so
+it only checks feature availability (now always true for Free since the limit is 3 > 0). The actual
+"3 events then must upgrade" cap is enforced via the DB columns `profiles.free_event_limit` /
+`profiles.free_events_used` (read in `useAuth.tsx`). To make the 3-event lifetime cap real:
 
-Quick sweep: `grep -rnE "\$[0-9]+(\.[0-9]{2})?" src/components/{UpgradeModal,conversion/PricingSection,conversion/TripPassModal,consumer/ConsumerBillingSection,native/NativeSubscriptionPaywall,trip/TripExportModal}.tsx | grep -v '\$0\b'` → should return (almost) nothing.
+1. Migration: set `profiles.free_event_limit` default to **3** (was 1) and backfill existing rows
+   (`UPDATE profiles SET free_event_limit = 3 WHERE free_event_limit = 1;`). Two-phase if needed.
+2. Ensure the event-create flow increments `free_events_used` and blocks at the limit for Free/Explorer,
+   routing the upgrade CTA to **Frequent Chraveler**. (Or pass `usageCount` into
+   `canUse('event_creation', { usageCount })` so the FEATURE_LIMITS path enforces it directly — then the
+   two systems converge on one.)
 
-Also confirm the commit actually contains these files: `git show --stat HEAD` (and earlier commits on the branch). If the "6 files changed" diffstat was the whole commit, the component edits were NOT committed.
+This is a deliberate, separate change (DB default + gate wiring) and was left out of the UI/config PR.
 
-## Still TODO this phase (not done)
-- Events: the `useEventCreationGate` already routes upgrade → Frequent Chraveler and reads `eventsLimit`; confirm DB `profiles.free_event_limit` default supports a 3-event cap (may need a migration — app constant says 3).
-- The 3 dashboard UPDATE browser-agent scripts are in the plan file `/root/.claude/plans/comprehensive-payment-stateful-mochi.md` (Stripe / RevenueCat / App Store Connect) — move them into `docs/ACTIVE/` if they should live in the repo.
-- Pre-existing, UNRELATED test failures (do not block this work): `useStreamTripChat.pin`, `useTripTasks`, `useTripBasecamp.offline`, `useTripDetailData`, `NativeSettings` (fails with "useAuth must be used within an AuthProvider" — a test-harness issue, not pricing).
+## Dashboard UPDATE scripts (Stripe / RevenueCat / App Store Connect)
 
-## Validation last seen GREEN
-`npm run typecheck` ✓ · `npm run build` ✓ · `vitest run src/billing/__tests__/pricingParity.test.ts` → 15/15 ✓ (after the featureTiers duplicate-key fix).
+In the plan file `/root/.claude/plans/comprehensive-payment-stateful-mochi.md`. They diff each dashboard
+against the canonical matrix and update mismatches to the LOWER price. Move into `docs/ACTIVE/` if they
+should live in the repo. (Audit-only scripts already in `docs/ACTIVE/{stripe,revenuecat,app-store-connect}-audit-browser-agent.md`.)

@@ -11,7 +11,6 @@ import {
   Wallet,
   Globe,
   Phone,
-  CalendarPlus,
   UserCheck,
   Clock,
   FileText,
@@ -24,6 +23,7 @@ import {
 import { useConsumerSubscription } from '../hooks/useConsumerSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -113,17 +113,6 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
               <Building size={18} />
               Chravel Pro
             </button>
-            <button
-              onClick={() => setSelectedPlan('events')}
-              className={`px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 ${
-                selectedPlan === 'events'
-                  ? 'bg-gradient-to-r from-primary to-primary/80 text-white'
-                  : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              <CalendarPlus size={18} />
-              Events
-            </button>
           </div>
         </div>
 
@@ -187,29 +176,25 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
             <div className="text-center">
               <div className="bg-gradient-to-r from-glass-orange/20 to-glass-yellow/20 backdrop-blur-sm border border-glass-orange/30 rounded-2xl p-6 mb-6">
                 <div className="text-4xl font-bold text-white mb-2">
-                  $
                   {billingCycle === 'monthly'
-                    ? selectedPlan === 'explorer'
-                      ? '9.99'
-                      : '19.99'
-                    : selectedPlan === 'explorer'
-                      ? '99'
-                      : '199'}
+                    ? CONSUMER_PRICE_DISPLAY[consumerPlan].monthly
+                    : CONSUMER_PRICE_DISPLAY[consumerPlan].annual}
                   {billingCycle === 'monthly' ? '/month' : '/year'}
                 </div>
                 {billingCycle === 'annual' && (
                   <>
                     <div className="text-sm text-gray-300 mb-1">
-                      ${selectedPlan === 'explorer' ? '8.25' : '16.58'}/month when billed annually
+                      {CONSUMER_PRICE_DISPLAY[consumerPlan].annualPerMonth}/month when billed
+                      annually
                     </div>
                     <div className="text-green-400 text-sm mb-2">
-                      Save ${selectedPlan === 'explorer' ? '20' : '40'}/year (17% off)
+                      {CONSUMER_PRICE_DISPLAY[consumerPlan].annualSavingsLabel} (
+                      {CONSUMER_PRICE_DISPLAY[consumerPlan].annualSavingsPct}% off)
                     </div>
                   </>
                 )}
                 <p className="text-gray-400 text-xs mt-1">
-                  Or get a Trip Pass:{' '}
-                  {selectedPlan === 'explorer' ? '$39.99 for 45 days' : '$74.99 for 90 days'}
+                  Or get a Trip Pass: {TRIP_PASS_DISPLAY[consumerPlan].label}
                 </p>
                 <p className="text-gray-300 mb-4">14-day free trial • Cancel anytime</p>
               </div>
@@ -240,6 +225,10 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
                     <li className="flex items-start gap-2">
                       <div className="w-1.5 h-1.5 bg-glass-orange rounded-full mt-2 flex-shrink-0"></div>
                       Search past trips - find that perfect restaurant again
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 bg-glass-orange rounded-full mt-2 flex-shrink-0"></div>
+                      Up to 3 events (upgrade to Frequent Chraveler for unlimited)
                     </li>
                     <li className="flex items-start gap-2">
                       <div className="w-1.5 h-1.5 bg-glass-orange rounded-full mt-2 flex-shrink-0"></div>
