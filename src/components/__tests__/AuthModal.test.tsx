@@ -155,6 +155,19 @@ describe('AuthModal', () => {
       });
     });
 
+    it('uses an opaque viewport scrim and renders a single ChravelApp wordmark', async () => {
+      render(<AuthModal isOpen={true} onClose={mockOnClose} />, {
+        wrapper: createTestWrapper(),
+      });
+
+      await waitFor(() => {
+        const scrim = screen.getByTestId('auth-modal-scrim');
+        expect(scrim).toHaveClass('bg-slate-950');
+        expect(scrim).not.toHaveClass('bg-slate-950/85');
+        expect(screen.getAllByText('ChravelApp')).toHaveLength(1);
+      });
+    });
+
     it('calls onClose when X button is clicked', async () => {
       render(<AuthModal isOpen={true} onClose={mockOnClose} />, {
         wrapper: createTestWrapper(),

@@ -1327,11 +1327,14 @@
 @layer utilities {
   /* Premium gold gradient text — brand wordmarks */
   .text-gradient-gold {
+    display: inline-block;
     background: linear-gradient(135deg, #533517 0%, #c49746 50%, #feeaa5 100%);
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     background-clip: text;
-    color: transparent;
+    /* Only -webkit-text-fill-color — `color: transparent` ghosts a second glyph on Android WebView */
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    transform: translateZ(0);
   }
 
   /* Hide scrollbars while maintaining scroll functionality */
