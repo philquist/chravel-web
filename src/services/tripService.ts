@@ -614,7 +614,13 @@ export const tripService = {
    * Reduces 3 sequential round-trips to 1 parallel batch
    */
   async getTripMembersWithCreator(tripId: string): Promise<{
-    members: Array<{ id: string; name: string; avatar?: string; isCreator?: boolean }>;
+    members: Array<{
+      id: string;
+      name: string;
+      avatar?: string;
+      isCreator?: boolean;
+      role?: string;
+    }>;
     creatorId: string | null;
   }> {
     // NOTE: Auth is now handled by useTripDetailData hook (gates query on authUserId)
@@ -694,6 +700,7 @@ export const tripService = {
                 'Trip Creator',
               avatar: creatorProfile?.avatar_url,
               isCreator: true,
+              role: 'admin',
             },
           ],
           creatorId,
@@ -719,6 +726,7 @@ export const tripService = {
         name: profile?.resolved_display_name || profile?.display_name || FORMER_MEMBER_LABEL,
         avatar: profile?.avatar_url,
         isCreator: m.user_id === creatorId,
+        role: m.role || 'member',
       };
     });
 
@@ -747,6 +755,7 @@ export const tripService = {
               'Trip Creator',
             avatar: creatorProfile?.avatar_url,
             isCreator: true,
+            role: creatorMembership?.role || 'admin',
           },
           ...members,
         ];

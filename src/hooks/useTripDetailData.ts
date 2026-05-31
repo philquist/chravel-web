@@ -7,6 +7,7 @@ import { getTripById as getDemoTripById } from '@/data/tripsData';
 import { convertSupabaseTripToMock } from '@/utils/tripConverter';
 import { useDemoTripMembersStore } from '@/store/demoTripMembersStore';
 import { errorTracking } from '@/utils/errorTracking';
+import { isDemoTrip } from '@/utils/demoUtils';
 
 interface TripMember {
   id: string;
@@ -63,8 +64,7 @@ export const useTripDetailData = (tripId: string | undefined): UseTripDetailData
   }
 
   // Demo mode: Fast path - synchronous, no network
-  const isNumericId = tripId ? /^\d+$/.test(tripId) : false;
-  const shouldUseDemoPath = isDemoMode && isNumericId;
+  const shouldUseDemoPath = isDemoMode && isDemoTrip(tripId);
 
   // Get demo members from store for numeric trip IDs
   const demoAddedMembersCount = useDemoTripMembersStore(state =>
@@ -85,7 +85,7 @@ export const useTripDetailData = (tripId: string | undefined): UseTripDetailData
   // 🔑 Include authUserId in query key to prevent anon cache poisoning auth cache
   // 🔒 FIX: Use authUserId (from session) for consistent cache keys
   const tripQuery = useQuery({
-    queryKey: [...tripKeys.detail(tripId!), authUserId ?? 'anon'],
+    queryKey: tripKeys.detailForUser(tripId!, authUserId ?? 'anon'),
     queryFn: async () => {
       const startTime = performance.now();
       errorTracking.addBreadcrumb({
@@ -123,7 +123,7 @@ export const useTripDetailData = (tripId: string | undefined): UseTripDetailData
   // ⚡ PRIORITY 2: Members data - can render progressively
   // 🔑 CANONICAL: Same key as useTripMembersQuery so Trip Members + Payments share cache
   const membersQuery = useQuery({
-    queryKey: [...tripKeys.members(tripId!), demoAddedMembersCount],
+    queryKey: tripKeys.membersWithRevision(tripId!, demoAddedMembersCount),
     queryFn: async () => {
       return await tripService.getTripMembersWithCreator(tripId!);
     },
@@ -237,8 +237,7 @@ export const useTripDetailData = (tripId: string | undefined): UseTripDetailData
  * Get mock fallback members for demo trips
  */
 function getMockFallbackMembers(tripId: string): TripMember[] {
-  const isNumericOnly = /^\d+$/.test(tripId);
-  if (!isNumericOnly) return [];
+  if (!isDemoTrip(tripId)) return [];
 
   const numericTripId = parseInt(tripId, 10);
   const trip = getDemoTripById(numericTripId);

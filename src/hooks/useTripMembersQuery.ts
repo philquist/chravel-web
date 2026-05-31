@@ -15,11 +15,17 @@ import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { useDemoTripMembersStore } from '@/store/demoTripMembersStore';
 import { tripKeys, QUERY_CACHE_CONFIG } from '@/lib/queryKeys';
+import { isDemoTrip } from '@/utils/demoUtils';
+import {
+  reportStreamMembershipSyncFailure,
+  syncRemoveMemberFromTripChannels,
+} from '@/services/stream/streamMembershipCoordinator';
 export interface TripMember {
   id: string;
   name: string;
   avatar?: string;
   isCreator?: boolean;
+  role?: string;
 }
 
 interface TripMembersData {
@@ -29,8 +35,7 @@ interface TripMembersData {
 }
 
 const getMockFallbackMembers = (tripId: string): TripMember[] => {
-  const isNumericOnly = /^\d+$/.test(tripId);
-  if (!isNumericOnly) return [];
+  if (!isDemoTrip(tripId)) return [];
 
   const numericTripId = parseInt(tripId, 10);
   const trip = getTripById(numericTripId);
@@ -69,10 +74,8 @@ const getMockFallbackMembers = (tripId: string): TripMember[] => {
  * Fetch trip data and members in PARALLEL for faster loading
  */
 async function fetchTripMembersData(tripId: string, isDemoMode: boolean): Promise<TripMembersData> {
-  const isNumericOnly = /^\d+$/.test(tripId);
-
   // Fast path for demo mode with numeric IDs
-  if (isDemoMode && isNumericOnly) {
+  if (isDemoMode && isDemoTrip(tripId)) {
     const mockMembers = getMockFallbackMembers(tripId);
     return {
       members: mockMembers,
@@ -91,6 +94,7 @@ async function fetchTripMembersData(tripId: string, isDemoMode: boolean): Promis
       name: m.name,
       avatar: m.avatar,
       isCreator: m.isCreator,
+      role: m.role,
     }));
 
     return {
@@ -114,10 +118,11 @@ export const useTripMembersQuery = (tripId?: string) => {
   const demoAddedMembersCount = useDemoTripMembersStore(state =>
     tripId ? state.addedMembers[tripId]?.length || 0 : 0,
   );
+  const membersQueryKey = tripKeys.membersWithRevision(tripId || '', demoAddedMembersCount);
 
   // Main query with caching
   const { data, isLoading, refetch } = useQuery({
-    queryKey: [...tripKeys.members(tripId || ''), demoAddedMembersCount],
+    queryKey: membersQueryKey,
     queryFn: () => fetchTripMembersData(tripId!, isDemoMode),
     enabled: !!tripId,
     staleTime: QUERY_CACHE_CONFIG.members.staleTime,
@@ -188,21 +193,26 @@ export const useTripMembersQuery = (tripId?: string) => {
     },
     onMutate: async userId => {
       await queryClient.cancelQueries({ queryKey: tripKeys.members(tripId!) });
-      const previous = queryClient.getQueryData<TripMembersData>(tripKeys.members(tripId!));
+      const previous = queryClient.getQueryData<TripMembersData>(membersQueryKey);
 
-      queryClient.setQueryData<TripMembersData>(tripKeys.members(tripId!), old => ({
+      queryClient.setQueryData<TripMembersData>(membersQueryKey, old => ({
         ...old!,
         members: old?.members.filter(m => m.id !== userId) || [],
       }));
 
       return { previous };
     },
-    onSuccess: () => {
+    onSuccess: (_, userId) => {
       toast.success('Member removed from trip');
+      if (tripId) {
+        syncRemoveMemberFromTripChannels(tripId, userId).catch(error => {
+          reportStreamMembershipSyncFailure('remove-trip-member', { tripId, userId }, error);
+        });
+      }
     },
     onError: (error, _, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(tripKeys.members(tripId!), context.previous);
+        queryClient.setQueryData(membersQueryKey, context.previous);
       }
       toast.error(error instanceof Error ? error.message : 'Failed to remove member');
     },
@@ -258,6 +268,15 @@ export const useTripMembersQuery = (tripId?: string) => {
       return true;
     },
     onSuccess: () => {
+      if (tripId && user?.id && !isDemoMode) {
+        syncRemoveMemberFromTripChannels(tripId, user.id).catch(error => {
+          reportStreamMembershipSyncFailure(
+            'remove-trip-member',
+            { tripId, userId: user.id },
+            error,
+          );
+        });
+      }
       queryClient.invalidateQueries({ queryKey: tripKeys.members(tripId!) });
     },
     onError: () => {
