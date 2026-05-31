@@ -36,6 +36,12 @@ export interface UpdateTripLinkParams {
   category?: string;
 }
 
+export type TripLinkDeleteSource = 'chat' | 'manual' | 'places';
+
+export function getTripLinkDeleteTable(source: TripLinkDeleteSource): 'trip_link_index' | 'trip_links' {
+  return source === 'manual' ? 'trip_links' : 'trip_link_index';
+}
+
 /**
  * Demo mode storage key generator
  */
@@ -373,6 +379,56 @@ export async function deleteTripLink(
   } catch (error) {
     console.error('[TripLinksService] ❌ Unexpected error', error);
     toast.error('Failed to remove link');
+    return false;
+  }
+}
+
+export async function deleteTripLinkBySource(
+  linkId: string,
+  tripId: string,
+  source: TripLinkDeleteSource,
+  isDemoMode: boolean,
+  options: { suppressToast?: boolean } = {},
+): Promise<boolean> {
+  console.info('[TripLinksService] Deleting trip link by source', {
+    linkId,
+    source,
+    isDemoMode,
+  });
+
+  if (isDemoMode) {
+    const demoLinks = getDemoLinks(tripId);
+    const filteredLinks = demoLinks.filter(link => link.id !== linkId);
+
+    if (filteredLinks.length === demoLinks.length) {
+      console.warn('[TripLinksService] ⚠️ Demo link not found', { linkId });
+      if (!options.suppressToast) toast.error('Link not found');
+      return false;
+    }
+
+    saveDemoLinks(tripId, filteredLinks);
+    if (!options.suppressToast) toast.success('Link removed');
+    return true;
+  }
+
+  try {
+    const table = getTripLinkDeleteTable(source);
+    const { data: deleted, error } = await supabase
+      .from(table)
+      .delete()
+      .eq('id', linkId)
+      .select('id');
+
+    if (error) throw error;
+    if (!deleted || deleted.length !== 1) {
+      throw new Error('Delete failed (not authorized, not found, or already deleted).');
+    }
+
+    if (!options.suppressToast) toast.success('Link removed');
+    return true;
+  } catch (error) {
+    console.error('[TripLinksService] ❌ Delete by source error', error);
+    if (!options.suppressToast) toast.error('Failed to remove link');
     return false;
   }
 }
