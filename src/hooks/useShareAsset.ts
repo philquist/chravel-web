@@ -116,7 +116,7 @@ export function useShareAsset(tripId: string) {
               'image',
               file.type,
               tripId,
-              messageResult?.id?.toString(),
+              (messageResult as any)?.id?.toString(),
             );
             if (parsed && parsed.suggestions && parsed.suggestions.length > 0) {
               setParsedContent(parsed);
@@ -172,7 +172,7 @@ export function useShareAsset(tripId: string) {
               'document',
               file.type,
               tripId,
-              messageResult?.id?.toString(),
+              (messageResult as any)?.id?.toString(),
             );
             if (parsed && parsed.suggestions && parsed.suggestions.length > 0) {
               setParsedContent(parsed);

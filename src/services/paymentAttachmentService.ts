@@ -204,7 +204,7 @@ export async function uploadPaymentFileAttachment(params: {
   });
 
   // 3. Record the join row the payment card reads.
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('payment_attachments')
     .insert({
       trip_id: tripId,
@@ -270,7 +270,7 @@ export async function addPaymentUrlAttachment(params: {
     // A duplicate/link-index failure must not block the payment attachment record.
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('payment_attachments')
     .insert({
       trip_id: tripId,
@@ -300,7 +300,7 @@ export async function fetchPaymentAttachments(
   const ids = paymentMessageIds.filter(Boolean);
   if (ids.length === 0) return grouped;
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('payment_attachments')
     .select(
       'id, payment_message_id, trip_id, attachment_type, file_name, mime_type, file_size, storage_path, url, title, metadata, created_at',

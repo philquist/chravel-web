@@ -791,7 +791,7 @@ export const MobileUnifiedMediaHub = ({ tripId }: MobileUnifiedMediaHubProps) =>
                       setLinkToDelete({
                         id: link.id,
                         title: link.title,
-                        deleteTable: link.deleteTable,
+                        deleteTable: (link as any).deleteTable,
                       })
                     }
                     className="rounded-xl"
