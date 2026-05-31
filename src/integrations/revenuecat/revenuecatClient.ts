@@ -23,23 +23,25 @@ import type {
 import type { SubscriptionTier } from '@/billing/types';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
 
 // Native IAP handled by chravel-mobile.
 // This variable is kept as a null placeholder for the loadPurchasesPlugin() interface.
 const Purchases: unknown | null = null;
 
 /**
- * Get current platform (always 'web' — native handled by chravel-mobile)
+ * Get current platform using the same native detector as billing provider selection.
  */
 export function getPlatform(): RevenueCatPlatform {
-  return 'web';
+  if (typeof navigator === 'undefined') return 'web';
+  return detectNativeBillingPlatform(navigator.userAgent || '', isNativeWebView());
 }
 
 /**
- * Check if we're on a native platform (always false — native handled by chravel-mobile)
+ * Check if we're on a native platform.
  */
 export function isNativePlatform(): boolean {
-  return false;
+  return getPlatform() !== 'web';
 }
 
 /**

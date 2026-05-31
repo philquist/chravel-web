@@ -64,7 +64,7 @@ export const FREEMIUM_LIMITS = {
     urlsPerTrip: -1, // Unlimited
     storageAccountMB: 500,
     activeTripsLimit: 3, // Max 3 active (non-archived) trips
-    paymentRequestsPerTrip: 5, // Max 5 payment requests per trip
+    paymentRequestsPerTrip: 3, // Matches FEATURE_LIMITS.payment_splitting.free
     canCreatePayments: true,
     canSettlePayments: true,
     // Taste test: 1 free Pro trip + 1 free Event
@@ -81,7 +81,7 @@ export const FREEMIUM_LIMITS = {
     urlsPerTrip: -1,
     storageAccountMB: 50000, // 50GB
     activeTripsLimit: -1, // Unlimited
-    paymentRequestsPerTrip: -1, // Unlimited
+    paymentRequestsPerTrip: 10, // Matches FEATURE_LIMITS.payment_splitting.explorer
     canCreatePayments: true,
     canSettlePayments: true,
     // Events bundled into Explorer
