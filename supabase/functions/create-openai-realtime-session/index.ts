@@ -4,6 +4,10 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import { requireSecrets } from '../_shared/validateSecrets.ts';
 import { getBearerToken } from '../_shared/authHeaders.ts';
 import { VOICE_FUNCTION_DECLARATIONS, VOICE_ADDENDUM } from '../_shared/voiceToolDeclarations.ts';
+import {
+  isRealtimeVoiceEnabled,
+  realtimeVoiceDisabledPayload,
+} from '../_shared/voiceProductPath.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -29,6 +33,13 @@ function getRealtimeModelCandidates(): string[] {
 serve(async req => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  if (!isRealtimeVoiceEnabled(Deno.env.get('REALTIME_VOICE_ENABLED'))) {
+    return new Response(JSON.stringify(realtimeVoiceDisabledPayload()), {
+      status: 410,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 
   let OPENAI_API_KEY: string;
   try {
