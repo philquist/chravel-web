@@ -11,14 +11,6 @@ import {
   Wallet,
   Globe,
   Phone,
-  UserCheck,
-  Clock,
-  FileText,
-  DollarSign,
-  Mail,
-  Ticket,
-  Megaphone,
-  Paintbrush,
 } from 'lucide-react';
 import { useConsumerSubscription } from '../hooks/useConsumerSubscription';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +30,11 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
   const { upgradeToTier, isLoading } = useConsumerSubscription();
 
   if (!isOpen) return null;
+
+  // When a consumer plan is selected, this is the typed key for pricing lookups.
+  // (`selectedPlan` also allows 'travel-pro', which is not a consumer pricing tier.)
+  const consumerPlan: 'explorer' | 'frequent-chraveler' =
+    selectedPlan === 'frequent-chraveler' ? 'frequent-chraveler' : 'explorer';
 
   const handleUpgrade = async () => {
     if (['explorer', 'frequent-chraveler'].includes(selectedPlan)) {

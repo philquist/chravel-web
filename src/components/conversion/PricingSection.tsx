@@ -119,6 +119,7 @@ const consumerTiers: PricingTier[] = [
 // Pro/Enterprise Tiers - Chravel Pro (Starter, Growth, Enterprise)
 // Import from central source of truth
 import { SUBSCRIPTION_TIERS } from '@/types/pro';
+import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
 
 const proTiers: PricingTier[] = [
   {

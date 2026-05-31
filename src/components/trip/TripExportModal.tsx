@@ -5,6 +5,7 @@ import { isConsumerTrip } from '@/utils/tripTierDetector';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { usePdfExportUsage } from '@/hooks/usePdfExportUsage';
 import { Badge } from '@/components/ui/badge';
+import { CONSUMER_PRICE_DISPLAY } from '@/billing/pricingDisplay';
 
 export interface TripExportModalProps {
   isOpen: boolean;
