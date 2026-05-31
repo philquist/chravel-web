@@ -63,7 +63,7 @@ const consumerTiers: PricingTier[] = [
       '1 PDF export per trip (sample it!)',
       'Save up to 3 active trips',
       '🎁 1 free Pro trip to try',
-      '🎁 1 free Event to try',
+      'Up to 3 events (upgrade to Frequent Chraveler for unlimited)',
     ],
     cta: 'Start First Trip Free',
     category: 'consumer',
@@ -72,11 +72,10 @@ const consumerTiers: PricingTier[] = [
   {
     id: 'explorer',
     name: 'Explorer',
-    price: '$9.99',
-    annualPrice: '$99',
-    originalPrice: '$119.88',
-    description:
-      'For people who travel regularly and want smarter planning. Or grab a Trip Pass for $39.99 (45 days).',
+    price: CONSUMER_PRICE_DISPLAY.explorer.monthly,
+    annualPrice: CONSUMER_PRICE_DISPLAY.explorer.annual,
+    originalPrice: CONSUMER_PRICE_DISPLAY.explorer.originalAnnual,
+    description: `For people who travel regularly and want smarter planning. Or grab a Trip Pass for ${TRIP_PASS_DISPLAY.explorer.price} (${TRIP_PASS_DISPLAY.explorer.durationDays} days).`,
     icon: <Globe size={24} />,
     features: [
       'Everything in Free',
@@ -92,15 +91,15 @@ const consumerTiers: PricingTier[] = [
     popular: true,
     category: 'consumer',
     badge: 'Most Popular',
-    savings: 'Save $20/year',
+    savings: CONSUMER_PRICE_DISPLAY.explorer.annualSavingsLabel,
   },
   {
     id: 'frequent-chraveler',
     name: 'Frequent Chraveler',
-    price: '$19.99',
-    annualPrice: '$199',
-    originalPrice: '$239.88',
-    description: 'For Frequent Flyers, Teams, and Tours. Or grab a Trip Pass for $74.99 (90 days).',
+    price: CONSUMER_PRICE_DISPLAY['frequent-chraveler'].monthly,
+    annualPrice: CONSUMER_PRICE_DISPLAY['frequent-chraveler'].annual,
+    originalPrice: CONSUMER_PRICE_DISPLAY['frequent-chraveler'].originalAnnual,
+    description: `For Frequent Flyers, Teams, and Tours. Or grab a Trip Pass for ${TRIP_PASS_DISPLAY['frequent-chraveler'].price} (${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays} days).`,
     icon: <Sparkles size={24} />,
     features: [
       'Everything in Explorer',
@@ -113,7 +112,7 @@ const consumerTiers: PricingTier[] = [
     ],
     cta: 'Upgrade to Frequent',
     category: 'consumer',
-    savings: 'Save $40/year',
+    savings: CONSUMER_PRICE_DISPLAY['frequent-chraveler'].annualSavingsLabel,
   },
 ];
 

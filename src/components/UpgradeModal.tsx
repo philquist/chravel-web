@@ -32,7 +32,7 @@ interface UpgradeModalProps {
 
 export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
   const [selectedPlan, setSelectedPlan] = useState<
-    'explorer' | 'frequent-chraveler' | 'travel-pro' | 'events'
+    'explorer' | 'frequent-chraveler' | 'travel-pro'
   >('explorer');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
   const { upgradeToTier, isLoading } = useConsumerSubscription();

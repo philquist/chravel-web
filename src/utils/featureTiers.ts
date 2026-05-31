@@ -67,9 +67,13 @@ export const FREEMIUM_LIMITS = {
     paymentRequestsPerTrip: 5, // Max 5 payment requests per trip
     canCreatePayments: true,
     canSettlePayments: true,
-    // Taste test: 1 free Pro trip + 1 free Event
+    // Taste test: 1 free Pro trip. Events are a Frequent Chraveler benefit —
+    // Free and Explorer get 3 events total (lifetime), then upgrade to FC for
+    // unlimited. eventsLimit MUST stay aligned with FEATURE_LIMITS.event_creation
+    // in src/billing/entitlements.ts.
     freeProTripsLimit: 1,
-    freeEventsLimit: 1,
+    freeEventsLimit: 3,
+    eventsLimit: 3,
     eventAttendeesLimit: 50,
     canCreateEvents: true,
   },
@@ -84,9 +88,10 @@ export const FREEMIUM_LIMITS = {
     paymentRequestsPerTrip: -1, // Unlimited
     canCreatePayments: true,
     canSettlePayments: true,
-    // Events bundled into Explorer
+    // Events are a Frequent Chraveler benefit — Explorer gets 3 events total
+    // (lifetime), then upgrade to FC for unlimited. Aligns with FEATURE_LIMITS.event_creation.
     canCreateEvents: true,
-    eventsLimit: -1, // Unlimited
+    eventsLimit: 3,
     eventAttendeesLimit: 100,
   },
   'frequent-chraveler': {

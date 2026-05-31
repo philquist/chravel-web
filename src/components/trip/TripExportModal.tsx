@@ -174,14 +174,18 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
                   disabled={isUpgrading}
                   className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white px-3 py-2.5 text-sm rounded-lg transition-all disabled:opacity-50 min-h-[44px]"
                 >
-                  {isUpgrading ? 'Processing...' : 'Explorer from $9.99/mo'}
+                  {isUpgrading
+                    ? 'Processing...'
+                    : `Explorer from ${CONSUMER_PRICE_DISPLAY.explorer.monthly}/mo`}
                 </button>
                 <button
                   onClick={() => upgradeToTier('frequent-chraveler', 'monthly')}
                   disabled={isUpgrading}
                   className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white px-3 py-2.5 text-sm rounded-lg transition-all disabled:opacity-50 min-h-[44px]"
                 >
-                  {isUpgrading ? 'Processing...' : 'Frequent Chraveler from $19.99/mo'}
+                  {isUpgrading
+                    ? 'Processing...'
+                    : `Frequent Chraveler from ${CONSUMER_PRICE_DISPLAY['frequent-chraveler'].monthly}/mo`}
                 </button>
               </div>
               <p className="text-gray-400 text-[10px] mt-2 text-center">
