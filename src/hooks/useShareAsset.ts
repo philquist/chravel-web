@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { uploadToStorage, insertMediaIndex, insertFileIndex } from '@/services/uploadService';
 import { insertLinkIndex, fetchOpenGraphData } from '@/services/linkService';
-import { sendChatMessage } from '@/services/chatService';
-import { sendTripMessageViaStream } from '@/services/stream/tripMessageTransport';
+import { sendTripMessageWithCanonicalTransport } from '@/services/stream/canonicalTripMessageTransport';
 import { autoParseContent, ParsedContent } from '@/services/chatContentParser';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -25,21 +24,7 @@ export function useShareAsset(tripId: string) {
   const userId = user?.id || '';
 
   async function sendMessageWithCanonicalTransport(payload: Record<string, unknown>) {
-    const streamResult = await sendTripMessageViaStream({
-      tripId,
-      content: (payload.content as string) || '',
-      mediaType: payload.media_type as string | undefined,
-      mediaUrl: payload.media_url as string | undefined,
-      privacyMode: payload.privacy_mode as string | undefined,
-      messageType: payload.message_type as string | undefined,
-      attachments: payload.attachments as unknown[] | undefined,
-      linkPreview: payload.link_preview as
-        | { url?: string; title?: string; image?: string; description?: string }
-        | undefined,
-    });
-
-    if (streamResult) return streamResult;
-    return sendChatMessage(payload);
+    return sendTripMessageWithCanonicalTransport(tripId, payload);
   }
 
   async function shareFile(kind: ShareKind, file: File, onProgress?: (progress: number) => void) {
@@ -131,7 +116,7 @@ export function useShareAsset(tripId: string) {
               'image',
               file.type,
               tripId,
-              messageResult?.id?.toString(),
+              (messageResult as any)?.id?.toString(),
             );
             if (parsed && parsed.suggestions && parsed.suggestions.length > 0) {
               setParsedContent(parsed);
@@ -187,7 +172,7 @@ export function useShareAsset(tripId: string) {
               'document',
               file.type,
               tripId,
-              messageResult?.id?.toString(),
+              (messageResult as any)?.id?.toString(),
             );
             if (parsed && parsed.suggestions && parsed.suggestions.length > 0) {
               setParsedContent(parsed);

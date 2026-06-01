@@ -343,15 +343,13 @@ export const TripChat = React.memo(
         if (demoMode.isDemoMode) return;
 
         if (!streamClient) {
-          toast.error('Chat connection unavailable. Please try again.');
-          return;
+          throw new Error('Chat connection unavailable. Please try again.');
         }
 
         // Defensive owner check — Stream rejects owner-scoped ops as 403 if mismatch.
         const authorId = findMessageAuthorId(messageId);
         if (authorId && streamClient.userID && authorId !== streamClient.userID) {
-          toast.error('You can only edit your own messages');
-          return;
+          throw new Error('You can only edit your own messages');
         }
 
         try {
@@ -369,7 +367,7 @@ export const TripChat = React.memo(
             messageId,
           });
           const codeSuffix = details.code !== undefined ? ` (code ${details.code})` : '';
-          toast.error(`Failed to edit message${codeSuffix}`);
+          throw new Error(`Failed to edit message${codeSuffix}`);
         }
       },
       [demoMode.isDemoMode, streamClient, findMessageAuthorId],
@@ -380,8 +378,7 @@ export const TripChat = React.memo(
         if (demoMode.isDemoMode) return;
 
         if (!streamClient) {
-          toast.error('Chat connection unavailable. Please try again.');
-          return;
+          throw new Error('Chat connection unavailable. Please try again.');
         }
 
         const authorId = findMessageAuthorId(messageId);
@@ -391,14 +388,12 @@ export const TripChat = React.memo(
           authorId === streamClient.userID
         );
 
-        if (authorId && streamClient.userID && !isOwnMessage) {
-          toast.error('You can only delete your own messages');
-          return;
+        if (authorId && streamClient.userID && !isOwnMessage && !canDeleteAnyMessage) {
+          throw new Error('You can only delete your own messages');
         }
 
-        if (isOwnMessage && !canDeleteOwnMessage) {
-          toast.error('You don’t have permission to delete this message');
-          return;
+        if (isOwnMessage && !canDeleteOwnMessage && !canDeleteAnyMessage) {
+          throw new Error('You don’t have permission to delete this message');
         }
 
         try {
@@ -413,14 +408,19 @@ export const TripChat = React.memo(
             messageId,
           });
           if (details.status === 403 || details.code === 403) {
-            toast.error('You don’t have permission to delete this message');
-            return;
+            throw new Error('You don’t have permission to delete this message');
           }
           const codeSuffix = details.code !== undefined ? ` (code ${details.code})` : '';
-          toast.error(`Failed to delete message${codeSuffix}`);
+          throw new Error(`Failed to delete message${codeSuffix}`);
         }
       },
-      [canDeleteOwnMessage, demoMode.isDemoMode, streamClient, findMessageAuthorId],
+      [
+        canDeleteAnyMessage,
+        canDeleteOwnMessage,
+        demoMode.isDemoMode,
+        streamClient,
+        findMessageAuthorId,
+      ],
     );
 
     const handleMessagePinToggle = useCallback(
@@ -440,8 +440,7 @@ export const TripChat = React.memo(
             shouldPin,
           });
           const codeSuffix = details.code !== undefined ? ` (code ${details.code})` : '';
-          toast.error(`Failed to ${shouldPin ? 'pin' : 'unpin'} message${codeSuffix}`);
-          throw error;
+          throw new Error(`Failed to ${shouldPin ? 'pin' : 'unpin'} message${codeSuffix}`);
         }
       },
       [demoMode.isDemoMode, togglePin],
@@ -1011,6 +1010,7 @@ export const TripChat = React.memo(
             onOpenThread={handleActivateThread}
             onEdit={demoMode.isDemoMode ? undefined : handleMessageEdit}
             onDelete={demoMode.isDemoMode ? undefined : handleMessageDelete}
+            transportMode="stream"
             onRetry={handleRetryFailedMessage}
             systemMessagePrefs={systemMessagePrefs}
             tripMembers={tripMembers}

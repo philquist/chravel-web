@@ -111,7 +111,6 @@ serve(async (req): Promise<Response> => {
       }
     }
 
-
     const { data: tripRow, error: tripError } = await supabaseClient
       .from('trips')
       .select(
@@ -184,7 +183,6 @@ serve(async (req): Promise<Response> => {
 
       trip.active_invite_code = activeInviteCode;
     }
-
 
     return new Response(JSON.stringify({ success: true, trip }), {
       status: 200,

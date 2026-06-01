@@ -7,9 +7,16 @@ import {
   SystemMessageCategoryPrefs,
 } from '@/utils/systemMessageCategory';
 
+const { messageBubbleProps } = vi.hoisted(() => ({
+  messageBubbleProps: [] as Array<Record<string, unknown>>,
+}));
+
 // Stub out heavy / DOM-coupled bubble dependencies
 vi.mock('../MessageBubble', () => ({
-  MessageBubble: ({ text }: { text: string }) => <div data-testid="user-bubble">{text}</div>,
+  MessageBubble: (props: { text: string }) => {
+    messageBubbleProps.push(props as unknown as Record<string, unknown>);
+    return <div data-testid="user-bubble">{props.text}</div>;
+  },
 }));
 
 vi.mock('../SystemMessageBubble', () => ({
@@ -50,6 +57,28 @@ const allOn: SystemMessageCategoryPrefs = {
 };
 
 describe('MessageItem — system message category filter', () => {
+  it('passes async edit/delete callbacks through to the action layer', async () => {
+    messageBubbleProps.length = 0;
+    const onDelete = vi.fn().mockRejectedValue(new Error('Delete denied'));
+    render(
+      <MessageItem
+        message={{
+          id: 'user-msg',
+          text: 'hello',
+          sender: { id: 'me', name: 'Me' },
+          createdAt: '2026-04-17T12:00:00Z',
+        }}
+        onReaction={vi.fn()}
+        onDelete={onDelete}
+      />,
+    );
+
+    const bubbleProps = messageBubbleProps[0];
+    const deleteResult = (bubbleProps.onDelete as (messageId: string) => Promise<void>)('user-msg');
+
+    await expect(deleteResult).rejects.toThrow('Delete denied');
+  });
+
   it('renders system bubble when master toggle ON and category ON', () => {
     render(
       <MessageItem

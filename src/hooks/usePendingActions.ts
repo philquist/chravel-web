@@ -39,6 +39,29 @@ export interface PendingAction {
   resolved_by: string | null;
 }
 
+interface UsePendingActionsOptions {
+  autoConfirmOwnActions?: boolean;
+}
+
+const globalAutoConfirmedIds = new Set<string>();
+const globalAutoConfirmInFlightIds = new Set<string>();
+
+export function selectAutoConfirmPendingActions(
+  pendingActions: PendingAction[],
+  userId: string | undefined,
+  confirmedIds: ReadonlySet<string>,
+  inFlightIds: ReadonlySet<string>,
+): PendingAction[] {
+  if (!userId) return [];
+  return pendingActions.filter(
+    action =>
+      action.user_id === userId &&
+      action.status === 'pending' &&
+      !confirmedIds.has(action.id) &&
+      !inFlightIds.has(action.id),
+  );
+}
+
 type PendingActionToolName =
   | 'createTask'
   | 'updateTask'
@@ -60,10 +83,11 @@ function assertNeverToolName(toolName: never): never {
   throw new Error(`Unknown tool: ${toolName}`);
 }
 
-export function usePendingActions(tripId: string) {
+export function usePendingActions(tripId: string, options: UsePendingActionsOptions = {}) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
+  const autoConfirmOwnActions = options.autoConfirmOwnActions ?? false;
 
   // In-flight confirm guard: prevents the same actionId from being confirmed
   // twice when a user rapidly double-taps the confirm button before the
@@ -76,19 +100,20 @@ export function usePendingActions(tripId: string) {
   const { data: pendingActions = [], isLoading } = useQuery({
     queryKey,
     queryFn: async (): Promise<PendingAction[]> => {
-      if (isDemoMode || !tripId) return [];
+      if (isDemoMode || !tripId || !user?.id) return [];
 
       const { data, error } = await supabase
         .from('trip_pending_actions')
         .select('*')
         .eq('trip_id', tripId)
+        .eq('user_id', user.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return (data || []) as PendingAction[];
     },
-    enabled: !!tripId && !isDemoMode,
+    enabled: !!tripId && !!user?.id && !isDemoMode,
     staleTime: 10_000,
     gcTime: 60_000,
     refetchOnWindowFocus: true,
@@ -110,6 +135,7 @@ export function usePendingActions(tripId: string) {
         .from('trip_pending_actions')
         .select('*')
         .eq('id', actionId)
+        .eq('user_id', user.id)
         .eq('status', 'pending')
         .single();
 
@@ -264,16 +290,29 @@ export function usePendingActions(tripId: string) {
         }
 
         case 'addExpense': {
-          // trip_payment_messages.trip_id is TEXT (not UUID) per schema
-          const { error } = await (supabase as any).from('trip_payment_messages').insert({
-            trip_id: action.trip_id,
-            created_by: (payload.created_by as string) || user.id,
-            amount: payload.amount as number,
-            currency: (payload.currency as string) || 'USD',
-            description: payload.description as string,
-            split_count: (payload.split_count as number) || 1,
-            split_participants: (payload.split_participants as unknown[]) || [],
-            payment_methods: [],
+          const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          const rawParticipants = Array.isArray(payload.split_participants)
+            ? (payload.split_participants as string[])
+            : [];
+          if (
+            rawParticipants.length > 0 &&
+            !rawParticipants.every(participant => uuidPattern.test(participant))
+          ) {
+            throw new Error(
+              'Expense split participants must be member IDs. Please retry with a member selection.',
+            );
+          }
+          const splitParticipants = rawParticipants.length > 0 ? rawParticipants : [user.id];
+          const splitCount = splitParticipants.length;
+          const { error } = await (supabase.rpc as any)('create_payment_with_splits_v2', {
+            p_trip_id: action.trip_id,
+            p_amount: payload.amount as number,
+            p_currency: (payload.currency as string) || 'USD',
+            p_description: payload.description as string,
+            p_split_count: splitCount,
+            p_split_participants: splitParticipants,
+            p_payment_methods: [],
+            p_created_by: user.id,
           });
           if (error) throw error;
           break;
@@ -417,6 +456,7 @@ export function usePendingActions(tripId: string) {
           resolved_by: user.id,
         })
         .eq('id', actionId)
+        .eq('user_id', user.id)
         .eq('status', 'pending')
         .select()
         .single();
@@ -532,6 +572,7 @@ export function usePendingActions(tripId: string) {
           resolved_by: user.id,
         })
         .eq('id', actionId)
+        .eq('user_id', user.id)
         .eq('status', 'pending');
 
       if (error) throw error;
@@ -548,30 +589,41 @@ export function usePendingActions(tripId: string) {
 
   // Auto-confirm pending actions created by the current user.
   // Batch-process ALL self-owned pending actions in one tick (e.g. multi-tool messages
-  // that create both a calendar event AND a task). Each id is guarded by autoConfirmedIds
-  // so a single id is never confirmed twice across renders.
-  const autoConfirmedIds = useRef<Set<string>>(new Set());
+  // that create both a calendar event AND a task). Auto-confirm is intentionally owned
+  // by the trip shell, not by Concierge chat, so the same row cannot race across mounts.
   useEffect(() => {
+    if (!autoConfirmOwnActions) return;
     if (!user?.id || pendingActions.length === 0) return;
 
-    const selfPending = pendingActions.filter(
-      a => a.user_id === user.id && a.status === 'pending' && !autoConfirmedIds.current.has(a.id),
+    const selfPending = selectAutoConfirmPendingActions(
+      pendingActions,
+      user.id,
+      globalAutoConfirmedIds,
+      globalAutoConfirmInFlightIds,
     );
 
     if (selfPending.length === 0) return;
 
-    selfPending.forEach(a => autoConfirmedIds.current.add(a.id));
+    selfPending.forEach(a => {
+      globalAutoConfirmedIds.add(a.id);
+      globalAutoConfirmInFlightIds.add(a.id);
+    });
     void Promise.all(
       selfPending.map(a =>
-        confirmMutation.mutateAsync(a.id).catch(err => {
-          // Allow re-attempt on next tick if the confirm failed (e.g. transient RLS race)
-          autoConfirmedIds.current.delete(a.id);
-          if (import.meta.env.DEV) console.warn('[usePendingActions] auto-confirm failed', err);
-        }),
+        confirmMutation
+          .mutateAsync(a.id)
+          .catch(err => {
+            // Allow re-attempt on next tick if the confirm failed (e.g. transient RLS race)
+            globalAutoConfirmedIds.delete(a.id);
+            if (import.meta.env.DEV) console.warn('[usePendingActions] auto-confirm failed', err);
+          })
+          .finally(() => {
+            globalAutoConfirmInFlightIds.delete(a.id);
+          }),
       ),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingActions, user?.id]);
+  }, [autoConfirmOwnActions, pendingActions, user?.id]);
 
   return {
     pendingActions,

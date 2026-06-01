@@ -178,20 +178,34 @@ vi.mock('../MessageItem', () => ({
     onTogglePin,
     canDeleteOwnMessage,
     canDeleteAnyMessage,
+    transportMode,
   }: any) => (
     <>
+      <div data-testid={`transport-${message.id}`}>{transportMode}</div>
       {(canDeleteOwnMessage || canDeleteAnyMessage) && (
-        <button onClick={() => onDelete?.(message.id)} data-testid={`delete-${message.id}`}>
+        <button
+          onClick={() => void Promise.resolve(onDelete?.(message.id)).catch(() => {})}
+          data-testid={`delete-${message.id}`}
+        >
           delete
         </button>
       )}
-      <button onClick={() => onDelete?.(message.id)} data-testid={`force-delete-${message.id}`}>
+      <button
+        onClick={() => void Promise.resolve(onDelete?.(message.id)).catch(() => {})}
+        data-testid={`force-delete-${message.id}`}
+      >
         force-delete
       </button>
-      <button onClick={() => onEdit?.(message.id, 'edited')} data-testid={`edit-${message.id}`}>
+      <button
+        onClick={() => void Promise.resolve(onEdit?.(message.id, 'edited')).catch(() => {})}
+        data-testid={`edit-${message.id}`}
+      >
         edit
       </button>
-      <button onClick={() => onTogglePin?.(message.id, true)} data-testid={`pin-${message.id}`}>
+      <button
+        onClick={() => void Promise.resolve(onTogglePin?.(message.id, true)).catch(() => {})}
+        data-testid={`pin-${message.id}`}
+      >
         pin
       </button>
     </>
@@ -242,7 +256,7 @@ describe('TripChat delete message', () => {
     // Defense-in-depth still blocks direct calls to onDelete when capability is denied.
     fireEvent.click(screen.getByTestId('force-delete-msg-123'));
     expect(mockDeleteMessage).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalledWith('You don’t have permission to delete this message');
+    expect(toast.error).not.toHaveBeenCalled();
   });
 
   it('hides Delete for admin role when Stream delete-any grant is missing', async () => {
@@ -259,14 +273,49 @@ describe('TripChat delete message', () => {
     expect(screen.queryByTestId('delete-msg-123')).not.toBeInTheDocument();
   });
 
-  it('shows deterministic error toast when Stream client is unavailable', async () => {
-    mockGetStreamClient.mockReturnValue(null);
+  it('allows admin delete when Stream delete-any grant is present', async () => {
+    mockChatModeUserRole = 'admin';
+    mockOwnCapabilities = ['delete-any-message', 'update-own-message'];
+    mockMessageAuthorId = 'user-2';
+    mockGetStreamClient.mockReturnValue({
+      deleteMessage: mockDeleteMessage,
+      userID: 'user-1',
+    } as any);
+    mockDeleteMessage.mockResolvedValue(undefined);
 
     renderSubject();
     fireEvent.click(screen.getByTestId('delete-msg-123'));
 
+    expect(mockDeleteMessage).toHaveBeenCalledTimes(1);
+    expect(mockDeleteMessage).toHaveBeenCalledWith('msg-123');
+  });
+
+  it('allows deleting own message with Stream delete-any grant even without delete-own grant', async () => {
+    mockOwnCapabilities = ['delete-any-message', 'update-own-message'];
+    mockMessageAuthorId = 'user-1';
+    mockGetStreamClient.mockReturnValue({
+      deleteMessage: mockDeleteMessage,
+      userID: 'user-1',
+    } as any);
+    mockDeleteMessage.mockResolvedValue(undefined);
+
+    renderSubject();
+    fireEvent.click(screen.getByTestId('delete-msg-123'));
+
+    expect(mockDeleteMessage).toHaveBeenCalledTimes(1);
+    expect(mockDeleteMessage).toHaveBeenCalledWith('msg-123');
+  });
+
+  it('keeps TripChat on Stream transport when Stream client is unavailable', async () => {
+    mockGetStreamClient.mockReturnValue(null);
+
+    renderSubject();
+    expect(screen.getByTestId('transport-msg-123')).toHaveTextContent('stream');
+
+    fireEvent.click(screen.getByTestId('delete-msg-123'));
+
     expect(mockDeleteMessage).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalledWith('Chat connection unavailable. Please try again.');
+    expect(toast.error).not.toHaveBeenCalled();
     expect(mockDeleteChatMessage).not.toHaveBeenCalled();
   });
 

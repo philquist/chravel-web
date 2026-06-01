@@ -638,7 +638,9 @@ export const MobileTripTabs = ({
                   display: isActive ? 'flex' : 'none',
                   flexDirection: 'column',
                   minHeight: 0,
-                  overflow: isActive ? 'auto' : 'hidden',
+                  overflowY: isActive ? 'auto' : 'hidden',
+                  overflowX: 'hidden',
+                  overscrollBehaviorX: 'none',
                   WebkitOverflowScrolling: isActive ? 'touch' : undefined,
                 }}
                 className={isActive ? 'h-full flex-1 relative' : ''}

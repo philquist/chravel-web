@@ -403,6 +403,9 @@ export const ChatInput = ({
           tripMembers={tripMembers}
           isVisible={isPaymentMode}
           tripId={tripId}
+          // Chat payment mode routes the payment through the message pipeline (no payment id to
+          // attach to here), so the attachment picker is offered on the Payments tab instead.
+          enableAttachments={false}
         />
       )}
 

@@ -14,9 +14,17 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '../ui/badge';
 import { CurrencySelector } from './CurrencySelector';
+import { useFeatureFlag } from '@/lib/featureFlags';
+import { usePaymentAttachmentDraft } from '@/features/payments/hooks/usePaymentAttachmentDraft';
+import { PaymentAttachmentPicker } from '@/features/payments/components/PaymentAttachmentPicker';
 
 interface PaymentInputProps {
-  /** Returns true on success, false on failure. Form only resets on success. */
+  /**
+   * Persists the payment. Returns the new payment id on success (used to attach staged
+   * proof/context after creation) and `success: false` on failure. May also return void for
+   * surfaces that route the payment elsewhere (e.g. chat payment mode) — those skip attachments.
+   * Form only resets on success.
+   */
   onSubmit: (paymentData: {
     amount: number;
     currency: string;
@@ -24,14 +32,27 @@ interface PaymentInputProps {
     splitCount: number;
     splitParticipants: string[];
     paymentMethods: string[];
-  }) => void | Promise<boolean | void>;
+  }) => void | Promise<{ success: boolean; paymentId?: string } | void>;
   tripMembers: Array<{ id: string; name: string; avatar?: string }>;
   isVisible: boolean;
   tripId: string;
+  /**
+   * Whether to offer the optional attachment picker. Off for surfaces that don't persist a
+   * payment id we can attach to (e.g. chat payment mode). Defaults to true.
+   */
+  enableAttachments?: boolean;
 }
 
-export const PaymentInput = ({ onSubmit, tripMembers, isVisible, tripId }: PaymentInputProps) => {
+export const PaymentInput = ({
+  onSubmit,
+  tripMembers,
+  isVisible,
+  tripId,
+  enableAttachments = true,
+}: PaymentInputProps) => {
   const { user } = useAuth();
+  const attachmentsEnabled = useFeatureFlag('payment_attachments', true);
+  const attachmentDraft = usePaymentAttachmentDraft();
   const {
     amount,
     currency,
@@ -67,8 +88,22 @@ export const PaymentInput = ({ onSubmit, tripMembers, isVisible, tripId }: Payme
 
     setIsSubmitting(true);
     try {
-      const success = await onSubmit(paymentData);
-      if (success === true) {
+      const result = await onSubmit(paymentData);
+      if (result && result.success) {
+        // Attach staged proof/context AFTER the payment exists. The draft hook handles per-item
+        // failures, cache invalidation, and clearing itself; failures never block the payment.
+        if (showAttachments && result.paymentId && user?.id && attachmentDraft.count > 0) {
+          await attachmentDraft.commit({
+            tripId,
+            paymentId: result.paymentId,
+            uploadedBy: user.id,
+            context: {
+              description: paymentData.description,
+              amount: paymentData.amount,
+              currency: paymentData.currency,
+            },
+          });
+        }
         resetForm();
       }
     } finally {
@@ -78,6 +113,7 @@ export const PaymentInput = ({ onSubmit, tripMembers, isVisible, tripId }: Payme
 
   const amountPerPerson = perPersonAmount;
   const { isDemoMode } = useDemoMode();
+  const showAttachments = enableAttachments && attachmentsEnabled && !isDemoMode;
 
   // Auto-detect participants when description changes
   useEffect(() => {
@@ -380,6 +416,17 @@ export const PaymentInput = ({ onSubmit, tripMembers, isVisible, tripId }: Payme
               })}
             </div>
           </div>
+
+          {/* Optional attachments */}
+          {showAttachments && (
+            <PaymentAttachmentPicker
+              pending={attachmentDraft.pending}
+              onAddFiles={attachmentDraft.addFiles}
+              onAddUrl={attachmentDraft.addUrl}
+              onRemove={attachmentDraft.remove}
+              disabled={isSubmitting}
+            />
+          )}
 
           <Button
             type="submit"

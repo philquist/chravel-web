@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, CreditCard, Smartphone, DollarSign, Mail, Phone } from 'lucide-react';
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Star,
+  CreditCard,
+  Smartphone,
+  DollarSign,
+  Mail,
+  Phone,
+} from 'lucide-react';
 import { PaymentMethod } from '../../types/payments';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -341,9 +351,12 @@ export const PaymentMethodsSettings = ({ userId }: PaymentMethodsSettingsProps) 
                               {method.displayName || getDefaultDisplayName(method.type)}
                             </span>
                             {method.isPreferred && (
-                              <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full shrink-0">
-                                Preferred
-                              </span>
+                              <Star
+                                size={16}
+                                className="text-primary fill-primary shrink-0"
+                                aria-label="Preferred payment method"
+                                role="img"
+                              />
                             )}
                           </div>
                           <div className="text-sm text-muted-foreground truncate">

@@ -266,7 +266,7 @@ export const AIConciergeChat = ({
   };
 
   return (
-    <div className="flex flex-col overflow-hidden flex-1 min-h-0 h-full">
+    <div className="flex flex-col overflow-hidden flex-1 min-h-0 min-w-0 h-full">
       <div className="rounded-2xl border border-white/10 bg-black/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden flex flex-col flex-1">
         {/* Header — title row + controls row */}
         <div className="border-b border-white/10 bg-black/30 px-3 py-2 flex-shrink-0">
@@ -372,7 +372,7 @@ export const AIConciergeChat = ({
         {/* Chat area */}
         <div
           ref={chatScrollRef}
-          className="flex-1 overflow-y-auto p-4 chat-scroll-container native-scroll min-h-0"
+          className="flex-1 overflow-y-auto overflow-x-hidden p-4 chat-scroll-container native-scroll min-h-0 min-w-0"
         >
           {/* "Picked up where you left off" divider — shown once when server history hydrates */}
           {historyLoadedFromServer && messages.length > 0 && (

@@ -63,6 +63,21 @@ export function isLikelyIosWkWebViewUserAgent(userAgent: string): boolean {
   );
 }
 
+export type NativeBillingPlatform = 'web' | 'ios' | 'android';
+
+export function detectNativeBillingPlatform(
+  userAgent: string,
+  nativeWebView: boolean,
+): NativeBillingPlatform {
+  if (!nativeWebView) return 'web';
+  if (/Android/i.test(userAgent)) return 'android';
+  if (/iPhone|iPad|iPod/i.test(userAgent)) return 'ios';
+  if (/; wv\)/i.test(userAgent)) return 'android';
+  if (isLikelyIosWkWebViewUserAgent(userAgent)) return 'ios';
+  // Native shell but OS not inferable: fail closed for Play, never web checkout.
+  return 'android';
+}
+
 /** True when running inside a native app's webview (Expo WebView, Android WebView, etc). */
 export function isNativeWebView(): boolean {
   if (typeof window === 'undefined') return false;

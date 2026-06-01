@@ -180,7 +180,12 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
   const showTTS = isAssistant && onTTSPlay && onTTSStop && !!sanitizedContent;
 
   return (
-    <div className={cn('flex w-full gap-2', isOwnMessage ? 'justify-end' : 'justify-start')}>
+    <div
+      className={cn(
+        'flex w-full min-w-0 max-w-full gap-2 overflow-x-hidden',
+        isOwnMessage ? 'justify-end' : 'justify-start',
+      )}
+    >
       {/* CA Avatar for assistant messages — Concierge AI / Chravel Agent */}
       {!isOwnMessage && (
         <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
@@ -189,14 +194,17 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
       )}
 
       <div
-        className={cn('flex flex-col', isOwnMessage ? 'items-end' : 'items-start', 'max-w-[78%]')}
+        className={cn(
+          'flex min-w-0 max-w-[78%] flex-col',
+          isOwnMessage ? 'items-end' : 'items-start',
+        )}
       >
         <div
           className={cn('flex items-end gap-1.5', isOwnMessage ? 'flex-row-reverse' : 'flex-row')}
         >
           <div
             className={cn(
-              'px-3.5 py-2.5 rounded-2xl backdrop-blur-sm border',
+              'min-w-0 max-w-full overflow-hidden px-3.5 py-2.5 rounded-2xl backdrop-blur-sm border',
               // Use transition-colors instead of transition-all to prevent layout animation jitter on iOS during streaming
               // Disable transitions entirely for streaming bubbles to eliminate iOS vibration
               message.isStreamingVoice ? 'transition-none' : 'transition-colors duration-150',
@@ -216,7 +224,7 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
             {/* Message content — sanitize assistant text to strip leaked tool-plan JSON */}
             {message.content && isAssistant ? (
               sanitizedContent ? (
-                <div className="text-sm leading-relaxed ai-markdown-content">
+                <div className="text-sm leading-relaxed ai-markdown-content min-w-0 max-w-full overflow-hidden">
                   <ReactMarkdown
                     components={{
                       a: ({ href, children }) => (

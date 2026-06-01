@@ -343,8 +343,9 @@ export const AuthModal = ({
     >
       {/* Full-viewport scrim: underlying routes (e.g. JoinTrip hero badge) must not read as a second logo */}
       <div
-        className="absolute inset-0 bg-slate-950/85 backdrop-blur-sm pointer-events-auto"
+        className="absolute inset-0 bg-slate-950 pointer-events-auto"
         aria-hidden
+        data-testid="auth-modal-scrim"
       />
       <div className="relative flex min-h-full w-full items-center justify-center p-4 sm:p-6 pointer-events-none">
         <div data-testid="auth-modal-content" className="w-full max-w-md pointer-events-auto">

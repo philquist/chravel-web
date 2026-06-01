@@ -25,8 +25,8 @@ interface MessageItemProps {
   onOpenThread?: (messageId: string) => void;
   showSenderInfo?: boolean;
   onRetry?: (messageId: string) => void;
-  onEdit?: (messageId: string, newContent: string) => void;
-  onDelete?: (messageId: string) => void;
+  onEdit?: (messageId: string, newContent: string) => void | Promise<void>;
+  onDelete?: (messageId: string) => void | Promise<void>;
   transportMode?: 'legacy' | 'stream';
   // System message visibility preferences
   systemMessagePrefs?: {
@@ -96,14 +96,14 @@ export const MessageItem = memo(
 
     const handleEdit = useCallback(
       (messageId: string, newContent: string) => {
-        onEdit?.(messageId, newContent);
+        return onEdit?.(messageId, newContent);
       },
       [onEdit],
     );
 
     const handleDelete = useCallback(
       (messageId: string) => {
-        onDelete?.(messageId);
+        return onDelete?.(messageId);
       },
       [onDelete],
     );

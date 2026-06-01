@@ -68,10 +68,15 @@ export const TripPassModal: React.FC<TripPassModalProps> = ({ open, onOpenChange
         return;
       }
 
+      const billingPlatform =
+        typeof navigator === 'undefined'
+          ? 'web'
+          : detectNativeBillingPlatform(navigator.userAgent || '', isNativeWebView());
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           tier: passId,
           purchase_type: 'pass',
+          platform: billingPlatform,
         },
       });
 

@@ -9,11 +9,14 @@ import { useDemoMode } from '../../hooks/useDemoMode';
 import { MediaGridItem } from './MediaGridItem';
 import { SwipeableListItem } from './SwipeableListItem';
 import { MediaViewerModal, type MediaViewerItem } from '../media/MediaViewerModal';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { createTripLink } from '@/services/tripLinksService';
+import {
+  createTripLink,
+  deleteTripLinkFromTable,
+  type TripLinkDeleteTable,
+} from '@/services/tripLinksService';
 import { toast } from 'sonner';
-import { uploadTripMedia } from '@/services/mediaService';
+import { mediaService, uploadTripMedia } from '@/services/mediaService';
 import { getUploadContentType } from '@/utils/mime';
 
 interface MediaItem {
@@ -128,7 +131,11 @@ export const MobileUnifiedMediaHub = ({ tripId }: MobileUnifiedMediaHubProps) =>
   // Track active media index for swipe navigation (-1 means no viewer open)
   const [activeMediaIndex, setActiveMediaIndex] = useState<number>(-1);
   const [itemToDelete, setItemToDelete] = useState<MediaItem | null>(null);
-  const [linkToDelete, setLinkToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [linkToDelete, setLinkToDelete] = useState<{
+    id: string;
+    title: string;
+    deleteTable: TripLinkDeleteTable;
+  } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const photoCaptureInputRef = useRef<HTMLInputElement>(null);
@@ -421,17 +428,7 @@ export const MobileUnifiedMediaHub = ({ tripId }: MobileUnifiedMediaHubProps) =>
         return;
       }
 
-      // Extract storage path from URL
-      const urlParts = item.url.split('/trip-media/');
-      if (urlParts.length > 1) {
-        const storagePath = decodeURIComponent(urlParts[1]);
-        await supabase.storage.from('trip-media').remove([storagePath]);
-      }
-
-      // Delete from database
-      const { error } = await supabase.from('trip_media_index').delete().eq('id', item.id);
-
-      if (error) throw error;
+      await mediaService.deleteMedia(item.id);
       toast.success('Deleted successfully');
       await refetch();
     } catch (e) {
@@ -443,7 +440,7 @@ export const MobileUnifiedMediaHub = ({ tripId }: MobileUnifiedMediaHubProps) =>
     }
   };
 
-  const handleDeleteLink = async (linkId: string) => {
+  const handleDeleteLink = async (linkId: string, deleteTable: TripLinkDeleteTable) => {
     if (!user?.id && !isDemoMode) {
       toast.error('Please sign in to delete');
       return;
@@ -459,10 +456,10 @@ export const MobileUnifiedMediaHub = ({ tripId }: MobileUnifiedMediaHubProps) =>
         return;
       }
 
-      // Delete from database
-      const { error } = await supabase.from('trip_links').delete().eq('id', linkId);
-
-      if (error) throw error;
+      const deleted = await deleteTripLinkFromTable(linkId, tripId, deleteTable, isDemoMode, {
+        suppressToast: true,
+      });
+      if (!deleted) throw new Error('Delete failed');
       toast.success('Link deleted successfully');
       await refetch();
     } catch (e) {
@@ -790,7 +787,13 @@ export const MobileUnifiedMediaHub = ({ tripId }: MobileUnifiedMediaHubProps) =>
                 {filteredLinks.map((link, index) => (
                   <SwipeableListItem
                     key={link.id}
-                    onDelete={() => setLinkToDelete({ id: link.id, title: link.title })}
+                    onDelete={() =>
+                      setLinkToDelete({
+                        id: link.id,
+                        title: link.title,
+                        deleteTable: (link as any).deleteTable,
+                      })
+                    }
                     className="rounded-xl"
                   >
                     <a
@@ -899,7 +902,7 @@ export const MobileUnifiedMediaHub = ({ tripId }: MobileUnifiedMediaHubProps) =>
                 Cancel
               </button>
               <button
-                onClick={() => handleDeleteLink(linkToDelete.id)}
+                onClick={() => handleDeleteLink(linkToDelete.id, linkToDelete.deleteTable)}
                 className="native-button bg-red-600 text-white py-3 rounded-xl font-medium flex items-center justify-center gap-2"
                 disabled={isDeleting}
               >

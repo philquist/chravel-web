@@ -46,7 +46,7 @@ export const MobileProTripDetail = () => {
   // 🛰️ Keep concierge pending-action auto-confirm mounted at the trip shell so AI-created
   // calendar events / tasks / polls promote into their real tables even when the user
   // navigates away from the Concierge tab before the round-trip completes.
-  usePendingActions(proTripId || '');
+  usePendingActions(proTripId || '', { autoConfirmOwnActions: true });
 
   // Persist activeTab in sessionStorage to survive orientation changes
   const getInitialTab = () => {

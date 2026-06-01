@@ -3,6 +3,7 @@ import { ConsumerSubscription } from '../types/consumer';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { openExternalUrl } from '@/platform/navigation';
+import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
 import { toast } from 'sonner';
 import { SUPER_ADMIN_EMAILS } from '@/constants/admins';
 import type { ConsumerSubscription as ConsumerSubscriptionShape } from '../types/consumer';
@@ -167,6 +168,10 @@ export const ConsumerSubscriptionProvider = ({ children }: { children: React.Rea
 
     setIsLoading(true);
     try {
+      const billingPlatform =
+        typeof navigator === 'undefined'
+          ? 'web'
+          : detectNativeBillingPlatform(navigator.userAgent || '', isNativeWebView());
       const tierMap = {
         explorer: 'consumer-explorer',
         'frequent-chraveler': 'consumer-frequent-chraveler',
@@ -176,7 +181,7 @@ export const ConsumerSubscriptionProvider = ({ children }: { children: React.Rea
         body: {
           tier: tierMap[tier],
           billing_cycle: billingCycle,
-          platform: 'web',
+          platform: billingPlatform,
         },
       });
 

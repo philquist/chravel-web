@@ -56,15 +56,15 @@ export const usePrefetchTrip = () => {
 
       // ⚡ PRIORITY 1: Core trip data (needed for UI rendering)
       queryClient.prefetchQuery({
-        queryKey: tripKeys.detail(tripId),
+        queryKey: tripKeys.detailForUser(tripId, user?.id ?? 'anon'),
         queryFn: () => tripService.getTripById(tripId),
         staleTime: QUERY_CACHE_CONFIG.trip.staleTime,
       });
 
       // ⚡ PRIORITY 1: Trip members (needed for UI rendering)
       queryClient.prefetchQuery({
-        queryKey: tripKeys.members(tripId),
-        queryFn: () => tripService.getTripMembers(tripId),
+        queryKey: tripKeys.membersWithRevision(tripId, 0),
+        queryFn: () => tripService.getTripMembersWithCreator(tripId),
         staleTime: QUERY_CACHE_CONFIG.members.staleTime,
       });
 
@@ -75,7 +75,7 @@ export const usePrefetchTrip = () => {
         staleTime: QUERY_CACHE_CONFIG.calendar.staleTime,
       });
     },
-    [isDemoMode, queryClient],
+    [isDemoMode, queryClient, user?.id],
   );
 
   /**

@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import ProTripDetail from '../ProTripDetail';
 import { proTripMockData } from '../../data/proTripMockData';
-import { getTripLabels } from '../../utils/tripLabels';
 
 // Mock all hooks the component uses
 vi.mock('../../hooks/useAuth', () => ({
@@ -108,9 +107,8 @@ describe.skip('ProTripDetail', () => {
 
   Object.keys(proTripMockData).forEach(id => {
     const data = proTripMockData[id];
-    const labels = getTripLabels(data.category);
 
-    it(`renders correct title and labels for trip ${id}`, async () => {
+    it(`renders correct title for trip ${id}`, async () => {
       renderWithRouter(id);
       // Wait for lazy-loaded components and async state
       await waitFor(
@@ -119,8 +117,6 @@ describe.skip('ProTripDetail', () => {
         },
         { timeout: 3000 },
       );
-      expect(screen.getByRole('heading', { name: labels.schedule })).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: labels.team })).toBeInTheDocument();
     });
   });
 

@@ -105,8 +105,9 @@ export const AdminDashboard = () => {
             Schedule Pro Trip Message
           </Button>
           <p className="text-sm text-slate-400 mt-2">
-            Scheduled messages for Pro Trips are temporarily unavailable while scheduling is
-            disabled.
+            {isBroadcastSchedulingEnabled
+              ? 'Schedule a broadcast to be sent to a Pro Trip at a future date and time.'
+              : 'Scheduled messages for Pro Trips are temporarily unavailable while scheduling is disabled.'}
           </p>
         </div>
 

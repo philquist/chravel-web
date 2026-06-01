@@ -14,6 +14,8 @@ import { Pencil, Trash2, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
 import { isDemoTrip } from '@/utils/demoUtils';
 import { formatCurrency } from '@/services/currencyService';
 import { formatCompactDate } from '@/utils/dateFormatters';
+import { usePaymentAttachments } from '@/hooks/usePaymentAttachments';
+import { PaymentAttachmentsViewer } from '@/features/payments/components/PaymentAttachmentsViewer';
 
 interface PaymentHistoryProps {
   tripId: string;
@@ -63,6 +65,10 @@ export const PaymentHistory = ({
       .filter(p => p.isSettled)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [payments]);
+
+  // Optional attachments (proof/context) for the visible payments — read-only on the card.
+  const attachmentPaymentIds = useMemo(() => settledPayments.map(p => p.id), [settledPayments]);
+  const { getAttachments } = usePaymentAttachments(tripId, attachmentPaymentIds);
 
   // Enrich payments with creator names
   useEffect(() => {
@@ -217,78 +223,80 @@ export const PaymentHistory = ({
               const isCreator = user?.id === payment.createdBy;
 
               return (
-                <div
-                  key={payment.id}
-                  className="flex items-center justify-between py-2 border-b border-border last:border-0 gap-2 flex-wrap"
-                >
-                  {/* Single row: all info inline with bullet separators */}
-                  <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
-                    <span className="font-semibold text-foreground">{payment.description}</span>
-                    <span className="text-muted-foreground hidden sm:inline">•</span>
-                    {payment.isSettled ? (
-                      <Badge
-                        variant="outline"
-                        className="text-xs bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                      >
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Settled
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="text-xs bg-amber-500/10 text-amber-300 border-amber-500/30"
-                      >
-                        <Clock className="w-3 h-3 mr-1" />
-                        Pending
-                      </Badge>
-                    )}
-                    <span className="text-muted-foreground hidden sm:inline">•</span>
-                    <span className="text-sm text-muted-foreground">
-                      {payment.createdByName || 'Trip member'}
-                    </span>
-                    <span className="text-muted-foreground hidden sm:inline">•</span>
-                    <span className="text-sm text-muted-foreground">
-                      Split {payment.splitCount} ways
-                    </span>
-                    <span className="text-muted-foreground hidden sm:inline">•</span>
-                    <span className="text-sm text-muted-foreground">
-                      {formatCompactDate(payment.createdAt)}
-                    </span>
+                <div key={payment.id} className="py-2 border-b border-border last:border-0">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    {/* Single row: all info inline with bullet separators */}
+                    <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                      <span className="font-semibold text-foreground">{payment.description}</span>
+                      <span className="text-muted-foreground hidden sm:inline">•</span>
+                      {payment.isSettled ? (
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                        >
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Settled
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-amber-500/10 text-amber-300 border-amber-500/30"
+                        >
+                          <Clock className="w-3 h-3 mr-1" />
+                          Pending
+                        </Badge>
+                      )}
+                      <span className="text-muted-foreground hidden sm:inline">•</span>
+                      <span className="text-sm text-muted-foreground">
+                        {payment.createdByName || 'Trip member'}
+                      </span>
+                      <span className="text-muted-foreground hidden sm:inline">•</span>
+                      <span className="text-sm text-muted-foreground">
+                        Split {payment.splitCount} ways
+                      </span>
+                      <span className="text-muted-foreground hidden sm:inline">•</span>
+                      <span className="text-sm text-muted-foreground">
+                        {formatCompactDate(payment.createdAt)}
+                      </span>
+                    </div>
+
+                    {/* Amount and actions */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="font-bold text-foreground">
+                        {formatCurrency(payment.amount, payment.currency)}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        ({formatCurrency(payment.amount / payment.splitCount, payment.currency)}/ea)
+                      </span>
+
+                      {/* Edit/Delete buttons - only for creator */}
+                      {isCreator && (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 min-h-[44px] min-w-[44px]"
+                            onClick={() => handleEdit(payment)}
+                            aria-label={`Edit payment: ${payment.description}`}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 min-h-[44px] min-w-[44px] text-destructive hover:text-destructive"
+                            onClick={() => setDeleteConfirmId(payment.id)}
+                            aria-label={`Delete payment: ${payment.description}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Amount and actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="font-bold text-foreground">
-                      {formatCurrency(payment.amount, payment.currency)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      ({formatCurrency(payment.amount / payment.splitCount, payment.currency)}/ea)
-                    </span>
-
-                    {/* Edit/Delete buttons - only for creator */}
-                    {isCreator && (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 min-h-[44px] min-w-[44px]"
-                          onClick={() => handleEdit(payment)}
-                          aria-label={`Edit payment: ${payment.description}`}
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 min-h-[44px] min-w-[44px] text-destructive hover:text-destructive"
-                          onClick={() => setDeleteConfirmId(payment.id)}
-                          aria-label={`Delete payment: ${payment.description}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                  {/* Optional attachments (proof/context) — compact, only when present */}
+                  <PaymentAttachmentsViewer attachments={getAttachments(payment.id)} />
                 </div>
               );
             })}

@@ -23,10 +23,15 @@ export interface LinkItem {
   image_url?: string;
   created_at: string;
   source: 'chat' | 'manual' | 'places';
+  deleteTable: 'trip_link_index' | 'trip_links';
   tags?: string[];
 }
 
 export type MediaType = 'all' | 'photos' | 'videos' | 'files' | 'links';
+
+function withDemoDeleteTable(links: Omit<LinkItem, 'deleteTable'>[]): LinkItem[] {
+  return links.map(link => ({ ...link, deleteTable: 'trip_links' as const }));
+}
 
 export const useMediaManagement = (tripId: string) => {
   const { isDemoMode } = useDemoMode();
@@ -92,15 +97,17 @@ export const useMediaManagement = (tripId: string) => {
           tripTier === 'consumer' &&
           TripSpecificMockDataService.getTripLinkItems(parseInt(tripId)).length > 0
         ) {
-          return TripSpecificMockDataService.getTripLinkItems(parseInt(tripId));
+          return withDemoDeleteTable(
+            TripSpecificMockDataService.getTripLinkItems(parseInt(tripId)),
+          );
         }
         if (tripTier === 'pro' && proTripMockData[tripId]) {
-          return proTripMockData[tripId].links || [];
+          return withDemoDeleteTable(proTripMockData[tripId].links || []);
         }
         if (tripTier === 'event' && eventsMockData[tripId]) {
-          return eventsMockData[tripId].links || [];
+          return withDemoDeleteTable(eventsMockData[tripId].links || []);
         }
-        return UniversalMockDataService.getLinkItems(tripId);
+        return withDemoDeleteTable(UniversalMockDataService.getLinkItems(tripId));
       }
 
       try {
@@ -137,6 +144,7 @@ export const useMediaManagement = (tripId: string) => {
               source: isFromPlaces
                 ? ('places' as const)
                 : ((item.message_id ? 'chat' : 'manual') as 'chat' | 'manual'),
+              deleteTable: 'trip_link_index' as const,
               tags: [],
             };
           }),
@@ -149,6 +157,7 @@ export const useMediaManagement = (tripId: string) => {
             image_url: undefined,
             created_at: item.created_at,
             source: 'manual' as const,
+            deleteTable: 'trip_links' as const,
             tags: [],
           })),
         ];

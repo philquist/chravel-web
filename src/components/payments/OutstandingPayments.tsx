@@ -19,6 +19,8 @@ import { isDemoTrip } from '@/utils/demoUtils';
 import { formatCurrency } from '@/services/currencyService';
 import { formatShortDate } from '@/utils/dateFormatters';
 import { PAYMENT_METHOD_DISPLAY_NAMES } from '@/types/paymentMethods';
+import { usePaymentAttachments } from '@/hooks/usePaymentAttachments';
+import { PaymentAttachmentsViewer } from '@/features/payments/components/PaymentAttachmentsViewer';
 
 interface PaymentSplit {
   id: string;
@@ -93,6 +95,10 @@ export const OutstandingPayments = ({
   const unsettledPayments = useMemo(() => {
     return payments.filter(p => !p.isSettled);
   }, [payments]);
+
+  // Optional attachments (proof/context) for the visible payments — read-only on the card.
+  const attachmentPaymentIds = useMemo(() => unsettledPayments.map(p => p.id), [unsettledPayments]);
+  const { getAttachments } = usePaymentAttachments(tripId, attachmentPaymentIds);
 
   // Enrich payments with splits and creator payment methods
   useEffect(() => {
@@ -498,6 +504,9 @@ export const OutstandingPayments = ({
                     </div>
                   ))}
                 </div>
+
+                {/* Optional attachments (proof/context) — compact, only when present */}
+                <PaymentAttachmentsViewer attachments={getAttachments(payment.id)} />
 
                 {/* Edit/Delete buttons - only show for payment creator */}
                 {user?.id === payment.createdBy && (
