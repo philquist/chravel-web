@@ -47,18 +47,6 @@ interface PricingSectionProps {
   onSignUp?: () => void;
 }
 
-// Trip Pass display values (must be declared before consumerTiers uses it)
-const TRIP_PASS_DISPLAY = {
-  explorer: {
-    price: TRIP_PASS_PRICING.explorer.priceDisplay,
-    durationDays: TRIP_PASS_PRICING.explorer.durationDays,
-  },
-  'frequent-chraveler': {
-    price: TRIP_PASS_PRICING['frequent-chraveler'].priceDisplay,
-    durationDays: TRIP_PASS_PRICING['frequent-chraveler'].durationDays,
-  },
-} as const;
-
 // Consumer Pricing Tiers - Chravel Plus (Free, Explorer, Frequent Chraveler)
 const consumerTiers: PricingTier[] = [
   {
