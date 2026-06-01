@@ -33,7 +33,7 @@ documented below.
 | 5 | MEDIUM | Pricing duplicated across 4+ files + hardcoded UI strings; could drift undetected. | **Mitigated** (parity test added) |
 | 6 | MEDIUM | `webhook_events` idempotency table is **shared** between Stream chat (`stream:message.new`) and billing events. | Documented (deferred) |
 | 7 | LOW | No billing **kill-switch** feature flag (all 4 flags are Stream-chat). | Documented (deferred) |
-| 8 | LOW | Apple IAP / Google Billing scaffold-only; `process-account-deletions` & `join-trip` also reference `private_profiles`. | Documented (intended / deferred) |
+| 8 | LOW | Apple IAP / Google Billing scaffold-only; `process-account-deletions` skips missing `private_profiles`; `join-trip` comment updated. | **Fixed** (graceful skip + comment) |
 
 ---
 

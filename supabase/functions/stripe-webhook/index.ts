@@ -87,6 +87,11 @@ import {
   resolveCanceledTransition,
   resolveEntitlementTransition,
 } from './entitlementTransitions.ts';
+import {
+  extractRefundedPurchaseType,
+  resolvePaymentIntentId,
+  shouldRevokeTripPassOnRefund,
+} from './refundCorrelation.ts';
 
 /**
  * Log an entitlement change to the audit trail (best-effort — does not block).
@@ -775,10 +780,7 @@ async function handleChargeRefunded(
   // Charge. So correlate the refunded charge back to its originating Checkout Session
   // via the PaymentIntent. If the refund is for a subscription (or any other) charge
   // on the same customer, leave the pass intact and let the subscription flows handle it.
-  const paymentIntentId =
-    typeof charge.payment_intent === 'string'
-      ? charge.payment_intent
-      : (charge.payment_intent?.id ?? null);
+  const paymentIntentId = resolvePaymentIntentId(charge.payment_intent);
 
   let refundedPurchaseType: string | null = null;
   if (paymentIntentId) {
@@ -787,7 +789,7 @@ async function handleChargeRefunded(
         payment_intent: paymentIntentId,
         limit: 1,
       });
-      refundedPurchaseType = sessions.data[0]?.metadata?.purchase_type ?? null;
+      refundedPurchaseType = extractRefundedPurchaseType(sessions.data[0]);
     } catch (err) {
       logStep('Could not resolve checkout session for refunded charge', {
         paymentIntentId,
@@ -796,7 +798,7 @@ async function handleChargeRefunded(
     }
   }
 
-  if (refundedPurchaseType !== 'pass') {
+  if (!shouldRevokeTripPassOnRefund(refundedPurchaseType)) {
     logStep('Refund is not a Trip Pass purchase — pass entitlement left intact', {
       userId,
       refundedPurchaseType,

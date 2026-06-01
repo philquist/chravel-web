@@ -87,7 +87,7 @@ try {
 // ----------------------------------------------------------------------
 console.log('\nVerifying Idempotency Logic...');
 // The webhook uses:
-// - `upsert` for `private_profiles` (Idempotent)
+// - `update` on `profiles` for billing identifiers (Idempotent)
 // - `upsert` for `user_entitlements` (Idempotent)
 // - `update` for `profiles` (Idempotent: setting status to 'active' twice is safe)
 // - `insert` for `notifications`.

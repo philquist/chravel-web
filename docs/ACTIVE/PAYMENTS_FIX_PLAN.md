@@ -1,7 +1,7 @@
 # Chravel — Payments Fix Plan
 
 > Companion to `PAYMENTS_AUDIT.md`. Lists what changed, what must happen to ship it, and paste-ready
-> follow-ups for the deferred items. **No external-dashboard or DB-migration changes were applied in this pass.**
+> follow-ups for the deferred items. **Edge functions redeployed and two DB migrations applied to live (2026-05-31).**
 
 ---
 
@@ -15,22 +15,24 @@
 | Storage-limit drift | `src/billing/entitlements.ts` | `media_upload.explorer` `2000` → `50000` (MB) + cross-link comment |
 | Stale legacy price | `src/constants/stripe.ts` | `STRIPE_PRODUCTS['pro-enterprise'].price` `199` → `0` (custom) |
 | Parity guard | `src/billing/__tests__/pricingParity.test.ts` | New — 11 assertions locking config mirrors |
-| Refund correlation | `supabase/functions/stripe-webhook/index.ts` | `handleChargeRefunded` correlates the refunded charge → Checkout Session (`metadata.purchase_type`) and only revokes a Trip Pass when the pass purchase itself was refunded — not on unrelated refunds for the same customer (the lookup repoint re-activated this previously-dead handler) |
+| Refund correlation | `supabase/functions/stripe-webhook/index.ts` + `refundCorrelation.ts` | `handleChargeRefunded` correlates the refunded charge → Checkout Session (`metadata.purchase_type`) and only revokes a Trip Pass when the pass purchase itself was refunded — not on unrelated refunds for the same customer (the lookup repoint re-activated this previously-dead handler) |
+| Refund unit tests | `supabase/functions/stripe-webhook/__tests__/refundCorrelation.test.ts` | Locks purchase-type correlation helpers |
+| Account deletion cleanup | `supabase/functions/process-account-deletions/index.ts` | Skip missing `private_profiles` table gracefully (same pattern as other optional tables) |
+| Reconciliation view + unique index | `20260531180000_*`, `20260531180100_*` migrations | View joins `profiles`; partial unique on `stripe_customer_id` |
 
-All are non-destructive. No DB schema change.
+All are non-destructive. DB migrations applied to live project via Supabase MCP (2026-05-31).
 
-### Required to make the webhook fix live: **redeploy edge functions**
+### Required to make the webhook fix live: **redeploy edge functions** — ✅ DONE (2026-05-31)
 
-The edge-function source is fixed but the **deployed** copies are stale. After merge, redeploy:
+Deployed to project `jmjiyekmxwsxkfnqwyaa`:
 
-- `stripe-webhook`, `check-subscription`, `fetch-invoices`
+| Function | Version | Notes |
+|---|---:|---|
+| `stripe-webhook` | 859 | Uses `profiles`; refund correlation live |
+| `check-subscription` | 1020 | Customer id cache on `profiles` |
+| `fetch-invoices` | 847 | Invoice lookup via `profiles` |
 
-Options:
-1. MCP: `mcp__supabase__deploy_edge_function` for each (project `jmjiyekmxwsxkfnqwyaa`).
-2. CLI: `supabase functions deploy stripe-webhook check-subscription fetch-invoices --project-ref jmjiyekmxwsxkfnqwyaa`.
-
-After deploy, confirm with `mcp__supabase__get_edge_function` that the body references `profiles` (not
-`private_profiles`).
+Verify with `get_edge_function` that deployed bodies reference `profiles` (not `private_profiles` in executable code).
 
 ---
 
@@ -189,8 +191,5 @@ RLS blocks client entitlement mutation.
    and wire `stripePriceIdAnnual`, or drop `priceAnnual` for Pro tiers."
 7. **Collapse hardcoded UI price strings.** "Replace literal prices in `UpgradeModal.tsx` / `ProUpgradeModal.tsx`
    with values derived from `billing/config.ts`; extend `pricingParity.test.ts` to assert the rendered values."
-8. **Harden customer→user lookup (#1 follow-up).** "Add a partial `UNIQUE (stripe_customer_id)` index on
-   `profiles` (nullable) and clear/reassign the id on customer change in `create-checkout`, so the webhook's
-   `.eq('stripe_customer_id', …).limit(1)` lookups can never resolve to the wrong user if an id is ever duplicated."
-9. **Repoint remaining `private_profiles` reference.** "Update `process-account-deletions` (and the `join-trip`
-   comment) off `private_profiles` as part of the PII-model decision in B2."
+8. **Harden customer→user lookup (#1 follow-up).** ✅ Applied — partial `UNIQUE (stripe_customer_id)` index on `profiles` (migration `20260531180100_*`, live 2026-05-31). Remaining: clear/reassign id on customer change in `create-checkout` if Stripe customer is ever recreated.
+9. **Repoint remaining `private_profiles` reference.** ✅ Applied — `process-account-deletions` skips missing table; `join-trip` comment updated (2026-05-31).

@@ -278,7 +278,7 @@ serve(async req => {
     if (requiresApproval) {
       // Get requester profile FIRST to capture name at request time
       // This is critical for displaying the correct name in the Requests tab
-      // Note: email column was moved to private_profiles table, use auth user email instead
+      // Email is always from auth user (profiles table does not store email)
       const { data: requesterProfile } = await supabaseClient
         .from('profiles')
         .select('display_name, first_name, last_name')

@@ -33,13 +33,13 @@ SELECT
   ue.plan,
   ue.status,
   ue.current_period_end,
-  pp.stripe_customer_id,
-  pp.stripe_subscription_id
+  p.stripe_customer_id,
+  p.stripe_subscription_id
 FROM public.user_entitlements ue
-LEFT JOIN public.private_profiles pp ON pp.id = ue.user_id
+LEFT JOIN public.profiles p ON p.user_id = ue.user_id
 WHERE ue.source = 'stripe'
   AND ue.purchase_type = 'subscription'
   AND (
     (ue.status IN ('active', 'trialing', 'past_due', 'canceled') AND ue.current_period_end IS NOT NULL AND ue.current_period_end < now())
-    OR pp.stripe_customer_id IS NULL
+    OR p.stripe_customer_id IS NULL
   );

@@ -9,7 +9,7 @@
  * 2. Anonymize chat messages (keep content with snapshotted sender_display_name, null out user_id)
  * 3. Delete user-owned data (tasks, polls, events, payments, files, etc.)
  * 4. Delete storage media (avatars, uploads, exports)
- * 5. Delete private_profiles (cascades from profiles)
+ * 5. Delete legacy private_profiles row if that table exists (not deployed in live DB)
  * 6. Delete profiles row
  * 7. Delete auth.users entry (invalidates all sessions)
  * 8. Audit log the deletion
@@ -270,12 +270,15 @@ async function processAccountDeletion(
     result.errors.push(...errors);
   }
 
-  // Step 5: Delete private_profiles (cascades from profiles via FK, but explicit for safety)
+  // Step 5: Delete legacy private_profiles if deployed (billing identifiers live on profiles)
   try {
     const { error } = await supabase.from('private_profiles').delete().eq('id', profileId);
 
     if (error) {
-      result.errors.push(`delete private_profiles: ${error.message}`);
+      // Table might not exist in this environment — skip gracefully
+      if (!error.message.includes('relation') && !error.message.includes('does not exist')) {
+        result.errors.push(`delete private_profiles: ${error.message}`);
+      }
     } else {
       result.tablesProcessed.push('private_profiles (deleted)');
     }
