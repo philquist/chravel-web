@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { StreamChat } from 'npm:stream-chat';
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { requireSecrets, createMissingSecretResponse } from '../_shared/validateSecrets.ts';
+import { verifyTripMembership } from '../_shared/verifyTripMembership.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -119,12 +120,11 @@ serve(async req => {
       );
     }
 
-    const { data: membership, error: membershipError } = await adminClient
-      .from('trip_members')
-      .select('trip_id')
-      .eq('trip_id', tripId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const { isMember, error: membershipError } = await verifyTripMembership(
+      adminClient,
+      user.id,
+      tripId,
+    );
 
     if (membershipError) {
       return errorResponse(
@@ -136,7 +136,7 @@ serve(async req => {
       );
     }
 
-    if (!membership) {
+    if (!isMember) {
       return errorResponse(
         corsHeaders,
         403,
