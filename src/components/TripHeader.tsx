@@ -375,7 +375,12 @@ export const TripHeader = ({
         }
         setCropImageSrc(null);
       } else {
-        toast.error('Cover photo was uploaded but could not be saved to trip details.');
+        if (import.meta.env.DEV) {
+          console.error('[TripHeader] cover persist failed:', result.error);
+        }
+        toast.error(
+          "We uploaded the photo, but couldn't attach it to this trip. Please try again.",
+        );
       }
       return result.ok;
     } finally {

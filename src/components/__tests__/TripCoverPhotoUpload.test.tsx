@@ -56,6 +56,17 @@ vi.mock('@/utils/tripCoverStorage', () => ({
   uploadTripCoverBlob: (...args: unknown[]) => mockUploadTripCoverBlob(...args),
 }));
 
+// prepareImageForUpload does canvas/EXIF work that jsdom can't run; mock it so
+// the drop handler reaches the crop modal instead of erroring out up front.
+vi.mock('@/utils/imagePrep', () => ({
+  ImagePrepError: class ImagePrepError extends Error {},
+  prepareImageForUpload: vi.fn().mockResolvedValue({
+    blob: new Blob(['img'], { type: 'image/jpeg' }),
+    fileName: 'cover.jpg',
+    contentType: 'image/jpeg',
+  }),
+}));
+
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     storage: {
@@ -75,6 +86,14 @@ vi.mock('sonner', () => ({
 
 describe('TripCoverPhotoUpload', () => {
   beforeEach(() => {
+    // jsdom has no object-URL implementation; the component creates/revokes them
+    // for the crop preview.
+    if (!URL.createObjectURL) {
+      URL.createObjectURL = vi.fn(() => 'blob:mock');
+    }
+    if (!URL.revokeObjectURL) {
+      URL.revokeObjectURL = vi.fn();
+    }
     vi.clearAllMocks();
     mockUploadTripCoverBlob.mockResolvedValue({
       publicUrl: 'https://abc.supabase.co/storage/v1/object/public/trip-covers/trip-1/cover.jpg',
@@ -101,6 +120,32 @@ describe('TripCoverPhotoUpload', () => {
     await waitFor(() => {
       expect(onPhotoUploaded).toHaveBeenCalledTimes(1);
       expect(mockRemove).toHaveBeenCalledWith(['trip-1/cover.jpg']);
+    });
+  });
+
+  it('shows the truthful "could not attach" copy when the trip-detail save fails', async () => {
+    // Regression: the storage upload succeeds but persisting to the trip record
+    // fails (e.g. the RLS infinite-recursion bug fixed in
+    // 20260603120000_fix_trips_rls_infinite_recursion). The toast must not claim
+    // success, and must point the user at retrying the attach step.
+    const onPhotoUploaded = vi.fn().mockResolvedValue(false);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TripCoverPhotoUpload tripId="trip-1" onPhotoUploaded={onPhotoUploaded} tripName="Trip" />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(screen.getByText('Upload Trip Cover Photo'));
+    fireEvent.click(await screen.findByText('Confirm Crop'));
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith(
+        "We uploaded the photo, but couldn't attach it to this trip. Please try again.",
+      );
     });
   });
 });
