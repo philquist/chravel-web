@@ -61,8 +61,29 @@ export const FooterSection = () => {
                   Demo
                 </Link>
               </li>
+              <li>
+                <a
+                  href="https://testflight.apple.com/join/S3DNbjNf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground hover:text-primary transition-colors"
+                >
+                  iOS Beta (TestFlight)
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.chravel.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground hover:text-primary transition-colors"
+                >
+                  Android (Play Store)
+                </a>
+              </li>
             </ul>
           </div>
+
 
           {/* Company Links */}
           <div className="space-y-4">
