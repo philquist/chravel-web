@@ -125,7 +125,7 @@ export const useTripCoverPhoto = (
       updateTripCoverCache(queryClient, tripId, bustedPhotoUrl);
       await invalidateTripCoverQueries(queryClient, tripId);
 
-      toast.success('Cover photo updated');
+      toast.success('Trip cover photo saved.');
       return true;
     } catch (error) {
       console.error('Error updating cover photo:', error);

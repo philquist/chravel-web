@@ -114,7 +114,12 @@ export const TripCoverPhotoUpload = ({
           setSelectedImageSrc('');
           return true;
         }
-        toast.error('Cover photo was uploaded but could not be saved to trip details.');
+        if (import.meta.env.DEV) {
+          console.error('[TripCoverPhotoUpload] cover persist failed:', result.error);
+        }
+        toast.error(
+          "We uploaded the photo, but couldn't attach it to this trip. Please try again.",
+        );
         return false;
       } catch (error) {
         console.error('Photo upload error:', error);
