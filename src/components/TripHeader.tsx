@@ -376,7 +376,7 @@ export const TripHeader = ({
         setCropImageSrc(null);
       } else {
         if (import.meta.env.DEV) {
-          console.error('[TripHeader] cover persist failed:', result.error);
+          console.error('[TripHeader] cover persist failed:', (result as { error?: string }).error);
         }
         toast.error(
           "We uploaded the photo, but couldn't attach it to this trip. Please try again.",
