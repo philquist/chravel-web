@@ -91,11 +91,49 @@ channel — verify they are set before device testing.
 
 ---
 
-## Known limitations / follow-ups
+## Native app (iOS/Android) badge wiring — belongs in `chravel-mobile`, not here
 
-1. **Android count badge** needs a native plugin (e.g. `@capawesome/capacitor-badge`)
-   that reads the delivered `data.badgeCount`. Not added — CLAUDE.md requires explicit
-   sign-off for new dependencies. iOS (APNS) and installed PWA already show counts.
+**`chravel-web` is the web/PWA app only.** It has no Capacitor/native runtime
+(`useNativePush` is a web stub: *"Native push is handled by the separate
+chravel-mobile Expo app"*; there are no `@capacitor/*` deps, no `capacitor.config`,
+and no `ios/`/`android/` projects). A Capacitor badge plugin therefore cannot run
+here — the native badge code must live in the native app repo.
+
+The web dispatcher already sends everything the native app needs:
+- iOS: APNS `aps.badge` (set in `_shared/fcmV1.ts` → FCM `apns.payload.aps.badge`)
+  — iOS sets the home-screen badge automatically, **no app code required**.
+- Android: FCM `data.badgeCount` (string) — Android needs the app to set the count
+  explicitly in its push-received handler.
+
+Paste ONE of these into the native app, matching its framework:
+
+**Capacitor (`@capawesome/capacitor-badge`):**
+```ts
+import { Badge } from '@capawesome/capacitor-badge';
+import { PushNotifications } from '@capacitor/push-notifications';
+
+PushNotifications.addListener('pushNotificationReceived', async (n) => {
+  const count = Number(n.data?.badgeCount);
+  if (Number.isFinite(count) && count >= 0) await Badge.set({ count });
+});
+// Clear when the app is opened / notifications are read:
+//   await Badge.clear();
+```
+
+**Expo (`expo-notifications`):**
+```ts
+import * as Notifications from 'expo-notifications';
+
+Notifications.addNotificationReceivedListener((n) => {
+  const count = Number(n.request.content.data?.badgeCount);
+  if (Number.isFinite(count) && count >= 0) Notifications.setBadgeCountAsync(count);
+});
+// Clear on app resume / read: Notifications.setBadgeCountAsync(0);
+```
+
+iOS (APNS) and the installed PWA already show count badges from `chravel-web`.
+
+## Other limitations / follow-ups
 2. **iOS Safari** only supports web push when the site is **installed to the Home Screen**
    (iOS 16.4+). Non-installed Safari tabs get no web push (expected).
 3. The native/web push-toggle logic is duplicated across the consumer/enterprise/event
