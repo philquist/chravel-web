@@ -49,6 +49,7 @@ import { useIsMobile } from '../hooks/use-mobile';
 import { useDemoMode } from '../hooks/useDemoMode';
 import { useRecsAccess } from '../hooks/useRecsAccess';
 import { useNotificationRealtime } from '../hooks/useNotificationRealtime';
+import { useAppBadge } from '../hooks/useAppBadge';
 import { useDemoModeStore } from '../store/demoModeStore';
 import { useTrips } from '../hooks/useTrips';
 import { usePendingRequestTripCards } from '../hooks/usePendingRequestTripCards';
@@ -124,6 +125,9 @@ const AuthIndex = () => {
 
   // Notification unread count for mobile tab bar badge
   const { unreadCount: notificationUnreadCount } = useNotificationRealtime();
+
+  // Mirror the category-filtered unread count to the app-icon badge (PWA Web Badging API).
+  useAppBadge();
 
   // Initialize onboarding with user context for Supabase sync
   const {

@@ -43,6 +43,18 @@ export interface FcmV1Message {
   android?: {
     notification?: Record<string, string>;
   };
+  /**
+   * iOS/APNs overrides forwarded by FCM. We use this to set the app-icon badge
+   * (aps.badge); the title/body still come from the top-level `notification`.
+   */
+  apns?: {
+    payload?: {
+      aps?: {
+        badge?: number;
+        sound?: string;
+      };
+    };
+  };
 }
 
 export interface FcmSendResult {

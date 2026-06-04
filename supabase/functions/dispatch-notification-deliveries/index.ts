@@ -2,6 +2,7 @@ import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { sendFcmV1, toFcmData } from '../_shared/fcmV1.ts';
+import { computeBadgeCount } from '../_shared/badgeCategories.ts';
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   getMinutesUntilQuietHoursEnd,
@@ -410,6 +411,7 @@ async function sendPush(
   title: string,
   body: string,
   data: Record<string, unknown>,
+  badgeCount?: number,
 ): Promise<{
   ok: boolean;
   providerMessageId?: string;
@@ -419,6 +421,10 @@ async function sendPush(
   const result = await sendFcmV1(tokens, {
     notification: { title, body },
     data: data ? toFcmData(data) : undefined,
+    // Set the iOS app-icon badge via APNs; title/body still come from `notification`.
+    ...(typeof badgeCount === 'number'
+      ? { apns: { payload: { aps: { badge: badgeCount } } } }
+      : {}),
   });
 
   if (result.success.length > 0) {
@@ -608,6 +614,10 @@ serve(async req => {
       deferred: 0,
     };
 
+    // Cache the app-icon badge count per recipient — multiple deliveries in this
+    // batch can share a recipient, so compute the count query at most once each.
+    const badgeCountByUser = new Map<string, number>();
+
     for (const delivery of deliveries) {
       const notification = notificationById.get(delivery.notification_id);
       if (!notification) {
@@ -680,13 +690,27 @@ serve(async req => {
         let pushError = '';
         const providerIds: string[] = [];
 
+        // App-icon badge count (category-filtered unread total) for this recipient.
+        let badgeCount = badgeCountByUser.get(userId);
+        if (badgeCount === undefined) {
+          badgeCount = await computeBadgeCount(supabase, userId, prefs);
+          badgeCountByUser.set(userId, badgeCount);
+        }
+
         // 1. Deliver to FCM if available
         if (fcmTokens.length > 0) {
-          const pushResult = await sendPush(fcmTokens, notification.title, notification.message, {
-            notificationId: notification.id,
-            type: notification.type || 'notification',
-            tripId: notification.trip_id,
-          });
+          const pushResult = await sendPush(
+            fcmTokens,
+            notification.title,
+            notification.message,
+            {
+              notificationId: notification.id,
+              type: notification.type || 'notification',
+              tripId: notification.trip_id,
+              badgeCount,
+            },
+            badgeCount,
+          );
           if (pushResult.ok) {
             pushSucceeded = true;
             if (pushResult.providerMessageId)
@@ -709,6 +733,8 @@ serve(async req => {
                   notificationId: notification.id,
                   tripId: notification.trip_id,
                   type: notification.type,
+                  // SW reads this to update the PWA app-icon badge (Web Badging API).
+                  badgeCount,
                 },
               },
               vapidPublicKey,
