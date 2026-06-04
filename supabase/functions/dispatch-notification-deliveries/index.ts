@@ -4,6 +4,8 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import { sendFcmV1, toFcmData } from '../_shared/fcmV1.ts';
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
+  getMinutesUntilQuietHoursEnd,
+  isQuietHours,
   normalizeCategory,
   type NotificationCategory,
   type NotificationPreferences,
@@ -530,6 +532,22 @@ serve(async req => {
       }
 
       if (body.dryRun) {
+        continue;
+      }
+
+      // Quiet hours: defer push + email delivery until the window ends so the
+      // user's quiet-hours setting is honored. The in-app notification row was
+      // already created, so nothing is lost — only the interruptive delivery is
+      // delayed. (Category opt-outs above still hard-skip.)
+      if (basePreferenceDecision.allow && prefs.quiet_hours_enabled && isQuietHours(prefs)) {
+        const delayMinutes = Math.max(getMinutesUntilQuietHoursEnd(prefs), 1);
+        const nextAttemptAt = new Date(Date.now() + delayMinutes * 60 * 1000).toISOString();
+        await markDelivery(supabase, delivery.id, {
+          status: 'queued',
+          error: 'quiet_hours_deferred',
+          next_attempt_at: nextAttemptAt,
+        });
+        summary.deferred++;
         continue;
       }
 
