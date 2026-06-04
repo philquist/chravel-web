@@ -11,6 +11,7 @@
  * 4. Delete storage media (avatars, uploads, exports)
  * 5. Delete legacy private_profiles row if that table exists (not deployed in live DB)
  * 6. Delete profiles row
+ * 6b. Revoke Sign in with Apple grant (App Store 5.1.1(v)) — before auth.users delete
  * 7. Delete auth.users entry (invalidates all sessions)
  * 8. Audit log the deletion
  */
@@ -20,6 +21,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { verifyCronAuth } from '../_shared/cronGuard.ts';
 import { logError } from '../_shared/errorHandling.ts';
+import { revokeAppleForUser } from '../_shared/appleRevoke.ts';
 
 interface DeletionResult {
   userId: string;
@@ -27,6 +29,7 @@ interface DeletionResult {
   tablesProcessed: string[];
   storageCleanedUp: string[];
   errors: string[];
+  appleRevocation?: { revoked: boolean; reason?: string; status?: number };
 }
 
 const logStep = (step: string, details?: unknown) => {
@@ -303,6 +306,18 @@ async function processAccountDeletion(
     return result;
   }
 
+  // Step 6b: Revoke Sign in with Apple grant BEFORE deleting auth.users (App Store 5.1.1(v)).
+  // No-ops cleanly when the user never signed in with Apple. Never blocks deletion.
+  try {
+    const revocation = await revokeAppleForUser(supabase, userId);
+    result.appleRevocation = revocation;
+    result.tablesProcessed.push(
+      `apple_auth_tokens (${revocation.revoked ? 'revoked' : (revocation.reason ?? 'no-op')})`,
+    );
+  } catch (err) {
+    result.errors.push(`apple revoke: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
   // Step 7: Delete auth.users entry — this invalidates ALL sessions (C3)
   try {
     const { error } = await supabase.auth.admin.deleteUser(userId);
@@ -320,12 +335,15 @@ async function processAccountDeletion(
   // Step 8: Audit log
   try {
     await supabase.from('security_audit_log').insert({
-      event_type: 'account_deletion_executed',
+      action: 'account_deletion_executed',
+      table_name: 'profiles',
       user_id: userId,
-      details: {
+      record_id: profileId,
+      metadata: {
         profile_id: profileId,
         tables_processed: result.tablesProcessed,
         storage_cleaned_up: result.storageCleanedUp,
+        apple_revocation: result.appleRevocation ?? null,
         errors: result.errors,
         executed_at: new Date().toISOString(),
       },
@@ -419,6 +437,7 @@ serve(async req => {
           success: r.success,
           tablesProcessed: r.tablesProcessed.length,
           storageCleanedUp: r.storageCleanedUp.length,
+          appleRevoked: r.appleRevocation?.revoked ?? false,
           errorCount: r.errors.length,
         })),
       }),
