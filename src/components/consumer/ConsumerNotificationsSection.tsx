@@ -6,8 +6,7 @@ import {
   NotificationPreferences,
 } from '../../services/userPreferencesService';
 import { useToast } from '../../hooks/use-toast';
-import { useNativePush } from '@/hooks/useNativePush';
-import { useWebPush } from '@/hooks/useWebPush';
+import { usePushPreferenceToggle } from '@/hooks/usePushPreferenceToggle';
 import { useDemoMode } from '../../hooks/useDemoMode';
 import { NotificationPreviewPanel } from '@/components/dev/NotificationPreviewPanel';
 import { getTripNotificationPreferenceCategories } from '@/components/settings/tripNotificationPreferenceCategories';
@@ -19,12 +18,7 @@ export const ConsumerNotificationsSection = () => {
   const { user } = useAuth();
   const { preferences, updatePreferences, isUpdating } = useGlobalSystemMessagePreferences();
   const { toast } = useToast();
-  const { isNative: isNativePush, registerForPush, unregisterFromPush } = useNativePush();
-  const {
-    isSupported: isWebPushSupported,
-    subscribe: subscribeWebPush,
-    unsubscribe: unsubscribeWebPush,
-  } = useWebPush();
+  const { applyPushEnabled } = usePushPreferenceToggle();
   const { showDemoContent } = useDemoMode();
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(true);
   const [isUpdatingPush, setIsUpdatingPush] = useState(false);
@@ -164,68 +158,31 @@ export const ConsumerNotificationsSection = () => {
     const dbKey = keyMap[setting];
     if (!dbKey) return;
 
-    // Push notifications: request/register only when user explicitly enables (native only).
-    if (setting === 'push' && user?.id && isNativePush) {
+    // Push: enabling must register a device token (native) or create a
+    // web_push_subscriptions row (web/PWA), or the dispatcher has no target.
+    if (setting === 'push' && user?.id) {
       setIsUpdatingPush(true);
       try {
-        if (newValue) {
-          const token = await registerForPush();
-          if (!token) {
-            toast({
-              title: 'Push notifications not enabled',
-              description: 'Allow notifications in iOS Settings to receive alerts.',
-              variant: 'destructive',
-            });
-            return;
-          }
-        } else {
-          await unregisterFromPush();
+        const result = await applyPushEnabled(newValue);
+        if (result === 'permission_denied') {
+          toast({
+            title: 'Push notifications not enabled',
+            description: 'Allow notifications for this app to receive alerts on this device.',
+            variant: 'destructive',
+          });
+          return;
         }
-
+        if (result === 'error') {
+          toast({
+            title: 'Error',
+            description: 'Failed to update push notifications. Please try again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        // 'ok' or 'unsupported' — record the preference.
         setNotificationSettings(prev => ({ ...prev, push: newValue }));
         await userPreferencesService.updateNotificationPreferences(user.id, { [dbKey]: newValue });
-        return;
-      } catch (error) {
-        if (import.meta.env.DEV) console.error('Error updating push notifications:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to update push notifications. Please try again.',
-          variant: 'destructive',
-        });
-        return;
-      } finally {
-        setIsUpdatingPush(false);
-      }
-    }
-
-    // Web/PWA push: enabling must actually request permission and create a
-    // web_push_subscriptions row, or the dispatcher has no target to send to.
-    if (setting === 'push' && user?.id && !isNativePush && isWebPushSupported) {
-      setIsUpdatingPush(true);
-      try {
-        if (newValue) {
-          const ok = await subscribeWebPush();
-          if (!ok) {
-            toast({
-              title: 'Push notifications not enabled',
-              description: 'Allow notifications in your browser to receive alerts on this device.',
-              variant: 'destructive',
-            });
-            return;
-          }
-        } else {
-          await unsubscribeWebPush();
-        }
-        setNotificationSettings(prev => ({ ...prev, push: newValue }));
-        await userPreferencesService.updateNotificationPreferences(user.id, { [dbKey]: newValue });
-        return;
-      } catch (error) {
-        if (import.meta.env.DEV) console.error('Error updating web push:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to update push notifications. Please try again.',
-          variant: 'destructive',
-        });
         return;
       } finally {
         setIsUpdatingPush(false);
