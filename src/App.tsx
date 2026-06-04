@@ -32,6 +32,7 @@ import { ExitDemoButton } from './components/demo';
 
 import { setupGlobalSyncProcessor } from './services/globalSyncProcessor';
 import { useSwUpdate } from '@/hooks/useSwUpdate';
+import { useAppBadge } from '@/hooks/useAppBadge';
 import { safeReload } from '@/utils/safeReload';
 import { retryImport } from '@/lib/retryImport';
 import { getPublicSeoRoute, SEO_LANDING_CONTENT } from '@/lib/seo';
@@ -179,6 +180,10 @@ const App = () => {
   React.useMemo(() => {
     useDemoModeStore.getState().init();
   }, []);
+
+  // Keep the OS app-icon badge (PWA / installed app) in sync with unread notifications.
+  useAppBadge();
+
   // Track app initialization performance
   const stopTiming = performanceService.startTiming('App Initialization');
 

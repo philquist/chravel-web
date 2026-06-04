@@ -43,6 +43,10 @@ export interface FcmV1Message {
   android?: {
     notification?: Record<string, string>;
   };
+  // iOS — FCM forwards this to APNS. aps.badge sets the home-screen icon badge.
+  apns?: {
+    payload?: { aps?: { badge?: number; sound?: string } };
+  };
 }
 
 export interface FcmSendResult {

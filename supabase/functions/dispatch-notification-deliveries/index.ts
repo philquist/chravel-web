@@ -279,9 +279,14 @@ async function sendPush(
   error?: string;
   invalidTokens?: string[];
 }> {
+  // Set the iOS APNS badge (and Android via data.badgeCount) when provided, so
+  // the home-screen app icon shows the unread count even with the app closed.
+  const badge = typeof data?.badgeCount === 'number' ? (data.badgeCount as number) : undefined;
+
   const result = await sendFcmV1(tokens, {
     notification: { title, body },
     data: data ? toFcmData(data) : undefined,
+    ...(badge !== undefined ? { apns: { payload: { aps: { badge } } } } : {}),
   });
 
   if (result.success.length > 0) {
@@ -391,6 +396,7 @@ serve(async req => {
       { data: profileRows },
       { data: pushTokenRows },
       { data: webPushRows },
+      { data: unreadRows },
     ] = await Promise.all([
       supabase.from('notification_preferences').select('*').in('user_id', recipientIds),
       tripIds.length
@@ -416,12 +422,29 @@ serve(async req => {
             .in('user_id', recipientIds)
             .eq('is_active', true)
         : Promise.resolve({ data: [], error: null }),
+      // Unread notification rows for recipients — used to set the OS app-icon
+      // badge count in the push payload. user_id only keeps the rows lightweight.
+      recipientIds.length
+        ? supabase
+            .from('notifications')
+            .select('user_id')
+            .in('user_id', recipientIds)
+            .eq('is_read', false)
+            .eq('is_visible', true)
+            .limit(5000)
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
     const preferencesByUser = new Map<string, NotificationPreferences>();
     for (const userId of recipientIds) {
       const raw = (preferenceRows || []).find(row => row.user_id === userId);
       preferencesByUser.set(userId, mergePreferences(userId, raw || undefined));
+    }
+
+    // Per-recipient unread count → OS badge number for push payloads.
+    const unreadByUser = new Map<string, number>();
+    for (const row of (unreadRows || []) as Array<{ user_id: string }>) {
+      unreadByUser.set(row.user_id, (unreadByUser.get(row.user_id) || 0) + 1);
     }
 
     const tripById = new Map<string, TripRow>(
@@ -538,12 +561,17 @@ serve(async req => {
         let pushError = '';
         const providerIds: string[] = [];
 
+        // OS app-icon badge count: this recipient's current unread total (already
+        // includes the notification being delivered). Falls back to 1.
+        const badgeCount = unreadByUser.get(userId) ?? 1;
+
         // 1. Deliver to FCM if available
         if (fcmTokens.length > 0) {
           const pushResult = await sendPush(fcmTokens, notification.title, notification.message, {
             notificationId: notification.id,
             type: notification.type || 'notification',
             tripId: notification.trip_id,
+            badgeCount,
           });
           if (pushResult.ok) {
             pushSucceeded = true;
@@ -567,6 +595,7 @@ serve(async req => {
                   notificationId: notification.id,
                   tripId: notification.trip_id,
                   type: notification.type,
+                  badgeCount,
                 },
               },
               vapidPublicKey,

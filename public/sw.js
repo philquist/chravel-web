@@ -188,7 +188,19 @@ self.addEventListener('push', function (event) {
     vibrate: [100, 50, 100],
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  // Set the OS app-icon badge from the server-provided authoritative unread count.
+  // The foreground app reconciles this to the true count when next opened.
+  var badgeCount =
+    payload.data && typeof payload.data.badgeCount === 'number' ? payload.data.badgeCount : null;
+
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, options),
+      badgeCount !== null && badgeCount > 0 && self.navigator && self.navigator.setAppBadge
+        ? self.navigator.setAppBadge(badgeCount).catch(function () {})
+        : Promise.resolve(),
+    ]),
+  );
 });
 
 /**
@@ -199,6 +211,12 @@ self.addEventListener('push', function (event) {
  */
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
+
+  // Clearing the badge on tap is best-effort; the foreground app reconciles the
+  // badge to the true unread count once it loads.
+  if (self.navigator && self.navigator.clearAppBadge) {
+    self.navigator.clearAppBadge().catch(function () {});
+  }
 
   var data = event.notification.data || {};
   var action = event.action;
