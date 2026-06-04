@@ -2,6 +2,7 @@ import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { sendFcmV1, toFcmData } from '../_shared/fcmV1.ts';
+import { computeBadgeCount } from '../_shared/badgeCategories.ts';
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   getMinutesUntilQuietHoursEnd,
@@ -276,6 +277,7 @@ async function sendPush(
   title: string,
   body: string,
   data: Record<string, unknown>,
+  badgeCount?: number,
 ): Promise<{
   ok: boolean;
   providerMessageId?: string;
@@ -289,7 +291,10 @@ async function sendPush(
   const result = await sendFcmV1(tokens, {
     notification: { title, body },
     data: data ? toFcmData(data) : undefined,
-    ...(badge !== undefined ? { apns: { payload: { aps: { badge } } } } : {}),
+    // Set the iOS app-icon badge via APNs; title/body still come from `notification`.
+    ...(typeof badgeCount === 'number'
+      ? { apns: { payload: { aps: { badge: badgeCount } } } }
+      : {}),
   });
 
   if (result.success.length > 0) {
@@ -487,6 +492,12 @@ serve(async req => {
       cancelled: { push: 0, email: 0 },
       deferred: 0,
     };
+
+    // Cache the app-icon badge count per recipient — multiple deliveries in this
+    // batch can share a recipient, so compute the count query at most once each.
+    // `null` means the count query failed (unknown) — we omit the badge rather
+    // than sending 0, which would wrongly clear the icon.
+    const badgeCountByUser = new Map<string, number | null>();
 
     for (const delivery of deliveries) {
       const notification = notificationById.get(delivery.notification_id);

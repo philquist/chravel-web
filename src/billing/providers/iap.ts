@@ -83,15 +83,8 @@ export class AppleIAPProvider extends BaseBillingProvider {
     this.log('Purchase requested', request);
 
     if (!this.isAvailable()) {
-      // IAP not available - prompt user to subscribe on web
-      if (BILLING_FLAGS.SHOW_WEB_SUBSCRIBE_PROMPT) {
-        return {
-          success: false,
-          error: 'Please subscribe on our website at chravel.app',
-          errorCode: 'SUBSCRIBE_ON_WEB',
-        };
-      }
-
+      // App Store 3.1.1: never steer iOS users to an external/web purchase for digital
+      // subscriptions. Surface a neutral unavailable state instead of a "subscribe on web" link.
       return {
         success: false,
         error: 'In-app purchases are not available',
@@ -142,11 +135,11 @@ export class AppleIAPProvider extends BaseBillingProvider {
  *
  * □ Configure products in App Store Connect
  *   - Create subscription group "Chravel Consumer"
- *   - Add products:
- *     - com.chravel.explorer.monthly ($4.99/mo)
- *     - com.chravel.explorer.annual ($49.99/yr)
- *     - com.chravel.frequentchraveler.monthly ($9.99/mo)
- *     - com.chravel.frequentchraveler.annual ($99.99/yr)
+ *   - Add products (prices are source-of-truth from src/billing/config.ts):
+ *     - com.chravel.explorer.monthly ($9.99/mo)
+ *     - com.chravel.explorer.annual ($99/yr)
+ *     - com.chravel.frequentchraveler.monthly ($19.99/mo)
+ *     - com.chravel.frequentchraveler.annual ($199/yr)
  *
  * □ Add shared secret to Edge Function secrets
  *   APPLE_SHARED_SECRET=<from App Store Connect>

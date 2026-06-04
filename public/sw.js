@@ -188,19 +188,25 @@ self.addEventListener('push', function (event) {
     vibrate: [100, 50, 100],
   };
 
-  // Set the OS app-icon badge from the server-provided authoritative unread count.
-  // The foreground app reconciles this to the true count when next opened.
+  // App-icon badge: the server computes the category-filtered unread count and
+  // sends it as data.badgeCount. The SW can't query Supabase, so it relies on
+  // this value. (FCM may stringify data values, so accept number or numeric string.)
+  var rawBadge = payload.data && payload.data.badgeCount;
   var badgeCount =
-    payload.data && typeof payload.data.badgeCount === 'number' ? payload.data.badgeCount : null;
+    typeof rawBadge === 'number'
+      ? rawBadge
+      : typeof rawBadge === 'string' && rawBadge !== '' && !isNaN(Number(rawBadge))
+        ? Number(rawBadge)
+        : undefined;
 
-  event.waitUntil(
-    Promise.all([
-      self.registration.showNotification(title, options),
-      badgeCount !== null && badgeCount > 0 && self.navigator && self.navigator.setAppBadge
-        ? self.navigator.setAppBadge(badgeCount).catch(function () {})
-        : Promise.resolve(),
-    ]),
-  );
+  var tasks = [self.registration.showNotification(title, options)];
+  if (typeof badgeCount === 'number' && 'setAppBadge' in self.navigator) {
+    tasks.push(
+      badgeCount > 0 ? self.navigator.setAppBadge(badgeCount) : self.navigator.clearAppBadge(),
+    );
+  }
+
+  event.waitUntil(Promise.all(tasks));
 });
 
 /**

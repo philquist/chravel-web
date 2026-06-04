@@ -21,6 +21,52 @@ export async function getBlockedUsers(): Promise<string[]> {
   return (data as Array<{ blocked_id: string }>).map(row => row.blocked_id);
 }
 
+export interface BlockedUserProfile {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+/**
+ * Blocked users resolved to display profiles, preserving block recency order.
+ * Powers the in-app "Blocked Users" management surface (App Store Guideline 1.2:
+ * users must be able to view and unblock the people they've blocked).
+ */
+export async function getBlockedUserProfiles(): Promise<BlockedUserProfile[]> {
+  const ids = await getBlockedUsers();
+  if (ids.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from('profiles_public')
+    .select('user_id, display_name, resolved_display_name, avatar_url')
+    .in('user_id', ids);
+
+  if (error) {
+    throw new Error(`Failed to fetch blocked user profiles: ${error.message}`);
+  }
+
+  const profileById = new Map(
+    (
+      (data ?? []) as Array<{
+        user_id: string;
+        display_name: string | null;
+        resolved_display_name: string | null;
+        avatar_url: string | null;
+      }>
+    ).map(p => [p.user_id, p]),
+  );
+
+  // Preserve the most-recent-first order from getBlockedUsers().
+  return ids.map(id => {
+    const p = profileById.get(id);
+    return {
+      id,
+      displayName: p?.resolved_display_name || p?.display_name || 'Chravel user',
+      avatarUrl: p?.avatar_url ?? null,
+    };
+  });
+}
+
 export async function blockUser(blockedId: string): Promise<boolean> {
   const {
     data: { user },

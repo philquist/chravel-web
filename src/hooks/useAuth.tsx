@@ -27,6 +27,7 @@ import { openInstalledAuthBrowser } from '@/utils/installedAuthBrowser';
 import { errorTracking } from '@/services/errorTracking';
 import type { AuthUser as User, UserProfile, AuthContextType } from './auth/types';
 import { createDemoUser, getOAuthReturnTo, withTimeout } from './auth/authHelpers';
+import { captureAppleRefreshToken } from './auth/captureAppleToken';
 
 const TRIPS_QUERY_KEY = 'trips';
 
@@ -614,6 +615,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (demoStore.isDemoMode || demoStore.demoView === 'app-preview') {
             demoStore.setDemoView('off');
           }
+
+          // 🍎 Capture the Apple Sign-in refresh token (present only on the initial
+          // OAuth redirect) so the account-deletion flow can revoke the Apple grant
+          // per App Store 5.1.1(v). Best-effort, non-blocking — no-ops for non-Apple.
+          captureAppleRefreshToken(session);
 
           // 🔒 Detect potential duplicate provider account: if a brand-new Google OAuth
           // user's email already has a profile under a different user_id, warn the user

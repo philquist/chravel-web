@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent, screen } from '@testing-library/react';
+import { render, fireEvent, screen, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 
 vi.mock('@/hooks/useAuth', () => ({
@@ -56,5 +56,49 @@ describe('StickyLandingNav scrollRoot', () => {
 
     expect(nav).toHaveClass('translate-y-0');
     expect(nav).not.toHaveClass('-translate-y-full');
+  });
+
+  it('coalesces a scroll burst within one frame and captures the final position on the trailing frame', () => {
+    // Capture rAF callbacks instead of letting them run, so we can assert the
+    // leading-edge (synchronous) update separately from the trailing recompute.
+    const rafCbs: FrameRequestCallback[] = [];
+    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
+      rafCbs.push(cb);
+      return rafCbs.length;
+    });
+
+    try {
+      render(<LandingScrollHarness />);
+
+      const root = screen.getByTestId('landing-scroll');
+      Object.defineProperty(root, 'clientHeight', { configurable: true, value: 400 });
+      Object.defineProperty(root, 'scrollHeight', { configurable: true, value: 2000 });
+
+      const nav = root.parentElement?.querySelector('nav') as HTMLElement;
+      // First child of the nav is the progress bar whose width tracks scrollProgress.
+      const progressBar = nav.querySelector('div') as HTMLElement;
+
+      // scrollableH = scrollHeight - clientHeight = 2000 - 400 = 1600.
+      // Leading edge: the first event of the frame updates synchronously.
+      root.scrollTop = 200;
+      fireEvent.scroll(root);
+      expect(progressBar.style.width).toBe('12.5%'); // 200 / 1600
+
+      // A second event arrives while the frame is still pending: it must NOT
+      // recompute synchronously — the leading-edge value is held until the frame.
+      root.scrollTop = 1600;
+      fireEvent.scroll(root);
+      expect(progressBar.style.width).toBe('12.5%');
+
+      // Exactly one frame was scheduled (the leading edge); flushing it runs the
+      // trailing recompute, which captures the latest scroll position.
+      expect(rafCbs).toHaveLength(1);
+      act(() => {
+        rafCbs.forEach(cb => cb(0));
+      });
+      expect(progressBar.style.width).toBe('100%'); // 1600 / 1600
+    } finally {
+      rafSpy.mockRestore();
+    }
   });
 });

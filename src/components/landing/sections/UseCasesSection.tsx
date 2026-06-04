@@ -6,8 +6,8 @@ import { cn } from '@/lib/utils';
 const scenarios = [
   {
     title: 'Family Hubs, Schedules & Carpools',
-    subtitle: 'Practices · pickups · errands · roomies · year-round planning',
-    before: "Last-minute texts. Missed pickups. Nobody knows who's doing what.",
+    subtitle: 'Practices · pickups · errands · roommates · season planning',
+    before: 'Missed email updates. Missed pickups. Confusion spread across multiple threads.',
     expandCTA: 'ChravelApp helps families stay organized',
     after:
       'One shared space for family logistics. Calendars, tasks, and chat in sync — everyone knows where to be.',

@@ -196,7 +196,10 @@ async function sendAPNs(tokens: string[], notification: NotificationContent): Pr
           title: notification.title,
           body: notification.body,
         },
-        badge: 1,
+        // NOTE: No badge here. This path fans one payload out to many tokens and
+        // lacks per-recipient context, so a hardcoded badge (was `1`) is wrong.
+        // Authoritative, category-filtered badge counts are set per recipient by
+        // `dispatch-notification-deliveries` (the canonical delivery path).
         sound: 'default',
         'mutable-content': 1,
       },

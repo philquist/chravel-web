@@ -93,7 +93,8 @@ export function getGoogleProvider(): GooglePlayProvider {
  *
  * Logic:
  * - iOS + Consumer plan + IAP enabled → Apple IAP
- * - iOS + Consumer plan + IAP disabled → Show "subscribe on web"
+ * - iOS + Consumer plan + IAP disabled → Apple provider returns a neutral "unavailable" state
+ *   (no external/web purchase steering, per App Store 3.1.1)
  * - iOS + Pro plan → Stripe (B2B exception)
  * - Android + Google Billing enabled → Google Play
  * - Android + Consumer + Google Billing disabled → unavailable provider (block web fallback)
@@ -118,8 +119,8 @@ export function getBillingProvider(tier?: SubscriptionTier): BillingProvider {
         return getAppleProvider();
       }
 
-      // IAP not enabled - will show "subscribe on web" message
-      // Return Apple provider so it can handle the error appropriately
+      // IAP not enabled - Apple provider surfaces a neutral unavailable state
+      // (no external/web purchase steering). Native IAP is wired in chravel-mobile.
       return getAppleProvider();
     }
 

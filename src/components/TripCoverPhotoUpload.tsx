@@ -115,7 +115,10 @@ export const TripCoverPhotoUpload = ({
           return true;
         }
         if (import.meta.env.DEV) {
-          console.error('[TripCoverPhotoUpload] cover persist failed:', (result as { error?: string }).error);
+          console.error(
+            '[TripCoverPhotoUpload] cover persist failed:',
+            (result as { error?: string }).error,
+          );
         }
         toast.error(
           "We uploaded the photo, but couldn't attach it to this trip. Please try again.",

@@ -46,9 +46,9 @@ export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
     const root = scrollRoot;
     const useWindow = root === undefined;
     let rafId = 0;
+    let trailing = false;
 
     const computeScroll = () => {
-      rafId = 0;
       const viewportH = useWindow ? window.innerHeight : root.clientHeight;
       const scrollTop = useWindow ? window.scrollY : root.scrollTop;
       const scrollableH = useWindow
@@ -60,9 +60,24 @@ export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
       setScrollProgress(Math.min(Math.max(progress, 0), 100));
     };
 
+    // Leading-edge throttle: update synchronously on the first event of a frame
+    // so a discrete scroll reveals the nav immediately, then coalesce any further
+    // events within the same frame into a single trailing recompute. Deferring the
+    // first update into rAF (the previous behavior) left the nav a frame behind the
+    // scroll and broke synchronous observation entirely.
     const handleScroll = () => {
-      if (rafId !== 0) return;
-      rafId = requestAnimationFrame(computeScroll);
+      if (rafId !== 0) {
+        trailing = true;
+        return;
+      }
+      computeScroll();
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        if (trailing) {
+          trailing = false;
+          computeScroll();
+        }
+      });
     };
 
     const target: HTMLElement | Window = useWindow ? window : root;

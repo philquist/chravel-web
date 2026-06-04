@@ -84,7 +84,6 @@ export const FooterSection = () => {
             </ul>
           </div>
 
-
           {/* Company Links */}
           <div className="space-y-4">
             <h3 className="font-semibold text-lg text-foreground">Company</h3>

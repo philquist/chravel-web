@@ -3,6 +3,7 @@ import { useApiHealth } from '@/hooks/useApiHealth';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { useAuth } from '@/hooks/useAuth';
 import { useStreamClient } from '@/hooks/stream/useStreamClient';
+import { useAppBadge } from '@/hooks/useAppBadge';
 
 /**
  * AppInitializer - Runs API health checks on app startup
@@ -18,6 +19,11 @@ export const AppInitializer = ({ children }: { children: React.ReactNode }) => {
 
   // Initialize Stream Chat client when any Stream feature flag is enabled
   useStreamClient();
+
+  // Keep the PWA app-icon badge in sync across ALL authenticated routes (the hook
+  // self-guards on `user`). Mounted here, not on the home route, so foreground and
+  // realtime badge reconciliation keeps working on /trip/:id and elsewhere.
+  useAppBadge();
 
   // CSP violation monitoring with error safety
   useEffect(() => {
