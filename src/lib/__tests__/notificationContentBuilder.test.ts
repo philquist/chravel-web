@@ -3,7 +3,6 @@ import {
   buildAllChannelContent,
   isPushContent,
   isEmailContent,
-  isSmsContent,
   type NotificationContentType,
   type TripContext,
 } from '../notifications/contentBuilder';
@@ -127,48 +126,12 @@ describe('buildNotificationContent', () => {
     });
   });
 
-  describe('SMS notifications', () => {
-    it('builds SMS with Chravel prefix', () => {
-      const content = buildNotificationContent({
-        type: 'broadcast_posted',
-        channel: 'sms',
-        tripContext: sampleTrip,
-        actorName: 'Manager',
-      });
-
-      expect(isSmsContent(content)).toBe(true);
-      if (isSmsContent(content)) {
-        expect(content.message).toMatch(/^ChravelApp:/);
-        expect(content.message.length).toBeLessThanOrEqual(160);
-      }
-    });
-
-    it('truncates long SMS messages', () => {
-      const content = buildNotificationContent({
-        type: 'broadcast_posted',
-        channel: 'sms',
-        tripContext: {
-          tripName: 'A Very Long Trip Name That Goes On And On',
-          location: ['Los Angeles', 'San Francisco', 'Seattle', 'Portland', 'Vancouver'],
-          startDate: '2026-01-01',
-          endDate: '2026-12-31',
-        },
-        actorName: 'Tour Manager With A Very Long Name',
-      });
-
-      if (isSmsContent(content)) {
-        expect(content.message.length).toBeLessThanOrEqual(160);
-      }
-    });
-  });
-
   describe('buildAllChannelContent', () => {
-    it('returns content for all three channels', () => {
+    it('returns content for push and email channels', () => {
       const result = buildAllChannelContent('task_assigned', sampleTrip, 'Alex');
 
       expect(result.push.title).toContain('Task');
       expect(result.email.subject).toContain('Task');
-      expect(result.sms.message).toMatch(/^ChravelApp:/);
     });
   });
 

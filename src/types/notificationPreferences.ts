@@ -1,7 +1,6 @@
 export interface NotificationPreferencesContract {
   push_enabled: boolean;
   email_enabled: boolean;
-  sms_enabled: boolean;
   messages: boolean;
   broadcasts_and_pins: boolean;
   tasks: boolean;
@@ -13,7 +12,6 @@ export interface NotificationPreferencesContract {
 export const DEFAULT_NOTIFICATION_PREFERENCES_CONTRACT: NotificationPreferencesContract = {
   push_enabled: true,
   email_enabled: false,
-  sms_enabled: false,
   messages: false,
   broadcasts_and_pins: true,
   tasks: true,

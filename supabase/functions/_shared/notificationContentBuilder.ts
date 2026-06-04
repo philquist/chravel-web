@@ -27,7 +27,7 @@ export type NotificationContentType =
   | 'trip_reminder'
   | 'rsvp_update';
 
-export type DeliveryChannel = 'push' | 'email' | 'sms';
+export type DeliveryChannel = 'push' | 'email';
 
 export interface TripContext {
   tripName?: string;
@@ -61,13 +61,8 @@ export interface EmailContent {
   footerText: string;
 }
 
-export interface SmsContent {
-  message: string;
-}
+export type NotificationContent = PushContent | EmailContent;
 
-export type NotificationContent = PushContent | EmailContent | SmsContent;
-
-const BRAND_PREFIX = 'ChravelApp:';
 export const FROM_EMAIL = 'support@chravelapp.com';
 export const FROM_NAME = 'ChravelApp';
 const APP_URL = 'https://app.chravelapp.com';
@@ -138,11 +133,6 @@ function tripContext(ctx: TripContext): string {
   const dates = formatDateRange(ctx.startDate, ctx.endDate);
   if (dates) parts.push(dates);
   return parts.length > 0 ? ` (${parts.join(' \u2022 ')})` : '';
-}
-
-function truncate(text: string, max: number): string {
-  if (!text) return '';
-  return text.length <= max ? text : `${text.substring(0, Math.max(max - 3, 1))}...`;
 }
 
 function escapeHtml(str: string): string {
@@ -295,15 +285,6 @@ function buildEmail(input: NotificationContentInput): EmailContent {
 }
 
 // ---------------------------------------------------------------------------
-// SMS
-// ---------------------------------------------------------------------------
-
-function buildSms(input: NotificationContentInput): SmsContent {
-  const push = buildPush(input);
-  return { message: `${BRAND_PREFIX} ${truncate(push.body, 140)}` };
-}
-
-// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -313,8 +294,6 @@ export function buildNotificationContent(input: NotificationContentInput): Notif
       return buildPush(input);
     case 'email':
       return buildEmail(input);
-    case 'sms':
-      return buildSms(input);
     default:
       return buildPush(input);
   }
@@ -326,11 +305,10 @@ export function buildAllChannelContent(
   actorName?: string,
   count?: number,
   extra?: Record<string, string | number | undefined>,
-): { push: PushContent; email: EmailContent; sms: SmsContent } {
+): { push: PushContent; email: EmailContent } {
   const base = { type, tripContext, actorName, count, extra };
   return {
     push: buildPush({ ...base, channel: 'push' }),
     email: buildEmail({ ...base, channel: 'email' }),
-    sms: buildSms({ ...base, channel: 'sms' }),
   };
 }

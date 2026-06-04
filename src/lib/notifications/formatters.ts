@@ -2,7 +2,7 @@
  * Notification formatting helpers.
  *
  * These provide consistent date ranges, location summaries, and trip display
- * names across push/email/SMS channels.
+ * names across push/email channels.
  */
 
 export function formatDateRange(

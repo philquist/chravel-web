@@ -25,7 +25,6 @@ describe('useNotificationPreferences', () => {
     mockGet.mockResolvedValue({
       push_enabled: true,
       email_enabled: false,
-      sms_enabled: false,
       chat_messages: false,
       broadcasts: true,
       tasks: true,

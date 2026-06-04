@@ -26,7 +26,6 @@ const DEFAULT_PREFERENCES: AppPreferences = {
 export interface NotificationPreferences extends NotificationPreferencesContract {
   id?: string;
   user_id?: string;
-  sms_phone_number?: string | null; // Phone number for SMS delivery
   chat_messages: boolean; // legacy alias of `messages`
   mentions_only: boolean;
   broadcasts: boolean; // legacy alias of `broadcasts_and_pins`
@@ -68,22 +67,9 @@ export const EMAIL_ELIGIBLE_CATEGORIES: NotificationCategory[] = [
   'trip_invites',
 ];
 
-// Categories eligible for SMS delivery (high-urgency only)
-export const SMS_ELIGIBLE_CATEGORIES: NotificationCategory[] = [
-  'broadcasts', // Critical announcements from organizers
-  'payments', // Payment requests and deadlines
-  'basecamp_updates', // Location/basecamp changes
-  'calendar_events', // Event updates and reminders
-  'join_requests', // New member join requests (for organizers)
-  'tasks', // Assigned task notifications
-  'polls', // New poll notifications
-  'chat_messages', // Privacy-safe new message alerts
-];
-
 const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   push_enabled: true,
   email_enabled: false,
-  sms_enabled: false,
   chat_messages: false,
   mentions_only: true,
   broadcasts: true,

@@ -25,8 +25,6 @@ export interface NotificationPreferences {
   user_id: string;
   push_enabled: boolean;
   email_enabled: boolean;
-  sms_enabled: boolean;
-  sms_phone_number: string | null;
   chat_messages: boolean;
   broadcasts: boolean;
   calendar_events: boolean;
@@ -41,15 +39,12 @@ export interface NotificationPreferences {
   quiet_start: string;
   quiet_end: string;
   timezone: string;
-  sms_sent_today?: number;
-  last_sms_reset_date?: string;
 }
 
 export interface DeliveryDecision {
   createInApp: boolean;
   sendPush: boolean;
   sendEmail: boolean;
-  sendSms: boolean;
   reason?: string;
 }
 
@@ -71,21 +66,6 @@ export const EMAIL_ELIGIBLE_CATEGORIES: NotificationCategory[] = [
   'tasks', // Task assignments
   'polls', // New polls
   'trip_invites', // Trip invitations
-];
-
-/**
- * Categories eligible for SMS delivery.
- * High-urgency categories only - these warrant a text message.
- */
-export const SMS_ELIGIBLE_CATEGORIES: NotificationCategory[] = [
-  'broadcasts', // Critical announcements from organizers
-  'payments', // Payment requests and deadlines
-  'basecamp_updates', // Location/basecamp changes
-  'calendar_events', // Event updates and reminders
-  'calendar_bulk_import', // Bulk import summaries
-  'join_requests', // New member join requests (for organizers)
-  'tasks', // Assigned tasks with actionable urgency
-  'polls', // New polls needing input
 ];
 
 /**
@@ -273,13 +253,6 @@ export function isEmailEligible(category: NotificationCategory): boolean {
 }
 
 /**
- * Check if SMS delivery is allowed for a category.
- */
-export function isSmsEligible(category: NotificationCategory): boolean {
-  return SMS_ELIGIBLE_CATEGORIES.includes(category);
-}
-
-/**
  * Determine what delivery methods should be used for a notification.
  * This is the main decision function that enforces all rules.
  *
@@ -287,12 +260,11 @@ export function isSmsEligible(category: NotificationCategory): boolean {
  * 1. Category must be enabled for ANY notification to be created
  * 2. Push: category enabled + push_enabled + not in quiet hours
  * 3. Email: category enabled + email_enabled + category is email-eligible + not in quiet hours
- * 4. SMS: category enabled + sms_enabled + category is sms-eligible + phone number exists + not in quiet hours
- * 5. In-app: always created if category is enabled (even during quiet hours)
+ * 4. In-app: always created if category is enabled (even during quiet hours)
  */
 /**
  * Categories that are permanently suppressed from all external delivery channels.
- * chat_messages removed: too high-volume for push/email/SMS.
+ * chat_messages removed: too high-volume for push/email.
  * Chat still works in-app; only outbound notifications are blocked.
  */
 export const SUPPRESSED_CATEGORIES: NotificationCategory[] = ['chat_messages'];
@@ -306,7 +278,6 @@ export function getDeliveryDecision(
       createInApp: false,
       sendPush: false,
       sendEmail: false,
-      sendSms: false,
       reason: `Category '${category}' is permanently suppressed from notifications`,
     };
   }
@@ -319,7 +290,6 @@ export function getDeliveryDecision(
       createInApp: false,
       sendPush: false,
       sendEmail: false,
-      sendSms: false,
       reason: `Category '${category}' is disabled by user`,
     };
   }
@@ -336,15 +306,10 @@ export function getDeliveryDecision(
   // Email: enabled + eligible category + not quiet hours
   const sendEmail = prefs.email_enabled && isEmailEligible(category) && !inQuietHours;
 
-  // SMS: enabled + eligible category + phone exists + not quiet hours
-  const sendSms =
-    prefs.sms_enabled && isSmsEligible(category) && !!prefs.sms_phone_number && !inQuietHours;
-
   return {
     createInApp,
     sendPush,
     sendEmail,
-    sendSms,
     reason: inQuietHours
       ? 'Delivery suppressed during quiet hours (in-app still created)'
       : undefined,
@@ -357,8 +322,6 @@ export function getDeliveryDecision(
 export const DEFAULT_NOTIFICATION_PREFERENCES: Omit<NotificationPreferences, 'user_id'> = {
   push_enabled: true,
   email_enabled: false, // Default off to avoid spam for new users
-  sms_enabled: false,
-  sms_phone_number: null,
   chat_messages: false, // Permanently disabled: too high-volume for external notifications
   broadcasts: true,
   calendar_events: true,
@@ -373,6 +336,33 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: Omit<NotificationPreferences, 'us
   quiet_start: '22:00',
   quiet_end: '08:00',
   timezone: 'UTC',
-  sms_sent_today: 0,
-  last_sms_reset_date: undefined,
 };
+
+/**
+ * Format an ISO timestamp as a localized time string for a given timezone.
+ * Generic helper used by calendar reminder notifications.
+ */
+export function formatTimeForTimezone(
+  isoTime: string | undefined,
+  timezone: string = 'America/Los_Angeles',
+): string {
+  if (!isoTime) return 'soon';
+
+  const fallback = () => (isoTime.length <= 18 ? isoTime : `${isoTime.substring(0, 15)}...`);
+
+  try {
+    const date = new Date(isoTime);
+    if (Number.isNaN(date.getTime())) {
+      return fallback();
+    }
+
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(date);
+  } catch {
+    return fallback();
+  }
+}

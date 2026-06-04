@@ -6,7 +6,6 @@ import { NotificationPreferenceKey } from '@/types/notificationPreferences';
 const TOGGLE_ORDER: NotificationPreferenceKey[] = [
   'push_enabled',
   'email_enabled',
-  'sms_enabled',
   'broadcasts_and_pins',
   'messages',
   'calendar_events',
@@ -32,7 +31,6 @@ export const NotificationsSection = () => {
     polls: 'Polls',
     push_enabled: 'Push Notifications',
     email_enabled: 'Email Notifications',
-    sms_enabled: 'SMS Notifications',
   };
 
   if (isLoading) return null;

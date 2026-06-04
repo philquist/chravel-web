@@ -111,7 +111,6 @@ vi.mock('@/services/userPreferencesService', () => ({
     getNotificationPreferences: vi.fn().mockResolvedValue({
       push_enabled: false,
       email_enabled: true,
-      sms_enabled: false,
       chat_messages: true,
       broadcasts: true,
       calendar_reminders: true,

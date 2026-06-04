@@ -4,8 +4,8 @@
  * Centralized notification creation with full preference gating.
  * This is the single entry point for creating SYSTEM notifications that respects:
  * - Category toggles (e.g., broadcasts ON/OFF)
- * - Delivery method toggles (push/email/SMS)
- * - Email/SMS category eligibility restrictions
+ * - Delivery method toggles (push/email)
+ * - Email category eligibility restrictions
  * - Quiet hours
  *
  * SECURITY:
@@ -49,12 +49,18 @@ interface CreateNotificationRequest {
 // Roles that can send trip-wide notifications
 const NOTIFICATION_SENDER_ROLES = ['organizer', 'admin', 'creator'];
 
+// Email delivery is intentionally OFF: the notification fan-out trigger
+// (20260604170000_notification_fanout_prod_schema.sql) enqueues push only,
+// because every user currently has email_enabled = true and an email fan-out
+// would blast the whole base. Keep reported emailSent honest (no email is
+// delivered) until email is deliberately re-enabled with per-category gating.
+const EMAIL_FANOUT_ENABLED = false;
+
 interface NotificationResult {
   userId: string;
   inAppCreated: boolean;
   pushSent: boolean;
   emailSent: boolean;
-  smsSent: boolean;
   skipped: boolean;
   reason?: string;
 }
@@ -66,7 +72,6 @@ interface CreateNotificationResponse {
   inAppCreated: number;
   pushSent: number;
   emailSent: number;
-  smsSent: number;
   skipped: number;
 }
 
@@ -224,7 +229,6 @@ Deno.serve(async req => {
           inAppCreated: 0,
           pushSent: 0,
           emailSent: 0,
-          smsSent: 0,
           skipped: 0,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
@@ -271,7 +275,6 @@ Deno.serve(async req => {
       inAppCreated: 0,
       pushSent: 0,
       emailSent: 0,
-      smsSent: 0,
       skipped: 0,
     };
 
@@ -296,7 +299,6 @@ Deno.serve(async req => {
         inAppCreated: false,
         pushSent: false,
         emailSent: false,
-        smsSent: false,
         skipped: !decision.createInApp,
         reason: decision.reason,
       };
@@ -328,14 +330,9 @@ Deno.serve(async req => {
         response.pushSent++;
       }
 
-      if (decision.sendEmail) {
+      if (EMAIL_FANOUT_ENABLED && decision.sendEmail) {
         result.emailSent = true;
         response.emailSent++;
-      }
-
-      if (decision.sendSms && prefs.sms_phone_number) {
-        result.smsSent = true;
-        response.smsSent++;
       }
 
       results.push(result);
@@ -393,8 +390,8 @@ Deno.serve(async req => {
     if (dispatchData && typeof dispatchData.sent === 'object' && dispatchData.sent) {
       const sentObj = dispatchData.sent as Record<string, unknown>;
       if (typeof sentObj.push === 'number') response.pushSent = sentObj.push;
-      if (typeof sentObj.email === 'number') response.emailSent = sentObj.email;
-      if (typeof sentObj.sms === 'number') response.smsSent = sentObj.sms;
+      if (EMAIL_FANOUT_ENABLED && typeof sentObj.email === 'number')
+        response.emailSent = sentObj.email;
     }
 
     // ========================================================================
@@ -411,11 +408,10 @@ Deno.serve(async req => {
         inAppCreated: response.inAppCreated,
         pushSent: response.pushSent,
         emailSent: response.emailSent,
-        smsSent: response.smsSent,
         skipped: response.skipped,
         dispatch: dispatchData,
       },
-      success: response.inAppCreated + response.pushSent + response.emailSent + response.smsSent,
+      success: response.inAppCreated + response.pushSent + response.emailSent,
       failure: response.skipped,
       sent_at: new Date().toISOString(),
     });
@@ -426,7 +422,6 @@ Deno.serve(async req => {
       inApp: response.inAppCreated,
       push: response.pushSent,
       email: response.emailSent,
-      sms: response.smsSent,
       skipped: response.skipped,
     });
 

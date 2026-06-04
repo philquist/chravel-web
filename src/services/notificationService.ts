@@ -11,7 +11,6 @@ export interface NotificationPreference {
   userId: string;
   pushEnabled: boolean;
   emailEnabled: boolean;
-  smsEnabled: boolean;
   // These map to the actual database columns
   broadcasts: boolean;
   chatMessages: boolean;
@@ -287,7 +286,6 @@ export class NotificationService {
           userId,
           pushEnabled: true,
           emailEnabled: true,
-          smsEnabled: false,
           broadcasts: true,
           chatMessages: false,
           calendarEvents: true,
@@ -304,7 +302,6 @@ export class NotificationService {
         userId: data.user_id,
         pushEnabled: data.push_enabled ?? true,
         emailEnabled: data.email_enabled ?? true,
-        smsEnabled: data.sms_enabled ?? false,
         broadcasts: data.broadcasts ?? true,
         chatMessages: data.chat_messages ?? false,
         calendarEvents: data.calendar_events ?? true,
@@ -337,7 +334,6 @@ export class NotificationService {
         updated_at: new Date().toISOString(),
         ...(preferences.pushEnabled !== undefined && { push_enabled: preferences.pushEnabled }),
         ...(preferences.emailEnabled !== undefined && { email_enabled: preferences.emailEnabled }),
-        ...(preferences.smsEnabled !== undefined && { sms_enabled: preferences.smsEnabled }),
         ...(preferences.broadcasts !== undefined && { broadcasts: preferences.broadcasts }),
         ...(preferences.chatMessages !== undefined && { chat_messages: preferences.chatMessages }),
         ...(preferences.calendarEvents !== undefined && {
@@ -691,102 +687,6 @@ export class NotificationService {
       return false;
     }
   }
-
-  /**
-   * Send SMS notification via Edge Function
-   * Truth-based: success only when Twilio returns a valid Message SID
-   * @returns { success, sid?, status?, errorMessage?, errorCode? } for UI
-   */
-  async sendSMSNotification(
-    userId: string,
-    message: string,
-  ): Promise<{
-    success: boolean;
-    sid?: string;
-    status?: string;
-    errorMessage?: string;
-    errorCode?: number;
-  }> {
-    try {
-      const { data, error } = await supabase.functions.invoke('push-notifications', {
-        body: {
-          action: 'send_sms',
-          userId,
-          message,
-        },
-      });
-
-      const result = (data ?? {}) as {
-        success?: boolean;
-        sid?: string;
-        status?: string;
-        error?: string;
-        message?: string;
-        errorCode?: number;
-        errorMessage?: string;
-      };
-
-      if (error) {
-        if (import.meta.env.DEV) {
-          console.error('[NotificationService] SMS error:', error);
-        }
-        let errorMessage = (error as { message?: string }).message || 'Request failed';
-        if (result?.message) errorMessage = result.message;
-        else if (result?.error) errorMessage = result.error;
-        else {
-          try {
-            const ctx = (
-              error as { context?: { json?: () => Promise<{ message?: string; error?: string }> } }
-            ).context;
-            if (ctx?.json && typeof ctx.json === 'function') {
-              const body = await ctx.json();
-              if (body?.message) errorMessage = body.message;
-              else if (body?.error) errorMessage = body.error;
-            }
-          } catch {
-            // ignore
-          }
-        }
-        return {
-          success: false,
-          errorMessage,
-          errorCode: result?.errorCode,
-        };
-      }
-
-      if (result.success === false) {
-        return {
-          success: false,
-          errorMessage: result.message || result.error || 'SMS delivery failed',
-          errorCode: result.errorCode,
-        };
-      }
-
-      // Truth-based: only success if we have a valid Message SID from Twilio
-      const hasValidSid =
-        result.sid && typeof result.sid === 'string' && result.sid.startsWith('SM');
-      if (!hasValidSid) {
-        return {
-          success: false,
-          errorMessage: result.message || result.error || 'Twilio did not return a message SID',
-          errorCode: result.errorCode,
-        };
-      }
-
-      return {
-        success: true,
-        sid: result.sid,
-        status: result.status,
-      };
-    } catch (err) {
-      if (import.meta.env.DEV) {
-        console.error('[NotificationService] Error sending SMS notification:', err);
-      }
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      return { success: false, errorMessage: msg };
-    }
-  }
-
   /**
    * Unsubscribe from push notifications
    */

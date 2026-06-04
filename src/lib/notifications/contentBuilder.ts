@@ -2,7 +2,7 @@
  * Centralized Notification Content Builder
  *
  * Single source of truth for notification copy generation across all channels.
- * Ensures consistent messaging whether delivered via push, email, or SMS.
+ * Ensures consistent messaging whether delivered via push or email.
  *
  * Guiding principles:
  * - Clear, short, contextual, non-sensitive
@@ -11,7 +11,7 @@
  * - Include trip/event context (name, location, date range)
  */
 
-import { buildTripContext, formatTripDisplayName, truncate } from './formatters';
+import { buildTripContext, formatTripDisplayName } from './formatters';
 
 export type NotificationContentType =
   | 'broadcast_posted'
@@ -30,7 +30,7 @@ export type NotificationContentType =
   | 'trip_reminder'
   | 'rsvp_update';
 
-export type DeliveryChannel = 'push' | 'email' | 'sms';
+export type DeliveryChannel = 'push' | 'email';
 
 export interface TripContext {
   tripName?: string;
@@ -63,13 +63,8 @@ export interface EmailContent {
   footerText: string;
 }
 
-export interface SmsContent {
-  message: string;
-}
+export type NotificationContent = PushContent | EmailContent;
 
-export type NotificationContent = PushContent | EmailContent | SmsContent;
-
-const BRAND_PREFIX = 'ChravelApp:';
 const FROM_EMAIL = 'support@chravelapp.com';
 const FROM_NAME = 'ChravelApp';
 const APP_URL = 'https://app.chravelapp.com';
@@ -224,17 +219,6 @@ function buildEmailContent(input: NotificationContentInput): EmailContent {
 }
 
 // ---------------------------------------------------------------------------
-// SMS notification content
-// ---------------------------------------------------------------------------
-function buildSmsContent(input: NotificationContentInput): SmsContent {
-  const push = buildPushContent(input);
-  const smsBody = truncate(push.body, 140);
-  return {
-    message: `${BRAND_PREFIX} ${smsBody}`,
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -255,8 +239,6 @@ export function buildNotificationContent(input: NotificationContentInput): Notif
       return buildPushContent(input);
     case 'email':
       return buildEmailContent(input);
-    case 'sms':
-      return buildSmsContent(input);
     default:
       return buildPushContent(input);
   }
@@ -273,12 +255,8 @@ export function isEmailContent(content: NotificationContent): content is EmailCo
   return 'subject' in content && 'ctaLabel' in content;
 }
 
-export function isSmsContent(content: NotificationContent): content is SmsContent {
-  return 'message' in content && !('title' in content);
-}
-
 /**
- * Convenience: build content for all three channels at once.
+ * Convenience: build content for all channels at once.
  */
 export function buildAllChannelContent(
   type: NotificationContentType,
@@ -286,11 +264,10 @@ export function buildAllChannelContent(
   actorName?: string,
   count?: number,
   extra?: Record<string, string | number | undefined>,
-): { push: PushContent; email: EmailContent; sms: SmsContent } {
+): { push: PushContent; email: EmailContent } {
   const base = { type, tripContext, actorName, count, extra };
   return {
     push: buildPushContent({ ...base, channel: 'push' }),
     email: buildEmailContent({ ...base, channel: 'email' }),
-    sms: buildSmsContent({ ...base, channel: 'sms' }),
   };
 }

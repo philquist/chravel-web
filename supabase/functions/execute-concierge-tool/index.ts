@@ -1,16 +1,12 @@
 /**
  * execute-concierge-tool
  *
- * Server-side bridge for concierge tool calls (text + voice).
+ * Server-side bridge for concierge tool calls (text concierge + dictation).
  *
- * Supports two auth modes:
- * 1. User JWT (browser) — standard Supabase JWT, RLS applies
- * 2. Short-lived agent assertion (LiveKit agent) + service-role bearer transport
+ * Auth: User JWT (browser) — standard Supabase JWT, RLS applies.
  *
  * Security:
- *  - LiveKit agent calls must present a signed short-lived assertion header
- *  - Assertion claims (user_id/trip_id/allowed_tools/exp) are verified server-side
- *  - Rate limiting applies to both auth modes, keyed by userId
+ *  - Rate limiting keyed by userId
  *  - Google API calls happen server-side (keys never reach the browser)
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -21,7 +17,6 @@ import { executeToolSecurely } from '../_shared/security/toolRouter.ts';
 import { checkRateLimit } from '../_shared/security.ts';
 import { getBearerToken } from '../_shared/authHeaders.ts';
 import { verifyConciergeTripAccess } from '../_shared/concierge/tripAccess.ts';
-import { verifyAgentAssertion } from '../_shared/security/agentAssertions.ts';
 import { MUTATING_TOOL_NAMES } from '../_shared/concierge/toolRegistry.ts';
 import {
   checkMonthlyTokenBudget,
@@ -30,7 +25,6 @@ import {
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
@@ -67,9 +61,7 @@ serve(async (req: Request) => {
       });
     }
 
-    // Two auth modes:
-    // 1. Agent assertion JWT (LiveKit agent) in X-Agent-Assertion header.
-    // 2. User JWT (browser) in Authorization header.
+    // Single auth mode: User JWT (browser) in Authorization header. Supabase RLS applies.
     const token = getBearerToken(authHeader);
     if (!token) {
       return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), {
@@ -78,53 +70,22 @@ serve(async (req: Request) => {
       });
     }
 
-    const agentAssertionHeader = req.headers.get('X-Agent-Assertion');
-    const hasAgentAssertion =
-      typeof agentAssertionHeader === 'string' && agentAssertionHeader.trim().length > 0;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
 
-    let supabase;
-    let userId: string;
-    let agentAllowedTools: string[] | null = null;
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(token);
 
-    if (hasAgentAssertion) {
-      let assertion;
-      try {
-        assertion = await verifyAgentAssertion(agentAssertionHeader!.trim());
-      } catch {
-        return new Response(JSON.stringify({ error: 'Invalid agent assertion' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      userId = assertion.user_id;
-      if (assertion.trip_id !== body.tripId) {
-        return new Response(JSON.stringify({ error: 'tripId mismatch with agent assertion' }), {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      agentAllowedTools = assertion.allowed_tools;
-      supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    } else {
-      // Browser call — validate user JWT, Supabase RLS applies.
-      supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: { headers: { Authorization: authHeader } },
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
-
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser(token);
-
-      if (authError || !user) {
-        return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      userId = user.id;
     }
+    const userId = user.id;
     // Per-user AI tool rate limit: 20 requests per hour (both auth modes)
     const rlResult = await checkRateLimit(
       supabase,
@@ -175,17 +136,6 @@ serve(async (req: Request) => {
     if (!tripAccess.allowed) {
       return new Response(JSON.stringify({ error: tripAccess.error }), {
         status: tripAccess.status || 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (
-      agentAllowedTools &&
-      !agentAllowedTools.includes(toolName) &&
-      !agentAllowedTools.includes('*')
-    ) {
-      return new Response(JSON.stringify({ error: 'Tool not permitted by agent assertion' }), {
-        status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

@@ -30,7 +30,6 @@ export const EmergencyBroadcast = () => {
   const [audience, setAudience] = useState('all');
   const [pushNotification, setPushNotification] = useState(true);
   const [emailNotification, setEmailNotification] = useState(false);
-  const [smsNotification, setSmsNotification] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { toast } = useToast();
@@ -99,9 +98,6 @@ export const EmergencyBroadcast = () => {
       if (template.urgency === 'critical' || template.urgency === 'high') {
         setPushNotification(true);
         setEmailNotification(true);
-        if (template.urgency === 'critical') {
-          setSmsNotification(true);
-        }
       }
     }
   };
@@ -135,7 +131,6 @@ export const EmergencyBroadcast = () => {
       setAudience('all');
       setPushNotification(true);
       setEmailNotification(false);
-      setSmsNotification(false);
     } catch (error) {
       if (import.meta.env.DEV) {
         console.error('Error sending broadcast:', error);
@@ -293,15 +288,6 @@ export const EmergencyBroadcast = () => {
                   <span className="text-gray-500 text-sm">(1-2 min delay)</span>
                 </div>
                 <Switch checked={emailNotification} onCheckedChange={setEmailNotification} />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Bell size={16} className="text-orange-400" />
-                  <span className="text-white">SMS Notifications</span>
-                  <span className="text-gray-500 text-sm">(Critical only)</span>
-                </div>
-                <Switch checked={smsNotification} onCheckedChange={setSmsNotification} />
               </div>
             </div>
           </div>

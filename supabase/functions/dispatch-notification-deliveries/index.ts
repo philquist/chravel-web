@@ -12,24 +12,14 @@ import {
   type NotificationPreferences,
 } from '../_shared/notificationUtils.ts';
 import {
-  computeRetryPolicy,
   enforcePreferenceAtSendTime,
   type DeliveryChannel,
 } from '../_shared/notificationDispatchPolicy.ts';
-import {
-  formatTimeForTimezone,
-  generateSmsMessage,
-  SMS_APP_BASE_URL,
-  type SmsTemplateData,
-} from '../_shared/smsTemplates.ts';
 import { sendWebPushNotification, type WebPushSubscription } from '../_shared/webPushUtils.ts';
-import {
-  mapPrimaryEntitlementsByUser,
-  type EntitlementRow,
-} from '../_shared/entitlementSelection.ts';
 import {
   buildNotificationContent,
   type EmailContent,
+  type PushContent,
   type NotificationContentType,
   type TripContext,
 } from '../_shared/notificationContentBuilder.ts';
@@ -56,9 +46,9 @@ interface NotificationRow {
 interface DeliveryRow {
   id: string;
   notification_id: string;
-  recipient_user_id: string;
   channel: DeliveryChannel;
-  attempts: number;
+  attempt_count: number;
+  max_attempts?: number;
 }
 
 interface ProfileRow {
@@ -74,21 +64,10 @@ interface TripRow {
   name: string;
 }
 
-interface SmsOptInRow {
-  user_id: string;
-  phone_e164: string;
-  verified: boolean;
-  opted_in: boolean;
-}
-
 const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY');
 const sendGridFromEmail = Deno.env.get('SENDGRID_FROM_EMAIL') || 'support@chravelapp.com';
 const resendApiKey = Deno.env.get('RESEND_API_KEY');
 const resendFromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'support@chravelapp.com';
-const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
-const twilioMessagingServiceSid = Deno.env.get('TWILIO_MESSAGING_SERVICE_SID');
 const internalSecret = Deno.env.get('NOTIFICATION_DISPATCH_SECRET');
 
 const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
@@ -102,16 +81,6 @@ function getDisplayName(profile?: ProfileRow): string {
     [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim() ||
     (profile.email ? profile.email.split('@')[0] : null) ||
     'Someone'
-  );
-}
-
-function isUserSmsEntitled(entitlement?: EntitlementRow): boolean {
-  if (!entitlement) return false;
-  if (!['active', 'trialing'].includes((entitlement.status || '').toLowerCase())) return false;
-
-  const plan = (entitlement.plan || '').toLowerCase();
-  return ['explorer', 'frequent-chraveler', 'pro-starter', 'pro-growth', 'pro-enterprise'].includes(
-    plan,
   );
 }
 
@@ -193,56 +162,6 @@ function getActorUserId(metadata: Record<string, unknown>): string | undefined {
   return typeof actorId === 'string' ? actorId : undefined;
 }
 
-function buildSmsTemplateData(
-  notification: NotificationRow,
-  category: NotificationCategory,
-  tripName: string,
-  senderName: string,
-  timezone: string,
-): SmsTemplateData {
-  const metadata = parseMetadata(notification.metadata);
-  const eventTimeRaw =
-    (typeof metadata.event_time === 'string' && metadata.event_time) ||
-    (typeof metadata.start_time === 'string' && metadata.start_time) ||
-    undefined;
-
-  const deepLink = notification.trip_id
-    ? `${SMS_APP_BASE_URL}/trip/${notification.trip_id}`
-    : undefined;
-
-  return {
-    tripName,
-    senderName,
-    deepLink,
-    amount:
-      typeof metadata.amount === 'number' || typeof metadata.amount === 'string'
-        ? (metadata.amount as number | string)
-        : undefined,
-    count:
-      typeof metadata.count === 'number' || typeof metadata.count === 'string'
-        ? (metadata.count as number | string)
-        : undefined,
-    currency: typeof metadata.currency === 'string' ? metadata.currency : undefined,
-    location:
-      typeof metadata.new_location_name === 'string'
-        ? metadata.new_location_name
-        : typeof metadata.location === 'string'
-          ? metadata.location
-          : undefined,
-    eventName:
-      typeof metadata.event_title === 'string'
-        ? metadata.event_title
-        : typeof metadata.event_name === 'string'
-          ? metadata.event_name
-          : undefined,
-    eventTime: formatTimeForTimezone(eventTimeRaw, timezone),
-    preview: notification.message,
-    taskTitle: typeof metadata.task_title === 'string' ? metadata.task_title : notification.title,
-    pollQuestion:
-      typeof metadata.poll_question === 'string' ? metadata.poll_question : notification.title,
-  };
-}
-
 async function markDelivery(
   supabase: any,
   deliveryId: string,
@@ -283,59 +202,6 @@ async function logDeliveryAttempt(
     sent_at: params.status === 'sent' ? new Date().toISOString() : null,
     created_at: new Date().toISOString(),
   });
-}
-
-async function sendSms(
-  phoneNumber: string,
-  message: string,
-): Promise<{
-  ok: boolean;
-  providerMessageId?: string;
-  error?: string;
-  httpStatus?: number;
-}> {
-  if (!twilioAccountSid || !twilioAuthToken || (!twilioPhoneNumber && !twilioMessagingServiceSid)) {
-    return { ok: false, error: 'Twilio credentials are not configured' };
-  }
-
-  const smsParams: Record<string, string> = {
-    To: phoneNumber,
-    Body: message,
-  };
-  if (twilioMessagingServiceSid) {
-    smsParams.MessagingServiceSid = twilioMessagingServiceSid;
-  } else {
-    smsParams.From = twilioPhoneNumber!;
-  }
-
-  const credentials = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
-  const response = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams(smsParams),
-    },
-  );
-
-  const responseText = await response.text();
-  if (!response.ok) {
-    return {
-      ok: false,
-      httpStatus: response.status,
-      error: `Twilio error ${response.status}: ${responseText.substring(0, 200)}`,
-    };
-  }
-
-  try {
-    const parsed = JSON.parse(responseText);
-    return { ok: true, providerMessageId: parsed.sid };
-  } catch {
-    return { ok: true };
-  }
 }
 
 async function sendEmail(
@@ -418,6 +284,10 @@ async function sendPush(
   error?: string;
   invalidTokens?: string[];
 }> {
+  // Set the iOS APNS badge (and Android via data.badgeCount) when provided, so
+  // the home-screen app icon shows the unread count even with the app closed.
+  const badge = typeof data?.badgeCount === 'number' ? (data.badgeCount as number) : undefined;
+
   const result = await sendFcmV1(tokens, {
     notification: { title, body },
     data: data ? toFcmData(data) : undefined,
@@ -446,14 +316,23 @@ serve(async req => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (internalSecret) {
-    const providedSecret = req.headers.get('x-notification-secret');
-    if (providedSecret !== internalSecret) {
-      return new Response(JSON.stringify({ error: 'Unauthorized dispatch request' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+  // Auth — FAIL CLOSED. This function runs with the service-role client and can
+  // drive mass push/email, so it must never process an unauthenticated request.
+  // Accept either: (a) the internal cron, which authenticates with the
+  // service-role bearer (the `app.settings.service_role_key` GUC the cron job
+  // already references — it MUST be set in prod), or (b) an ops caller presenting
+  // the NOTIFICATION_DISPATCH_SECRET. Anything else is rejected.
+  const authHeader = req.headers.get('Authorization') || '';
+  const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  const providedSecret = req.headers.get('x-notification-secret');
+  const isServiceRole = serviceRoleKey.length > 20 && bearer === serviceRoleKey;
+  const hasValidSecret = !!internalSecret && providedSecret === internalSecret;
+  if (!isServiceRole && !hasValidSecret) {
+    return new Response(JSON.stringify({ error: 'Unauthorized dispatch request' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   if (req.method !== 'POST') {
@@ -530,24 +409,13 @@ serve(async req => {
 
     const [
       { data: preferenceRows },
-      { data: entitlementRows },
-      { data: smsOptInRows },
       { data: tripRows },
       { data: profileRows },
       { data: pushTokenRows },
       { data: webPushRows },
+      { data: unreadRows },
     ] = await Promise.all([
       supabase.from('notification_preferences').select('*').in('user_id', recipientIds),
-      supabase
-        .from('user_entitlements')
-        .select('user_id, plan, status, current_period_end, purchase_type, updated_at')
-        .in('user_id', recipientIds)
-        .in('purchase_type', ['subscription', 'pass'])
-        .order('updated_at', { ascending: false }),
-      supabase
-        .from('sms_opt_in')
-        .select('user_id, phone_e164, verified, opted_in')
-        .in('user_id', recipientIds),
       tripIds.length
         ? supabase.from('trips').select('id, name').in('id', tripIds)
         : Promise.resolve({ data: [], error: null }),
@@ -571,6 +439,17 @@ serve(async req => {
             .in('user_id', recipientIds)
             .eq('is_active', true)
         : Promise.resolve({ data: [], error: null }),
+      // Unread notification rows for recipients — used to set the OS app-icon
+      // badge count in the push payload. user_id only keeps the rows lightweight.
+      recipientIds.length
+        ? supabase
+            .from('notifications')
+            .select('user_id')
+            .in('user_id', recipientIds)
+            .eq('is_read', false)
+            .eq('is_visible', true)
+            .limit(5000)
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
     const preferencesByUser = new Map<string, NotificationPreferences>();
@@ -579,12 +458,12 @@ serve(async req => {
       preferencesByUser.set(userId, mergePreferences(userId, raw || undefined));
     }
 
-    const entitlementsByUser = mapPrimaryEntitlementsByUser(
-      entitlementRows as EntitlementRow[] | null,
-    );
-    const smsOptInByUser = new Map<string, SmsOptInRow>(
-      ((smsOptInRows || []) as SmsOptInRow[]).map(row => [row.user_id, row]),
-    );
+    // Per-recipient unread count → OS badge number for push payloads.
+    const unreadByUser = new Map<string, number>();
+    for (const row of (unreadRows || []) as Array<{ user_id: string }>) {
+      unreadByUser.set(row.user_id, (unreadByUser.get(row.user_id) || 0) + 1);
+    }
+
     const tripById = new Map<string, TripRow>(
       ((tripRows || []) as TripRow[]).map(row => [row.id, row]),
     );
@@ -608,9 +487,9 @@ serve(async req => {
 
     const summary = {
       processed: 0,
-      sent: { push: 0, email: 0, sms: 0 },
-      failed: { push: 0, email: 0, sms: 0 },
-      skipped: { push: 0, email: 0, sms: 0 },
+      sent: { push: 0, email: 0 },
+      failed: { push: 0, email: 0 },
+      cancelled: { push: 0, email: 0 },
       deferred: 0,
     };
 
@@ -625,8 +504,9 @@ serve(async req => {
       if (!notification) {
         await markDelivery(supabase, delivery.id, {
           status: 'failed',
-          error: 'Missing notification row',
-          attempts: delivery.attempts + 1,
+          error_message: 'Missing notification row',
+          attempt_count: delivery.attempt_count + 1,
+          last_attempted_at: new Date().toISOString(),
         });
         summary.processed++;
         summary.failed[delivery.channel]++;
@@ -641,14 +521,27 @@ serve(async req => {
 
       summary.processed++;
 
+      // Defensive: push + email are the only supported channels. A non-push/email
+      // delivery (e.g. a historical channel='sms' row queued before the SMS-removal
+      // migration marked it skipped) is claimed as 'processing' by the RPC; mark it
+      // skipped here so it never gets stuck or double-counted in the summary.
+      if ((channel as string) !== 'push' && (channel as string) !== 'email') {
+        await markDelivery(supabase, delivery.id, {
+          status: 'cancelled',
+          error_message: `unsupported_channel:${String(channel)}`,
+          attempt_count: delivery.attempt_count + 1,
+        });
+        continue;
+      }
+
       const basePreferenceDecision = enforcePreferenceAtSendTime(channel, category, prefs);
       if (!basePreferenceDecision.allow && basePreferenceDecision.reason === 'category_disabled') {
         await markDelivery(supabase, delivery.id, {
-          status: 'skipped',
-          error: `category_disabled:${category || 'unknown'}`,
-          attempts: delivery.attempts + 1,
+          status: 'cancelled',
+          error_message: `category_disabled:${category || 'unknown'}`,
+          attempt_count: delivery.attempt_count + 1,
         });
-        summary.skipped[channel]++;
+        summary.cancelled[channel]++;
         await logDeliveryAttempt(supabase, {
           userId,
           channel,
@@ -664,14 +557,30 @@ serve(async req => {
         continue;
       }
 
+      // Quiet hours: defer push + email delivery until the window ends so the
+      // user's quiet-hours setting is honored. The in-app notification row was
+      // already created, so nothing is lost — only the interruptive delivery is
+      // delayed. (Category opt-outs above still hard-skip.)
+      if (basePreferenceDecision.allow && prefs.quiet_hours_enabled && isQuietHours(prefs)) {
+        const delayMinutes = Math.max(getMinutesUntilQuietHoursEnd(prefs), 1);
+        const nextAttemptAt = new Date(Date.now() + delayMinutes * 60 * 1000).toISOString();
+        await markDelivery(supabase, delivery.id, {
+          status: 'queued',
+          error_message: 'quiet_hours_deferred',
+          next_attempt_at: nextAttemptAt,
+        });
+        summary.deferred++;
+        continue;
+      }
+
       if (channel === 'push') {
         if (!basePreferenceDecision.allow) {
           await markDelivery(supabase, delivery.id, {
-            status: 'skipped',
-            error: 'push_disabled',
-            attempts: delivery.attempts + 1,
+            status: 'cancelled',
+            error_message: 'push_disabled',
+            attempt_count: delivery.attempt_count + 1,
           });
-          summary.skipped.push++;
+          summary.cancelled.push++;
           continue;
         }
 
@@ -680,11 +589,11 @@ serve(async req => {
 
         if (fcmTokens.length === 0 && webPushSubs.length === 0) {
           await markDelivery(supabase, delivery.id, {
-            status: 'skipped',
-            error: 'no_push_targets',
-            attempts: delivery.attempts + 1,
+            status: 'cancelled',
+            error_message: 'no_push_targets',
+            attempt_count: delivery.attempt_count + 1,
           });
-          summary.skipped.push++;
+          summary.cancelled.push++;
           continue;
         }
 
@@ -692,31 +601,43 @@ serve(async req => {
         let pushError = '';
         const providerIds: string[] = [];
 
-        // App-icon badge count (category-filtered unread total) for this recipient.
-        // `undefined` = not yet computed; `null` = computed but query failed (unknown).
-        let badgeCount = badgeCountByUser.get(userId);
-        if (badgeCount === undefined) {
-          badgeCount = await computeBadgeCount(supabase, userId, prefs);
-          badgeCountByUser.set(userId, badgeCount);
+        // OS app-icon badge count: this recipient's current unread total (already
+        // includes the notification being delivered). Falls back to 1.
+        const badgeCount = unreadByUser.get(userId) ?? 1;
+
+        // Per-type push copy: use the centralized content builder (same source as
+        // email) so each notification type has polished, contextual title/body.
+        // Falls back to the caller-provided title/message for unmapped types.
+        let pushTitle = notification.title;
+        let pushBody = notification.message;
+        const pushContentType = categoryToContentType(category, metadata);
+        if (pushContentType) {
+          const pushTripCtx = buildTripContextFromRow(notification, tripById, metadata);
+          const pushActorId = getActorUserId(metadata);
+          const pushActorName =
+            (typeof metadata.sender_name === 'string' && metadata.sender_name) ||
+            (typeof metadata.requester_name === 'string' && metadata.requester_name) ||
+            getDisplayName(pushActorId ? profileByUserId.get(pushActorId) : undefined);
+          const pushContent = buildNotificationContent({
+            type: pushContentType,
+            channel: 'push',
+            tripContext: pushTripCtx,
+            actorName: pushActorName,
+            count: typeof metadata.count === 'number' ? metadata.count : undefined,
+            extra: { tripId: notification.trip_id || undefined },
+          }) as PushContent;
+          pushTitle = pushContent.title;
+          pushBody = pushContent.body;
         }
-        // Only forward a concrete number; on unknown we omit the badge entirely so
-        // a transient count failure can't clear a still-valid icon badge.
-        const badgeValue = typeof badgeCount === 'number' ? badgeCount : undefined;
 
         // 1. Deliver to FCM if available
         if (fcmTokens.length > 0) {
-          const pushResult = await sendPush(
-            fcmTokens,
-            notification.title,
-            notification.message,
-            {
-              notificationId: notification.id,
-              type: notification.type || 'notification',
-              tripId: notification.trip_id,
-              badgeCount: badgeValue,
-            },
-            badgeValue,
-          );
+          const pushResult = await sendPush(fcmTokens, pushTitle, pushBody, {
+            notificationId: notification.id,
+            type: notification.type || 'notification',
+            tripId: notification.trip_id,
+            badgeCount,
+          });
           if (pushResult.ok) {
             pushSucceeded = true;
             if (pushResult.providerMessageId)
@@ -732,16 +653,14 @@ serve(async req => {
             const webResult = await sendWebPushNotification(
               sub,
               {
-                title: notification.title,
-                body: notification.message,
+                title: pushTitle,
+                body: pushBody,
                 tag: `notif-${notification.id}`,
                 data: {
                   notificationId: notification.id,
                   tripId: notification.trip_id,
                   type: notification.type,
-                  // SW reads this to update the PWA app-icon badge (Web Badging API).
-                  // Omitted when the count is unknown so the SW leaves the badge as-is.
-                  badgeCount: badgeValue,
+                  badgeCount,
                 },
               },
               vapidPublicKey,
@@ -774,9 +693,10 @@ serve(async req => {
           await markDelivery(supabase, delivery.id, {
             status: 'sent',
             provider_message_id: providerIds.join(','),
-            error: null,
+            error_message: null,
             sent_at: new Date().toISOString(),
-            attempts: delivery.attempts + 1,
+            attempt_count: delivery.attempt_count + 1,
+            last_attempted_at: new Date().toISOString(),
           });
           summary.sent.push++;
           await logDeliveryAttempt(supabase, {
@@ -790,8 +710,9 @@ serve(async req => {
         } else {
           await markDelivery(supabase, delivery.id, {
             status: 'failed',
-            error: pushError || 'push_delivery_failed',
-            attempts: delivery.attempts + 1,
+            error_message: pushError || 'push_delivery_failed',
+            attempt_count: delivery.attempt_count + 1,
+            last_attempted_at: new Date().toISOString(),
           });
           summary.failed.push++;
           await logDeliveryAttempt(supabase, {
@@ -810,22 +731,22 @@ serve(async req => {
       if (channel === 'email') {
         if (!basePreferenceDecision.allow) {
           await markDelivery(supabase, delivery.id, {
-            status: 'skipped',
-            error: 'email_disabled',
-            attempts: delivery.attempts + 1,
+            status: 'cancelled',
+            error_message: 'email_disabled',
+            attempt_count: delivery.attempt_count + 1,
           });
-          summary.skipped.email++;
+          summary.cancelled.email++;
           continue;
         }
 
         const recipientEmail = profileByUserId.get(userId)?.email?.trim();
         if (!recipientEmail) {
           await markDelivery(supabase, delivery.id, {
-            status: 'skipped',
-            error: 'missing_email',
-            attempts: delivery.attempts + 1,
+            status: 'cancelled',
+            error_message: 'missing_email',
+            attempt_count: delivery.attempt_count + 1,
           });
-          summary.skipped.email++;
+          summary.cancelled.email++;
           continue;
         }
 
@@ -864,9 +785,10 @@ serve(async req => {
           await markDelivery(supabase, delivery.id, {
             status: 'sent',
             provider_message_id: emailResult.providerMessageId || null,
-            error: null,
+            error_message: null,
             sent_at: new Date().toISOString(),
-            attempts: delivery.attempts + 1,
+            attempt_count: delivery.attempt_count + 1,
+            last_attempted_at: new Date().toISOString(),
           });
           summary.sent.email++;
           await logDeliveryAttempt(supabase, {
@@ -881,8 +803,9 @@ serve(async req => {
         } else {
           await markDelivery(supabase, delivery.id, {
             status: 'failed',
-            error: emailResult.error || 'email_delivery_failed',
-            attempts: delivery.attempts + 1,
+            error_message: emailResult.error || 'email_delivery_failed',
+            attempt_count: delivery.attempt_count + 1,
+            last_attempted_at: new Date().toISOString(),
           });
           summary.failed.email++;
           await logDeliveryAttempt(supabase, {
@@ -897,187 +820,6 @@ serve(async req => {
         }
 
         continue;
-      }
-
-      // SMS
-      if (!basePreferenceDecision.allow) {
-        await markDelivery(supabase, delivery.id, {
-          status: 'skipped',
-          error: 'sms_disabled',
-          attempts: delivery.attempts + 1,
-        });
-        summary.skipped.sms++;
-        continue;
-      }
-
-      const entitlement = entitlementsByUser.get(userId);
-      if (!isUserSmsEntitled(entitlement)) {
-        await markDelivery(supabase, delivery.id, {
-          status: 'skipped',
-          error: 'sms_not_entitled',
-          attempts: delivery.attempts + 1,
-        });
-        summary.skipped.sms++;
-
-        // Auto-disable SMS preference when entitlement is missing.
-        await supabase
-          .from('notification_preferences')
-          .update({ sms_enabled: false, updated_at: new Date().toISOString() })
-          .eq('user_id', userId);
-
-        await logDeliveryAttempt(supabase, {
-          userId,
-          channel: 'sms',
-          title: notification.title,
-          body: notification.message,
-          status: 'skipped',
-          error: 'User is not entitled for SMS delivery',
-        });
-        continue;
-      }
-
-      // sms_opt_in is optional: use it only when fully verified; otherwise use notification_preferences
-      const optIn = smsOptInByUser.get(userId);
-      const smsPhone =
-        optIn?.opted_in && optIn?.verified ? optIn.phone_e164 : prefs.sms_phone_number || null;
-
-      if (!smsPhone) {
-        await markDelivery(supabase, delivery.id, {
-          status: 'skipped',
-          error: 'missing_sms_phone',
-          attempts: delivery.attempts + 1,
-        });
-        summary.skipped.sms++;
-        continue;
-      }
-
-      // Check daily rate limit via RPC (handles DB reset on new day)
-      const SMS_DAILY_LIMIT = 10;
-      const { data: rateLimitRows, error: rateLimitErr } = await supabase.rpc(
-        'check_sms_rate_limit',
-        {
-          p_user_id: userId,
-          p_daily_limit: SMS_DAILY_LIMIT,
-        },
-      );
-
-      const rateLimit =
-        Array.isArray(rateLimitRows) && rateLimitRows.length > 0 ? rateLimitRows[0] : null;
-      const allowed = rateLimit?.allowed ?? true;
-
-      if (rateLimitErr) {
-        console.error('[dispatch] Rate limit check failed:', rateLimitErr);
-      }
-
-      if (!allowed) {
-        await markDelivery(supabase, delivery.id, {
-          status: 'skipped',
-          error: 'rate_limited',
-          attempts: delivery.attempts + 1,
-        });
-        summary.skipped.sms++;
-        await logDeliveryAttempt(supabase, {
-          userId,
-          channel: 'sms',
-          title: notification.title,
-          body: notification.message,
-          status: 'skipped',
-          error: `Daily limit of ${SMS_DAILY_LIMIT} SMS reached. Resets at ${rateLimit?.reset_at ?? 'midnight'}`,
-        });
-        continue;
-      }
-
-      if (isQuietHours(prefs)) {
-        const delayMinutes = Math.max(getMinutesUntilQuietHoursEnd(prefs), 1);
-        const nextAttemptAt = new Date(Date.now() + delayMinutes * 60 * 1000).toISOString();
-        await markDelivery(supabase, delivery.id, {
-          status: 'queued',
-          error: 'quiet_hours_deferred',
-          next_attempt_at: nextAttemptAt,
-        });
-        summary.deferred++;
-        continue;
-      }
-
-      const tripName = notification.trip_id
-        ? tripById.get(notification.trip_id)?.name || 'your trip'
-        : 'your trip';
-      const actorUserId = getActorUserId(metadata);
-      const senderName =
-        (typeof metadata.sender_name === 'string' && metadata.sender_name) ||
-        (typeof metadata.requester_name === 'string' && metadata.requester_name) ||
-        getDisplayName(actorUserId ? profileByUserId.get(actorUserId) : undefined);
-
-      const smsMessage = generateSmsMessage(
-        category as Parameters<typeof generateSmsMessage>[0],
-        buildSmsTemplateData(
-          notification,
-          category,
-          tripName,
-          senderName,
-          prefs.timezone || 'America/Los_Angeles',
-        ),
-      );
-
-      const smsResult = await sendSms(smsPhone, smsMessage);
-      if (smsResult.ok) {
-        // Increment local counter for batch consistency (persistence handled by RPC below)
-        prefs.sms_sent_today = (prefs.sms_sent_today || 0) + 1;
-
-        await markDelivery(supabase, delivery.id, {
-          status: 'sent',
-          provider_message_id: smsResult.providerMessageId || null,
-          error: null,
-          sent_at: new Date().toISOString(),
-          attempts: delivery.attempts + 1,
-        });
-        summary.sent.sms++;
-        await supabase.rpc('increment_sms_counter', { p_user_id: userId });
-        await logDeliveryAttempt(supabase, {
-          userId,
-          channel: 'sms',
-          title: notification.title,
-          body: smsMessage,
-          recipient: smsPhone,
-          status: 'sent',
-          externalId: smsResult.providerMessageId,
-          metadata: { category },
-        });
-      } else {
-        const newAttempts = delivery.attempts + 1;
-        const retryPolicy = computeRetryPolicy('sms', newAttempts, smsResult.httpStatus);
-
-        if (retryPolicy.retryable && retryPolicy.nextAttemptMinutes) {
-          const nextAttemptAt = new Date(
-            Date.now() + retryPolicy.nextAttemptMinutes * 60 * 1000,
-          ).toISOString();
-          await markDelivery(supabase, delivery.id, {
-            status: 'queued',
-            error: `retry_${newAttempts}:${smsResult.error || 'transient_failure'}`,
-            attempts: newAttempts,
-            next_attempt_at: nextAttemptAt,
-          });
-          summary.deferred++;
-        } else {
-          await markDelivery(supabase, delivery.id, {
-            status: 'failed',
-            error: smsResult.error || 'sms_delivery_failed',
-            attempts: newAttempts,
-            dead_lettered_at: retryPolicy.deadLetter ? new Date().toISOString() : null,
-          });
-          summary.failed.sms++;
-        }
-
-        await logDeliveryAttempt(supabase, {
-          userId,
-          channel: 'sms',
-          title: notification.title,
-          body: smsMessage,
-          recipient: smsPhone,
-          status: 'failed',
-          error: smsResult.error,
-          metadata: { category, attempt: newAttempts, willRetry: retryPolicy.retryable },
-        });
       }
     }
 

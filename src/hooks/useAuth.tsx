@@ -212,7 +212,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               {
                 push_enabled: false,
                 email_enabled: true,
-                sms_enabled: false,
                 chat_messages: true,
                 mentions_only: false,
                 broadcasts: true,

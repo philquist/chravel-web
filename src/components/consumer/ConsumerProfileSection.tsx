@@ -317,7 +317,7 @@ export const ConsumerProfileSection = () => {
               placeholder="+1 (555) 123-4567"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Used for SMS and direct contact if sharing is enabled.
+              Used for direct contact if you choose to share it with your trip.
             </p>
           </div>
         </div>

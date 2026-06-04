@@ -12,7 +12,6 @@ const mapDbToContract = (
 ) => ({
   push_enabled: prefs.push_enabled,
   email_enabled: prefs.email_enabled,
-  sms_enabled: prefs.sms_enabled,
   messages: prefs.chat_messages,
   broadcasts_and_pins: prefs.broadcasts,
   tasks: prefs.tasks,
@@ -26,7 +25,6 @@ const mapContractToDb = (
 ): Partial<Awaited<ReturnType<typeof userPreferencesService.getNotificationPreferences>>> => ({
   ...(prefs.push_enabled !== undefined && { push_enabled: prefs.push_enabled }),
   ...(prefs.email_enabled !== undefined && { email_enabled: prefs.email_enabled }),
-  ...(prefs.sms_enabled !== undefined && { sms_enabled: prefs.sms_enabled }),
   ...(prefs.messages !== undefined && { chat_messages: prefs.messages }),
   ...(prefs.broadcasts_and_pins !== undefined && { broadcasts: prefs.broadcasts_and_pins }),
   ...(prefs.tasks !== undefined && { tasks: prefs.tasks }),

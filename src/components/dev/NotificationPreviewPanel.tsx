@@ -3,7 +3,7 @@
  *
  * Allows developers to:
  * - Pick a notification type
- * - Pick a channel (push/email/sms)
+ * - Pick a channel (push/email)
  * - Enter sample trip/event context
  * - Preview the generated copy/template
  *
@@ -179,17 +179,6 @@ export const NotificationPreviewPanel = () => {
             CTA: {allContent.email.ctaLabel} → {allContent.email.ctaUrl}
           </p>
           <p className="text-gray-500 text-xs mt-1">{allContent.email.footerText}</p>
-        </div>
-
-        {/* SMS Preview */}
-        <div className="bg-gray-800 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs font-mono rounded">
-              SMS
-            </span>
-            <span className="text-gray-500 text-xs">{allContent.sms.message.length} chars</span>
-          </div>
-          <p className="text-gray-300 text-sm font-mono">{allContent.sms.message}</p>
         </div>
       </div>
     </div>

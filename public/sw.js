@@ -218,6 +218,12 @@ self.addEventListener('push', function (event) {
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
 
+  // Clearing the badge on tap is best-effort; the foreground app reconciles the
+  // badge to the true unread count once it loads.
+  if (self.navigator && self.navigator.clearAppBadge) {
+    self.navigator.clearAppBadge().catch(function () {});
+  }
+
   var data = event.notification.data || {};
   var action = event.action;
   var targetUrl = '/';

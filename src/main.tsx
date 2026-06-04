@@ -132,7 +132,6 @@ const isPublicAnonymousBootstrapRoute = (): boolean => {
     path.startsWith('/privacy') ||
     path.startsWith('/support') ||
     path.startsWith('/terms') ||
-    path.startsWith('/sms-terms') ||
     path.startsWith('/delete-account') ||
     path.startsWith('/demo') ||
     path.startsWith('/healthz');

@@ -73,7 +73,6 @@ describe('EventNotificationsSection', () => {
     getNotificationPreferences.mockResolvedValue({
       push_enabled: true,
       email_enabled: false,
-      sms_enabled: false,
       broadcasts: true,
       calendar_events: true,
       join_requests: true,
@@ -106,7 +105,6 @@ describe('EventNotificationsSection', () => {
       .mockResolvedValueOnce({
         push_enabled: false,
         email_enabled: true,
-        sms_enabled: false,
         broadcasts: false,
         calendar_events: false,
         join_requests: true,
@@ -116,7 +114,6 @@ describe('EventNotificationsSection', () => {
       .mockResolvedValueOnce({
         push_enabled: true,
         email_enabled: false,
-        sms_enabled: true,
         broadcasts: true,
         calendar_events: true,
         join_requests: false,

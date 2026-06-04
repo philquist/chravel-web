@@ -32,6 +32,7 @@ import { ExitDemoButton } from './components/demo';
 
 import { setupGlobalSyncProcessor } from './services/globalSyncProcessor';
 import { useSwUpdate } from '@/hooks/useSwUpdate';
+import { useAppBadge } from '@/hooks/useAppBadge';
 import { safeReload } from '@/utils/safeReload';
 import { retryImport } from '@/lib/retryImport';
 import { getPublicSeoRoute, SEO_LANDING_CONTENT } from '@/lib/seo';
@@ -88,7 +89,6 @@ const Healthz = lazy(() => retryImport(() => import('./pages/Healthz')));
 const PrivacyPolicy = lazy(() => retryImport(() => import('./pages/PrivacyPolicy')));
 const SupportPage = lazy(() => retryImport(() => import('./pages/SupportPage')));
 const TermsOfService = lazy(() => retryImport(() => import('./pages/TermsOfService')));
-const SmsTerms = lazy(() => retryImport(() => import('./pages/SmsTerms')));
 const DeleteAccountPage = lazy(() => retryImport(() => import('./pages/DeleteAccountPage')));
 const GmailCallbackPage = lazy(() =>
   retryImport(() =>
@@ -156,7 +156,6 @@ const OfflineIndicatorGate = () => {
     pathname.startsWith('/privacy') ||
     pathname.startsWith('/support') ||
     pathname.startsWith('/terms') ||
-    pathname.startsWith('/sms-terms') ||
     pathname.startsWith('/delete-account') ||
     pathname.startsWith('/demo') ||
     pathname.startsWith('/healthz');
@@ -181,6 +180,10 @@ const App = () => {
   React.useMemo(() => {
     useDemoModeStore.getState().init();
   }, []);
+
+  // Keep the OS app-icon badge (PWA / installed app) in sync with unread notifications.
+  useAppBadge();
+
   // Track app initialization performance
   const stopTiming = performanceService.startTiming('App Initialization');
 
@@ -629,14 +632,6 @@ const App = () => {
                         element={
                           <LazyRoute>
                             <TermsOfService />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/sms-terms"
-                        element={
-                          <LazyRoute>
-                            <SmsTerms />
                           </LazyRoute>
                         }
                       />

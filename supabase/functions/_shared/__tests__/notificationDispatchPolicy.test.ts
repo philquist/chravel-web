@@ -10,8 +10,6 @@ const prefs: NotificationPreferences = {
   user_id: 'user-1',
   push_enabled: true,
   email_enabled: true,
-  sms_enabled: true,
-  sms_phone_number: '+14155550123',
   chat_messages: false,
   broadcasts: true,
   calendar_events: true,
@@ -30,7 +28,7 @@ const prefs: NotificationPreferences = {
 
 describe('notification dispatch policy', () => {
   it('routes eligible channels while enforcing preferences at send time', () => {
-    expect(routeChannels('broadcasts', prefs)).toEqual(['push', 'email', 'sms']);
+    expect(routeChannels('broadcasts', prefs)).toEqual(['push', 'email']);
   });
 
   it('blocks opted-out categories before send (opt-out compliance)', () => {
@@ -42,12 +40,12 @@ describe('notification dispatch policy', () => {
   });
 
   it('provides retry/backoff and dead-letter for transient channel failures', () => {
-    expect(computeRetryPolicy('sms', 1, 503)).toEqual({
+    expect(computeRetryPolicy('email', 1, 503)).toEqual({
       retryable: true,
-      nextAttemptMinutes: 2,
+      nextAttemptMinutes: 1,
       deadLetter: false,
     });
-    expect(computeRetryPolicy('sms', 4, 503)).toEqual({
+    expect(computeRetryPolicy('email', 4, 503)).toEqual({
       retryable: false,
       nextAttemptMinutes: null,
       deadLetter: true,

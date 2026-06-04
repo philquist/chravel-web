@@ -2,7 +2,7 @@
  * Notification Preferences Component
  *
  * Allows users to configure:
- * - Which channels to receive notifications (push, email, SMS)
+ * - Which channels to receive notifications (push, email)
  * - Which types of notifications to receive
  * - Quiet hours
  */
@@ -75,19 +75,6 @@ export const NotificationPreferences = () => {
               checked={prefs.email_enabled}
               onCheckedChange={v => void updatePreference('email_enabled', v)}
               aria-label="Toggle email notifications"
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              <Label htmlFor="sms">SMS Notifications</Label>
-            </div>
-            <Switch
-              id="sms"
-              checked={prefs.sms_enabled}
-              onCheckedChange={v => void updatePreference('sms_enabled', v)}
-              aria-label="Toggle SMS notifications"
             />
           </div>
         </div>
