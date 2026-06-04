@@ -19,6 +19,12 @@
 -- it inserts (notification_id, channel, status, next_attempt_at). recipient is
 -- nullable (resolved at send time); attempt_count/max_attempts use their defaults.
 --
+-- SCOPE: PUSH ONLY. Every notification_preferences row in production currently has
+-- email_enabled = TRUE, so fanning out an 'email' channel would email the entire
+-- user base on the next notification. The product goal here is push + badges, so
+-- this trigger enqueues the 'push' channel only. Re-enable an 'email' VALUES row
+-- below as a DELIBERATE, separately-reviewed change once email is intended.
+--
 -- IMPORTANT: deploy this together with the matching dispatch-notification-deliveries
 -- function (which also targets this schema). Deploying the trigger without the
 -- aligned dispatcher would queue rows the old dispatcher cannot process.
@@ -42,8 +48,9 @@ BEGIN
     next_attempt_at
   )
   VALUES
-    (NEW.id, 'push', 'queued'::public.notification_delivery_status, COALESCE(NEW.created_at, NOW())),
-    (NEW.id, 'email', 'queued'::public.notification_delivery_status, COALESCE(NEW.created_at, NOW()))
+    (NEW.id, 'push', 'queued'::public.notification_delivery_status, COALESCE(NEW.created_at, NOW()))
+    -- , (NEW.id, 'email', 'queued'::public.notification_delivery_status, COALESCE(NEW.created_at, NOW()))
+    --   ^ email intentionally disabled (all users are email_enabled; would blast). Re-enable deliberately.
   ON CONFLICT (notification_id, channel) DO NOTHING;
 
   RETURN NEW;
