@@ -146,6 +146,7 @@ export function useNotificationRealtime() {
     setUnreadCount,
     incrementUnread,
     decrementUnread,
+    bumpBadgeDirty,
     clearAll: storeClearAll,
   } = useNotificationRealtimeStore();
   const queryClient = useQueryClient();
@@ -224,6 +225,8 @@ export function useNotificationRealtime() {
           applyNotificationPatch(old ?? [], { ...item, timestampMs: Date.now() }),
         );
         if (!item.isRead) incrementUnread();
+        // Recompute the app-icon badge; useAppBadge applies the category filter.
+        bumpBadgeDirty();
       },
       onUpdate: (updatedRow: Record<string, unknown>) => {
         const id = updatedRow.id as string;
@@ -238,6 +241,8 @@ export function useNotificationRealtime() {
             timestampMs: Date.now(),
           });
         });
+        // Read-state may have changed on another device — reconcile the badge.
+        bumpBadgeDirty();
       },
       onReconnect: () => {
         // Only re-fetch on reconnect, not on initial subscription
@@ -250,7 +255,7 @@ export function useNotificationRealtime() {
 
     return cleanup;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- user object is unstable; user?.id already in deps
-  }, [user?.id, isDemoMode, fetchNotifications, fetchUnreadCount, incrementUnread]);
+  }, [user?.id, isDemoMode, fetchNotifications, fetchUnreadCount, incrementUnread, bumpBadgeDirty]);
 
   const markAsRead = useCallback(
     async (notificationId: string) => {
@@ -264,9 +269,10 @@ export function useNotificationRealtime() {
       queryClient.setQueryData<NotificationCacheItem[]>(['notifications', user.id], old =>
         clearOptimisticMutation(old ?? [], notificationId, mutationId),
       );
+      bumpBadgeDirty();
       fetchUnreadCount();
     },
-    [user, queryClient, decrementUnread, fetchUnreadCount],
+    [user, queryClient, decrementUnread, bumpBadgeDirty, fetchUnreadCount],
   );
 
   const markAllAsRead = useCallback(
@@ -279,8 +285,9 @@ export function useNotificationRealtime() {
           await supabase.from('notifications').update({ is_read: true }).in('id', unreadIds);
         }
       }
+      bumpBadgeDirty();
     },
-    [user, setUnreadCount],
+    [user, setUnreadCount, bumpBadgeDirty],
   );
 
   const clearAll = useCallback(
@@ -312,8 +319,9 @@ export function useNotificationRealtime() {
           .update({ is_visible: false, cleared_at: new Date().toISOString() })
           .eq('id', notificationId);
       }
+      bumpBadgeDirty();
     },
-    [user, queryClient],
+    [user, queryClient, bumpBadgeDirty],
   );
 
   const notificationsQuery = useQuery({
