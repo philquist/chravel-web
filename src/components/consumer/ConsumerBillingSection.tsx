@@ -7,6 +7,12 @@ import { BILLING_PRODUCTS } from '@/billing/config';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
+
+// App Store 3.1.1: inside the iOS app, consumers must not be steered to an external
+// web checkout or the Stripe-hosted billing portal for digital subscriptions. Manage/
+// cancel must route to Apple's native subscription settings instead.
+const IOS_SUBSCRIPTIONS_URL = 'itms-apps://apps.apple.com/account/subscriptions';
 
 export const ConsumerBillingSection = () => {
   const {
@@ -26,12 +32,19 @@ export const ConsumerBillingSection = () => {
   useEffect(() => {
     void checkSubscription();
   }, [checkSubscription]);
-  const isNativeIOS = false;
-  const blockConsumerCheckoutOnIOS = false;
+  const isNativeIOS =
+    detectNativeBillingPlatform(
+      typeof navigator !== 'undefined' ? navigator.userAgent : '',
+      isNativeWebView(),
+    ) === 'ios';
+  // Consumer (Explorer / Frequent Chraveler) digital subscriptions are IAP-only on iOS;
+  // Pro/Enterprise (B2B) checkout stays on Stripe per the reader-rule exception.
+  const blockConsumerCheckoutOnIOS = isNativeIOS;
 
   const handleManageSubscription = async () => {
     if (blockConsumerCheckoutOnIOS) {
-      toast.info('Consumer subscription management on iOS will be available with Apple IAP.');
+      // Route to Apple's native subscription management, not the external Stripe portal.
+      window.location.assign(IOS_SUBSCRIPTIONS_URL);
       return;
     }
     try {
@@ -62,7 +75,8 @@ export const ConsumerBillingSection = () => {
 
   const handleCancelSubscription = async () => {
     if (blockConsumerCheckoutOnIOS) {
-      toast.info('Cancellation on iOS will be available with Apple IAP subscription management.');
+      // Apple requires cancellation of digital subscriptions via iOS settings, not a web portal.
+      window.location.assign(IOS_SUBSCRIPTIONS_URL);
       return;
     }
 

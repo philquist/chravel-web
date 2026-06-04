@@ -332,6 +332,30 @@ export const AuthModal = ({
               ? 'Create Account'
               : 'Sign In'}
       </button>
+
+      {mode === 'signup' && (
+        <p className="text-center text-xs text-white/50 pt-1">
+          By creating an account, you agree to our{' '}
+          <a
+            href="/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-glass-orange hover:text-glass-yellow underline"
+          >
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a
+            href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-glass-orange hover:text-glass-yellow underline"
+          >
+            Privacy Policy
+          </a>
+          .
+        </p>
+      )}
     </form>
   );
 

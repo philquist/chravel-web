@@ -250,11 +250,6 @@ export const BILLING_FLAGS = {
   FALLBACK_TO_WEB: true,
 
   /**
-   * Show "Subscribe on web" message on iOS when IAP not ready.
-   */
-  SHOW_WEB_SUBSCRIBE_PROMPT: true,
-
-  /**
    * Enable subscription management via Stripe Customer Portal.
    */
   STRIPE_PORTAL_ENABLED: true,

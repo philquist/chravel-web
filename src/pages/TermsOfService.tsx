@@ -85,6 +85,18 @@ export default function TermsOfService() {
               <li>Reverse engineer or attempt to extract source code</li>
               <li>Violate any intellectual property rights</li>
             </ul>
+            <p className="text-foreground/90 mb-4">
+              <strong>Zero tolerance for objectionable content and abusive users.</strong> Chravel
+              has zero tolerance for objectionable content (including harassment, hate speech,
+              sexual or exploitative material, threats, and impersonation) and for abusive behavior
+              toward other users. You can report objectionable content or block an abusive user from
+              any message, or contact{' '}
+              <a href="mailto:safety@chravelapp.com" className="underline">
+                safety@chravelapp.com
+              </a>
+              . We remove violating content and eject offending users, typically within 24 hours of
+              a report.
+            </p>
           </section>
 
           <section className="mb-8">

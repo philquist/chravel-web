@@ -14,7 +14,6 @@ import {
   canUseWebCheckout,
   requiresIAPForTier,
 } from '../providers';
-import { BILLING_FLAGS } from '../config';
 import type {
   UserEntitlements,
   SubscriptionTier,
@@ -52,7 +51,6 @@ export interface UseBillingReturn {
   // Platform-specific helpers
   requiresIAP: (tier: SubscriptionTier) => boolean;
   canUseWebCheckout: (tier?: SubscriptionTier) => boolean;
-  showWebSubscribePrompt: boolean;
 }
 
 /**
@@ -199,12 +197,6 @@ export function useBilling(): UseBillingReturn {
   const canCreateProTrip = canUseFeature('pro_trip_creation');
   const proTripQuota = getLimit('pro_trip_creation');
 
-  // Show web subscribe prompt on iOS when IAP is not enabled
-  const showWebSubscribePrompt =
-    platform === 'ios' &&
-    BILLING_FLAGS.SHOW_WEB_SUBSCRIBE_PROMPT &&
-    !BILLING_FLAGS.APPLE_IAP_ENABLED;
-
   return {
     // State
     entitlements,
@@ -232,6 +224,5 @@ export function useBilling(): UseBillingReturn {
     // Platform-specific helpers
     requiresIAP: requiresIAPForTier,
     canUseWebCheckout,
-    showWebSubscribePrompt,
   };
 }
