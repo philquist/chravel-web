@@ -8,7 +8,8 @@ import { setupGlobalPurchaseListener } from '@/integrations/revenuecat/revenueca
 import { getMissingSupabaseEnvVars } from '@/integrations/supabase/config';
 import { telemetry } from '@/telemetry/service';
 import { isLovablePreview } from './utils/env';
-import { isChravelNativeShell } from './utils/platformDetection';
+import { hasAuthStorageMarker, shouldUseMarketingBootstrap } from './lib/bootstrapShell';
+import { isChravelNativeShell, isInstalledApp } from './utils/platformDetection';
 import './index.css';
 
 // ── Startup env validation ──────────────────────────────────────────────────
@@ -52,45 +53,26 @@ const safeCookieIncludes = (needle: string): boolean => {
   }
 };
 
-const AUTH_STORAGE_MARKERS = [
-  'supabase.auth.token',
-  'sb-',
-  'chravel-auth',
-  'firebase:authUser',
-] as const;
+const hasAuthMarkerOnBoot =
+  typeof window !== 'undefined' &&
+  hasAuthStorageMarker({
+    localStorage,
+    sessionStorage,
+    cookieIncludes: safeCookieIncludes,
+  });
 
-const storageContainsAuthMarker = (storage: Storage): boolean => {
-  try {
-    for (let i = 0; i < storage.length; i += 1) {
-      const key = storage.key(i);
-      if (key && AUTH_STORAGE_MARKERS.some(marker => key.includes(marker))) {
-        return true;
-      }
-    }
-  } catch {
-    return false;
-  }
-
-  return false;
-};
-
-const isAnonymousRootRoute = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  if (window.location.pathname !== '/') return false;
-
-  const hasAuthMarker =
-    storageContainsAuthMarker(localStorage) ||
-    storageContainsAuthMarker(sessionStorage) ||
-    AUTH_STORAGE_MARKERS.some(marker => safeCookieIncludes(marker));
-
-  return !hasAuthMarker;
-};
-
-// Anonymous visitors to `/` always boot the lightweight MarketingApp shell.
-// The full authed App lazy-loads on sign-in or any non-marketing route.
+// Anonymous browser visitors to `/` boot MarketingApp for faster first paint.
+// Installed shells (PWA, Capacitor, chravel-mobile TestFlight) always boot App
+// so Index can show the in-app auth gate instead of the marketing landing.
 // Set VITE_MARKETING_SPLIT=0 to force legacy bootstrap if ever needed.
 const shouldUseMarketingSplit =
-  import.meta.env.VITE_MARKETING_SPLIT !== '0' && isAnonymousRootRoute();
+  typeof window !== 'undefined' &&
+  shouldUseMarketingBootstrap({
+    marketingSplitEnabled: import.meta.env.VITE_MARKETING_SPLIT !== '0',
+    pathname: window.location.pathname,
+    hasAuthMarker: hasAuthMarkerOnBoot,
+    isInstalledApp: isInstalledApp(),
+  });
 const safeLocalStorageSet = (key: string, value: string): void => {
   try {
     localStorage.setItem(key, value);
