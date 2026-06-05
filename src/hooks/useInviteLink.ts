@@ -27,7 +27,6 @@ interface InviteLinkResult {
   handleCopyLink: () => Promise<void>;
   handleShare: () => Promise<void>;
   handleEmailInvite: () => void;
-  handleSMSInvite: () => void;
 }
 
 // UUID validation regex
@@ -404,15 +403,6 @@ export const useInviteLink = ({
     window.open(`mailto:?subject=${subject}&body=${body}`);
   };
 
-  const handleSMSInvite = () => {
-    if (!inviteLink) return;
-
-    const message = encodeURIComponent(
-      `You're invited to join my trip "${tripName}"! ${inviteLink} (Opens in ChravelApp if installed)`,
-    );
-    window.open(`sms:?body=${message}`);
-  };
-
   const retryGenerate = useCallback(async () => {
     setError(null);
     await generateTripLink();
@@ -432,6 +422,5 @@ export const useInviteLink = ({
     handleCopyLink,
     handleShare,
     handleEmailInvite,
-    handleSMSInvite,
   };
 };

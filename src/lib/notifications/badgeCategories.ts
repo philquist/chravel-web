@@ -35,7 +35,9 @@ export const BADGE_NOTIFICATION_TYPES = [
 export const ACCEPTANCE_ACTION = 'join_approved';
 
 // Types that always badge (chat is handled separately because it is pref-gated).
-const ALWAYS_BADGE_TYPES = new Set(BADGE_NOTIFICATION_TYPES.filter(t => t !== 'chat_message'));
+const ALWAYS_BADGE_TYPES: Set<string> = new Set(
+  BADGE_NOTIFICATION_TYPES.filter(t => t !== 'chat_message'),
+);
 
 /**
  * Build the PostgREST `.or(...)` filter string for the badge count query.
@@ -61,5 +63,5 @@ export function isBadgeCountable(
 
   const type = row.type ?? '';
   if (type === 'chat_message') return prefs.chat_messages;
-  return ALWAYS_BADGE_TYPES.has(type as (typeof BADGE_NOTIFICATION_TYPES)[number]);
+  return ALWAYS_BADGE_TYPES.has(type);
 }

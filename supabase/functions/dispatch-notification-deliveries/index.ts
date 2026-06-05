@@ -413,7 +413,6 @@ serve(async req => {
       { data: profileRows },
       { data: pushTokenRows },
       { data: webPushRows },
-      { data: unreadRows },
     ] = await Promise.all([
       supabase.from('notification_preferences').select('*').in('user_id', recipientIds),
       tripIds.length
@@ -439,29 +438,12 @@ serve(async req => {
             .in('user_id', recipientIds)
             .eq('is_active', true)
         : Promise.resolve({ data: [], error: null }),
-      // Unread notification rows for recipients — used to set the OS app-icon
-      // badge count in the push payload. user_id only keeps the rows lightweight.
-      recipientIds.length
-        ? supabase
-            .from('notifications')
-            .select('user_id')
-            .in('user_id', recipientIds)
-            .eq('is_read', false)
-            .eq('is_visible', true)
-            .limit(5000)
-        : Promise.resolve({ data: [], error: null }),
     ]);
 
     const preferencesByUser = new Map<string, NotificationPreferences>();
     for (const userId of recipientIds) {
       const raw = (preferenceRows || []).find(row => row.user_id === userId);
       preferencesByUser.set(userId, mergePreferences(userId, raw || undefined));
-    }
-
-    // Per-recipient unread count → OS badge number for push payloads.
-    const unreadByUser = new Map<string, number>();
-    for (const row of (unreadRows || []) as Array<{ user_id: string }>) {
-      unreadByUser.set(row.user_id, (unreadByUser.get(row.user_id) || 0) + 1);
     }
 
     const tripById = new Map<string, TripRow>(
@@ -601,9 +583,19 @@ serve(async req => {
         let pushError = '';
         const providerIds: string[] = [];
 
-        // OS app-icon badge count: this recipient's current unread total (already
-        // includes the notification being delivered). Falls back to 1.
-        const badgeCount = unreadByUser.get(userId) ?? 1;
+        // OS app-icon badge count: ONLY badge-eligible unread notifications for
+        // this recipient (chat — when their chat pref is on — plus broadcasts,
+        // basecamp updates, and trip acceptances), NOT tasks/polls/payments/
+        // calendar. Computed once per recipient and cached across deliveries in
+        // this batch. `null` means the count query failed → pass `undefined` so
+        // the push sender omits the badge and leaves the current icon untouched
+        // rather than clearing it to 0.
+        let cachedBadgeCount = badgeCountByUser.get(userId);
+        if (cachedBadgeCount === undefined) {
+          cachedBadgeCount = await computeBadgeCount(supabase, userId, prefs);
+          badgeCountByUser.set(userId, cachedBadgeCount);
+        }
+        const badgeCount = cachedBadgeCount ?? undefined;
 
         // Per-type push copy: use the centralized content builder (same source as
         // email) so each notification type has polished, contextual title/body.

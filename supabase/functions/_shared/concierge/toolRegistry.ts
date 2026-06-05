@@ -1,9 +1,9 @@
 /**
  * Tool Registry — Single source of truth for all concierge tool declarations.
  *
- * Both the text concierge (lovable-concierge) and voice concierge
- * (gemini-voice-session) derive their tool lists from this registry,
- * eliminating drift between the two paths.
+ * Both the text concierge (lovable-concierge) and the voice tool
+ * declarations (voiceToolDeclarations.ts) derive their tool lists from this
+ * registry, eliminating drift between the two paths.
  *
  * Tools are conditionally loaded per query class to reduce token overhead.
  *
@@ -1713,7 +1713,7 @@ const VOICE_DESCRIPTION_OVERRIDES: Record<string, string> = {
 
 /**
  * Get all tool declarations with voice-friendly (shorter) descriptions.
- * Used by gemini-voice-session via voiceToolDeclarations.ts.
+ * Exposed via voiceToolDeclarations.ts for the voice tool declarations.
  */
 export function getToolsForVoice(): ToolDeclaration[] {
   return ALL_TOOL_DECLARATIONS.map(tool => {

@@ -1,8 +1,8 @@
 /**
  * Shared Vertex AI OAuth2 authentication utilities.
  *
- * Extracted from gemini-voice-session so both the legacy HTTP endpoint
- * and the new WebSocket proxy can mint access tokens without duplication.
+ * Shared so the Vertex-backed edge functions (e.g. concierge-tts) can mint
+ * access tokens without duplicating the OAuth2 flow.
  */
 
 // ── Types ──
