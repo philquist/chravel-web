@@ -187,6 +187,13 @@ const AuthIndex = () => {
   // handleSearchTripSelect is defined after allSearchableTrips memo below
 
   // Clear stale demo mode for unauthenticated users visiting root (not from /demo redirect)
+  // 🔒 RACE FIX: Read demoView imperatively (NOT as an effect dependency). When this effect
+  // depended on `demoView`, the onboarding "Explore demo trip" handler's intentional
+  // setDemoView('app-preview') re-triggered this effect, which immediately flipped it back
+  // to 'off' for the (still unauthenticated) new user — leaving the demo trip without demo
+  // mode and surfacing "Couldn't Load Trip". We still clear genuinely *stale* demo state
+  // when auth resolves for a returning unauthenticated user, just not in reaction to a
+  // fresh activation.
   useEffect(() => {
     const fromDemo = searchParams.get('from') === 'demo';
 
@@ -202,10 +209,10 @@ const AuthIndex = () => {
     if (authLoading) return;
 
     // Not from /demo redirect - clear stale demo mode for unauthenticated users
-    if (!user && demoView === 'app-preview') {
+    if (!user && useDemoModeStore.getState().demoView === 'app-preview') {
       useDemoModeStore.getState().setDemoView('off');
     }
-  }, [user, authLoading, demoView, searchParams, setSearchParams]);
+  }, [user, authLoading, searchParams, setSearchParams]);
 
   // Counter to force re-renders when demo session state changes (archive/hide)
   const [demoRefreshCounter, setDemoRefreshCounter] = useState(0);

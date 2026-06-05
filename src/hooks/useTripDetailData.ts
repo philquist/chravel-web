@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { tripService } from '@/services/tripService';
 import { useDemoMode } from './useDemoMode';
@@ -64,7 +65,15 @@ export const useTripDetailData = (tripId: string | undefined): UseTripDetailData
   }
 
   // Demo mode: Fast path - synchronous, no network
-  const shouldUseDemoPath = isDemoMode && isDemoTrip(tripId);
+  // 🔒 RESILIENCE: Gate the demo fast path on the *structural* trip-id check alone, NOT on
+  // the (fragile, hydration/race-prone) isDemoMode flag. Demo trip ids are numeric 1–12 while
+  // real trips are UUIDs, so isDemoTrip() can never match a real trip. Serving canonical local
+  // data from src/data/tripsData.ts for these ids is always correct and guarantees the demo
+  // trip loads with no Supabase call, no RLS, and no auth requirement — even on cold start,
+  // PWA, or TestFlight, and even if the demo-mode flag momentarily flips. This is what keeps
+  // "Couldn't Load Trip" out of the demo path. (isDemoMode still gates sub-feature isolation
+  // in the payment/places/chat services, so demo mode is kept ON via Index.tsx — see RACE FIX.)
+  const shouldUseDemoPath = isDemoTrip(tripId);
 
   // Get demo members from store for numeric trip IDs
   const demoAddedMembersCount = useDemoTripMembersStore(state =>
@@ -139,6 +148,41 @@ export const useTripDetailData = (tripId: string | undefined): UseTripDetailData
       return failureCount < 2;
     },
   });
+
+  // 🔭 Structured failure logging for the REAL-trip path. Without this, every failure
+  // collapses into the same generic "Couldn't Load Trip" screen, making post-mortems
+  // impossible. The demo path never errors (handled above) so it is excluded here.
+  const realTripError = tripQuery.error as Error | null;
+  const realMembersError = membersQuery.error as Error | null;
+  // An unauthenticated visit to a real trip is an EXPECTED state (we render a sign-in
+  // prompt), NOT a fault — so it must not be captured as an exception, or it would flood
+  // error tracking on every logged-out trip link click.
+  const authRequired = !shouldUseDemoPath && isAuthResolved && !authUserId && !!tripId;
+  useEffect(() => {
+    if (shouldUseDemoPath || !tripId) return;
+    // Genuine fetch failure (trip or members) → exception with a diagnosable category.
+    const failure = realTripError ?? realMembersError;
+    if (failure) {
+      errorTracking.captureException(failure, {
+        action: 'trip-detail-load',
+        tripId,
+        metadata: {
+          category: classifyTripError(failure),
+          source: realTripError ? 'trip' : 'members',
+        },
+      });
+      return;
+    }
+    // Expected non-fault: record a breadcrumb for trace context, not an exception.
+    if (authRequired) {
+      errorTracking.addBreadcrumb({
+        category: 'trip-detail-load',
+        level: 'info',
+        message: 'Trip requires auth (user not signed in)',
+        data: { tripId, category: 'auth-required' },
+      });
+    }
+  }, [shouldUseDemoPath, realTripError, realMembersError, authRequired, tripId]);
 
   // Demo mode: Return mock data immediately
   if (shouldUseDemoPath && tripId) {
@@ -232,6 +276,44 @@ export const useTripDetailData = (tripId: string | undefined): UseTripDetailData
     membersError: membersQuery.error as Error | null,
   };
 };
+
+/**
+ * Classify a real-trip load failure into an actionable category for logging.
+ * Keeps user-facing copy generic while making logs diagnosable.
+ */
+type TripErrorCategory =
+  | 'auth-required'
+  | 'permission-denied'
+  | 'not-found'
+  | 'network'
+  | 'malformed'
+  | 'unknown';
+
+function classifyTripError(error: Error | null): TripErrorCategory {
+  if (!error) return 'unknown';
+  // Supabase/PostgREST errors carry structured `code`/`status` that the message often omits
+  // (e.g. an RLS denial is code 42501 with a generic message). Inspect those first.
+  const { code, status } = error as Error & { code?: string; status?: number };
+  if (code === '42501' || status === 403) return 'permission-denied';
+  if (code === 'PGRST116' || status === 404) return 'not-found';
+  if (status === 0 || status === 429 || status === 503) return 'network';
+
+  const msg = (error.message || '').toLowerCase();
+  if (msg.includes('auth_required') || msg.includes('not authenticated')) return 'auth-required';
+  if (msg.includes('permission') || msg.includes('rls') || msg.includes('forbidden')) {
+    return 'permission-denied';
+  }
+  if (msg.includes('not found') || msg.includes('no rows') || msg.includes('404')) {
+    return 'not-found';
+  }
+  if (msg.includes('network') || msg.includes('fetch') || msg.includes('timeout')) {
+    return 'network';
+  }
+  if (msg.includes('json') || msg.includes('parse') || msg.includes('unexpected')) {
+    return 'malformed';
+  }
+  return 'unknown';
+}
 
 /**
  * Get mock fallback members for demo trips

@@ -1,7 +1,7 @@
 /**
  * Media Demo Screen — Shared album activity feed
  *
- * ~6s loop: header → 3 media upload rows → counter → reset
+ * ~6s loop: header → 5 media upload rows → counter → reset
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -27,11 +27,13 @@ export const MediaDemoScreen = () => {
 
   useEffect(() => {
     const timers = [
-      setTimeout(() => setStep(1), 500),
-      setTimeout(() => setStep(2), 1200),
-      setTimeout(() => setStep(3), 2200),
-      setTimeout(() => setStep(4), 3200),
-      setTimeout(() => setStep(5), 4200),
+      setTimeout(() => setStep(1), 400), // header
+      setTimeout(() => setStep(2), 900), // row 1
+      setTimeout(() => setStep(3), 1500), // row 2
+      setTimeout(() => setStep(4), 2100), // row 3
+      setTimeout(() => setStep(5), 2700), // row 4
+      setTimeout(() => setStep(6), 3300), // row 5
+      setTimeout(() => setStep(7), 4200), // counter
       setTimeout(resetAndLoop, LOOP_DURATION * 1000),
     ];
     return () => timers.forEach(clearTimeout);
@@ -45,14 +47,14 @@ export const MediaDemoScreen = () => {
           <motion.div key={`${cycle}-header`} {...slideUp} className="flex items-center gap-2 px-1">
             <Images className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium text-foreground">Shared Album</span>
-            {step >= 5 && (
+            {step >= 7 && (
               <motion.span
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={motionPreset.micro}
                 className="text-[10px] text-green-400 ml-auto"
               >
-                ✓ 19 items shared
+                ✓ 29 items shared
               </motion.span>
             )}
           </motion.div>
@@ -93,6 +95,32 @@ export const MediaDemoScreen = () => {
               count={4}
               mediaType="file"
               tripName="Hannah Gets Hitched"
+            />
+          </motion.div>
+        )}
+
+        {/* Maya Chen — Photos */}
+        {step >= 5 && (
+          <motion.div key={`${cycle}-media4`} {...slideUp}>
+            <DemoMediaRow
+              avatar={{ initial: 'M', color: 'bg-purple-500' }}
+              name="Maya Chen"
+              count={8}
+              mediaType="photo"
+              tripName="Bali Yoga Retreat"
+            />
+          </motion.div>
+        )}
+
+        {/* Diego Ruiz — Videos */}
+        {step >= 6 && (
+          <motion.div key={`${cycle}-media5`} {...slideUp}>
+            <DemoMediaRow
+              avatar={{ initial: 'D', color: 'bg-emerald-500' }}
+              name="Diego Ruiz"
+              count={2}
+              mediaType="video"
+              tripName="Bachelor Party Vegas"
             />
           </motion.div>
         )}

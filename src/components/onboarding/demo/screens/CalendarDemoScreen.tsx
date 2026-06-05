@@ -1,7 +1,7 @@
 /**
  * Calendar Demo Screen — Itinerary timeline with shared group visibility
  *
- * ~6s loop: Day header → 3 events → shared badge → reset
+ * ~6s loop: Day header → 5 events → shared badge → reset
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -27,11 +27,13 @@ export const CalendarDemoScreen = () => {
 
   useEffect(() => {
     const timers = [
-      setTimeout(() => setStep(1), 500), // day header
-      setTimeout(() => setStep(2), 1200), // event 1
-      setTimeout(() => setStep(3), 2200), // event 2
-      setTimeout(() => setStep(4), 3200), // event 3
-      setTimeout(() => setStep(5), 4200), // shared badge
+      setTimeout(() => setStep(1), 400), // day header
+      setTimeout(() => setStep(2), 1000), // event 1
+      setTimeout(() => setStep(3), 1700), // event 2
+      setTimeout(() => setStep(4), 2400), // event 3
+      setTimeout(() => setStep(5), 3100), // event 4
+      setTimeout(() => setStep(6), 3800), // event 5
+      setTimeout(() => setStep(7), 4600), // shared badge
       setTimeout(resetAndLoop, LOOP_DURATION * 1000),
     ];
     return () => timers.forEach(clearTimeout);
@@ -89,8 +91,36 @@ export const CalendarDemoScreen = () => {
           </motion.div>
         )}
 
-        {/* Shared indicator */}
+        {/* Event 4 */}
         {step >= 5 && (
+          <motion.div key={`${cycle}-ev4`} {...slideUp}>
+            <DemoTimelineEvent
+              emoji="🎭"
+              title="Broadway Show"
+              category="activity"
+              categoryLabel="Show"
+              time="8:00 PM"
+              location="Lyric Theatre"
+            />
+          </motion.div>
+        )}
+
+        {/* Event 5 */}
+        {step >= 6 && (
+          <motion.div key={`${cycle}-ev5`} {...slideUp}>
+            <DemoTimelineEvent
+              emoji="🏖️"
+              title="Free Afternoon"
+              category="activity"
+              categoryLabel="Free Time"
+              time="2:00 PM"
+              location="Beachfront"
+            />
+          </motion.div>
+        )}
+
+        {/* Shared indicator */}
+        {step >= 7 && (
           <motion.div
             key={`${cycle}-shared`}
             initial={{ opacity: 0 }}

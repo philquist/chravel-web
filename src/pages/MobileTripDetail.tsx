@@ -5,6 +5,7 @@ import { MobileTripTabs } from '../components/mobile/MobileTripTabs';
 import { MobileErrorBoundary } from '../components/mobile/MobileErrorBoundary';
 import { MobileTripInfoDrawer } from '../components/mobile/MobileTripInfoDrawer';
 import { MobileHeaderOptionsSheet } from '../components/mobile/MobileHeaderOptionsSheet';
+import { DemoTripBar } from '../components/demo/DemoTripBar';
 import { TripExportModal } from '../components/trip/TripExportModal';
 import { InviteModal } from '../components/InviteModal';
 import { DeleteTripConfirmDialog } from '../components/DeleteTripConfirmDialog';
@@ -455,15 +456,6 @@ export const MobileTripDetail = () => {
             <button
               onClick={() => {
                 hapticService.light();
-                navigate(`/trip/${tripId}/preview`);
-              }}
-              className="bg-white/10 text-white px-6 py-3 rounded-xl transition-colors active:scale-95"
-            >
-              View Trip Preview
-            </button>
-            <button
-              onClick={() => {
-                hapticService.light();
                 navigate('/');
               }}
               className="bg-white/10 text-white px-6 py-3 rounded-xl transition-colors active:scale-95"
@@ -606,6 +598,9 @@ export const MobileTripDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* Demo Mode bar — reserved-height row above the pills (no overlap with header/pills) */}
+        <DemoTripBar />
 
         {/* Mobile Tabs - Swipeable */}
         <MobileTripTabs

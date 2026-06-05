@@ -21,16 +21,27 @@ vi.mock('@/hooks/useAuth', () => ({
     user: { id: 'user-1', displayName: 'Member One', avatar: null },
     session: { user: { id: 'user-1' } },
     isLoading: false,
+    // 🔒 The hook gates queries on a fully *hydrated* auth session (isHydrated &&
+    // !isLoading). Without this the hook is stuck in its loading state forever.
+    isHydrated: true,
   }),
 }));
 
-vi.mock('@/store/demoTripMembersStore', () => ({
-  useDemoTripMembersStore: () => 0,
-}));
+vi.mock('@/store/demoTripMembersStore', () => {
+  // Used both as a selector hook (useDemoTripMembersStore(selector)) and imperatively
+  // (useDemoTripMembersStore.getState().getAddedMembers(tripId)) inside the demo path.
+  const store: { (): number; getState: () => { getAddedMembers: () => unknown[] } } = (() =>
+    0) as never;
+  store.getState = () => ({ getAddedMembers: () => [] });
+  return { useDemoTripMembersStore: store };
+});
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
+    // The hook sets its own per-query retry policy (which overrides the client default),
+    // so error-path tests DO retry. Collapse the backoff to 0 so those retries settle
+    // within the test instead of leaking pending timers into the next test (flaky failures).
+    defaultOptions: { queries: { retry: false, retryDelay: 0 } },
   });
 
   return ({ children }: { children: ReactNode }) => (
@@ -81,6 +92,24 @@ describe('useTripDetailData', () => {
 
     expect(result.current.trip).toBeNull();
     expect(result.current.tripError?.message).toContain('ACCESS_DENIED');
+  });
+
+  it('serves canonical demo data for numeric demo trip ids even when isDemoMode is false', async () => {
+    // 🔒 RESILIENCE (root-cause fix for "Couldn't Load Trip"): the demo fast path is gated on
+    // the structural isDemoTrip() check, NOT on the fragile isDemoMode flag (mocked false here).
+    // A numeric demo id must load local data with no network call, no auth requirement, and no
+    // error — even when the demo-mode flag is off (e.g. cleared by a race during onboarding).
+    const { result } = renderHook(() => useTripDetailData('1'), {
+      wrapper: createWrapper(),
+    });
+
+    // Synchronous demo path — resolves immediately, never enters loading/error.
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.tripError).toBeNull();
+    expect(result.current.trip?.id).toBe(1);
+    expect(result.current.tripMembers.length).toBeGreaterThan(0);
+    // Critically: no Supabase fetch is attempted for a demo trip id.
+    expect(tripService.getTripById).not.toHaveBeenCalled();
   });
 
   it('maps missing trip row to not-found outcome (null trip without access-denied error)', async () => {

@@ -118,9 +118,18 @@ const LegacyProTripRedirect = () => {
 // Always use BrowserRouter - Lovable preview now supports SPA routing
 const Router = BrowserRouter;
 
-// Adapter component: renders ExitDemoButton inside Router context with navigation callback
+// Adapter component: renders the global floating ExitDemoButton inside Router context.
+// On trip/event detail routes the exit affordance lives in the in-layout <DemoTripBar />
+// (above the menu pills) instead, so the floating button is suppressed there to avoid
+// overlapping the header back button and the pills row. The single-segment patterns below
+// only match the detail routes themselves — /trip/:id/preview has an extra segment and so
+// still gets the floating button.
 const ExitDemoButtonWithNav = () => {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isTripDetailRoute =
+    /^\/trip\/[^/]+\/?$/.test(pathname) || /^\/event\/[^/]+\/?$/.test(pathname);
+  if (isTripDetailRoute) return null;
   return <ExitDemoButton onNavigate={() => navigate('/')} />;
 };
 
