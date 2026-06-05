@@ -2306,6 +2306,8 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
+          deletion_requested_at: string | null
+          deletion_scheduled_for: string | null
           display_name: string | null
           email: string | null
           first_name: string | null
@@ -2338,6 +2340,8 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          deletion_requested_at?: string | null
+          deletion_scheduled_for?: string | null
           display_name?: string | null
           email?: string | null
           first_name?: string | null
@@ -2370,6 +2374,8 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          deletion_requested_at?: string | null
+          deletion_scheduled_for?: string | null
           display_name?: string | null
           email?: string | null
           first_name?: string | null
@@ -5003,6 +5009,7 @@ export type Database = {
         Args: { _channel_id: string; _user_id: string }
         Returns: boolean
       }
+      cancel_account_deletion: { Args: never; Returns: Json }
       check_and_increment_smart_import_usage: {
         Args: { p_limit: number; p_trip_id: string; p_user_id: string }
         Returns: {
@@ -5123,6 +5130,7 @@ export type Database = {
         Args: { p_trip_id: string; p_user_id: string }
         Returns: boolean
       }
+      get_account_deletion_status: { Args: never; Returns: Json }
       get_admin_accessible_channels: {
         Args: { _trip_id: string; _user_id: string }
         Returns: {
@@ -5347,6 +5355,7 @@ export type Database = {
         Args: { p_poll_id: string; p_user_id: string }
         Returns: undefined
       }
+      request_account_deletion: { Args: never; Returns: Json }
       revoke_super_admin: { Args: { _email: string }; Returns: undefined }
       send_notification: {
         Args: {
