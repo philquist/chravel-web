@@ -432,3 +432,14 @@ Known security anti-patterns discovered during audits. Reference this before int
 **Required Tests:** None mandatory for z-index; manual check from Settings on mobile + iOS shell.
 **Regression Surfaces:** Any future full-screen overlay with z-index between `50` and dialog band — keep ordering documented in component comments.
 **Fixed in:** `src/components/ui/dialog.tsx`, `src/components/ui/alert-dialog.tsx`, `src/hooks/useDataExport.ts`, `src/components/settings/SettingsLayout.tsx` (May 2026, PR #608)
+
+## 10. Marketing Bootstrap Split Traps TestFlight / Native Shells
+
+**Symptom:** After deploying the marketing split, TestFlight/Capacitor/chravel-mobile users see the public marketing landing (or a spinner) instead of the in-app sign-in shell; trips never load.
+**Risk:** P0 — installed iOS beta unusable on cold start at `/`.
+**Root Cause:** `main.tsx` gated anonymous `/` to `MarketingApp`, which has no trip routes. `Index.tsx` already routes installed shells to `AuthModal`, but that logic never runs when the marketing shell boots first. `isChravelNativeShell()` was only used for SW/telemetry, not bootstrap.
+**How to Confirm:** Open TestFlight build at `/` with cleared storage — marketing hero appears instead of auth modal. In Safari devtools (remote WebView), `shouldUseMarketingBootstrap` is true while `isInstalledApp()` is true.
+**Smallest Safe Fix:** `shouldUseMarketingBootstrap({ isInstalledApp: true })` → false in `src/lib/bootstrapShell.ts`; optional `MarketingApp` escape to `/auth`.
+**Required Tests:** `src/lib/__tests__/bootstrapShell.test.ts` — installed + anonymous `/` must not use marketing shell.
+**Regression Surfaces:** Any change to `main.tsx` cold-start routing or `VITE_MARKETING_SPLIT`.
+**Fixed in:** `src/lib/bootstrapShell.ts`, `src/main.tsx`, `src/MarketingApp.tsx` (June 2026)

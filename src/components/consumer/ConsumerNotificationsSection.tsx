@@ -6,25 +6,33 @@ import {
   NotificationPreferences,
 } from '../../services/userPreferencesService';
 import { useToast } from '../../hooks/use-toast';
-import { usePushPreferenceToggle } from '@/hooks/usePushPreferenceToggle';
+import { useNativePush } from '@/hooks/useNativePush';
+import { useWebPush } from '@/hooks/useWebPush';
 import { useDemoMode } from '../../hooks/useDemoMode';
 import { NotificationPreviewPanel } from '@/components/dev/NotificationPreviewPanel';
-import { PushDiagnostics } from '@/components/notifications/PushDiagnostics';
-import { TestNotificationButton } from '@/components/notifications/TestNotificationButton';
 import { getTripNotificationPreferenceCategories } from '@/components/settings/tripNotificationPreferenceCategories';
 import { ChatActivitySettings } from '@/components/settings/ChatActivitySettings';
 import { useGlobalSystemMessagePreferences } from '@/hooks/useSystemMessagePreferences';
 import { SystemMessageCategoryPrefs } from '@/utils/systemMessageCategory';
+import { usePushPreferenceToggle } from '@/hooks/usePushPreferenceToggle';
+import { PushDiagnostics } from '@/components/notifications/PushDiagnostics';
+import { TestNotificationButton } from '@/components/notifications/TestNotificationButton';
 
 export const ConsumerNotificationsSection = () => {
   const { user } = useAuth();
   const { preferences, updatePreferences, isUpdating } = useGlobalSystemMessagePreferences();
   const { toast } = useToast();
-  // Single source of truth for enabling/disabling push (native token vs web/PWA
-  // Web Push subscription). Replaces the per-section raw useNativePush/useWebPush
-  // wiring this component used to duplicate.
-  const { applyPushEnabled } = usePushPreferenceToggle();
+  const { isNative: isNativePush, registerForPush, unregisterFromPush } = useNativePush();
+  const {
+    subscribe: subscribeWebPush,
+    unsubscribe: unsubscribeWebPush,
+    isSupported: webPushSupported,
+    requiresHomeScreen: webPushRequiresHomeScreen,
+    iosUnsupported: webPushIosUnsupported,
+    permission: webPushPermission,
+  } = useWebPush();
   const { showDemoContent } = useDemoMode();
+  const { applyPushEnabled } = usePushPreferenceToggle();
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(true);
   const [isUpdatingPush, setIsUpdatingPush] = useState(false);
 
@@ -192,6 +200,80 @@ export const ConsumerNotificationsSection = () => {
       } finally {
         setIsUpdatingPush(false);
       }
+    }
+
+    // Push notifications (PWA / web): drive the Web Push subscription so the
+    // app-icon badge and background pushes actually work in the installed PWA.
+    if (setting === 'push' && user?.id && !isNativePush) {
+      if (newValue) {
+        if (webPushIosUnsupported) {
+          toast({
+            title: 'iOS 16.4+ required',
+            description: 'Update iOS to receive push notifications.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        if (webPushRequiresHomeScreen) {
+          toast({
+            title: 'Add Chravel to your Home Screen',
+            description:
+              'On iPhone, tap Share → Add to Home Screen, then open Chravel from there to enable push.',
+          });
+          return;
+        }
+        if (!webPushSupported) {
+          toast({
+            title: 'Push not supported',
+            description: "This browser can't receive push notifications.",
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        setIsUpdatingPush(true);
+        try {
+          const ok = await subscribeWebPush();
+          if (!ok) {
+            toast({
+              title: 'Push notifications not enabled',
+              description:
+                webPushPermission === 'denied'
+                  ? 'Allow notifications in your browser settings to receive alerts.'
+                  : 'Could not enable push notifications. Please try again.',
+              variant: 'destructive',
+            });
+            return;
+          }
+          setNotificationSettings(prev => ({ ...prev, push: true }));
+          await userPreferencesService.updateNotificationPreferences(user.id, {
+            [dbKey]: true,
+          });
+        } catch (error) {
+          if (import.meta.env.DEV) console.error('Error enabling web push:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to enable push notifications. Please try again.',
+            variant: 'destructive',
+          });
+        } finally {
+          setIsUpdatingPush(false);
+        }
+        return;
+      }
+
+      // Disabling: tear down the subscription, then persist.
+      setIsUpdatingPush(true);
+      try {
+        await unsubscribeWebPush();
+        setNotificationSettings(prev => ({ ...prev, push: false }));
+        await userPreferencesService.updateNotificationPreferences(user.id, { [dbKey]: false });
+      } catch (error) {
+        if (import.meta.env.DEV) console.error('Error disabling web push:', error);
+      } finally {
+        setIsUpdatingPush(false);
+      }
+      return;
     }
 
     // Default: update local state immediately for responsiveness
