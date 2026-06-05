@@ -120,6 +120,12 @@ export type SecurityEventType =
 /**
  * Write a structured entry to the security_audit_log table.
  * Fire-and-forget: never throws, so callers don't need try/catch around it.
+ *
+ * Maps to the table's ACTUAL columns
+ *   (user_id, action, table_name, record_id, metadata)
+ * — the previous version wrote {event_type, details, ip_address}, none of which
+ * exist on the table, so every call silently failed. `ip` is folded into
+ * metadata to preserve the information without a schema change.
  */
 export async function logSecurityEvent(
   supabaseClient: any,
@@ -130,10 +136,10 @@ export async function logSecurityEvent(
 ): Promise<void> {
   try {
     await supabaseClient.from('security_audit_log').insert({
-      event_type: eventType,
       user_id: userId,
-      details,
-      ip_address: ip ?? null,
+      action: eventType,
+      table_name: 'security_event',
+      metadata: { ...details, ip_address: ip ?? null },
     });
   } catch (err) {
     // Logging must never break the calling code path

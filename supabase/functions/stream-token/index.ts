@@ -11,7 +11,14 @@
  * Security:
  *   - Validates Supabase JWT before issuing Stream token
  *   - STREAM_API_SECRET never leaves server
- *   - Token scoped to authenticated user only
+ *   - Token is an IDENTITY token scoped to the authenticated user only. It is
+ *     intentionally trip-agnostic and grants NO channel access on its own —
+ *     Stream isolation is enforced by per-channel membership (see
+ *     stream-ensure-membership) plus channel-type permissions (see
+ *     stream-setup-permissions). Do NOT add a tripId/membership gate here: the
+ *     frontend (src/services/stream/streamTokenService.ts) calls this with an
+ *     empty body, and chat would break.
+ *   - Issuance is recorded to security_audit_log (best-effort, fail-open).
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -19,6 +26,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { StreamChat } from 'npm:stream-chat';
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { requireSecrets, createMissingSecretResponse } from '../_shared/validateSecrets.ts';
+import { logSecurityEvent } from '../_shared/logSecurityEvent.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -95,6 +103,15 @@ serve(async req => {
     // Create user token (expires in 24 hours)
     const exp = Math.floor(Date.now() / 1000) + 86400;
     const token = serverClient.createToken(user.id, exp);
+
+    // Best-effort audit trail (fail-open — never blocks token issuance).
+    const adminClient = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    await logSecurityEvent(adminClient, {
+      userId: user.id,
+      action: 'stream.token_issued',
+      tableName: 'stream',
+      metadata: { exp },
+    });
 
     return new Response(
       JSON.stringify({

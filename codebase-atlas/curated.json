@@ -30,8 +30,8 @@
     {
       "key": "overall",
       "label": "Overall Codebase Health",
-      "score": 74,
-      "rationale": "Mature, feature-complete product with strong repo memory, remediation tracking, and several recent hardening slices landed. Export privacy paths now emit table-level manifests and hard-fail required omissions; trip PDF export membership policy is tested; file AI parsing short-circuits cached file/type replays before usage increments; Gmail imports now distinguish completed/completed_partial/failed; chart and org-chart export dependencies moved behind lazy/user-intent boundaries. Still pulled down by concentrated god files (Index, demoModeService, useTripTasks, useAuth, TripChat, useStreamTripChat), hundreds of production `any` usages, a large mock/demo data surface, and dead-code findings that require careful triage."
+      "score": 75,
+      "rationale": "Mature, feature-complete product with strong repo memory, remediation tracking, and several recent hardening slices landed. Enterprise security/identity layer is now solid: immutable + hash-chained admin audit log, append-only security_audit_log, a DB-backed audited super_admins table, and a buyer-facing evidence packet (SECURITY_MODEL.md, ENTERPRISE_SECURITY_READINESS/AUDIT docs). Export privacy paths emit table-level manifests and hard-fail required omissions; trip PDF export membership policy is tested; file AI parsing short-circuits cached replays; Gmail imports distinguish completed/completed_partial/failed; chart and org-chart export dependencies are behind lazy/user-intent boundaries. Still pulled down by concentrated god files (Index, demoModeService, useTripTasks, useAuth, TripChat, useStreamTripChat), hundreds of production `any` usages, a large mock/demo data surface, and dead-code findings that require careful triage."
     },
     {
       "key": "clarity",
@@ -54,8 +54,8 @@
     {
       "key": "security",
       "label": "Security / Posture",
-      "score": 84,
-      "rationale": "Security posture improved materially: export-user-data now records table-level manifests and fails closed on required data omissions; export-trip auth/member policy is centralized and tested; file-ai-parser checks cached extractions before usage increments; Gmail imports persist completed_partial/failed terminal states; TTS free-for-all is explicit opt-in; privileged app-settings/push paths no longer silently downgrade service-role work to anon. Remaining risks are service-role seed functions, live Supabase integration coverage for export/import replay and role matrices, DB-level uniqueness for concurrent file extraction retries, and continued role/RLS drift vigilance."
+      "score": 87,
+      "rationale": "Security posture improved materially. Tenant/identity layer is now hardened end-to-end: admin_audit_logs is append-only (UPDATE/DELETE/TRUNCATE blocked for all roles incl. service_role) AND tamper-evident via a sha256 hash chain (prev_hash/event_hash ordered by a monotonic seq, with verify_admin_audit_chain()); security_audit_log is append-only and now actually written to (the _shared/security.ts logSecurityEvent helper previously inserted nonexistent columns and silently no-opped — fixed); super-admin access moved from a hardcoded email allowlist to a DB-backed super_admins table with grant/revoke functions and an audit trail; capability-token issuance (Stream/LiveKit) is audit-logged via a shared logSecurityEvent helper; trip-membership checks in edge functions are centralized in _shared/verifyTripMembership.ts (canonical is_trip_member RPC). Earlier slices still hold: export manifests fail closed, trip-export auth is tested, file-ai-parser is idempotent, Gmail terminal states persist. Buyer-facing evidence now exists (SECURITY_MODEL.md, docs/ENTERPRISE_SECURITY_READINESS.md, docs/ENTERPRISE_SECURITY_AUDIT_2026-06.md). Remaining risks: external WORM audit-log sink not yet built (in-DB tamper-evidence only), service-role seed functions, live Supabase integration coverage for role matrices, and continued RLS-drift vigilance."
     },
     {
       "key": "tests",
@@ -104,6 +104,8 @@
       "src/hooks/useAuth.tsx — gates the entire critical path; a bug here cascades everywhere",
       "src/services/* (151 modules) — the de-facto API layer between UI and Supabase",
       "supabase RLS policies (756) — the real security boundary, not the client",
+      "is_super_admin() + super_admins table — server-side privilege source of truth (gates audit-log reads and internal-admin routes)",
+      "admin_audit_logs (append-only + hash-chained) — tamper-evident record of every privileged action",
       "src/lib/queryKeys.ts — cache-invalidation contract for all server state"
     ],
     "topRisks": [
