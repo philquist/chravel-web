@@ -196,7 +196,14 @@ class ErrorTrackingService {
 // Export singleton instance
 export const errorTracking = new ErrorTrackingService();
 
-// Auto-initialize
-errorTracking.init({
-  environment: import.meta.env.MODE || 'development',
-});
+// Auto-initialize. Wrapped so a Sentry/provider init failure can never throw at
+// module-evaluation time — that would reject the lazy App chunk import and black-
+// screen the app before any error boundary mounts. App.tsx also calls init() on
+// mount, so a failure here is non-fatal.
+try {
+  errorTracking.init({
+    environment: import.meta.env.MODE || 'development',
+  });
+} catch (err) {
+  console.warn('[errorTracking] Deferred init after module-load failure:', err);
+}

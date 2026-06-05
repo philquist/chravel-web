@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { TripVariantProvider } from '@/contexts/TripVariantContext';
 import { BasecampProvider } from '@/contexts/BasecampContext';
 import { RuntimeConfigError } from '@/components/RuntimeConfigError';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { registerServiceWorker } from './utils/serviceWorkerRegistration';
 import { setupGlobalPurchaseListener } from '@/integrations/revenuecat/revenuecatClient';
 import { getMissingSupabaseEnvVars } from '@/integrations/supabase/config';
@@ -10,6 +11,7 @@ import { telemetry } from '@/telemetry/service';
 import { isLovablePreview } from './utils/env';
 import { hasAuthStorageMarker, shouldUseMarketingBootstrap } from './lib/bootstrapShell';
 import { isChravelNativeShell, isInstalledApp } from './utils/platformDetection';
+import { installChunkErrorRecovery, claimOneShotReload } from '@/utils/chunkRecovery';
 import './index.css';
 
 // ── Startup env validation ──────────────────────────────────────────────────
@@ -126,10 +128,27 @@ const isPublicAnonymousBootstrapRoute = (): boolean => {
 // cost (registration, activation) without benefit inside the WebView.
 const inNativeShell = isChravelNativeShell();
 
-// Unregister stale service workers from old hosts on first load.
-// Skip in the native shell to avoid pointless work on cold start.
-if (!inNativeShell && 'serviceWorker' in navigator) {
-  if (navigator.serviceWorker.controller !== null) {
+if ('serviceWorker' in navigator) {
+  if (inNativeShell) {
+    // The native shell must NEVER have a service worker. A SW registered by an
+    // earlier build persists inside the WKWebView and keeps serving a stale
+    // index.html + old chunk hashes; after a deploy churns those hashes, every
+    // dynamic import() 404s → blank screen that survives app updates. Tear down
+    // any legacy SW and its caches on every cold start (we never re-register one
+    // below in the native shell).
+    navigator.serviceWorker
+      .getRegistrations()
+      .then(registrations => {
+        if (registrations.length === 0) return;
+        return Promise.all(registrations.map(reg => reg.unregister())).then(() => {
+          if ('caches' in window) {
+            return caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
+          }
+        });
+      })
+      .catch(() => {});
+  } else if (navigator.serviceWorker.controller !== null) {
+    // Web/PWA: unregister stale service workers from old hosts on first load.
     navigator.serviceWorker
       .getRegistrations()
       .then(registrations => {
@@ -137,6 +156,24 @@ if (!inNativeShell && 'serviceWorker' in navigator) {
       })
       .catch(() => {});
   }
+}
+
+// Recover from post-deploy stale-chunk failures even if the lazy app-root chunk
+// itself fails to load (before any React error boundary can mount). One-shot
+// guarded inside the util so an un-clearable cache can't reload-loop.
+installChunkErrorRecovery();
+
+// Startup breadcrumb — with no device logs available from the native shell, this
+// makes the cold-start environment visible in any attached console.
+try {
+  console.info(
+    '[startup] nativeShell=%s swController=%s ua=%s',
+    inNativeShell,
+    'serviceWorker' in navigator ? navigator.serviceWorker.controller !== null : 'n/a',
+    typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a',
+  );
+} catch {
+  // ignore
 }
 
 // Initialize theme
@@ -158,7 +195,9 @@ if (isLovablePreview()) {
     clearAllCaches();
     safeLocalStorageSet(STORED_VERSION_KEY, currentVersion);
 
-    if (!isPublicAnonymousBootstrapRoute()) {
+    // One-shot guard: if storage can't persist the new version (restricted WebView),
+    // storedVersion stays stale and this would reload-loop into a blank screen.
+    if (!isPublicAnonymousBootstrapRoute() && claimOneShotReload('host_version_reload')) {
       window.location.reload();
     }
     // Tradeoff: on public anonymous routes we accept a potentially stale auth session snapshot
@@ -212,26 +251,33 @@ if (!isMarketingShellPath) {
 // Release guard: set VITE_MARKETING_SPLIT=0 to force legacy App bootstrap.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {hasRequiredSupabaseEnv && App ? (
-      shouldUseMarketingSplit && MarketingApp ? (
-        <MarketingApp />
+    {/* Root error boundary: the App/MarketingApp shells are lazy, so a failed chunk
+        import (e.g. a stale-cache 404 inside the native WebView) throws here during
+        render with no boundary below it — producing a black screen. This catches it,
+        auto-recovers from chunk errors, logs the real error via telemetry, and shows
+        a branded fallback instead of a blank root. */}
+    <ErrorBoundary>
+      {hasRequiredSupabaseEnv && App ? (
+        shouldUseMarketingSplit && MarketingApp ? (
+          <MarketingApp />
+        ) : (
+          <TripVariantProvider variant="consumer">
+            <BasecampProvider>
+              <Suspense
+                fallback={
+                  <div className="app-suspense-fallback min-h-screen flex items-center justify-center bg-background">
+                    <div className="app-suspense-spinner app-suspense-spin w-12 h-12 animate-spin gold-gradient-spinner" />
+                  </div>
+                }
+              >
+                <App />
+              </Suspense>
+            </BasecampProvider>
+          </TripVariantProvider>
+        )
       ) : (
-        <TripVariantProvider variant="consumer">
-          <BasecampProvider>
-            <Suspense
-              fallback={
-                <div className="app-suspense-fallback min-h-screen flex items-center justify-center bg-background">
-                  <div className="app-suspense-spinner app-suspense-spin w-12 h-12 animate-spin gold-gradient-spinner" />
-                </div>
-              }
-            >
-              <App />
-            </Suspense>
-          </BasecampProvider>
-        </TripVariantProvider>
-      )
-    ) : (
-      <RuntimeConfigError vars={missingEnvVars} />
-    )}
+        <RuntimeConfigError vars={missingEnvVars} />
+      )}
+    </ErrorBoundary>
   </StrictMode>,
 );

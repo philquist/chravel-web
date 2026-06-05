@@ -32,7 +32,11 @@ import { ExitDemoButton } from './components/demo';
 
 import { setupGlobalSyncProcessor } from './services/globalSyncProcessor';
 import { useSwUpdate } from '@/hooks/useSwUpdate';
-import { useAppBadge } from '@/hooks/useAppBadge';
+import {
+  installChunkErrorRecovery,
+  markAppBooted,
+  claimOneShotReload,
+} from '@/utils/chunkRecovery';
 import { safeReload } from '@/utils/safeReload';
 import { retryImport } from '@/lib/retryImport';
 import { getPublicSeoRoute, SEO_LANDING_CONTENT } from '@/lib/seo';
@@ -181,8 +185,12 @@ const App = () => {
     useDemoModeStore.getState().init();
   }, []);
 
-  // Keep the OS app-icon badge (PWA / installed app) in sync with unread notifications.
-  useAppBadge();
+  // The full app shell mounted — its chunks loaded successfully. Clear the one-shot
+  // chunk-recovery guard so a later, independent stale-chunk error can recover too.
+  // (The app-icon badge is reconciled in AppInitializer via useAppBadge, not here.)
+  useEffect(() => {
+    markAppBooted();
+  }, []);
 
   // Track app initialization performance
   const stopTiming = performanceService.startTiming('App Initialization');
@@ -224,8 +232,13 @@ const App = () => {
         return;
       }
 
-      // Breaking change detected - force reload silently
-      if (storedBreaking !== CURRENT_BREAKING_VERSION) {
+      // Breaking change detected - force reload silently. Guarded so it reloads at
+      // most once per session: if localStorage can't persist the new version (e.g.
+      // restricted WebView storage), this would otherwise reload-loop into a blank.
+      if (
+        storedBreaking !== CURRENT_BREAKING_VERSION &&
+        claimOneShotReload('breaking_version_reload')
+      ) {
         if ('caches' in window) {
           caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))));
         }
@@ -254,63 +267,10 @@ const App = () => {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-  // Chunk load failure recovery with better error detection
-  useEffect(() => {
-    let toastShown = false;
-
-    const clearCachesAndReload = async () => {
-      if ('caches' in window) {
-        const names = await caches.keys();
-        await Promise.all(names.map(name => caches.delete(name)));
-      }
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(registrations.map(reg => reg.unregister()));
-      }
-      await safeReload();
-    };
-
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      const error = event.reason?.message || String(event.reason);
-      const errorString = String(event.reason);
-
-      const isChunkError =
-        error.includes('Loading chunk') ||
-        error.includes('Failed to fetch dynamically imported') ||
-        error.includes('Failed to load module script') ||
-        errorString.includes('Failed to fetch dynamically imported') ||
-        errorString.includes('Loading chunk');
-
-      if (isChunkError && !toastShown) {
-        console.error('[App] Chunk loading error detected, auto-recovering:', error);
-        toastShown = true;
-        clearCachesAndReload();
-      }
-    };
-
-    // Also handle error events
-    const handleError = (event: ErrorEvent) => {
-      const error = event.message || String(event.error);
-      if (
-        (error.includes('Failed to fetch dynamically imported') ||
-          error.includes('Loading chunk') ||
-          error.includes('Failed to load module script')) &&
-        !toastShown
-      ) {
-        handleUnhandledRejection({
-          reason: { message: error },
-          preventDefault: () => {},
-        } as PromiseRejectionEvent);
-      }
-    };
-
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-    window.addEventListener('error', handleError);
-    return () => {
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-      window.removeEventListener('error', handleError);
-    };
-  }, []);
+  // Auto-recover from post-deploy stale-chunk failures (shared, one-shot guarded).
+  // Also installed at module scope in main.tsx so a failed app-root chunk import is
+  // caught even before this component mounts.
+  useEffect(() => installChunkErrorRecovery(), []);
 
   return (
     <ErrorBoundary>

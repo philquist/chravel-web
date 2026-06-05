@@ -3,6 +3,7 @@ import { AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
 import { safeReload } from '@/utils/safeReload';
 import { telemetry } from '@/telemetry/service';
 import { redactStackTrace } from '@/telemetry/privacy';
+import { isChunkLoadError, recoverFromChunkError } from '@/utils/chunkRecovery';
 
 interface Props {
   children: ReactNode;
@@ -17,37 +18,6 @@ interface State {
   hasError: boolean;
   error?: Error;
 }
-
-// Clear all caches - duplicated here to avoid circular imports
-const clearAllCaches = async (): Promise<void> => {
-  try {
-    if ('caches' in window) {
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map(name => caches.delete(name)));
-    }
-    if ('serviceWorker' in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map(reg => reg.unregister()));
-    }
-  } catch (error) {
-    console.error('[ErrorBoundary] Error clearing caches:', error);
-  }
-};
-
-// Check if error is a chunk loading error
-const isChunkError = (error: Error | undefined): boolean => {
-  if (!error) return false;
-  const errorStr = error.message || String(error);
-  return (
-    errorStr.includes('Failed to fetch dynamically imported') ||
-    errorStr.includes('Loading chunk') ||
-    errorStr.includes('ChunkLoadError') ||
-    errorStr.includes('Loading CSS chunk') ||
-    errorStr.includes('Importing a module script failed') ||
-    errorStr.includes('error loading dynamically imported module') ||
-    errorStr.includes('Failed to load module script')
-  );
-};
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
@@ -67,7 +37,7 @@ export class ErrorBoundary extends Component<Props, State> {
     telemetry.captureError(error, {
       context: 'ErrorBoundary',
       component_stack: redactStackTrace(errorInfo.componentStack),
-      is_chunk_error: isChunkError(error),
+      is_chunk_error: isChunkLoadError(error),
     });
 
     // Send error to monitoring service
@@ -78,17 +48,16 @@ export class ErrorBoundary extends Component<Props, State> {
       });
     }
 
-    // Auto-recover from chunk errors on new deployments
-    if (isChunkError(error)) {
-      setTimeout(async () => {
-        await clearAllCaches();
-        await safeReload(true);
-      }, 1000);
+    // Auto-recover from chunk errors on new deployments — guarded to run at most
+    // once per session so an un-clearable cache can't trigger a reload loop. If
+    // recovery was already attempted, fall through to the visible fallback below.
+    if (isChunkLoadError(error)) {
+      void recoverFromChunkError();
     }
   }
 
   private handleReset = async () => {
-    const shouldReload = isChunkError(this.state.error);
+    const shouldReload = isChunkLoadError(this.state.error);
 
     this.setState({ hasError: false, error: undefined });
     this.props.onRetry?.();
@@ -99,7 +68,7 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   private handleClearAndReload = async () => {
-    await clearAllCaches();
+    // safeReload(true) clears caches + unregisters service workers before reloading.
     await safeReload(true);
   };
 
@@ -109,7 +78,7 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      const isChunk = isChunkError(this.state.error);
+      const isChunk = isChunkLoadError(this.state.error);
 
       // Compact mode for nested components
       if (this.props.compact) {

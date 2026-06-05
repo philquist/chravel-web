@@ -2,7 +2,21 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConsumerNotificationsSection } from '../ConsumerNotificationsSection';
+
+// ConsumerNotificationsSection reads global system-message prefs via react-query,
+// so the component must render inside a QueryClientProvider.
+const renderSection = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ConsumerNotificationsSection />
+    </QueryClientProvider>,
+  );
+};
 
 const { mocks } = vi.hoisted(() => ({
   mocks: {
@@ -13,8 +27,8 @@ const { mocks } = vi.hoisted(() => ({
 
 vi.mock('../../../hooks/useAuth', () => ({ useAuth: () => ({ user: { id: 'user-1' } }) }));
 vi.mock('../../../hooks/use-toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
-vi.mock('../../../hooks/useNativePush', () => ({
-  useNativePush: () => ({ isNative: false, registerForPush: vi.fn(), unregisterFromPush: vi.fn() }),
+vi.mock('@/hooks/usePushPreferenceToggle', () => ({
+  usePushPreferenceToggle: () => ({ applyPushEnabled: vi.fn().mockResolvedValue('ok') }),
 }));
 vi.mock('../../../hooks/useDemoMode', () => ({ useDemoMode: () => ({ showDemoContent: false }) }));
 vi.mock('@/hooks/useConsumerSubscription', () => ({
@@ -51,7 +65,7 @@ describe('ConsumerNotificationsSection loading hydration', () => {
       }),
     );
 
-    render(<ConsumerNotificationsSection />);
+    renderSection();
 
     expect(screen.getByTestId('trip-notification-preference-rows')).toBeInTheDocument();
     expect(screen.getByText('Broadcast and pinned messages')).toBeInTheDocument();

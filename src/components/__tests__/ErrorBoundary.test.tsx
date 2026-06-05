@@ -112,9 +112,11 @@ describe('ErrorBoundary', () => {
     const user = userEvent.setup();
     const onRetry = vi.fn();
 
+    // "Try Again" (→ handleReset → onRetry) is only shown for chunk errors; the
+    // non-chunk fallback shows "Refresh Page", which reloads without onRetry.
     render(
       <ErrorBoundary onRetry={onRetry}>
-        <ThrowingComponent error={new Error('Test error')} />
+        <ThrowingComponent error={new Error('Loading chunk 123 failed')} />
       </ErrorBoundary>,
     );
 
@@ -167,6 +169,28 @@ describe('ErrorBoundary', () => {
         fatal: false,
       },
     );
+  });
+
+  it('catches a failed lazy import (stale-chunk 404) and shows the recovery fallback', async () => {
+    // Mirrors main.tsx: the app shell is React.lazy, so a rejected dynamic import
+    // throws to the nearest boundary during render. Without a root ErrorBoundary
+    // this is the black screen; with one, the user gets the recovery UI.
+    const FailingLazy = React.lazy(() =>
+      Promise.reject(
+        new Error('Failed to fetch dynamically imported module /assets/js/App-abc123.js'),
+      ),
+    );
+
+    render(
+      <ErrorBoundary>
+        <React.Suspense fallback={<div>loading</div>}>
+          <FailingLazy />
+        </React.Suspense>
+      </ErrorBoundary>,
+    );
+
+    expect(await screen.findByText('Failed to Load Page')).toBeInTheDocument();
+    expect(screen.getByText('Clear Cache & Reload')).toBeInTheDocument();
   });
 
   it('should recognize various chunk error patterns', () => {
