@@ -79,11 +79,6 @@ def hex_to_rgb(h):
     return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
 
 
-def text_w(draw, s, f):
-    box = draw.textbbox((0, 0), s, font=f)
-    return box[2] - box[0]
-
-
 # --- Palette sheet -----------------------------------------------------------
 def build_palette(path):
     W, cell_h, pad = 1600, 150, 40
