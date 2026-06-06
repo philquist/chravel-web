@@ -3,7 +3,8 @@ name: Atlas
 # Refreshes the Codebase Architecture Atlas metrics and publishes codebase-atlas/
 # to GitHub Pages. Manual-dispatch only — runs solely when you trigger it from the
 # Actions tab, never automatically on merge. Publish-only: nothing is committed back
-# to the repo (the generated index.html / architecture-data.json are gitignored).
+# to the repo (the tracked index.html / architecture-data.json are refreshed only on
+# demand — never as a side effect of routine work).
 # The judgment layer (curated.json) is refreshed separately via the codebase-atlas skill.
 
 on:
