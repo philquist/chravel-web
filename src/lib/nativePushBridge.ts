@@ -123,10 +123,13 @@ export async function registerNativePushToken(): Promise<NativePushRegistrationR
           resolve({ token: token.value });
         });
 
-        errorListener = await push.addListener('registrationError', (error: PushRegistrationError) => {
-          void cleanup();
-          resolve({ token: null, error: error.error || 'Registration failed' });
-        });
+        errorListener = await push.addListener(
+          'registrationError',
+          (error: PushRegistrationError) => {
+            void cleanup();
+            resolve({ token: null, error: error.error || 'Registration failed' });
+          },
+        );
 
         await push.register();
       } catch (err) {

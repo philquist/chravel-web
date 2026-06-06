@@ -136,11 +136,14 @@ export function useNativePush() {
     if (!user || !tokenRef.current) return;
 
     void updateLastSeen(user.id, tokenRef.current);
-    const interval = setInterval(() => {
-      if (tokenRef.current) {
-        void updateLastSeen(user.id, tokenRef.current);
-      }
-    }, 5 * 60 * 1000);
+    const interval = setInterval(
+      () => {
+        if (tokenRef.current) {
+          void updateLastSeen(user.id, tokenRef.current);
+        }
+      },
+      5 * 60 * 1000,
+    );
 
     return () => clearInterval(interval);
   }, [user]);

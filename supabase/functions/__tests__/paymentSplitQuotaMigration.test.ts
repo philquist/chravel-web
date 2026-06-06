@@ -21,7 +21,9 @@ describe('payment split quota migration', () => {
   });
 
   it('enforces quota at the table boundary and seeds the voice feature flag', () => {
-    expect(migrationSql).toContain('CREATE OR REPLACE FUNCTION public.enforce_payment_request_quota');
+    expect(migrationSql).toContain(
+      'CREATE OR REPLACE FUNCTION public.enforce_payment_request_quota',
+    );
     expect(migrationSql).toContain('BEFORE INSERT ON public.trip_payment_messages');
     expect(migrationSql).toContain("'realtime_voice'");
   });

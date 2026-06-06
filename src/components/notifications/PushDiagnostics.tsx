@@ -22,8 +22,12 @@ function Row({ status, label }: { status: Status; label: string }) {
  * Native shells use APNs/FCM; web/PWA uses Web Push + VAPID.
  */
 export const PushDiagnostics: React.FC = () => {
-  const { isNative, permission: nativePermission, isRegistered, error: nativeError } =
-    useNativePush();
+  const {
+    isNative,
+    permission: nativePermission,
+    isRegistered,
+    error: nativeError,
+  } = useNativePush();
   const {
     isSupported,
     permission: webPermission,
@@ -69,7 +73,9 @@ export const PushDiagnostics: React.FC = () => {
           )}
 
           <Row
-            status={webPermission === 'granted' ? 'ok' : webPermission === 'denied' ? 'bad' : 'warn'}
+            status={
+              webPermission === 'granted' ? 'ok' : webPermission === 'denied' ? 'bad' : 'warn'
+            }
             label={`Notification permission: ${webPermission}`}
           />
           <Row
