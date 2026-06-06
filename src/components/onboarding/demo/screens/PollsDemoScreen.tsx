@@ -8,10 +8,10 @@
  * Each poll is kept to 3 options so all three fit the frame without clipping.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DemoPollCard } from '../primitives';
-import { motion as motionPreset, LOOP_DURATION } from '../tokens';
+import { motion as motionPreset } from '../tokens';
+import { useDemoStepSequence } from '../useDemoStepSequence';
 import { BarChart3 } from 'lucide-react';
 
 const slideUp = {
@@ -21,25 +21,7 @@ const slideUp = {
 };
 
 export const PollsDemoScreen = () => {
-  const [cycle, setCycle] = useState(0);
-  const [step, setStep] = useState(0);
-
-  const resetAndLoop = useCallback(() => {
-    setStep(0);
-    setCycle(c => c + 1);
-  }, []);
-
-  useEffect(() => {
-    const timers = [
-      setTimeout(() => setStep(1), 500),
-      setTimeout(() => setStep(2), 1200),
-      setTimeout(() => setStep(3), 2400),
-      setTimeout(() => setStep(4), 3600),
-      setTimeout(() => setStep(5), 4600),
-      setTimeout(resetAndLoop, LOOP_DURATION * 1000),
-    ];
-    return () => timers.forEach(clearTimeout);
-  }, [cycle, resetAndLoop]);
+  const { step, cycle } = useDemoStepSequence([500, 1200, 2400, 3600, 4600]);
 
   return (
     <div className="flex flex-col h-full px-3 py-3 gap-2">

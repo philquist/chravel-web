@@ -4,10 +4,10 @@
  * ~6s loop: Day header → 5 events → shared badge → reset
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DemoDayHeader, DemoTimelineEvent } from '../primitives';
-import { motion as motionPreset, LOOP_DURATION } from '../tokens';
+import { motion as motionPreset } from '../tokens';
+import { useDemoStepSequence } from '../useDemoStepSequence';
 import { Users } from 'lucide-react';
 
 const slideUp = {
@@ -17,27 +17,8 @@ const slideUp = {
 };
 
 export const CalendarDemoScreen = () => {
-  const [cycle, setCycle] = useState(0);
-  const [step, setStep] = useState(0);
-
-  const resetAndLoop = useCallback(() => {
-    setStep(0);
-    setCycle(c => c + 1);
-  }, []);
-
-  useEffect(() => {
-    const timers = [
-      setTimeout(() => setStep(1), 400), // day header
-      setTimeout(() => setStep(2), 1000), // event 1
-      setTimeout(() => setStep(3), 1700), // event 2
-      setTimeout(() => setStep(4), 2400), // event 3
-      setTimeout(() => setStep(5), 3100), // event 4
-      setTimeout(() => setStep(6), 3800), // event 5
-      setTimeout(() => setStep(7), 4600), // shared badge
-      setTimeout(resetAndLoop, LOOP_DURATION * 1000),
-    ];
-    return () => timers.forEach(clearTimeout);
-  }, [cycle, resetAndLoop]);
+  // Steps: 1 day header, 2-6 five events, 7 shared badge.
+  const { step, cycle } = useDemoStepSequence([400, 1000, 1700, 2400, 3100, 3800, 4600]);
 
   return (
     <div className="flex flex-col h-full px-3 py-3 gap-2">

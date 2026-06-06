@@ -5,10 +5,10 @@
  *           airport) → base camp glow → reset
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DemoPlaceCard } from '../primitives';
-import { motion as motionPreset, LOOP_DURATION } from '../tokens';
+import { motion as motionPreset } from '../tokens';
+import { useDemoStepSequence } from '../useDemoStepSequence';
 import { MapPin } from 'lucide-react';
 
 const slideUp = {
@@ -18,27 +18,8 @@ const slideUp = {
 };
 
 export const PlacesDemoScreen = () => {
-  const [cycle, setCycle] = useState(0);
-  const [step, setStep] = useState(0);
-
-  const resetAndLoop = useCallback(() => {
-    setStep(0);
-    setCycle(c => c + 1);
-  }, []);
-
-  useEffect(() => {
-    const timers = [
-      setTimeout(() => setStep(1), 400), // header
-      setTimeout(() => setStep(2), 1000), // hotel base camp
-      setTimeout(() => setStep(3), 1700), // restaurant
-      setTimeout(() => setStep(4), 2400), // museum
-      setTimeout(() => setStep(5), 3100), // venue
-      setTimeout(() => setStep(6), 3800), // airport
-      setTimeout(() => setStep(7), 4600), // base camp glow
-      setTimeout(resetAndLoop, LOOP_DURATION * 1000),
-    ];
-    return () => timers.forEach(clearTimeout);
-  }, [cycle, resetAndLoop]);
+  // Steps: 1 header, 2-6 five places (hotel/restaurant/museum/venue/airport), 7 base-camp glow.
+  const { step, cycle } = useDemoStepSequence([400, 1000, 1700, 2400, 3100, 3800, 4600]);
 
   return (
     <div className="flex flex-col h-full px-3 py-3 gap-2.5">

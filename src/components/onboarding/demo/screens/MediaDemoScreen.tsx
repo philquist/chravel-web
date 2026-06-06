@@ -4,10 +4,10 @@
  * ~6s loop: header → 5 media upload rows → counter → reset
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DemoMediaRow } from '../primitives';
-import { motion as motionPreset, LOOP_DURATION } from '../tokens';
+import { motion as motionPreset } from '../tokens';
+import { useDemoStepSequence } from '../useDemoStepSequence';
 import { Images } from 'lucide-react';
 
 const slideUp = {
@@ -17,27 +17,8 @@ const slideUp = {
 };
 
 export const MediaDemoScreen = () => {
-  const [cycle, setCycle] = useState(0);
-  const [step, setStep] = useState(0);
-
-  const resetAndLoop = useCallback(() => {
-    setStep(0);
-    setCycle(c => c + 1);
-  }, []);
-
-  useEffect(() => {
-    const timers = [
-      setTimeout(() => setStep(1), 400), // header
-      setTimeout(() => setStep(2), 900), // row 1
-      setTimeout(() => setStep(3), 1500), // row 2
-      setTimeout(() => setStep(4), 2100), // row 3
-      setTimeout(() => setStep(5), 2700), // row 4
-      setTimeout(() => setStep(6), 3300), // row 5
-      setTimeout(() => setStep(7), 4200), // counter
-      setTimeout(resetAndLoop, LOOP_DURATION * 1000),
-    ];
-    return () => timers.forEach(clearTimeout);
-  }, [cycle, resetAndLoop]);
+  // Steps: 1 header, 2-6 five upload rows, 7 counter.
+  const { step, cycle } = useDemoStepSequence([400, 900, 1500, 2100, 2700, 3300, 4200]);
 
   return (
     <div className="flex flex-col h-full px-3 py-3 gap-2.5">

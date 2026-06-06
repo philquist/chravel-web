@@ -9,6 +9,7 @@ import { convertSupabaseTripToMock } from '@/utils/tripConverter';
 import { useDemoTripMembersStore } from '@/store/demoTripMembersStore';
 import { errorTracking } from '@/utils/errorTracking';
 import { isDemoTrip } from '@/utils/demoUtils';
+import { classifyError } from '@/utils/errorClassification';
 
 interface TripMember {
   id: string;
@@ -167,7 +168,7 @@ export const useTripDetailData = (tripId: string | undefined): UseTripDetailData
         action: 'trip-detail-load',
         tripId,
         metadata: {
-          category: classifyTripError(failure),
+          category: classifyError(failure),
           source: realTripError ? 'trip' : 'members',
         },
       });
@@ -276,44 +277,6 @@ export const useTripDetailData = (tripId: string | undefined): UseTripDetailData
     membersError: membersQuery.error as Error | null,
   };
 };
-
-/**
- * Classify a real-trip load failure into an actionable category for logging.
- * Keeps user-facing copy generic while making logs diagnosable.
- */
-type TripErrorCategory =
-  | 'auth-required'
-  | 'permission-denied'
-  | 'not-found'
-  | 'network'
-  | 'malformed'
-  | 'unknown';
-
-function classifyTripError(error: Error | null): TripErrorCategory {
-  if (!error) return 'unknown';
-  // Supabase/PostgREST errors carry structured `code`/`status` that the message often omits
-  // (e.g. an RLS denial is code 42501 with a generic message). Inspect those first.
-  const { code, status } = error as Error & { code?: string; status?: number };
-  if (code === '42501' || status === 403) return 'permission-denied';
-  if (code === 'PGRST116' || status === 404) return 'not-found';
-  if (status === 0 || status === 429 || status === 503) return 'network';
-
-  const msg = (error.message || '').toLowerCase();
-  if (msg.includes('auth_required') || msg.includes('not authenticated')) return 'auth-required';
-  if (msg.includes('permission') || msg.includes('rls') || msg.includes('forbidden')) {
-    return 'permission-denied';
-  }
-  if (msg.includes('not found') || msg.includes('no rows') || msg.includes('404')) {
-    return 'not-found';
-  }
-  if (msg.includes('network') || msg.includes('fetch') || msg.includes('timeout')) {
-    return 'network';
-  }
-  if (msg.includes('json') || msg.includes('parse') || msg.includes('unexpected')) {
-    return 'malformed';
-  }
-  return 'unknown';
-}
 
 /**
  * Get mock fallback members for demo trips

@@ -6,6 +6,7 @@ import { MobileErrorBoundary } from '../components/mobile/MobileErrorBoundary';
 import { MobileTripInfoDrawer } from '../components/mobile/MobileTripInfoDrawer';
 import { MobileHeaderOptionsSheet } from '../components/mobile/MobileHeaderOptionsSheet';
 import { DemoTripBar } from '../components/demo/DemoTripBar';
+import { isDemoTrip } from '@/utils/demoUtils';
 import { TripExportModal } from '../components/trip/TripExportModal';
 import { InviteModal } from '../components/InviteModal';
 import { DeleteTripConfirmDialog } from '../components/DeleteTripConfirmDialog';
@@ -120,8 +121,10 @@ export const MobileTripDetail = () => {
     return {
       ...trip,
       description: tripDescription || trip.description,
-      // Merge real trip members for authenticated trips instead of empty array
-      participants: isDemoMode
+      // Merge real trip members for authenticated trips instead of empty array.
+      // 🔒 Key on isDemoTrip(tripId) — the same structural gate useTripDetailData uses to serve
+      // demo data — so participants can't diverge from the loader's demo decision.
+      participants: isDemoTrip(tripId)
         ? trip.participants
         : (tripMembers.map(m => ({
             id: m.id as any, // UUID strings for authenticated trips
@@ -130,7 +133,7 @@ export const MobileTripDetail = () => {
             role: 'member',
           })) as any),
     };
-  }, [trip, tripDescription, isDemoMode, tripMembers]);
+  }, [trip, tripId, tripDescription, tripMembers]);
 
   const mockData = React.useMemo(() => {
     if (!trip) return null;

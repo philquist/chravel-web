@@ -30,7 +30,7 @@ import { openOrDownloadBlob } from '../utils/download';
 import { orderExportSections } from '../utils/exportSectionOrder';
 import { toast } from 'sonner';
 import { demoModeService } from '../services/demoModeService';
-import { useDemoMode } from '../hooks/useDemoMode';
+import { isDemoTrip } from '@/utils/demoUtils';
 import { useQueryClient } from '@tanstack/react-query';
 import { tripKeys } from '@/lib/queryKeys';
 import { usePendingActions } from '../hooks/usePendingActions';
@@ -54,7 +54,6 @@ export const TripDetailDesktop = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { isDemoMode } = useDemoMode();
   const queryClient = useQueryClient();
   const desktopContainerClass = 'mx-auto w-full max-w-6xl px-4 py-4 pb-8 md:px-6 lg:px-10 xl:px-12';
 
@@ -147,9 +146,11 @@ export const TripDetailDesktop = () => {
   const tripWithUpdatedData = React.useMemo(() => {
     if (!trip) return null;
 
-    // For demo mode, trip.participants is populated from static mock data
-    // For authenticated mode, participants come from tripMembers (trip.participants is always [])
-    const resolvedParticipants = isDemoMode
+    // For demo trips (numeric ids 1–12), trip.participants is populated from static mock data.
+    // For real trips, participants come from tripMembers (trip.participants is always []).
+    // 🔒 Key on isDemoTrip(tripId) — the SAME structural gate useTripDetailData uses to serve
+    // demo data — so participant rendering can never diverge from the loader's demo decision.
+    const resolvedParticipants = isDemoTrip(tripId)
       ? trip.participants
       : tripMembers.map(m => ({
           id: m.id as string | number,
@@ -168,11 +169,11 @@ export const TripDetailDesktop = () => {
     };
   }, [
     trip,
+    tripId,
     tripData.title,
     tripData.location,
     tripData.dateRange,
     tripDescription,
-    isDemoMode,
     tripMembers,
   ]);
 
@@ -204,13 +205,13 @@ export const TripDetailDesktop = () => {
       broadcasts: mockBroadcasts,
       links: mockLinks,
       messages: [] as Message[], // Messages handled by unified messaging service
-      collaborators: isDemoMode
+      collaborators: isDemoTrip(tripId)
         ? (tripWithUpdatedData?.participants ?? [])
         : tripMembers.map(m => ({ id: m.id, name: m.name, avatar: m.avatar })),
       itinerary: mockItinerary,
       isPro: false,
     };
-  }, [tripId, tripWithUpdatedData, basecamp, mockData, isDemoMode, tripMembers]);
+  }, [tripId, tripWithUpdatedData, basecamp, mockData, tripMembers]);
 
   // ⚡ OPTIMIZATION: Show skeleton UI for perceived instant load
   // 🔒 CRITICAL: Show skeleton during auth loading OR trip loading (not "Trip Not Found")

@@ -5,6 +5,8 @@
  * In development builds, extra technical detail is appended for debugging.
  */
 
+import { classifyError } from './errorClassification';
+
 const isDev = import.meta.env.DEV;
 
 /** Structured error returned from channel operations */
@@ -22,84 +24,51 @@ export interface ChannelOperationError {
  * user-friendly message suitable for a toast notification.
  */
 export function mapChannelSendError(error: unknown): ChannelOperationError {
-  // Supabase errors are objects with code / message / details
-  const code = (error as { code?: string })?.code ?? '';
-  const message = (error as { message?: string })?.message ?? '';
-  const details = (error as { details?: string })?.details ?? '';
-  const status = (error as { status?: number })?.status;
+  // Bucketing lives in the shared classifier; this function only maps a category → toast copy.
+  switch (classifyError(error)) {
+    case 'permission-denied':
+      return {
+        title: 'Cannot send message',
+        description: "You don't have access to post in this channel yet.",
+        raw: error,
+      };
 
-  // Combine for pattern matching
-  const combined = `${code} ${message} ${details}`.toLowerCase();
+    case 'foreign-key':
+      return {
+        title: 'Channel unavailable',
+        description: 'This channel no longer exists or has been archived.',
+        raw: error,
+      };
 
-  // --- Permission / RLS errors ---
-  if (
-    combined.includes('row-level security') ||
-    combined.includes('permission denied') ||
-    combined.includes('new row violates') ||
-    code === '42501' ||
-    code === '42000'
-  ) {
-    return {
-      title: 'Cannot send message',
-      description: "You don't have access to post in this channel yet.",
-      raw: error,
-    };
+    case 'validation':
+      return {
+        title: 'Invalid message',
+        description: 'The message could not be sent — some required data was missing.',
+        raw: error,
+      };
+
+    case 'network':
+      return {
+        title: 'Connection issue',
+        description: "Couldn't reach the server. Check your connection and try again.",
+        raw: error,
+      };
+
+    case 'rate-limit':
+      return {
+        title: 'Slow down',
+        description: "You're sending messages too quickly. Wait a moment and try again.",
+        raw: error,
+      };
+
+    // not-found / auth-required / malformed / unknown all surface the generic send failure.
+    default:
+      return {
+        title: 'Message failed to send',
+        description: 'Something went wrong. Please try again.',
+        raw: error,
+      };
   }
-
-  // --- Channel not found / deleted ---
-  if (
-    combined.includes('violates foreign key') ||
-    combined.includes('not present in table') ||
-    code === '23503'
-  ) {
-    return {
-      title: 'Channel unavailable',
-      description: 'This channel no longer exists or has been archived.',
-      raw: error,
-    };
-  }
-
-  // --- Not null / validation constraints ---
-  if (code === '23502' || combined.includes('null value in column')) {
-    return {
-      title: 'Invalid message',
-      description: 'The message could not be sent — some required data was missing.',
-      raw: error,
-    };
-  }
-
-  // --- Network / timeout errors ---
-  if (
-    combined.includes('fetch') ||
-    combined.includes('networkerror') ||
-    combined.includes('timeout') ||
-    combined.includes('aborted') ||
-    combined.includes('econnrefused') ||
-    status === 0 ||
-    (error instanceof TypeError && message.includes('fetch'))
-  ) {
-    return {
-      title: 'Connection issue',
-      description: "Couldn't reach the server. Check your connection and try again.",
-      raw: error,
-    };
-  }
-
-  // --- Rate limit ---
-  if (status === 429 || combined.includes('rate limit')) {
-    return {
-      title: 'Slow down',
-      description: "You're sending messages too quickly. Wait a moment and try again.",
-      raw: error,
-    };
-  }
-
-  // --- Generic fallback ---
-  return {
-    title: 'Message failed to send',
-    description: 'Something went wrong. Please try again.',
-    raw: error,
-  };
 }
 
 /**

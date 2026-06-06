@@ -96,37 +96,19 @@ export async function searchTripMessages(
 ): Promise<MessageSearchResult[]> {
   if (!query.trim()) return [];
 
-  const client = getStreamClient();
-  if (!client?.userID) return [];
-
-  try {
-    const channel = client.channel(CHANNEL_TYPE_TRIP, tripChannelId(tripId));
-    const result = await channel.search(
-      { text: query },
-      {
-        limit,
-        offset: 0,
-      },
-    );
-
-    return (result.results || []).map(item => {
-      const message = item.message;
-      return {
-        id: message.id,
-        content: message.text || '',
-        author_name: message.user?.name || message.user?.id || 'Unknown',
-        user_id: message.user?.id || null,
-        created_at: message.created_at || new Date().toISOString(),
-        parent_message_id: message.parent_id || undefined,
-        type: 'message' as const,
-      };
-    });
-  } catch (error) {
-    if (import.meta.env.DEV) {
-      console.error('Failed to search messages via Stream:', error);
-    }
-    return [];
-  }
+  // Delegate to the canonical Stream search helper instead of reinventing the
+  // getStreamClient()→channel.search() pipeline (which had drifted out of test coverage).
+  // Map the normalized StreamMessageSearchHit shape onto MessageSearchResult.
+  const hits = await searchTripChannelMessages({ tripId, query, limit });
+  return hits.map(hit => ({
+    id: hit.messageId,
+    content: hit.text,
+    author_name: hit.authorName,
+    user_id: hit.authorId,
+    created_at: hit.createdAt || new Date().toISOString(),
+    parent_message_id: hit.threadParentId,
+    type: 'message' as const,
+  }));
 }
 
 /**
@@ -217,7 +199,9 @@ async function searchTripMessagesWithFilters(
       ).map(message => ({
         id: message.id,
         content: message.text || '',
-        author_name: message.user?.name || message.user?.id || 'Unknown',
+        // 'User' matches the canonical mapChannelSearchHit fallback used by the text-search path
+        // (via searchTripChannelMessages) so both paths render the same placeholder.
+        author_name: message.user?.name || message.user?.id || 'User',
         user_id: message.user?.id || null,
         created_at: message.created_at || new Date().toISOString(),
         parent_message_id: (message as { parent_id?: string }).parent_id || undefined,

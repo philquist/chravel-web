@@ -14,6 +14,15 @@ vi.mock('@/hooks/useConsumerSubscription', () => ({
   useConsumerSubscription: () => mockUseConsumerSubscription(),
 }));
 
+// useDeferredPaidAccess defers the paid check until browser idle / first interaction, so in a
+// synchronous render it returns false. Bypass the deferral here and exercise the real paid-access
+// gate directly, which is what these tests actually assert (button enabled/disabled by tier).
+vi.mock('@/hooks/useDeferredPaidAccess', async () => {
+  const { hasPaidAccess } = await import('@/utils/paidAccess');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return { useDeferredPaidAccess: (input: any) => hasPaidAccess(input) };
+});
+
 vi.mock('@/hooks/useEventAgenda', () => ({
   useEventAgenda: () => ({
     sessions: [],

@@ -5,10 +5,10 @@
  *         → 4 admin-style broadcasts → reaction → reset
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DemoBubble, DemoSegmentedControl } from '../primitives';
-import { motion as motionPreset, LOOP_DURATION } from '../tokens';
+import { motion as motionPreset } from '../tokens';
+import { useDemoStepSequence } from '../useDemoStepSequence';
 
 const slideUp = {
   initial: { opacity: 0, y: 12 },
@@ -20,29 +20,10 @@ const slideUp = {
 const BROADCAST_STEP = 5;
 
 export const ChatDemoScreen = () => {
-  const [cycle, setCycle] = useState(0);
-  const [step, setStep] = useState(0);
-
-  const resetAndLoop = useCallback(() => {
-    setStep(0);
-    setCycle(c => c + 1);
-  }, []);
-
-  useEffect(() => {
-    const timers = [
-      setTimeout(() => setStep(1), 400), // segmented control + message 1 (Alex)
-      setTimeout(() => setStep(2), 1000), // message 2 (you)
-      setTimeout(() => setStep(3), 1500), // message 3 (Maya)
-      setTimeout(() => setStep(4), 2000), // message 4 (you)
-      setTimeout(() => setStep(BROADCAST_STEP), 2600), // switch to Broadcasts
-      setTimeout(() => setStep(6), 2900), // broadcast 1 (+ label)
-      setTimeout(() => setStep(7), 3400), // broadcast 2
-      setTimeout(() => setStep(8), 3900), // broadcast 3
-      setTimeout(() => setStep(9), 4400), // broadcast 4 + reaction
-      setTimeout(resetAndLoop, LOOP_DURATION * 1000),
-    ];
-    return () => timers.forEach(clearTimeout);
-  }, [cycle, resetAndLoop]);
+  // Steps: 1-4 messages (Alex / you / Maya / you), 5 switch to Broadcasts, 6-9 broadcasts.
+  const { step, cycle } = useDemoStepSequence([
+    400, 1000, 1500, 2000, 2600, 2900, 3400, 3900, 4400,
+  ]);
 
   const segmentMode = step >= BROADCAST_STEP ? 'broadcasts' : 'messages';
   const inMessages = step >= 1 && step < BROADCAST_STEP;
