@@ -283,11 +283,11 @@ export const ProTripCard = ({
   // Share trip data structure
 
   const cardShellClass =
-    'group bg-gradient-to-br backdrop-blur-xl border border-white/15 hover:border-white/30 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-black/30 relative';
+    'group w-full min-w-0 bg-gradient-to-br backdrop-blur-xl border border-white/15 hover:border-white/30 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-black/30 relative';
   const actionButtonClass = cn(
     buttonVariants({ variant: 'ghost', size: 'sm' }),
     // Ghost applies hover:text-accent-foreground (black); keep CTA labels white when pressed/hovered.
-    'bg-black/30 hover:bg-black/40 text-white border border-white/20 hover:border-white/30 hover:text-white active:text-white focus-visible:text-white disabled:opacity-50 disabled:cursor-not-allowed md:min-h-[44px] md:text-sm text-xs px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
+    'min-h-[44px] bg-black/30 hover:bg-black/40 text-white border border-white/20 hover:border-white/30 hover:text-white active:text-white focus-visible:text-white disabled:opacity-50 disabled:cursor-not-allowed md:text-sm text-xs px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
   );
 
   const shareTrip = {
@@ -303,7 +303,7 @@ export const ProTripCard = ({
   return (
     <div className={cn(cardShellClass, tripColor.cardGradient)}>
       {/* Hero Section - Dark overlay for text readability */}
-      <div className="relative h-32 md:h-48 bg-white/30 dark:bg-black/40">
+      <div className="trips-card-hero relative bg-white/30 dark:bg-black/40">
         {/* Cover photo overlay if available */}
         {coverPhoto && (
           <div
@@ -313,14 +313,14 @@ export const ProTripCard = ({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-white/50 via-transparent to-transparent dark:from-black/70 dark:via-black/30 dark:to-transparent" />
 
-        <div className="relative z-10 flex justify-between items-start h-full p-4 md:p-6">
+        <div className="relative z-10 flex justify-between items-start h-full p-3 md:p-4 tablet:p-6">
           {/* Trip Info - Inside Hero */}
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col justify-end">
             <div className="flex items-center gap-2 mb-2">
               <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">Pro</Badge>
             </div>
             <h3
-              className="text-lg md:text-xl font-bold text-black dark:text-white transition-colors line-clamp-2 md:line-clamp-1 mb-2"
+              className="text-base md:text-lg tablet:text-xl font-bold text-black dark:text-white transition-colors line-clamp-2 md:line-clamp-1 mb-2"
               title={trip.title}
             >
               {trip.title}
@@ -384,9 +384,9 @@ export const ProTripCard = ({
       </div>
 
       {/* Content Section */}
-      <div className="p-4 md:p-6">
+      <div className="p-3 md:p-4 tablet:p-6">
         {/* Stats Row - icon above → number → label */}
-        <div className="flex justify-between items-center md:grid md:grid-cols-3 md:gap-4 mb-4 md:mb-6">
+        <div className="flex justify-between items-center md:grid md:grid-cols-3 md:gap-4 mb-3 md:mb-4 tablet:mb-6">
           <CardStatItem icon={Users} value={formatPeopleCount(totalPeopleCount)} label="People" />
           <CardStatItem
             icon={CalendarGlyph}

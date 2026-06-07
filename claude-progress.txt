@@ -22,3 +22,8 @@
 - Fixed mobile Concierge horizontal overflow by clamping the active tab pane to vertical-only scrolling, adding `min-w-0`/`overflow-x-hidden` through the Concierge chat shell and message rows, and forcing AI markdown/links to wrap inside the bubble.
 - Added regression tests for long assistant markdown containment and leaving Concierge for Payments; targeted tests, typecheck, lint:check, and build pass. Screenshot capture was attempted but Playwright browser install was blocked by CDN 403 in the environment.
 - Merge preflight still cannot fetch `origin/main` in this environment; rerun in a networked checkout before merge.
+
+2026-06-07 — Trips mobile card responsiveness
+- Added CSS-first Trips grid/card sizing so mobile portrait cards are denser, mobile landscape switches the Trips grid to two columns, and Trips content gets NativeTabBar-height + safe-area bottom padding.
+- Kept the change scoped to `TripGrid`, consumer/pro trip cards, and shared CSS; no data/auth/realtime/API paths changed and demo mock data was not modified.
+- Targeted TripGrid layout test, lint:check, typecheck, and build pass. Full `npm run test:run` was attempted but has unrelated existing failures in edge/config/offline contract suites; screenshot capture was blocked by Playwright CDN 403.

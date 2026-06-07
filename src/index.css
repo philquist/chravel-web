@@ -196,6 +196,53 @@
     }
   }
 
+  /* Trips dashboard cards: keep mobile portrait compact and use landscape width efficiently. */
+  :root {
+    --mobile-tab-bar-height: 49px;
+  }
+
+  .trips-mobile-scroll-safe {
+    padding-bottom: calc(var(--mobile-tab-bar-height) + env(safe-area-inset-bottom, 0px) + 1rem);
+  }
+
+  .trips-card-hero {
+    height: 8rem;
+  }
+
+  @media (min-width: 428px) {
+    .trips-card-hero {
+      height: 10rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .trips-card-hero {
+      height: 12rem;
+    }
+  }
+
+  @media (orientation: landscape) and (min-width: 640px) and (max-width: 1023px) and (max-height: 500px) {
+    .trips-responsive-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .trips-mobile-scroll-safe {
+      padding-bottom: calc(
+        var(--mobile-tab-bar-height) + env(safe-area-inset-bottom, 0px) + 1.5rem
+      );
+    }
+
+    .trips-card-hero {
+      height: 7rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .trips-mobile-scroll-safe {
+      padding-bottom: 0;
+    }
+  }
+
   /* Mobile header offset utility - accounts for fixed header + safe area */
   .mobile-header-offset {
     padding-top: calc(env(safe-area-inset-top, 0px) + 60px);

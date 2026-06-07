@@ -107,6 +107,37 @@ describe('TripGrid requests tab', () => {
     expect(screen.queryByText('Pending Trip')).not.toBeInTheDocument();
   });
 
+  it('marks card grids with responsive trips layout classes', () => {
+    const { container } = render(
+      <TripGrid
+        viewMode="myTrips"
+        trips={[]}
+        proTrips={{}}
+        events={{}}
+        activeFilter="requests"
+        pendingRequestCards={[
+          {
+            requestId: 'req-layout',
+            tripId: 'trip-layout',
+            tripType: 'consumer',
+            requestedAt: null,
+            title: 'Layout Trip',
+            destination: 'Tokyo',
+            startDate: '2026-05-01',
+            endDate: '2026-05-06',
+            dateLabel: 'May 1, 2026 - May 6, 2026',
+            coverImageUrl: null,
+            peopleCount: 3,
+            placesCount: 4,
+          },
+        ]}
+      />,
+    );
+
+    expect(container.querySelector('.trips-mobile-scroll-safe')).toBeInTheDocument();
+    expect(container.querySelector('.trips-responsive-grid')).toBeInTheDocument();
+  });
+
   it('renders pending request cards in Requests using standard TripCard pending mode', () => {
     render(
       <TripGrid
