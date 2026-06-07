@@ -10,6 +10,7 @@ import {
   Trash2,
   FileDown,
   Share2,
+  ArrowUpDown,
 } from 'lucide-react';
 import { CardStatItem } from './ui/CardStatItem';
 import { CalendarGlyph } from './ui/CalendarGlyph';
@@ -57,6 +58,9 @@ interface ProTripCardProps {
   onArchiveSuccess?: () => void;
   onHideSuccess?: () => void;
   onDeleteSuccess?: () => void;
+  reorderMode?: boolean;
+  onMoveTrip?: () => void;
+  onExitMoveMode?: () => void;
 }
 
 export const ProTripCard = ({
@@ -64,6 +68,9 @@ export const ProTripCard = ({
   onArchiveSuccess,
   onHideSuccess,
   onDeleteSuccess,
+  reorderMode = false,
+  onMoveTrip,
+  onExitMoveMode,
 }: ProTripCardProps) => {
   const navigate = useNavigate();
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
@@ -71,6 +78,7 @@ export const ProTripCard = ({
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -99,7 +107,23 @@ export const ProTripCard = ({
     return baseCount + addedDemoMembers.length;
   }, [trip, addedDemoMembers]);
 
+  const handleMoveModeCardClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!reorderMode) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setIsMenuOpen(false);
+      onExitMoveMode?.();
+    },
+    [reorderMode, onExitMoveMode],
+  );
+
   const handleViewTrip = () => {
+    if (reorderMode) {
+      setIsMenuOpen(false);
+      onExitMoveMode?.();
+      return;
+    }
     navigate(`/tour/pro/${trip.id}`);
   };
 
@@ -301,7 +325,10 @@ export const ProTripCard = ({
   };
 
   return (
-    <div className={cn(cardShellClass, tripColor.cardGradient)}>
+    <div
+      className={cn(cardShellClass, tripColor.cardGradient)}
+      onClickCapture={handleMoveModeCardClick}
+    >
       {/* Hero Section - Dark overlay for text readability */}
       <div className="relative h-32 md:h-48 bg-white/30 dark:bg-black/40">
         {/* Cover photo overlay if available */}
@@ -344,20 +371,36 @@ export const ProTripCard = ({
           </div>
 
           {/* Menu Button */}
-          <DropdownMenu>
+          <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-black/40 hover:text-black dark:text-white/60 dark:hover:text-white hover:bg-black/10 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all duration-200 h-8 w-8"
+                className="text-black/40 hover:text-black dark:text-white/60 dark:hover:text-white hover:bg-black/10 dark:hover:bg-white/10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 h-11 w-11"
+                aria-label="Trip actions"
               >
                 <MoreHorizontal size={16} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-background border-border">
+              {onMoveTrip && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onMoveTrip();
+                    }}
+                    className="text-muted-foreground hover:text-foreground min-h-11"
+                  >
+                    <ArrowUpDown className="mr-2 h-4 w-4" />
+                    Move Trip
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuItem
                 onClick={() => setShowArchiveDialog(true)}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground min-h-11"
               >
                 <Archive className="mr-2 h-4 w-4" />
                 Archive Trip
@@ -365,7 +408,7 @@ export const ProTripCard = ({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleHideTrip}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground min-h-11"
               >
                 <EyeOff className="mr-2 h-4 w-4" />
                 Hide Trip
@@ -373,7 +416,7 @@ export const ProTripCard = ({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => setShowDeleteDialog(true)}
-                className="text-destructive hover:text-destructive"
+                className="text-destructive hover:text-destructive min-h-11"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete for me

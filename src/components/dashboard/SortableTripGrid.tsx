@@ -48,8 +48,7 @@ interface SortableTripGridProps<T> {
   userId: string | undefined;
   reorderMode?: boolean;
   isMobile?: boolean;
-  /** Called when user long-presses a card to enter reorder mode (mobile) */
-  onLongPressEnterReorder?: () => void;
+  onSaveError?: () => void;
 }
 
 export function SortableTripGrid<T>({
@@ -60,7 +59,7 @@ export function SortableTripGrid<T>({
   userId,
   reorderMode = false,
   isMobile = false,
-  onLongPressEnterReorder,
+  onSaveError,
 }: SortableTripGridProps<T>) {
   const { applyOrder, saveOrder } = useDashboardCardOrder(userId, dashboardType);
   const [orderedItems, setOrderedItems] = useState<T[]>([]);
@@ -126,15 +125,22 @@ export function SortableTripGrid<T>({
           const newIndex = prev.findIndex(item => getId(item) === over.id);
           if (oldIndex === -1 || newIndex === -1) return prev;
 
+          const previous = prev;
           const reordered = arrayMove(prev, oldIndex, newIndex);
-          saveOrder(reordered.map(getId));
+          saveOrder(reordered.map(getId), {
+            onError: () => {
+              setOrderedItems(previous);
+              saveOrder(previous.map(getId));
+              onSaveError?.();
+            },
+          });
           return reordered;
         });
       } finally {
         clearDragUi();
       }
     },
-    [getId, saveOrder, clearDragUi],
+    [getId, saveOrder, clearDragUi, onSaveError],
   );
 
   const handleDragCancel = useCallback(() => {
@@ -158,12 +164,7 @@ export function SortableTripGrid<T>({
       <ReorderModeDragCancelListener reorderMode={reorderMode} />
       <SortableContext items={ids} strategy={strategy}>
         {orderedItems.map(item => (
-          <SortableCardWrapper
-            key={getId(item)}
-            id={getId(item)}
-            reorderMode={reorderMode}
-            onLongPressEnterReorder={onLongPressEnterReorder}
-          >
+          <SortableCardWrapper key={getId(item)} id={getId(item)} reorderMode={reorderMode}>
             {renderCard(item)}
           </SortableCardWrapper>
         ))}

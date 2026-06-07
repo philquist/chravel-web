@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TripCard } from '../TripCard';
@@ -31,6 +32,18 @@ vi.mock('@/hooks/useConsumerSubscription', () => ({
 
 vi.mock('@/hooks/usePrefetchTrip', () => ({
   usePrefetchTrip: () => ({ prefetch: vi.fn() }),
+}));
+
+vi.mock('../ui/dropdown-menu', () => ({
+  DropdownMenu: ({ children }: { children: ReactNode }) => <>{children}</>,
+  DropdownMenuTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
+  DropdownMenuContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  DropdownMenuItem: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
+    <button type="button" onClick={onClick}>
+      {children}
+    </button>
+  ),
+  DropdownMenuSeparator: () => <hr />,
 }));
 
 vi.mock('@/store/demoTripMembersStore', () => ({
@@ -121,5 +134,46 @@ describe('TripCard pending approval mode', () => {
         title: 'Your request is still pending approval.',
       }),
     );
+  });
+});
+
+const baseTrip = {
+  id: 'trip-move-1',
+  title: 'Moveable Trip',
+  location: 'Tokyo',
+  dateRange: 'Jun 7 - Jun 22, 2026',
+  participants: [],
+  placesCount: 0,
+  peopleCount: 1,
+};
+
+describe('TripCard move mode actions', () => {
+  beforeEach(() => {
+    mockNavigate.mockReset();
+    mockToast.mockReset();
+  });
+
+  it('shows Move Trip in the overflow menu and calls the move handler', async () => {
+    const onMoveTrip = vi.fn();
+
+    render(<TripCard trip={baseTrip} onMoveTrip={onMoveTrip} />);
+
+    const trigger = screen.getByRole('button', { name: /trip actions/i });
+    fireEvent.pointerDown(trigger);
+    fireEvent.click(trigger);
+    fireEvent.click(await screen.findByText('Move Trip'));
+
+    expect(onMoveTrip).toHaveBeenCalledTimes(1);
+  });
+
+  it('exits move mode instead of navigating when the View CTA is tapped', () => {
+    const onExitMoveMode = vi.fn();
+
+    render(<TripCard trip={baseTrip} reorderMode onExitMoveMode={onExitMoveMode} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /view trip/i }));
+
+    expect(onExitMoveMode).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

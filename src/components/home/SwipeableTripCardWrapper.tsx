@@ -31,6 +31,8 @@ interface SwipeableTripCardWrapperProps {
   reorderMode?: boolean;
   /** When true, loads cover photo eagerly (for above-the-fold cards) */
   priority?: boolean;
+  onMoveTrip?: () => void;
+  onExitMoveMode?: () => void;
 }
 
 /**
@@ -46,6 +48,8 @@ export const SwipeableTripCardWrapper: React.FC<SwipeableTripCardWrapperProps> =
   onTripStateChange,
   reorderMode = false,
   priority = false,
+  onMoveTrip,
+  onExitMoveMode,
 }) => {
   const { openRowId, setOpenRowId } = useSwipeableRowContext();
   const tripId = trip.id.toString();
@@ -57,6 +61,9 @@ export const SwipeableTripCardWrapper: React.FC<SwipeableTripCardWrapperProps> =
       onHideSuccess={onTripStateChange}
       onDeleteSuccess={onTripStateChange}
       priority={priority}
+      reorderMode={reorderMode}
+      onMoveTrip={onMoveTrip}
+      onExitMoveMode={onExitMoveMode}
     />
   );
 
@@ -88,6 +95,8 @@ interface SwipeableProTripCardWrapperProps {
   onTripStateChange?: () => void;
   /** When true, disables swipe-to-delete so drag-to-reorder works on mobile */
   reorderMode?: boolean;
+  onMoveTrip?: () => void;
+  onExitMoveMode?: () => void;
 }
 
 /**
@@ -102,6 +111,8 @@ export const SwipeableProTripCardWrapper: React.FC<SwipeableProTripCardWrapperPr
   onDelete,
   onTripStateChange,
   reorderMode = false,
+  onMoveTrip,
+  onExitMoveMode,
 }) => {
   const { openRowId, setOpenRowId } = useSwipeableRowContext();
   const tripId = trip.id.toString();
@@ -112,6 +123,9 @@ export const SwipeableProTripCardWrapper: React.FC<SwipeableProTripCardWrapperPr
       onArchiveSuccess={onTripStateChange}
       onHideSuccess={onTripStateChange}
       onDeleteSuccess={onTripStateChange}
+      reorderMode={reorderMode}
+      onMoveTrip={onMoveTrip}
+      onExitMoveMode={onExitMoveMode}
     />
   );
 

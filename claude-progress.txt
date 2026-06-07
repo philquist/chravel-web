@@ -22,3 +22,8 @@
 - Fixed mobile Concierge horizontal overflow by clamping the active tab pane to vertical-only scrolling, adding `min-w-0`/`overflow-x-hidden` through the Concierge chat shell and message rows, and forcing AI markdown/links to wrap inside the bubble.
 - Added regression tests for long assistant markdown containment and leaving Concierge for Payments; targeted tests, typecheck, lint:check, and build pass. Screenshot capture was attempted but Playwright browser install was blocked by CDN 403 in the environment.
 - Merge preflight still cannot fetch `origin/main` in this environment; rerun in a networked checkout before merge.
+
+2026-06-07 — iOS trip reorder explicit Move Trip flow
+- Added Move Trip to consumer/pro trip overflow menus and routed it to controlled dashboard reorder mode instead of mobile long-press activation.
+- Kept existing dashboard_card_order persistence/RLS path, added save-failure rollback/toast handling, and preserved swipe/action suppression while reorder mode is active.
+- Verification: targeted TripCard/TripGrid/dnd tests and typecheck pass; lint:check and build pass. Full test run was interrupted after unrelated pre-existing failures in useTripTasks, Apple client secret, basecamp offline, Supabase config, and tool-result contract suites.

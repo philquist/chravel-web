@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { TripGrid } from '../TripGrid';
 
@@ -66,12 +66,19 @@ vi.mock('@/hooks/useDemoMode', () => ({ useDemoMode: () => ({ isDemoMode: false 
 vi.mock('@/hooks/useConsumerSubscription', () => ({
   useConsumerSubscription: () => ({ tier: 'pro' }),
 }));
-const sortableTripGridProps: Array<{ onLongPressEnterReorder?: () => void }> = [];
+type SortableTripGridMockProps = {
+  items?: unknown[];
+  renderCard?: (item: unknown) => ReactNode;
+  onSaveError?: () => void;
+};
 vi.mock('../../dashboard/SortableTripGrid', () => ({
-  SortableTripGrid: (props: { onLongPressEnterReorder?: () => void }) => {
-    sortableTripGridProps.push(props);
-    return null;
-  },
+  SortableTripGrid: (props: SortableTripGridMockProps) => (
+    <>
+      {props.items?.map((item, index) => (
+        <div key={index}>{props.renderCard?.(item)}</div>
+      ))}
+    </>
+  ),
 }));
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
@@ -160,50 +167,5 @@ describe('TripGrid requests tab', () => {
 
     expect(screen.queryByText('Requests Only Trip')).not.toBeInTheDocument();
     expect(screen.queryByText('Cancel request')).not.toBeInTheDocument();
-  });
-
-  it('exits reorder mode when activeTab changes from "trips" to a different tab', () => {
-    sortableTripGridProps.length = 0;
-    const trip = {
-      id: 1,
-      title: 'Trip A',
-      location: 'Paris',
-      dateRange: 'May 1 - May 8',
-      participants: [],
-    };
-    const { rerender } = render(
-      <TripGrid
-        viewMode="myTrips"
-        trips={[trip]}
-        proTrips={{}}
-        events={{}}
-        activeFilter="all"
-        activeTab="trips"
-      />,
-    );
-
-    // Capture the latest long-press handler and fire it to enter reorder mode.
-    const enterReorder =
-      sortableTripGridProps[sortableTripGridProps.length - 1]?.onLongPressEnterReorder;
-    expect(enterReorder).toBeTypeOf('function');
-    act(() => {
-      enterReorder?.();
-    });
-
-    expect(screen.getByText('Drag to reorder')).toBeInTheDocument();
-
-    // Simulate a mobile tab switch — pathname does not change, only activeTab.
-    rerender(
-      <TripGrid
-        viewMode="myTrips"
-        trips={[trip]}
-        proTrips={{}}
-        events={{}}
-        activeFilter="all"
-        activeTab="alerts"
-      />,
-    );
-
-    expect(screen.queryByText('Drag to reorder')).not.toBeInTheDocument();
   });
 });

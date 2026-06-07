@@ -3,6 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 
 type DashboardType = 'my_trips' | 'pro' | 'events';
 
+type SaveOrderOptions = {
+  onError?: () => void;
+};
+
 // ---------------------------------------------------------------------------
 // localStorage helpers (synchronous cache for instant UI)
 // ---------------------------------------------------------------------------
@@ -100,7 +104,7 @@ export function useDashboardCardOrder(userId: string | undefined, dashboardType:
   );
 
   const saveOrder = useCallback(
-    (orderedIds: string[]) => {
+    (orderedIds: string[], options?: SaveOrderOptions) => {
       if (!userId) return;
       const key = JSON.stringify(orderedIds);
       if (key === lastSavedRef.current) return;
@@ -126,9 +130,11 @@ export function useDashboardCardOrder(userId: string | undefined, dashboardType:
           );
           if (error) {
             console.error('[CardOrder] Upsert failed:', error.message);
+            options?.onError?.();
           }
         } catch (err) {
           console.error('[CardOrder] Network error during upsert:', err);
+          options?.onError?.();
         }
       }, 500);
     },

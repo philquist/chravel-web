@@ -11,6 +11,7 @@ import {
   EyeOff,
   FileDown,
   Trash2,
+  ArrowUpDown,
 } from 'lucide-react';
 import { CardStatItem } from './ui/CardStatItem';
 import { CalendarGlyph } from './ui/CalendarGlyph';
@@ -85,6 +86,9 @@ interface TripCardProps {
   pendingSecondaryActionLabel?: string;
   onPendingSecondaryAction?: () => void;
   isPendingSecondaryActionLoading?: boolean;
+  reorderMode?: boolean;
+  onMoveTrip?: () => void;
+  onExitMoveMode?: () => void;
 }
 
 export const TripCard = ({
@@ -98,12 +102,16 @@ export const TripCard = ({
   pendingSecondaryActionLabel,
   onPendingSecondaryAction,
   isPendingSecondaryActionLoading = false,
+  reorderMode = false,
+  onMoveTrip,
+  onExitMoveMode,
 }: TripCardProps) => {
   const navigate = useNavigate();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { deleteTrip, isDeleting } = useDeleteTrip();
   const [showExportModal, setShowExportModal] = useState(false);
   const { toast } = useToast();
@@ -135,7 +143,23 @@ export const TripCard = ({
     void import('@/pages/TripDetail').catch(() => {});
   }, [prefetch, tripIdStr]);
 
+  const handleMoveModeCardClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!reorderMode) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setIsMenuOpen(false);
+      onExitMoveMode?.();
+    },
+    [reorderMode, onExitMoveMode],
+  );
+
   const handleViewTrip = () => {
+    if (reorderMode) {
+      setIsMenuOpen(false);
+      onExitMoveMode?.();
+      return;
+    }
     if (pendingApproval) {
       toast({
         title: 'Your request is still pending approval.',
@@ -423,6 +447,7 @@ export const TripCard = ({
       onMouseEnter={handlePrefetch}
       onFocus={handlePrefetch}
       onTouchStart={handlePrefetch}
+      onClickCapture={handleMoveModeCardClick}
     >
       {/* Trip Image/Header - Responsive with lazy loading */}
       <div className="on-media dark-section relative h-32 md:h-48 bg-gradient-to-br from-gold-dark/20 via-gold-primary/10 to-transparent p-4 md:p-6">
@@ -518,17 +543,35 @@ export const TripCard = ({
           </div>
           {/* Archive menu - hidden for pending-approval cards */}
           {!pendingApproval && (
-            <DropdownMenu>
+            <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
               <DropdownMenuTrigger asChild>
-                <button className="text-white/60 hover:text-white transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 p-2 hover:bg-white/10 rounded-lg md:rounded-xl">
+                <button
+                  className="text-white/60 hover:text-white transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 p-2 hover:bg-white/10 rounded-lg md:rounded-xl min-h-11 min-w-11 inline-flex items-center justify-center"
+                  aria-label="Trip actions"
+                >
                   <MoreHorizontal size={18} className="md:hidden" />
                   <MoreHorizontal size={20} className="hidden md:block" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-background border-border">
+                {onMoveTrip && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        onMoveTrip();
+                      }}
+                      className="text-muted-foreground hover:text-foreground min-h-11"
+                    >
+                      <ArrowUpDown className="mr-2 h-4 w-4" />
+                      Move Trip
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem
                   onClick={() => setShowArchiveDialog(true)}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground min-h-11"
                 >
                   <Archive className="mr-2 h-4 w-4" />
                   Archive Trip
@@ -536,7 +579,7 @@ export const TripCard = ({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleHideTrip}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground min-h-11"
                 >
                   <EyeOff className="mr-2 h-4 w-4" />
                   Hide Trip
@@ -544,7 +587,7 @@ export const TripCard = ({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setShowDeleteDialog(true)}
-                  className="text-destructive hover:text-destructive"
+                  className="text-destructive hover:text-destructive min-h-11"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete for me

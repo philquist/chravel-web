@@ -117,9 +117,26 @@ export const TripGrid = React.memo(
     const { tier: _tier } = useConsumerSubscription();
     const { deleteTrip } = useDeleteTrip();
     const [reorderMode, setReorderMode] = useState<'my_trips' | 'pro' | 'events' | null>(null);
+    const enterReorderMode = useCallback(
+      (mode: 'my_trips' | 'pro' | 'events') => {
+        setReorderMode(mode);
+        toast({
+          title: 'Move mode',
+          description: 'Drag trips to reorder. Tap a card to finish.',
+        });
+      },
+      [toast],
+    );
     const exitReorderMode = useCallback(() => {
       setReorderMode(null);
     }, []);
+    const handleReorderSaveError = useCallback(() => {
+      toast({
+        title: 'Could not save trip order',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    }, [toast]);
     const gridWrapperRef = useRef<HTMLDivElement | null>(null);
 
     // Never keep reorder mode active across navigation/tab/view context changes.
@@ -617,7 +634,9 @@ export const TripGrid = React.memo(
               drags / scrolls so they always have a way out. */}
           {reorderMode !== null && (
             <div className="sticky top-0 z-10 flex items-center justify-between rounded-lg border border-border/60 bg-card/95 px-4 py-2.5 backdrop-blur">
-              <span className="text-sm font-medium text-muted-foreground">Drag to reorder</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                Move mode: drag trips to reorder. Tap a card to finish.
+              </span>
               <Button size="sm" onClick={exitReorderMode}>
                 Done
               </Button>
@@ -684,13 +703,15 @@ export const TripGrid = React.memo(
                       onTripStateChange={onTripStateChange}
                       reorderMode={reorderMode === 'my_trips'}
                       priority={!isMobile}
+                      onMoveTrip={() => enterReorderMode('my_trips')}
+                      onExitMoveMode={exitReorderMode}
                     />
                   )}
                   dashboardType="my_trips"
                   userId={user?.id}
                   reorderMode={reorderMode === 'my_trips'}
                   isMobile={isMobile}
-                  onLongPressEnterReorder={() => setReorderMode('my_trips')}
+                  onSaveError={handleReorderSaveError}
                 />
               </>
             ) : viewMode === 'tripsPro' ? (
@@ -706,13 +727,15 @@ export const TripGrid = React.memo(
                       onDelete={handleProTripSwipeDelete}
                       onTripStateChange={onTripStateChange}
                       reorderMode={reorderMode === 'pro'}
+                      onMoveTrip={() => enterReorderMode('pro')}
+                      onExitMoveMode={exitReorderMode}
                     />
                   )}
                   dashboardType="pro"
                   userId={user?.id}
                   reorderMode={reorderMode === 'pro'}
                   isMobile={isMobile}
-                  onLongPressEnterReorder={() => setReorderMode('pro')}
+                  onSaveError={handleReorderSaveError}
                 />
               </>
             ) : viewMode === 'events' ? (
@@ -741,7 +764,7 @@ export const TripGrid = React.memo(
                   userId={user?.id}
                   reorderMode={reorderMode === 'events'}
                   isMobile={isMobile}
-                  onLongPressEnterReorder={() => setReorderMode('events')}
+                  onSaveError={handleReorderSaveError}
                 />
               </>
             ) : viewMode === 'travelRecs' ? (
