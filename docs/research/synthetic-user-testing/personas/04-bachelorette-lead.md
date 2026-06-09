@@ -40,6 +40,7 @@
 ## C. Full User Journey — Nashville Bachelorette, 10 women, 3 nights
 
 ### 1. Discovery / landing first impression
+
 - **Tried:** Opens chravelapp.com on Safari after seeing a TikTok.
 - **What code says happens:** Unauthenticated visitors get the marketing landing
   (`src/MarketingApp.tsx`, `src/components/landing/FullPageLanding.tsx`) with pricing, FAQ, sign-up
@@ -51,6 +52,7 @@
 - **Verdict:** Interested but primed for disappointment on payments. ✅ proceeds.
 
 ### 2. Sign-up / onboarding
+
 - **Tried:** Google OAuth on iPhone Safari.
 - **What code says happens:** Email/Google/Apple auth, email verification post-signup, then a
   skippable **9-screen onboarding carousel** (Welcome → Chat → Calendar → Places → Tasks → Polls →
@@ -60,6 +62,7 @@
 - **Verdict:** Tolerable. ✅
 
 ### 3. Trip creation (Nashville weekend)
+
 - **Tried:** "NASH BASH 🤠", consumer trip, 3 nights, Nashville, cover photo of the bride.
 - **What code says happens:** `CreateTripModal.tsx` — title (unique per user), start/end dates,
   timezone required; optional location, description, cover photo with crop modal
@@ -68,6 +71,7 @@
 - **Verdict:** ✅ Best moment of setup. Feels premium.
 
 ### 4. Inviting 8 guests (the make-or-break step)
+
 - **Tried:** Taps Invite, shares the `/join/{token}` link into the group text.
 - **What code says happens:**
   - Link generation with optional expiration/max-uses/require-approval; share via copy/SMS/email/native
@@ -78,14 +82,14 @@
   - Guests see a real **pre-auth preview**: trip name, dates, cover, "8 Chravelers already planning",
     and an urgency chip "Trip starts in 3 weeks" `[OBSERVED — JoinTrip.tsx:850-909]`.
   - Then the auth wall. The unauthenticated copy is **leaked internal spec text shipped as UI**:
-    *"Sign in with the standard Chravel dark auth flow to request access to this trip."* and
-    *"Google, Apple, and email sign-in remain available in the same dark modal."*
+    _"Sign in with the standard Chravel dark auth flow to request access to this trip."_ and
+    _"Google, Apple, and email sign-in remain available in the same dark modal."_
     `[OBSERVED — JoinTrip.tsx:914-933]`. Real users should never read the words "dark auth flow"
     or "the same dark modal."
   - After auth, **auto-join fires** (good — no second tap) `[OBSERVED — JoinTrip.tsx:374-386]`, invite
     code survives the OAuth round-trip via localStorage `[OBSERVED — JoinTrip.tsx:59,126-141,248-256]`.
   - But the signed-in CTA is always **"Request to Join"** with spinner text "Requesting…", and a blue
-    **"Member Approval — A current trip member will review your request"** box renders for *every*
+    **"Member Approval — A current trip member will review your request"** box renders for _every_
     authed user, gated only on `!joining && user` — **not** on `invite.require_approval`
     `[OBSERVED — JoinTrip.tsx:948,961-971]`. Mack didn't turn approval on; her guests are told they're
     in a review queue anyway, then are surprised by instant "Successfully joined the trip!"
@@ -98,12 +102,13 @@
     bug `[OBSERVED — ground-truth §10.6]` — a guest who joins, then can't find the trip on her home
     screen, texts Mack "it's not working" and never returns. `[SIMULATED RISK]` for this exact group.
 - **Friction:** Half of Mack's 8 guests are exactly the "I'm not downloading another app" type. The
-  preview is great bait, but the account wall before *any* itinerary content means 3–4 guests stall.
+  preview is great bait, but the account wall before _any_ itinerary content means 3–4 guests stall.
 - **Verdict:** ⚠️ Strongest link-unfurl + preview in the category, sabotaged by mandatory accounts,
   placeholder copy, and false "approval" messaging. This is the single highest-leverage screen in the
   product and it ships with lorem-ipsum-grade text.
 
 ### 5. Schedule items
+
 - **Tried:** Adds Friday dinner, Saturday pedal tavern, party bus pickup, Sunday brunch.
 - **What code says happens:** Calendar with month/day/list views, event create with place autocomplete;
   Smart Import can ingest confirmation emails/PDFs `[OBSERVED — ground-truth §6]`.
@@ -114,6 +119,7 @@
 - **Verdict:** ✅ functional, ➖ no magic on free.
 
 ### 6. AI Concierge for restaurants / nightlife / schedule
+
 - **Tried:** "Best honky-tonks near Broadway for a bachelorette," "dinner for 10 Saturday," "build our
   Saturday schedule."
 - **What code says happens:** The recommendations are **real tools, not generic text**:
@@ -126,7 +132,7 @@
   AI writes go through a "Save to Trip?" confirm card `[OBSERVED — ground-truth §6]`.
 - **Friction:** Free = **10 queries per user per trip**, surfaced as an "X/10 Asks" chip that warns at
   ≤2 remaining and hard-stops at "0/10 Asks" `[OBSERVED — src/hooks/useConciergeUsage.ts:120-136,330-349;
-  featureTiers.ts:60]`. Planning a 3-night weekend conversationally burns 10 asks in one sitting.
+featureTiers.ts:60]`. Planning a 3-night weekend conversationally burns 10 asks in one sitting.
   The chip's upgrade link routes to `/settings` `[OBSERVED — useConciergeUsage.ts:368]` — a settings
   page, not a checkout, mid-flow. Known design friction: "Action Plan JSON" mandate frequently ignored
   by the model; preference injection on irrelevant queries `[OBSERVED — ground-truth §10 design frictions]`.
@@ -136,15 +142,17 @@
   10 messages. Best free-tier hook in the product, throttled hardest.
 
 ### 7. Places / Basecamp
+
 - **Tried:** Sets the Airbnb as Basecamp, saves Hattie B's, Losers Bar, the pedal tavern dock.
 - **What code says happens:** Google Places search/save; Basecamp drives distances and concierge
   context; map + list views `[OBSERVED — ground-truth §6; src/components/BasecampSelector.tsx]`.
 - **Friction:** Minimal. `[SIMULATED RISK]` Basecamp's value (walking-distance-aware recs) is marketed
-  inside the *paid* upsell ("Basecamp Intelligence… within walking distance… from your basecamp"
+  inside the _paid_ upsell ("Basecamp Intelligence… within walking distance… from your basecamp"
   `[OBSERVED — src/components/PlusUpsellModal.tsx:122-127]`), so free users may never learn why to set one.
 - **Verdict:** ✅
 
 ### 8. Polls (dinner, activities, outfits, budget)
+
 - **Tried:** "Friday dinner?", "Saturday: pedal tavern or boat?", "Outfit theme: denim & diamonds vs
   cowboy chic?", "Budget cap per person?"
 - **What code says happens:** 2–10 text options, allow-multiple, anonymous, allow-vote-change,
@@ -152,12 +160,13 @@
   `[OBSERVED — src/components/poll/CreatePollForm.tsx:20-74; ground-truth §6]`. No free-tier limit on
   polls found `[OBSERVED — no entitlement references in src/components/poll/]`.
 - **Friction:** Options are **text-only `Input` fields** `[OBSERVED — CreatePollForm.tsx:34,55-59]` —
-  the outfits poll wants *photos* (she'd otherwise drop 4 Pinterest screenshots in the group text).
+  the outfits poll wants _photos_ (she'd otherwise drop 4 Pinterest screenshots in the group text).
   Anonymous voting exists, which is genuinely right for the budget question.
 - **Verdict:** ✅ Core decision loop works and beats group-text chaos. ➖ No image options blunts the
   most bachelorette-y poll.
 
 ### 9. Tasks
+
 - **Tried:** "Book party bus — Mack", "Bring sashes — Dani", "Costco run — Jess + Amara", due dates.
 - **What code says happens:** Multi-assignment, due dates, mine/unassigned/overdue filters
   `[OBSERVED — ground-truth §6; src/components/todo/]`.
@@ -166,6 +175,7 @@
 - **Verdict:** ✅
 
 ### 10. Splitting costs — THE monetization moment, and it's broken in the inverse direction
+
 - **Tried:** Logs Airbnb $2,800 ÷ 9, party bus $450, two dinners, brunch, decorations, bride's
   share covered, matching shirts, pedal tavern deposit, Ubers — **10+ splits**, expecting to hit the
   documented free limit of 3.
@@ -182,10 +192,10 @@
   - So Mack logs all 10+ splits on free without ever seeing an upgrade prompt. The product's **best
     natural upgrade trigger never fires**, and the pricing table advertises a limit the code doesn't
     implement (sell-side drift: if it's ever enforced later, existing free trips break mid-weekend).
-  - Settle-up: who-owes-whom summary, then a **Venmo deeplink** built from the creditor's *saved*
+  - Settle-up: who-owes-whom summary, then a **Venmo deeplink** built from the creditor's _saved_
     handle — `generatePaymentDeeplink(method.type, amount, method.identifier)`
     `[OBSERVED — src/components/payments/PersonBalanceCard.tsx:46-51;
-    src/utils/paymentDeeplinks.ts:12-14]`. Correct recipient *if* the payer configured
+src/utils/paymentDeeplinks.ts:12-14]`. Correct recipient _if_ the payer configured
     `PaymentMethodsSettings`; if not, no deeplink renders and it's "mark as paid" manual honor system.
     Zelle "deeplink" is just `https://www.zellepay.com/send-money` `[OBSERVED — paymentDeeplinks.ts:22]`.
   - **No money moves in-app** `[OBSERVED — ground-truth §6, §10]` — Chravel is a ledger over Venmo,
@@ -198,7 +208,7 @@
   - Dead-code landmine: an unused `PaymentMessage.tsx` component **fabricates payment handles from
     display names** — "Mock payment identifiers for demo purposes…
     ``venmo: `@${payerName?.toLowerCase()…}` ``" `[OBSERVED — src/components/payments/PaymentMessage.tsx:38-50;
-    no non-test imports found]`. Harmless today; catastrophic if ever wired into chat rendering
+no non-test imports found]`. Harmless today; catastrophic if ever wired into chat rendering
     (money sent to a guessed handle).
 - **Friction:** Setup tax — each of the 9 guests must save her own Venmo handle before deeplinks work.
 - **Verdict:** ⚠️ The ledger + who-owes-whom view beats her spreadsheet. But it doesn't move money,
@@ -206,6 +216,7 @@
   double-credit race on her exact usage pattern.
 
 ### 11. Media
+
 - **Tried:** Group uploads from Friday night — easily 60+ photos from 10 phones.
 - **What code says happens:** Free tier = **5 photos, 5 videos, 5 files PER TRIP**
   `[OBSERVED — src/utils/featureTiers.ts:61-63]`, enforced pre-upload by counting **trip-wide**
@@ -214,7 +225,7 @@
   photos per trip on your current plan. Upgrade for unlimited uploads." `[OBSERVED — uploadService.ts:108]`.
   - Consequence 1: the entire 10-person group shares a 5-photo album. Dead on arrival Friday, hour one.
   - Consequence 2: **even if Mack upgrades, her free guests stay blocked** — the check applies each
-    *guest's* free limit against the trip-wide count, which already exceeds 5
+    _guest's_ free limit against the trip-wide count, which already exceeds 5
     `[OBSERVED — uploadService.ts:56-57,85-110: tier resolved per uploader, count per trip]`.
     Host upgrade does not unlock the group's album. This inverts the product's own viral loop.
   - Also note: ground-truth §7 table lists free storage (500 MB) but not the 5-photo cap; the upsell
@@ -222,32 +233,35 @@
     `[OBSERVED — PlusUpsellModal.tsx:163]` — she discovers the wall only at upload failure.
   - Quotas are client-side/advisory; bucket not signed-URL enforced `[OBSERVED — ground-truth §10.7]`.
   - Grid + lightbox, compression, iOS share-sheet ingestion exist `[OBSERVED — ground-truth §6,
-    src/components/UnifiedMediaHub.tsx]`; media-tile preview failures for chat uploads are
+src/components/UnifiedMediaHub.tsx]`; media-tile preview failures for chat uploads are
     recently-fixed regression-watch `[OBSERVED — ground-truth §10 recently fixed]`.
 - **Verdict:** ❌ Hard fail for this persona. The shared album is the #1 Instagram-worthy artifact of a
-  bachelorette, and the free tier caps it at 5 photos *for the whole group*, with an upgrade that
+  bachelorette, and the free tier caps it at 5 photos _for the whole group_, with an upgrade that
   doesn't even fix it group-wide. Everyone retreats to AirDrop/Shared iCloud Album.
 
 ### 12. Chat
+
 - **Tried:** Moves "NASH BASH" chatter in; pins the address; reacts; threads the outfit debate.
 - **What code says happens:** Stream Chat with threads, reactions, pins, mentions, link unfurl, search
   `[OBSERVED — ground-truth §6]`. Reconnect message loss and mobile horizontal-overflow tab-stealing
-  are *recently fixed* — cite as fragility watch, not open bugs `[OBSERVED — ground-truth §10 recently fixed]`.
+  are _recently fixed_ — cite as fragility watch, not open bugs `[OBSERVED — ground-truth §10 recently fixed]`.
 - **Friction:** `[SIMULATED RISK]` The group text doesn't die — it just forks. Chat in Chravel only
   wins if all 9 join; with 3 holdouts (step 4), conversation stays in iMessage and Chravel becomes
   Mack's solo dashboard. This is the guest-value cliff compounding.
 - **Verdict:** ✅ feature, ⚠️ adoption.
 
 ### 13. Notifications
+
 - **Tried:** Guests get pinged for polls, payments, schedule changes.
 - **What code says happens:** In-app dialog with categories, PWA/native push opt-in, preferences —
   but **no per-trip mute and no batching/grouping** `[OBSERVED — ground-truth §6, §10.4]`.
-- **Friction:** A 10-woman bachelorette generates hundreds of events. Guests who can't mute *this trip*
+- **Friction:** A 10-woman bachelorette generates hundreds of events. Guests who can't mute _this trip_
   (their only trip) will kill push globally or delete the PWA. `[SIMULATED RISK]` directly from the
   documented gap.
 - **Verdict:** ⚠️ Volume without controls = uninstall vector.
 
 ### 14. Reviewing the final itinerary
+
 - **Tried:** Wants a clean shareable "FINAL ITINERARY 🤠" the week before — ideally a PDF for the
   group text holdouts.
 - **What code says happens:** Calendar list view serves in-app. **PDF export is Explorer+**
@@ -256,20 +270,22 @@
   `[OBSERVED — PlusUpsellModal.tsx:165-166]`. Direct contradiction with `src/billing/config.ts`;
   exactly the limit-copy drift the ground-truth brief flags (§7 ⚠️). Whichever is true, she finds out
   at the worst moment.
-- **Verdict:** ⚠️ The one artifact that serves her *non-adopting* guests is paywalled — and the paywall
+- **Verdict:** ⚠️ The one artifact that serves her _non-adopting_ guests is paywalled — and the paywall
   copy disagrees with the billing config.
 
 ### 15. Returning later
+
 - **Tried:** Opens the app two weeks post-trip for photos and final settle-ups.
 - **What code says happens:** 3 active trips on free — fine for her single trip
   `[OBSERVED — featureTiers.ts:66]`. Archive restore is sold as a paid feature ("Unlimited saved trips +
   restore archived") `[OBSERVED — TripPassModal.tsx:27]`. The join-approval dashboard bug (§10.6) may
   have already shed stragglers. With 5 photos in media and balances settled out-of-band, there's
-  little to return *to*. `[SIMULATED RISK]` Day-7 return is the bride asking "where are the pics?" —
+  little to return _to_. `[SIMULATED RISK]` Day-7 return is the bride asking "where are the pics?" —
   and they're in iCloud, not Chravel.
 - **Verdict:** ⚠️ Post-trip retention depends on the exact feature (media) the free tier amputated.
 
 ### 16. Pay-or-upgrade decision
+
 - **Tried:** Hits the 10-ask concierge wall and the 5-photo wall; looks for a one-time option.
 - **What code says happens:**
   - The right product exists: **Explorer Trip Pass, 45 days, $39.99 one-time** ("Full premium features
@@ -294,20 +310,20 @@
 
 ## D. Feature-by-Feature Findings
 
-| Feature | Expected goal | Tried | What happened (per code) | Friction | Bug/UX issue | Severity | Revenue impact | Retention impact | Recommended fix |
-|---|---|---|---|---|---|---|---|---|---|
-| Invite link / join | 8 guests in, zero effort | Shared `/join/{token}` in group text | Rich unfurl + pre-auth preview + auto-join after auth `[OBSERVED — JoinTrip.tsx:232-245,374-386]` | Account wall before any itinerary content | Placeholder spec copy in production UI ("standard Chravel dark auth flow… same dark modal") `[OBSERVED — JoinTrip.tsx:914-933]`; "Request to Join"/"Member Approval" shown even when approval is off `[OBSERVED — JoinTrip.tsx:948,961-971]` | **High** | High — invite is the funnel | High | Condition CTA + approval box on `inviteData.invite.require_approval`; replace leaked copy; add read-only no-account itinerary view |
-| Guest (no account) | See the plan from one tap | Guest opens link, won't sign up | Preview card only; `consumer_guest` = NO resource access `[OBSERVED — ground-truth §8]` | Total value cliff | By design, but lethal for this persona | **Critical (product)** | High | High — 3–4 of 8 guests never activate | Public read-only trip view (itinerary + places) behind the invite token |
-| Join → dashboard | Trip visible after joining | Guest joins | Open bug: approved member's trip missing from dashboard `[OBSERVED — ground-truth §10.6]` | "It's not working" texts | Open high-sev bug | **High** | Med | High | Fix `trip_members.status` drift per DEBUG_PATTERNS entry |
-| Polls | Decide dinner/activities/outfits/budget | 4 polls | 2–10 options, anonymous, deadline, vote change, realtime `[OBSERVED — CreatePollForm.tsx]` | Text-only options | No image options for outfit polls `[OBSERVED — CreatePollForm.tsx:34]` | Low | Low | Med | Image attachments on poll options |
-| Payments — split limit | Log 10+ shared costs; expect free cap of 3 | 10+ splits | **Limit defined in config/pricing but never enforced** `[OBSERVED — featureTiers.ts:67, entitlements.ts:272, zero call sites in payments/edge code]` | None (that's the problem) | Pricing/code contract drift; best upgrade trigger never fires; future enforcement would break live trips | **High** | **High — direct conversion leak** | Low | Enforce at creation with in-context Trip Pass upsell + grandfathering for existing trips |
-| Payments — settle-up | Get paid back | Settle Sunday night | Venmo/CashApp/PayPal deeplinks from saved handles `[OBSERVED — PersonBalanceCard.tsx:46-51]`; manual mark-paid otherwise; **no in-app money movement** `[OBSERVED — ground-truth §6]` | Each guest must pre-save her handle | **Settlement double-credit race; missing idempotency** `[OBSERVED — ground-truth §10.1]` | **Critical** | Med | High — money errors kill trust permanently | Atomic settle RPC + idempotency keys; prompt handle setup at join |
-| Payments — dead mock component | — | — | Unused `PaymentMessage.tsx` fabricates Venmo/CashApp handles from display names `[OBSERVED — PaymentMessage.tsx:38-50]` | — | Dead code that mis-routes money if ever revived | Med (latent) | — | — | Delete the component |
-| Media | Group photo dump | 10 phones upload | Free = **5 photos/trip counted trip-wide vs uploader's tier** `[OBSERVED — uploadService.ts:80-111; featureTiers.ts:61]`; host upgrade doesn't unlock guests | Wall at hour one | Group-hostile limit design; cap undisclosed pre-hit; drift vs ground-truth §7 table (no photo cap listed) | **Critical (for this persona)** | High — punitive walls don't convert, they evict | **Critical** | Per-user counts, or trip media limit keyed to *trip owner's* tier; raise free cap to ≥50; disclose in pricing |
-| AI Concierge | Restaurants/nightlife/schedule | ~15 queries | Real Places/travel-time/save/reservation-draft/browse tools `[OBSERVED — toolRegistry.ts:140,259,298,508,814]`; "X/10 Asks" chip `[OBSERVED — useConciergeUsage.ts]` | 10 asks gone in one session; upgrade link → `/settings` | Limit-hit routes to settings, not checkout; JSON-mandate/preference-injection quirks `[OBSERVED — ground-truth §10]` | Med | High — best hook, weakest conversion handoff | Med | Route limit-hit to Trip Pass modal in-context |
-| Itinerary export | PDF for non-adopters | Export final itinerary | Free per config: no PDF `[OBSERVED — ground-truth §7]`; upsell modal claims free includes "1 PDF export per trip" `[OBSERVED — PlusUpsellModal.tsx:165]` | Discovered at crunch time | Limit-copy contradiction | Med | Med | Med | Reconcile copy with `billing/config.ts`; consider 1 free PDF as documented |
-| Notifications | Right pings, not spam | 10-person event volume | Categories + push, **no per-trip mute, no batching** `[OBSERVED — ground-truth §6, §10.4]` | Guests nuke push globally | Documented gap | High | Low | High | Per-trip mute + digest batching |
-| Upgrade surfaces | One-time pass for one weekend | Looks to pay once | Trip Pass only on marketing `PricingSection` `[OBSERVED — PricingSection.tsx:3,597]`; in-app = subscription-only `PlusUpsellModal`, absent from `MobileTripDetail` `[OBSERVED — grep]`; Pro-desktop trigger wired to close `[OBSERVED — ProTripDetailDesktop.tsx:571]`; iOS IAP disabled `[OBSERVED — ground-truth §7]` | Mobile user with money in hand finds no buy button | Multiple wiring gaps | **High** | **High — direct** | Med | Mount Trip Pass modal at every limit wall, mobile first; fix the `false` handler |
+| Feature                        | Expected goal                              | Tried                                | What happened (per code)                                                                                                                                                                                                                                                                                                | Friction                                                | Bug/UX issue                                                                                                                                                                                                                                 | Severity                        | Revenue impact                                  | Retention impact                           | Recommended fix                                                                                                                    |
+| ------------------------------ | ------------------------------------------ | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Invite link / join             | 8 guests in, zero effort                   | Shared `/join/{token}` in group text | Rich unfurl + pre-auth preview + auto-join after auth `[OBSERVED — JoinTrip.tsx:232-245,374-386]`                                                                                                                                                                                                                       | Account wall before any itinerary content               | Placeholder spec copy in production UI ("standard Chravel dark auth flow… same dark modal") `[OBSERVED — JoinTrip.tsx:914-933]`; "Request to Join"/"Member Approval" shown even when approval is off `[OBSERVED — JoinTrip.tsx:948,961-971]` | **High**                        | High — invite is the funnel                     | High                                       | Condition CTA + approval box on `inviteData.invite.require_approval`; replace leaked copy; add read-only no-account itinerary view |
+| Guest (no account)             | See the plan from one tap                  | Guest opens link, won't sign up      | Preview card only; `consumer_guest` = NO resource access `[OBSERVED — ground-truth §8]`                                                                                                                                                                                                                                 | Total value cliff                                       | By design, but lethal for this persona                                                                                                                                                                                                       | **Critical (product)**          | High                                            | High — 3–4 of 8 guests never activate      | Public read-only trip view (itinerary + places) behind the invite token                                                            |
+| Join → dashboard               | Trip visible after joining                 | Guest joins                          | Open bug: approved member's trip missing from dashboard `[OBSERVED — ground-truth §10.6]`                                                                                                                                                                                                                               | "It's not working" texts                                | Open high-sev bug                                                                                                                                                                                                                            | **High**                        | Med                                             | High                                       | Fix `trip_members.status` drift per DEBUG_PATTERNS entry                                                                           |
+| Polls                          | Decide dinner/activities/outfits/budget    | 4 polls                              | 2–10 options, anonymous, deadline, vote change, realtime `[OBSERVED — CreatePollForm.tsx]`                                                                                                                                                                                                                              | Text-only options                                       | No image options for outfit polls `[OBSERVED — CreatePollForm.tsx:34]`                                                                                                                                                                       | Low                             | Low                                             | Med                                        | Image attachments on poll options                                                                                                  |
+| Payments — split limit         | Log 10+ shared costs; expect free cap of 3 | 10+ splits                           | **Limit defined in config/pricing but never enforced** `[OBSERVED — featureTiers.ts:67, entitlements.ts:272, zero call sites in payments/edge code]`                                                                                                                                                                    | None (that's the problem)                               | Pricing/code contract drift; best upgrade trigger never fires; future enforcement would break live trips                                                                                                                                     | **High**                        | **High — direct conversion leak**               | Low                                        | Enforce at creation with in-context Trip Pass upsell + grandfathering for existing trips                                           |
+| Payments — settle-up           | Get paid back                              | Settle Sunday night                  | Venmo/CashApp/PayPal deeplinks from saved handles `[OBSERVED — PersonBalanceCard.tsx:46-51]`; manual mark-paid otherwise; **no in-app money movement** `[OBSERVED — ground-truth §6]`                                                                                                                                   | Each guest must pre-save her handle                     | **Settlement double-credit race; missing idempotency** `[OBSERVED — ground-truth §10.1]`                                                                                                                                                     | **Critical**                    | Med                                             | High — money errors kill trust permanently | Atomic settle RPC + idempotency keys; prompt handle setup at join                                                                  |
+| Payments — dead mock component | —                                          | —                                    | Unused `PaymentMessage.tsx` fabricates Venmo/CashApp handles from display names `[OBSERVED — PaymentMessage.tsx:38-50]`                                                                                                                                                                                                 | —                                                       | Dead code that mis-routes money if ever revived                                                                                                                                                                                              | Med (latent)                    | —                                               | —                                          | Delete the component                                                                                                               |
+| Media                          | Group photo dump                           | 10 phones upload                     | Free = **5 photos/trip counted trip-wide vs uploader's tier** `[OBSERVED — uploadService.ts:80-111; featureTiers.ts:61]`; host upgrade doesn't unlock guests                                                                                                                                                            | Wall at hour one                                        | Group-hostile limit design; cap undisclosed pre-hit; drift vs ground-truth §7 table (no photo cap listed)                                                                                                                                    | **Critical (for this persona)** | High — punitive walls don't convert, they evict | **Critical**                               | Per-user counts, or trip media limit keyed to _trip owner's_ tier; raise free cap to ≥50; disclose in pricing                      |
+| AI Concierge                   | Restaurants/nightlife/schedule             | ~15 queries                          | Real Places/travel-time/save/reservation-draft/browse tools `[OBSERVED — toolRegistry.ts:140,259,298,508,814]`; "X/10 Asks" chip `[OBSERVED — useConciergeUsage.ts]`                                                                                                                                                    | 10 asks gone in one session; upgrade link → `/settings` | Limit-hit routes to settings, not checkout; JSON-mandate/preference-injection quirks `[OBSERVED — ground-truth §10]`                                                                                                                         | Med                             | High — best hook, weakest conversion handoff    | Med                                        | Route limit-hit to Trip Pass modal in-context                                                                                      |
+| Itinerary export               | PDF for non-adopters                       | Export final itinerary               | Free per config: no PDF `[OBSERVED — ground-truth §7]`; upsell modal claims free includes "1 PDF export per trip" `[OBSERVED — PlusUpsellModal.tsx:165]`                                                                                                                                                                | Discovered at crunch time                               | Limit-copy contradiction                                                                                                                                                                                                                     | Med                             | Med                                             | Med                                        | Reconcile copy with `billing/config.ts`; consider 1 free PDF as documented                                                         |
+| Notifications                  | Right pings, not spam                      | 10-person event volume               | Categories + push, **no per-trip mute, no batching** `[OBSERVED — ground-truth §6, §10.4]`                                                                                                                                                                                                                              | Guests nuke push globally                               | Documented gap                                                                                                                                                                                                                               | High                            | Low                                             | High                                       | Per-trip mute + digest batching                                                                                                    |
+| Upgrade surfaces               | One-time pass for one weekend              | Looks to pay once                    | Trip Pass only on marketing `PricingSection` `[OBSERVED — PricingSection.tsx:3,597]`; in-app = subscription-only `PlusUpsellModal`, absent from `MobileTripDetail` `[OBSERVED — grep]`; Pro-desktop trigger wired to close `[OBSERVED — ProTripDetailDesktop.tsx:571]`; iOS IAP disabled `[OBSERVED — ground-truth §7]` | Mobile user with money in hand finds no buy button      | Multiple wiring gaps                                                                                                                                                                                                                         | **High**                        | **High — direct**                               | Med                                        | Mount Trip Pass modal at every limit wall, mobile first; fix the `false` handler                                                   |
 
 ## E. Emotional Reaction
 
@@ -331,17 +347,17 @@
 
 ## F. Conversion Scores
 
-| Metric | Score | Justification |
-|---|---|---|
-| **Activation** | **7/10** | Solo setup is fast and premium-feeling (trip, schedule, polls, concierge all deliver pre-invite) `[OBSERVED flows §C1–C8]`. Docked for 9-screen onboarding and Smart Import being paywalled at first touch. |
-| **Invite conversion** | **5/10** | Best-in-class unfurl + preview + auto-join `[OBSERVED — JoinTrip.tsx]`, but hard account wall, zero no-account value `[OBSERVED — ground-truth §8]`, false approval messaging, leaked spec copy, and a known join→dashboard bug `[OBSERVED — §10.6]`. |
-| **Day-7 retention** | **4/10** | Mid-trip the schedule/polls/ledger work; but media (the post-trip magnet) is capped at 5 group photos `[OBSERVED — uploadService.ts]`, chat forks back to iMessage, and notification spam has no per-trip mute `[OBSERVED — §10.4]`. |
-| **Paid conversion** | **3/10** | The split limit — her most natural trigger — is unenforced and never prompts `[OBSERVED — no call sites]`; the photo wall prompts but reads punitive and doesn't fix the group even if she pays `[OBSERVED — uploadService.ts:56-110]`; Trip Pass is unreachable in-app `[OBSERVED — PricingSection-only mount]`; mobile trip view has no upsell mount; native iOS purchase is a dead end `[OBSERVED — §7]`. |
-| **NPS** | **−5** | Promoter energy from concierge + polls + invite preview, cancelled by detractor energy from the photo cap and payments-that-don't-pay. She'd say "promising, not ready for *my* group" to the next MOH. |
+| Metric                | Score    | Justification                                                                                                                                                                                                                                                                                                                                                                                                |
+| --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Activation**        | **7/10** | Solo setup is fast and premium-feeling (trip, schedule, polls, concierge all deliver pre-invite) `[OBSERVED flows §C1–C8]`. Docked for 9-screen onboarding and Smart Import being paywalled at first touch.                                                                                                                                                                                                  |
+| **Invite conversion** | **5/10** | Best-in-class unfurl + preview + auto-join `[OBSERVED — JoinTrip.tsx]`, but hard account wall, zero no-account value `[OBSERVED — ground-truth §8]`, false approval messaging, leaked spec copy, and a known join→dashboard bug `[OBSERVED — §10.6]`.                                                                                                                                                        |
+| **Day-7 retention**   | **4/10** | Mid-trip the schedule/polls/ledger work; but media (the post-trip magnet) is capped at 5 group photos `[OBSERVED — uploadService.ts]`, chat forks back to iMessage, and notification spam has no per-trip mute `[OBSERVED — §10.4]`.                                                                                                                                                                         |
+| **Paid conversion**   | **3/10** | The split limit — her most natural trigger — is unenforced and never prompts `[OBSERVED — no call sites]`; the photo wall prompts but reads punitive and doesn't fix the group even if she pays `[OBSERVED — uploadService.ts:56-110]`; Trip Pass is unreachable in-app `[OBSERVED — PricingSection-only mount]`; mobile trip view has no upsell mount; native iOS purchase is a dead end `[OBSERVED — §7]`. |
+| **NPS**               | **−5**   | Promoter energy from concierge + polls + invite preview, cancelled by detractor energy from the photo cap and payments-that-don't-pay. She'd say "promising, not ready for _my_ group" to the next MOH.                                                                                                                                                                                                      |
 
 **Would she pay?** Yes — **once**. The Explorer Trip Pass ($39.99/45 days) is psychologically perfect
 for a one-off weekend ("No commitment. Keep your exports forever." `[OBSERVED — TripPassModal.tsx:102-103]`),
-and $4/head split across the group is a no-brainer *if* it visibly unlocked the group's album and
+and $4/head split across the group is a no-brainer _if_ it visibly unlocked the group's album and
 unlimited asks during the trip window. A $9.99/mo subscription is a hard no — she plans one of these
 a year and resents subscriptions by profile.
 
@@ -372,13 +388,13 @@ command center, the group half-adopts it, and nobody pays — unless the five fi
 
 1. **Replace the no-account dead end with a token-gated read-only trip view** (itinerary + places +
    final schedule behind `/join/{token}`, no auth) **because** 3–4 of Mack's 8 guests failed at the
-   *see the plan from one tap* task (`consumer_guest` = NO resource access
+   _see the plan from one tap_ task (`consumer_guest` = NO resource access
    `[OBSERVED — ground-truth §8]`), **causing** the viral loop to cap at ~50% of every invited group
    and the group text to remain the system of record.
 
 2. **Replace the trip-wide-count-vs-uploader-tier media check with per-user counts (or key the trip's
    media allowance to the trip owner's tier) and raise the free photo cap** (`uploadService.ts:80-111`,
-   `featureTiers.ts:61`) **because** Mack's group failed at the *shared photo album* task five photos
+   `featureTiers.ts:61`) **because** Mack's group failed at the _shared photo album_ task five photos
    into Friday night — and discovered that even paying doesn't unlock her guests — **causing** the
    stickiest post-trip artifact (and Day-7 retention) to be handed to iCloud, and the upgrade prompt to
    read as punishment instead of value `[OBSERVED]`.
@@ -393,8 +409,8 @@ command center, the group half-adopts it, and nobody pays — unless the five fi
 
 4. **Replace the placeholder auth copy and unconditional approval messaging on `JoinTrip` with
    production copy and a `require_approval`-conditioned CTA** ("Join Trip" vs "Request to Join";
-   hide the "Member Approval" box when approval is off) **because** guests failed at the *trust the
-   join flow* task — they read internal spec text ("standard Chravel dark auth flow… same dark modal"
+   hide the "Member Approval" box when approval is off) **because** guests failed at the _trust the
+   join flow_ task — they read internal spec text ("standard Chravel dark auth flow… same dark modal"
    `[OBSERVED — JoinTrip.tsx:914-933]`) and were told a review queue existed when it didn't
    `[OBSERVED — JoinTrip.tsx:948,961-971]` — **causing** drop-off and "is this app legit?" texts at the
    single most valuable screen in the funnel.
