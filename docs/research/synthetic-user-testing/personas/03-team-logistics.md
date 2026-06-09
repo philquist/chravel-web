@@ -1,0 +1,175 @@
+# Persona 3: Dana Okafor — NFL/NBA Team Logistics Coordinator
+
+## A. Profile
+
+- **Name:** Dana Okafor
+- **Role:** Director of Team Travel & Logistics, NBA franchise (previously D1 football ops). Runs 41+ road games/year with a ~60-person traveling party: 17 players, 9 coaches, equipment crew, medical/performance staff, security, broadcast, front office.
+- **Age range:** 38–45
+- **Tech comfort:** HIGH. Lives in TravelBank/Concur, Teamworks (the incumbent she'd be replacing), Smartsheet, group SMS trees, and airline ops desks. Evaluates software by asking "what happens when it fails at 11pm in Milwaukee."
+- **Planning style:** Militaristic. Everything keys off the day sheet: bus call is law, itinerary changes are versioned, and every staff member knows who is allowed to see what. Players must NEVER see staff logistics (security routing, medical notes, front-office rooming decisions).
+- **Pain points:** tool sprawl (Teamworks + SMS + email + PDFs), no confirmation that players actually saw the bus-call change, rooming list chaos at hotel check-in, per-diem distribution paper trails.
+- **Budget sensitivity:** LOW — employer pays; $49–$99/mo is a rounding error against one missed charter slot. But **procurement needs credibility**: SOC 2 posture, SSO, an actual sales process, contracts, and an SLA. A `mailto:` link is not a sales process.
+- **Why adopt:** one surface for roster + role-gated channels + broadcasts with acknowledgment + day sheet, replacing 4 tools; the Sports category roles (Player/Coach/Crew/Medical/Security) map exactly to her org [OBSERVED — `src/types/proCategories.ts:61`].
+- **Why reject:** core team-ops surfaces (room assignments, per-diem, day-sheet schedule, compliance, medical) are stubbed for real trips; broadcast targeting isn't enforced at delivery; no per-person "who has seen this" roster; no self-serve or credible enterprise purchase path; documented scale and notification-reliability issues.
+
+## B. Jobs-to-be-Done
+
+1. When I am **publishing the game-day itinerary the night before**, I want to **push a versioned day sheet (bus call, shootaround, meal windows, tip-off) to all 60 people at once**, so I can **guarantee nobody operates off a stale time**.
+2. When I am **changing bus call from 4:15 to 3:45 after a weather alert**, I want to **broadcast the change and see exactly who has and hasn't acknowledged it**, so I can **chase the 6 stragglers by phone instead of all 60**.
+3. When I am **onboarding the traveling party**, I want to **assign Player/Coach/Crew/Medical/Security roles with hard visibility walls**, so I can **discuss security routing and injury status without players or media-adjacent staff seeing it**.
+4. When I am **managing rooming and per-diem at the hotel**, I want to **maintain room assignments and per-diem distribution in the same system as the roster**, so I can **hand the front desk one list and have an audit trail for finance**.
+5. When I am **mid-trip and the charter slips 2 hours**, I want to **update one schedule item and have everyone's view + notifications update instantly**, so I can **avoid the SMS-tree game of telephone**.
+
+## C. Full User Journey
+
+### 1. Discovery — `/teams` marketing page
+- **Tried:** Googled team travel software, landed on `/teams` (lazy route in `src/App.tsx:88`).
+- **What code says happens:** `src/pages/ForTeams.tsx` renders "Built for Teams That Move", a Sports Teams use case ("College athletics, youth leagues, and professional teams managing travel, schedules, and rosters"), benefit cards claiming "Cut coordination time by 70%", "Compliance & Reporting — Built-in audit trails, compliance features, and real-time analytics", and "Advanced Integrations — Connect with Slack, QuickBooks, Google Workspace" [OBSERVED — `ForTeams.tsx:11–30`]. Three-tier pricing: Starter Pro $49/mo "Up to 50 team members", Growth Pro $99/mo "Up to 100 team members", Enterprise "Custom Pricing".
+- **Friction:** Every CTA — "Schedule a Demo →", "Start 14-Day Trial", "Contact Sales" — is `window.location.href = 'mailto:support@chravelapp.com?subject=...'` [OBSERVED — `ForTeams.tsx:81–97, 195–198, 236–239, 276–279`]. The compliance/audit-trail/QuickBooks claims are not implemented for real trips (see steps 10 and 14) — the in-app compliance tab is a placeholder [OBSERVED — `src/components/pro/ProTabContent.tsx:227–244`].
+- **Verdict:** Page says the right words for her vertical, but a mailto demo button plus claims the product can't back up reads as pre-launch. She emails anyway and starts a free evaluation. **PASS with skepticism.**
+
+### 2. Sign-up / onboarding
+- **Tried:** Email+password signup on desktop.
+- **What code says happens:** Email verification required, then a 9-screen consumer onboarding carousel (Welcome → Chat → … → Concierge), skippable [OBSERVED — ground-truth §3, `src/components/onboarding/`].
+- **Friction:** Onboarding is consumer-trip themed (group trips, polls, payments splits); nothing speaks to ops/Pro. No "I'm evaluating for a team" branch. [SIMULATED RISK] she skips it and learns nothing relevant.
+- **Verdict:** Smooth mechanically, wrong audience framing. **PASS.**
+
+### 3. Pro trip creation (Sports category)
+- **Tried:** Create "vs. Bucks — Milwaukee Road Trip", type Pro, category Sports.
+- **What code says happens:** `CreateTripModal.tsx` supports Pro type with category attached as `{ type: 'pro_category', value }` [OBSERVED — `CreateTripModal.tsx:209`]. Sports config provides roles `['Player','Coach','Crew','Medical','Security']` and terminology Team Roster / Team Member / Team Captain [OBSERVED — `proCategories.ts:56–79`]. Pro trip creation is gated: Free tier gets 1 trial Pro trip, Frequent Chraveler 1/month, Pro Starter+ unlimited [OBSERVED — ground-truth §7].
+- **Friction:** On a fresh free account she gets exactly **one** trial Pro trip — but an NBA season is 20+ road trips. To evaluate a second trip she must email billing. No self-serve Pro checkout exists [OBSERVED — ground-truth §7: "Pro trial CTAs are `mailto:` links"].
+- **Verdict:** Category fit is genuinely excellent (her five roles are the literal defaults). The purchase wall behind trip #2 is the problem. **PASS (trial #1) / BLOCKED (trip #2).**
+
+### 4. Inviting roster + staff with roles
+- **Tried:** Invite 60 people via link/short code; create roles Player, Coach, Crew, Medical, Security; assign members.
+- **What code says happens:** Invite links `/join/{token}` with expiration, max uses, require-approval [OBSERVED — ground-truth §5]. `RoleManager.tsx` is fully real: creates roles against `trip_roles` with view/edit/admin permission levels, auto-creates a private channel per role ("A private channel will be automatically created for this role"), manages member assignment, admin promote/demote, capped by `MAX_ROLES_PER_TRIP = 10` ("Maximum 10 roles allowed per trip for MVP") [OBSERVED — `src/components/pro/admin/RoleManager.tsx`, `src/utils/roleUtils.ts:8`]. Bulk role assignment exists (`BulkRoleAssignmentModal.tsx`).
+- **Friction:** (a) 10-role cap is fine for her 5 roles but tight for an NFL party (offense/defense/special teams/equipment/medical/security/PR/broadcast/front office/family liaison = 10 exactly). (b) Role rename rewrites `trip_channels.channel_slug` client-side and silently swallows channel-update failure (`console.warn` in DEV only) [OBSERVED — `RoleManager.tsx:262–274`]. (c) Known issue: approved joiners can be missing from their dashboard afterward (trip_members.status drift) [OBSERVED — ground-truth §10.6] — for a 60-person onboarding that's a support-ticket generator.
+- **Verdict:** Best part of the product for her. **PASS**, with the join-approval dashboard bug as a regression-watch item.
+
+### 5. Schedule items (flights, hotel, shootaround, meal windows, game time, bus call)
+- **Tried:** Build the day sheet: charter dep/arr, hotel check-in, 10:00 shootaround, 12:00–1:30 meal window, 7:00 tip, 4:15 bus call.
+- **What code says happens:** All of these go in as generic calendar events (month/day/list views, place autocomplete, Smart Import for flight confirmation emails/PDFs) [OBSERVED — ground-truth §6 Calendar/Smart Import]. The Pro-specific `schedule` field (`ProSchedule` in `src/types/pro.ts:128`) is **hardcoded to `[]` for every real Supabase trip** — `convertSupabaseTripToProTrip` returns `roster: [], roomAssignments: [], schedule: [], settlement: [], medical: [], compliance: []` and zeroed perDiem [OBSERVED — `src/utils/tripConverter.ts:117–130`]. The structured day-sheet surface only ever has data in demo mocks (`beyonceCowboyCarterTour`).
+- **Friction:** No event types (a bus call and a meal window are typed identically), no "bus call" semantics, no per-role schedule visibility, no change-versioning. [OBSERVED — calendar feature set, ground-truth §6]. Calendar event INSERTs trigger a notification to every member synchronously [OBSERVED — `supabase/migrations/20260512160000_canonical_trip_notification_fanout.sql:324–328`] — entering her 14-line day sheet fires 14 × 59 notification rows with no batching [OBSERVED — ground-truth §10.4].
+- **Verdict:** Usable as a shared calendar; **not a day sheet**. The demo showed her a real ops schedule; her real trip got an empty array. **PARTIAL FAIL.**
+
+### 6. AI Concierge
+- **Tried:** "What's near the hotel for a 25-person team dinner Thursday after shootaround?"
+- **What code says happens:** Text concierge is real — 38 tools, itinerary writes behind a "Save to Trip?" confirm card [OBSERVED — ground-truth §6]. Voice concierge — the marquee paid feature — is architecturally broken ("Voice setup timed out"; edge functions can't hold WebSockets; 31 tools declared, ~19 implemented) [OBSERVED — ground-truth §10.2].
+- **Friction:** [SIMULATED RISK] she doesn't want an AI writing to the team itinerary at all; the confirm card mitigates it, but there's no admin toggle scoped to "concierge can't touch the calendar" in what was reviewed. Documented "Action Plan JSON mandate frequently ignored" and preference injection on irrelevant queries [OBSERVED — ground-truth §10 design frictions].
+- **Verdict:** Nice-to-have for restaurants; irrelevant to her core job; voice being broken would embarrass her in front of the head coach. **NEUTRAL.**
+
+### 7. Places / Basecamp
+- **Tried:** Set the team hotel as Basecamp; save arena, practice facility, dinner spots.
+- **What code says happens:** Real — Google Places search/save, Basecamp drives distances and concierge context [OBSERVED — ground-truth §6]. Permission matrix: `pro_editor` has basecamp **read-only**, `pro_viewer` read-only [OBSERVED — `src/types/permissionMatrix.generated.ts:79–84, 111–116`] — only admins move the hotel. Correct instinct for her world.
+- **Friction:** Minimal.
+- **Verdict:** **PASS.**
+
+### 8. Polls
+- **Tried:** Poll coaches on the Thursday dinner option.
+- **What code says happens:** Real (options, auto/manual close, anonymous, realtime counts) [OBSERVED — ground-truth §6]. Notably, **`pro_viewer` can write polls** (`polls.write: true`) [OBSERVED — `permissionMatrix.generated.ts:99–104`] — so players assigned a view-only role can still create/vote in polls.
+- **Friction:** [SIMULATED RISK] players spinning up "which restaurant" polls in a trip the org runs is noise she'd want a kill switch for; there's no per-resource disable.
+- **Verdict:** **PASS** for staff use; minor governance gap.
+
+### 9. Task assignments
+- **Tried:** "Equipment: bags to loading dock by 2:30" assigned to Crew members; "Submit rooming list" to herself with due date.
+- **What code says happens:** Real — multi-assignee, due dates, mine/unassigned/overdue filters [OBSERVED — ground-truth §6]. `pro_viewer` cannot write tasks; `pro_editor` can [OBSERVED — `permissionMatrix.generated.ts:61–66, 93–98`].
+- **Friction:** Tasks assign to individuals, not roles ("assign to all Crew") in the reviewed surface — [SIMULATED RISK] at 60 people she wants role-targeted tasks. No recurring tasks for the 41-game season.
+- **Verdict:** **PASS** for a single trip.
+
+### 10. Payments / per-diem
+- **Tried:** Open the finance surface to distribute $150/day per-diem to 17 players.
+- **What code says happens:** The Pro finance tab renders a placeholder: heading "Per-diem & Settlement", body "Per-diem automation and settlement tracking" — an empty state with an icon, no functionality [OBSERVED — `ProTabContent.tsx:193–206`]. The `PerDiemData`/`SettlementData` types exist (`src/types/pro.ts:140,154`) but real trips get `perDiem: { dailyRate: 0 … participants: [] }, settlement: []` from the converter [OBSERVED — `tripConverter.ts:121–128`]. **Per-diem, settlement, and compliance are stubbed — plainly: they do not exist for real trips.** Consumer expense splitting is real but settles via Venmo deeplink only, no in-app money movement [OBSERVED — ground-truth §6, §10 design frictions], and the settlement mutation has a documented double-credit race [OBSERVED — ground-truth §10.1].
+- **Friction:** Total. This was a headline reason to consolidate tools.
+- **Verdict:** **FAIL.**
+
+### 11. Media
+- **Tried:** Upload the travel itinerary PDF and team photos.
+- **What code says happens:** Real — photos/videos/links/files, grid + lightbox, compression [OBSERVED — ground-truth §6]. Storage quotas advisory-only, media bucket not signed-URL enforced [OBSERVED — ground-truth §10.7].
+- **Friction:** Unsigned media URLs are a privacy problem for a team that uploads injury reports or security advance docs — anyone with a leaked URL can fetch the asset. [SIMULATED RISK grounded in observed gap §10.7.]
+- **Verdict:** **PASS for photos / FAIL for sensitive documents.**
+
+### 12. Chat + role channels + broadcasts
+- **Tried:** Team-wide chat; #coach, #medical, #security private channels; broadcast "Bus call moved to 3:45" to Players only.
+- **What code says happens:** Chat is Stream-backed and full-featured [OBSERVED — ground-truth §6]. Role channels are real: channel list from Supabase `trip_channels`, transport via Stream (`useStreamProChannel.ts` header: "Channel list still comes from Supabase (trip_channels table). Only message transport moves to Stream") [OBSERVED]. Broadcasts persist to `public.broadcasts` with priority urgent/reminder/fyi, reactions (`broadcast_reactions` upsert), read-receipt marking and an aggregate `get_broadcast_read_count` RPC, and Coming/Wait/Can't response buttons [OBSERVED — `src/services/broadcastService.ts`, `useBroadcastReactions.ts`].
+- **Friction — three serious ones:**
+  1. **Role targeting is cosmetic at delivery.** `RecipientSelector.tsx` offers "Everyone" and `role:X` options, but the `broadcasts` table has **no recipients column** (Row type: `created_by, message, priority, metadata, scheduled_for, is_sent…` [OBSERVED — `src/integrations/supabase/types.ts` broadcasts Row]), and the notification trigger fans out to **all trip members** via `create_notification_for_trip_members(NEW.trip_id, NEW.created_by, …)` with no role filter [OBSERVED — `20260512160000_canonical_trip_notification_fanout.sql:110–133`]. A "Players only" broadcast notifies security, media, everyone. Composer even carries `// Reserved for role-based targeting in enterprise broadcasts` dead code [OBSERVED — `BroadcastComposer.tsx:80–81`].
+  2. **Broadcast notification trigger drift.** The canonical fanout migration attaches `trigger_notify_broadcast` to `public.trip_broadcasts` [OBSERVED — same migration:312–316] — a table that appears in **no other migration and not in generated DB types**, while the app writes to `public.broadcasts`. The replaced `notify_on_broadcast()` body references `NEW.title` and `NEW.content`, columns the real `broadcasts` table doesn't have (it has `message`) [OBSERVED — types.ts vs migration:126–127]. The pre-existing trigger on `broadcasts` (20251114 migration) was never dropped by the canonical migration. [HYPOTHESIS — needs live test] depending on which trigger/table exists in the live DB, broadcast INSERTs either fail outright, or fire the old path, or notify nobody. For the feature whose whole job is "bus call moved," this uncertainty is disqualifying until proven live.
+  3. **Delivery confirmation is aggregate, not per-person.** `get_broadcast_read_count` returns a count [OBSERVED — `broadcastService.ts:263–283`]; there is no "these 6 people haven't seen it" roster view. Her JTBD #2 fails.
+  4. Bonus: **scheduled broadcasts were disabled** (`20260411000000_disable_scheduled_broadcasts_cron.sql`; service comment "broadcasts are immediate-send only" [OBSERVED — `broadcastService.ts:31–32`]) — no "auto-send bus-call reminder at 3:00pm."
+- **Verdict:** Channels **PASS**; broadcasts **FAIL for ops-grade use** (targeting not enforced, ack not per-person, delivery pipeline integrity unproven).
+
+### 13. Notifications
+- **Tried:** Confirm every member gets pushed on urgent broadcasts and schedule changes; mute the noise categories.
+- **What code says happens:** In-app notification center with categories + push opt-in exists; **no per-trip mute, no batching/grouping** [OBSERVED — ground-truth §6, §10.4]. Fanout INSERTs run synchronously inside the trigger transaction [OBSERVED — §10.4].
+- **Friction:** At 60 members the synchronous fanout is fine-ish; but every chat message, calendar event, payment, and pin also fans out [OBSERVED — canonical fanout migration triggers on `trip_chat_messages`, `calendar_events`, `trip_payments`]. With no per-trip mute, players will disable push entirely by day 2 of a road trip — and then miss the one urgent broadcast. [SIMULATED RISK grounded in observed gaps.] Telemetry can't even tell her delivery succeeded: PostHog has ingested zero events ever [OBSERVED — ground-truth §9].
+- **Verdict:** **FAIL** for "guaranteed nobody misses bus call."
+
+### 14. Day sheet / final schedule review
+- **Tried:** Export tomorrow's schedule as a one-page day sheet; check the compliance/medical tabs the marketing page implied.
+- **What code says happens:** PDF export exists (`export-trip` edge function; entitlement Explorer+) [OBSERVED — `supabase/functions/export-trip/`, ground-truth §7]. The Pro "day-sheet style schedule," medical ("Injury status tracking and compliance monitoring") and compliance ("Visa, union, and safety compliance tracking") tabs are **placeholder empty states** [OBSERVED — `ProTabContent.tsx:207–244`], fed by arrays hardcoded empty for real trips [OBSERVED — `tripConverter.ts`]. Also noted: the finance/compliance read-only role carve-out lists `['talent','cast','student','artist']` — **'player' is absent** [OBSERVED — `ProTabsConfig.tsx:93–98`]; harmless today because the tabs are stubs and the write-permission check still applies, but it shows Sports wasn't threaded through the read-only model.
+- **Verdict:** **FAIL.** She prints the calendar list view and annotates it by hand, like it's 2015.
+
+### 15. Mid-trip updates (game day, mobile)
+- **Tried:** From her phone at the arena: push tip-time change, re-broadcast, watch acknowledgments.
+- **What code says happens:** Same web app via PWA/Capacitor; mobile tab bar; calendar edit works; broadcast send works (subject to step 12's pipeline risk). Realtime is shared infrastructure — **no hot-trip isolation; one big trip can saturate realtime** [OBSERVED — ground-truth §10.5]. Recently-fixed-but-watch: chat message loss on reconnect, mobile chat overflow stealing tab taps [OBSERVED — ground-truth §10 recently fixed].
+- **Friction:** Arena Wi-Fi + reconnect-sensitive realtime + no offline-first day sheet = [SIMULATED RISK] of the exact 11pm-in-Milwaukee failure she screens for.
+- **Verdict:** **PARTIAL.** Works on the happy path; she wouldn't bet a bus call on it yet.
+
+### 16. Pay or upgrade
+- **Tried:** Buy Growth ($99/mo, 100 seats) on the org card.
+- **What code says happens:** Stripe products/prices exist in code for `pro-starter` ($49), `pro-growth` ($99, adds `logistics_management`), `pro-enterprise` (priceMonthly: 0, "Custom Pricing") [OBSERVED — `src/billing/config.ts:97–153`]. Pro plans are monthly-only (annual price ID = monthly ID, comment "Pro plans monthly only"). But every purchase path on `/teams` is `mailto:support@chravelapp.com` [OBSERVED — `ForTeams.tsx`]; ground truth confirms **no self-serve Pro checkout** [OBSERVED — §7]. Seat management UI is real (seats_used/seat_limit, invites disabled at cap with tooltip "Seat limit reached - upgrade to invite more members") [OBSERVED — `src/components/enterprise/SeatManagement.tsx:183–206`].
+- **Friction:** For B2B at $49–99/mo, mailto-only purchasing is a category error: too low-touch a price for a sales motion, too high-friction for self-serve. Procurement also asks about the `logistics_management` entitlement she's paying $99 for — which currently unlocks tabs whose content is stubbed (steps 5, 10, 14).
+- **Verdict:** **FAIL.** She cannot give them money in-product, and what Growth sells isn't built.
+
+## D. Feature-by-Feature Findings
+
+| Feature | Expected user goal | Tried | What happened (per code) | Friction | Bug/UX issue | Severity | Revenue impact | Retention impact | Recommended fix |
+|---|---|---|---|---|---|---|---|---|---|
+| `/teams` page | Vet vendor credibility | Read page, clicked CTAs | All CTAs are `mailto:` [OBSERVED — ForTeams.tsx]; claims compliance/QuickBooks/analytics that are stubbed or Enterprise-flagged | Can't book demo or trial in-product | Marketing overclaims vs. stubbed features | HIGH | Blocks 100% of B2B conversion | n/a | Real demo-booking + self-serve trial; align claims with shipped features |
+| Sports Pro category | Roles match org | Created Sports Pro trip | Default roles Player/Coach/Crew/Medical/Security [OBSERVED — proCategories.ts:61] | Pro creation gated to 1 trial trip on Free | — | LOW | Positive — strong vertical fit | Positive | Extend Pro trial to N trips or 14 days unlimited |
+| Role manager + role channels | Hard visibility walls | Created 5 roles, assigned 60 people | Real CRUD; private channel auto-created per role; 10-role cap; admin mgmt [OBSERVED — RoleManager.tsx] | Rename swallows channel-update failure silently | Client-side slug rewrite; possible role/channel name drift | MEDIUM | — | Positive (anchor feature) | Move rename to an edge function/transaction; surface channel-update failure |
+| Permission matrix | Players read-only | Reviewed pro_viewer/pro_editor | Viewer: read-only tasks/calendar/basecamp but **can write polls + links**; matrix omits chat/media/payments/broadcasts/roster [OBSERVED — permissionMatrix.generated.ts] | Resource coverage gaps | Sports 'player' missing from finance read-only role list [OBSERVED — ProTabsConfig.tsx:95] | MEDIUM | — | — | Extend matrix to all resources; add 'player' (or map by permission, not role-name string) |
+| Calendar as schedule | Day sheet with bus call | Entered 14 schedule items | Generic events only; Pro `schedule` is `[]` for real trips [OBSERVED — tripConverter.ts:120] | No event types/bus-call semantics/versioning | Demo shows structured schedule real trips can't have | HIGH | Growth tier sells "logistics" it lacks | Day-7 killer | Build typed schedule items (transport/meal/game/call time) persisted to DB |
+| Broadcasts | Targeted, acknowledged comms | "Players only" bus-call change | Persisted + reactions + aggregate read count [OBSERVED — broadcastService.ts]; **delivery ignores role targeting** [OBSERVED — fanout migration:117]; no recipients column [OBSERVED — types.ts] | Everyone gets every broadcast | **Trigger attached to nonexistent `trip_broadcasts`; function references `NEW.title`/`NEW.content` absent from `broadcasts`** [OBSERVED — migration 20260512160000 vs types.ts]; runtime effect [HYPOTHESIS — needs live test] | CRITICAL | Core Pro value prop | Immediate churn if a broadcast fails | Single broadcasts table; server-enforced role targeting; per-recipient delivery/ack rows; integration test trigger vs schema |
+| Broadcast acknowledgment | See who hasn't confirmed | Checked read receipts | Aggregate count RPC only [OBSERVED — broadcastService.ts:263] | Can't identify stragglers | Missing per-person ack roster | HIGH | Differentiator vs SMS | High | "Seen by 54/60 — view 6 unconfirmed" roster view |
+| Scheduled broadcasts | Auto bus-call reminder | Tried to schedule | Cron disabled; "immediate-send only" [OBSERVED — broadcastService.ts:31, migration 20260411] | Manual sends only | Disabled feature still typed in API | MEDIUM | — | Medium | Re-enable scheduling via durable queue |
+| Notifications | Reliable + quiet | Pushed day sheet | Synchronous fanout per INSERT, no per-trip mute/batching [OBSERVED — §10.4, fanout migration] | 14 events × 59 members = noise storm | Users disable push → miss urgent | HIGH | — | High | Async queue fanout; priority lanes; per-trip mute; batching |
+| Room assignments | Manage rooming list | Opened modal | **Display-only stub**: `_setAssignments` never called, no editor, Save echoes props; data `[]` for real trips [OBSERVED — RoomAssignmentsModal.tsx:20, tripConverter.ts:119] | Cannot create a single assignment | Demo-ware | HIGH | Growth-tier claim | High | Real CRUD on a room_assignments table + roster picker + export |
+| Per-diem / settlement | Distribute per-diem | Opened finance tab | Placeholder: "Per-diem automation and settlement tracking" [OBSERVED — ProTabContent.tsx:199–203] | Nothing works | **Stubbed — confirmed** | HIGH | Blocks finance buy-in | High | Ship per-diem ledger MVP or remove tab + claims |
+| Compliance / medical | Audit trails, injury status | Opened tabs | Placeholders [OBSERVED — ProTabContent.tsx:207–244]; `compliance: []`, `medical: []` for real trips [OBSERVED — tripConverter.ts] | Nothing works | **Stubbed — confirmed**; contradicts `/teams` claims | HIGH | Enterprise blocker | Medium | Remove from marketing until built |
+| Media | Share docs/photos | Uploaded itinerary PDF | Works; quotas advisory; bucket not signed-URL enforced [OBSERVED — §10.7] | Sensitive docs exposure | Privacy gap for medical/security docs | HIGH | Enterprise/security review fail | Medium | Signed URLs + per-role media visibility |
+| Payments (consumer) | Track team expenses | Logged shared expense | Works; Venmo-only settle; double-credit race [OBSERVED — §10.1] | No org-grade flows | Non-atomic settlement | HIGH | — | Low (she'd not use it) | Atomic settlement + idempotency keys |
+| Seats/org | Manage 60–250 seats | Reviewed SeatManagement | Real seat caps + invite blocking [OBSERVED — SeatManagement.tsx] | Starter=50 seats < 60-person party | Tier mismatch for NBA party size | MEDIUM | Forces Growth — fine | — | Document seat math on /teams |
+| Scale (60-person trip) | No degradation | Assessed vs known issues | Fanout synchronous; no hot-trip realtime isolation [OBSERVED — §10.4–5]; 60×season ≪ 4K event case but compounding | Realtime saturation risk on game day | — | MEDIUM | — | High if hit mid-game | Realtime sharding/isolation for large trips |
+
+## E. Emotional Reaction
+
+- **Impressed:** the Sports category nailing her exact five roles; role channels auto-provisioned with the role; invite approval queues; permission instincts (basecamp locked to admins). "Whoever specced this has talked to a team ops person."
+- **Confident:** roster/role administration, chat, calendar basics, places.
+- **Confused:** the demo trip (Cowboy Carter tour) shows rooming lists, day sheets, per-diem — her real trip shows empty arrays and placeholder tabs. The gap between demo-ware and shipped product feels like a bait-and-switch she'd flag to peers.
+- **Annoyed:** "Players only" broadcast notifying all 60 people; aggregate-only read counts; every CTA being an email; no way to schedule a reminder; notification firehose with no per-trip mute.
+- **Would abandon:** yes for this season, after the per-diem tab and room-assignment modal turned out to be facades, and after she couldn't verify broadcast delivery integrity. **Would she roll it out to the team? No — but she'd take a second meeting in 6 months.** The skeleton (roles, channels, broadcasts-with-ack, category terminology) is the right product; the organs aren't installed.
+
+## F. Conversion Scores
+
+- **Activation: 6/10** — signup, Sports Pro trip, roles, and channels all genuinely work in the first session; the gating to one trial trip and consumer-flavored onboarding cost points.
+- **Invite: 7/10** — invite links with approval queues and bulk role assignment are real and good; docked for the documented post-approval dashboard-missing bug [OBSERVED — §10.6].
+- **Day-7 retention: 3/10** — by day 7 she has hit the stubbed finance/rooming/compliance tabs, untargeted broadcasts, and notification noise; she's back to Teamworks + SMS for anything game-critical.
+- **Paid conversion: 2/10** — she has budget and intent and literally cannot purchase in-product; what Growth's `logistics_management` entitlement gates is largely placeholder UI.
+- **NPS: −35** — not hostile (the vision earns goodwill, roles/channels are real), but she would actively warn peers off using it for live game ops today.
+
+**Would the org pay?** Yes — teams pay $thousands/season for Teamworks/TripGrid. **What price?** $99–$499/mo per team is unremarkable if it works; Chravel's $99 Growth is underpriced for the segment, which itself hurts credibility. **What creates willingness to pay?** (1) enforced role-scoped broadcasts with per-person acknowledgment rosters, (2) a real day sheet (typed schedule + room list + per-diem) that exports clean, (3) proof of delivery reliability (status page, delivery logs). **What blocks procurement?** mailto-only sales path, no SSO/SOC2/DPA story surfaced anywhere, unsigned media URLs for sensitive docs, wildcard CORS on 26 edge functions [OBSERVED — §10.3], and marketing claims (audit trails, QuickBooks) the product can't demo. **Which upgrade CTA works for B2B?** None of the current ones — `mailto:` reads as "two founders and an inbox." Minimum viable: self-serve Stripe checkout for Starter/Growth (the price IDs already exist in `billing/config.ts`) plus a Calendly-style demo scheduler for Enterprise.
+
+## G. Top 5 Fixes
+
+1. **Replace the cosmetic broadcast role-targeting with server-enforced recipient resolution and per-recipient delivery/ack rows** (recipients column or join table + fanout filtering in `create_notification_for_trip_members`), and **reconcile the `broadcasts` vs `trip_broadcasts` trigger drift with an integration test that inserts a broadcast and asserts notification rows** — because Dana sent "Bus call 3:45 — Players only," it notified security and broadcast staff [OBSERVED — fanout migration ignores targeting], and she couldn't prove the pipeline fires at all [OBSERVED — trigger attached to a table absent from types/migrations], causing a missed-bus-call class of failure that ends the evaluation of any team-ops product instantly.
+2. **Replace the placeholder Per-diem & Settlement / Compliance / Medical tabs and the display-only `RoomAssignmentsModal` with either real persisted CRUD or their removal from real (non-demo) trips and from `/teams` claims** — because Dana bought the consolidation pitch, opened "Per-diem automation and settlement tracking," and found empty states fed by hardcoded `[]` [OBSERVED — ProTabContent.tsx:193–244, tripConverter.ts:117–130], causing a demo-vs-product trust collapse that converts a warm B2B lead into a public detractor.
+3. **Replace the aggregate `get_broadcast_read_count` with a per-person "Seen / Responded / Unconfirmed" roster view on every urgent broadcast** — because Dana's core job is chasing the 6 people who haven't confirmed the new bus call, and the aggregate count [OBSERVED — broadcastService.ts:263–283] forced her back to the SMS tree, eliminating Chravel's main differentiator over a group text and the reason to pay for Pro at all.
+4. **Replace the `mailto:` CTAs on `/teams` with self-serve Stripe checkout for Starter/Growth (price IDs already exist in `src/billing/config.ts`) and a real demo scheduler for Enterprise** — because Dana had approved budget and could not transact [OBSERVED — ForTeams.tsx:81–97, ground-truth §7], causing a 100% loss rate on in-product B2B conversion and undermining procurement's confidence that a vendor this manual can support a season.
+5. **Replace the synchronous all-member notification fanout with an async queue that supports role-scoped delivery, priority lanes (urgent bypasses mute), batching, and per-trip mute** — because Dana's 14-item day-sheet entry blasted ~826 undifferentiated notifications at the traveling party [OBSERVED — canonical fanout triggers on calendar/chat/payments; no mute/batching per §10.4], causing players to disable push by day 2 and miss the one urgent broadcast that mattered — the exact failure mode the product exists to prevent.
+
+---
+
+### Key question verdict
+
+**Could this evolve into a real logistics product for teams, agencies, or touring groups?** Yes — the architecture is closer than the surface suggests. Roles, auto-provisioned role channels, broadcast persistence with reactions/read receipts, invite approval, seat management, and category-specific terminology are real and correctly shaped [OBSERVED across RoleManager.tsx, broadcastService.ts, SeatManagement.tsx, proCategories.ts]. What's missing is the ops core: enforced targeting, per-person acknowledgment, a real day sheet/rooming/per-diem layer (currently demo-only), delivery reliability proof, and a B2B purchase path. That's roughly one focused quarter of work on already-typed data models (`src/types/pro.ts` defines `RoomAssignment`, `PerDiemData`, `SettlementData`, `ProSchedule` — they just need persistence and UI). Until then it's a strong consumer trip app wearing a Pro jersey.
