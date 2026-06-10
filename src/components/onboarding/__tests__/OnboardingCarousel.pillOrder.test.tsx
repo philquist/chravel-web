@@ -56,8 +56,17 @@ describe('OnboardingCarousel pill navigation', () => {
     await user.click(screen.getByRole('button', { name: 'Get Started' }));
     await waitFor(() => expect(scrollCalls[scrollCalls.length - 1]).toBe('chat'));
 
-    // 5-screen flow: Welcome → Chat → Calendar → Payments → Final CTA
-    for (const pillId of ['calendar', 'payments']) {
+    // 10-screen flow: Welcome → Chat → Calendar → Concierge → Media →
+    // Payments → Places → Polls → Tasks → Final CTA
+    for (const pillId of [
+      'calendar',
+      'concierge',
+      'media',
+      'payments',
+      'places',
+      'polls',
+      'tasks',
+    ]) {
       await user.click(screen.getByRole('button', { name: 'Continue' }));
       await waitFor(() => expect(scrollCalls[scrollCalls.length - 1]).toBe(pillId));
     }
@@ -67,7 +76,16 @@ describe('OnboardingCarousel pill navigation', () => {
     );
     const scrollIndices = scrollCalls.map(pillId => pillOrder.indexOf(pillId));
 
-    expect(scrollCalls).toEqual(['chat', 'calendar', 'payments']);
+    expect(scrollCalls).toEqual([
+      'chat',
+      'calendar',
+      'concierge',
+      'media',
+      'payments',
+      'places',
+      'polls',
+      'tasks',
+    ]);
     expect(scrollIndices.every(index => index >= 0)).toBe(true);
     expect(scrollIndices).toEqual([...scrollIndices].sort((a, b) => a - b));
   });

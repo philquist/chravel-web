@@ -1,5 +1,9 @@
 /**
- * Onboarding Carousel - Premium 5-screen product tour
+ * Onboarding Carousel - Premium 10-screen product tour
+ *
+ * Every screen carries a visible "Skip demo" affordance (header X on all
+ * screens + text button on non-final screens) so users who want the full
+ * walkthrough get it and everyone else can bail at any point.
  *
  * Desktop: two-column layout (phone preview + copy/controls)
  * Tablet: centered phone frame + controls below
@@ -14,7 +18,12 @@ import { OnboardingProgressDots } from './OnboardingProgressDots';
 import { WelcomeScreen } from './demo/screens/WelcomeScreen';
 import { ChatDemoScreen } from './demo/screens/ChatDemoScreen';
 import { CalendarDemoScreen } from './demo/screens/CalendarDemoScreen';
+import { ConciergeDemoScreen } from './demo/screens/ConciergeDemoScreen';
 import { PaymentsTrackingDemoScreen } from './demo/screens/PaymentsTrackingDemoScreen';
+import { PlacesDemoScreen } from './demo/screens/PlacesDemoScreen';
+import { MediaDemoScreen } from './demo/screens/MediaDemoScreen';
+import { PollsDemoScreen } from './demo/screens/PollsDemoScreen';
+import { TasksDemoScreen } from './demo/screens/TasksDemoScreen';
 import { FinalCTAScreen } from './demo/screens/FinalCTAScreen';
 import { PhoneFrame } from './demo/PhoneFrame';
 import { useOnboardingLayout } from './demo/useOnboardingLayout';
@@ -62,10 +71,45 @@ const screens: ScreenConfig[] = [
     showInFrame: true,
   },
   {
+    component: ConciergeDemoScreen,
+    title: 'Your Chravel Agent.',
+    subtitle: 'Ask anything — get restaurant picks, hotel recs, and trip ideas instantly.',
+    pill: 'concierge',
+    showInFrame: true,
+  },
+  {
+    component: MediaDemoScreen,
+    title: 'Every moment, together.',
+    subtitle: 'Photos, videos, and files — one shared album for the whole trip.',
+    pill: 'media',
+    showInFrame: true,
+  },
+  {
     component: PaymentsTrackingDemoScreen,
     title: 'Money, organized.',
     subtitle: 'Track expenses, split bills, settle up.',
     pill: 'payments',
+    showInFrame: true,
+  },
+  {
+    component: PlacesDemoScreen,
+    title: 'Pin your spots.',
+    subtitle: 'Save hotels, restaurants, and landmarks — your group always knows where to go.',
+    pill: 'places',
+    showInFrame: true,
+  },
+  {
+    component: PollsDemoScreen,
+    title: 'Decide together.',
+    subtitle: 'Polls that settle debates — destination, budget, plans.',
+    pill: 'polls',
+    showInFrame: true,
+  },
+  {
+    component: TasksDemoScreen,
+    title: 'Everyone knows their part.',
+    subtitle: "Assign tasks, set deadlines, track who's done.",
+    pill: 'tasks',
     showInFrame: true,
   },
   { component: FinalCTAScreen, title: '', subtitle: '', showInFrame: false },
@@ -209,7 +253,7 @@ export const OnboardingCarousel = ({
             onClick={handleSkip}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Skip tour
+            Skip demo
           </button>
         </div>
       )}
