@@ -36,10 +36,14 @@ async function insertResponse({ answers, chaosScore }: SubmitArgs): Promise<void
   };
 
   // `onboarding_responses` row is owned by the authenticated user; user_id defaults
-  // to auth.uid() server-side and RLS enforces auth.uid() = user_id on insert.
+  // to auth.uid() server-side and RLS enforces auth.uid() = user_id on insert/update.
+  // Upsert on user_id: a retake (exit at the result screen, then redo the survey)
+  // overwrites the previous response instead of inserting a duplicate row.
   // intentional: onboarding_responses table not yet in generated Supabase types
   // (mirrors the feature_flags pattern in src/lib/featureFlags.ts).
-  const { error } = await (supabase as any).from('onboarding_responses').insert(payload);
+  const { error } = await (supabase as any)
+    .from('onboarding_responses')
+    .upsert(payload, { onConflict: 'user_id' });
 
   if (error) {
     throw new Error(error.message);

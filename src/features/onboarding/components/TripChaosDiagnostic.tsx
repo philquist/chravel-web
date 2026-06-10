@@ -90,6 +90,15 @@ export const TripChaosDiagnostic = ({ onComplete, onSkip }: TripChaosDiagnosticP
     onComplete(painToScreen(answers.biggest_chaos));
   }, [onComplete, answers.biggest_chaos]);
 
+  // Escape exits the survey, mirroring the carousel's keyboard escape hatch.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleSkip();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleSkip]);
+
   // Question step is 1-indexed for display; result step shows a full bar.
   const progressValue = isResultStep ? 100 : Math.round(((step + 1) / (totalQuestions + 1)) * 100);
 
@@ -105,13 +114,15 @@ export const TripChaosDiagnostic = ({ onComplete, onSkip }: TripChaosDiagnosticP
       {/* Header: progress + skip */}
       <div className="flex items-center gap-4 px-4 pt-5 pb-2 max-w-md w-full mx-auto">
         <Progress value={progressValue} className="h-1.5 flex-1" />
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={handleSkip}
-          className="text-sm text-ink-2 hover:text-ink-1 transition-colors shrink-0"
+          className="text-muted-foreground shrink-0"
           aria-label="Skip survey"
         >
           <X className="w-5 h-5" />
-        </button>
+        </Button>
       </div>
 
       {/* Content */}
