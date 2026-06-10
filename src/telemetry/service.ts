@@ -33,12 +33,13 @@ const defaultConfig: TelemetryConfig = {
         : 'development',
   debug: import.meta.env.DEV,
   performanceSampleRate: 0.1, // Sample 10% of performance events
-  posthog: import.meta.env.VITE_POSTHOG_API_KEY
-    ? {
-        apiKey: import.meta.env.VITE_POSTHOG_API_KEY,
-        apiHost: import.meta.env.VITE_POSTHOG_HOST,
-      }
-    : undefined,
+  posthog: {
+    apiKey:
+      (import.meta.env.VITE_POSTHOG_API_KEY as string | undefined) ||
+      'phc_vVm8jyTKmHos7KrVBNY59kexLoeFdRZQzvqEmM83BCpp',
+    apiHost:
+      (import.meta.env.VITE_POSTHOG_HOST as string | undefined) || 'https://us.i.posthog.com',
+  },
   sentry: import.meta.env.VITE_SENTRY_DSN
     ? {
         dsn: import.meta.env.VITE_SENTRY_DSN,

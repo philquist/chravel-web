@@ -50,13 +50,13 @@ export function useTripNotificationMute(tripId: string | undefined): TripNotific
         // Fail open to "not muted" — never block the options sheet on this read
         return false;
       }
-      return data?.notifications_muted === true;
+      return (data as any)?.notifications_muted === true;
     },
   });
 
   const mutation = useMutation({
     mutationFn: async (nextMuted: boolean): Promise<boolean> => {
-      const { data, error } = await supabase.rpc('set_trip_notifications_muted', {
+      const { data, error } = await (supabase.rpc as any)('set_trip_notifications_muted', {
         p_trip_id: tripId as string,
         p_muted: nextMuted,
       });

@@ -367,7 +367,7 @@ export const paymentService = {
       const userId = authData?.user?.id;
       if (!userId) return false;
 
-      const { data, error } = await supabase.rpc('settle_payment_split', {
+      const { data, error } = await (supabase.rpc as any)('settle_payment_split', {
         p_split_id: splitId,
         p_user_id: userId,
         p_method: settlementMethod,
@@ -400,7 +400,7 @@ export const paymentService = {
   // settled flag is rolled back inside the same transaction.
   async unsettlePayment(splitId: string): Promise<boolean> {
     try {
-      const { data, error } = await supabase.rpc('unsettle_payment_split', {
+      const { data, error } = await (supabase.rpc as any)('unsettle_payment_split', {
         p_split_id: splitId,
       });
 

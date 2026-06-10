@@ -61,7 +61,7 @@ export async function settleSplitsForDebtor(
     return { success: true, settledCount: 0, alreadySettledCount: 0 };
   }
 
-  const { data, error } = await supabase.rpc('settle_payment_splits_for_debtor', {
+  const { data, error } = await (supabase.rpc as any)('settle_payment_splits_for_debtor', {
     p_payment_message_ids: paymentMessageIds,
     p_debtor_user_id: debtorUserId,
     p_method: method,
