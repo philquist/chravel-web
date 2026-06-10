@@ -2147,6 +2147,62 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_attachments: {
+        Row: {
+          attachment_type: string
+          created_at: string
+          file_name: string | null
+          file_size: number | null
+          id: string
+          metadata: Json
+          mime_type: string | null
+          payment_message_id: string
+          storage_path: string | null
+          title: string | null
+          trip_id: string
+          uploaded_by: string
+          url: string | null
+        }
+        Insert: {
+          attachment_type: string
+          created_at?: string
+          file_name?: string | null
+          file_size?: number | null
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          payment_message_id: string
+          storage_path?: string | null
+          title?: string | null
+          trip_id: string
+          uploaded_by: string
+          url?: string | null
+        }
+        Update: {
+          attachment_type?: string
+          created_at?: string
+          file_name?: string | null
+          file_size?: number | null
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          payment_message_id?: string
+          storage_path?: string | null
+          title?: string | null
+          trip_id?: string
+          uploaded_by?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_attachments_payment_message_id_fkey"
+            columns: ["payment_message_id"]
+            isOneToOne: false
+            referencedRelation: "trip_payment_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_audit_log: {
         Row: {
           action: string
@@ -3764,7 +3820,6 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          notifications_muted: boolean
           role: string
           trip_id: string
           updated_at: string
@@ -3773,7 +3828,6 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          notifications_muted?: boolean
           role?: string
           trip_id: string
           updated_at?: string
@@ -3782,7 +3836,6 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          notifications_muted?: boolean
           role?: string
           trip_id?: string
           updated_at?: string
@@ -5371,29 +5424,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      set_trip_notifications_muted: {
-        Args: {
-          p_muted: boolean
-          p_trip_id: string
-        }
-        Returns: Json
-      }
-      settle_payment_split: {
-        Args: {
-          p_method: string
-          p_split_id: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
-      settle_payment_splits_for_debtor: {
-        Args: {
-          p_debtor_user_id: string
-          p_method: string
-          p_payment_message_ids: string[]
-        }
-        Returns: Json
-      }
       should_send_notification: {
         Args: {
           p_channel?: string
@@ -5456,12 +5486,6 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
-      }
-      unsettle_payment_split: {
-        Args: {
-          p_split_id: string
-        }
-        Returns: Json
       }
       update_trip_basecamp_with_version: {
         Args: {
