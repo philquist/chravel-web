@@ -58,3 +58,12 @@ supabase/functions/_shared/__tests__/errorSanitization.test.ts:gcp-api-key:72
 docs/APP_STORE_PLAN.md:revenuecat-key:28
 docs/IOS_RELEASE_MANUAL_STEPS.md:revenuecat-key:36
 ios/App/App/RevenueCat/README.md:revenuecat-key:24
+
+# Supabase anon key in env-setup docs — anon keys are public client-side keys
+# (shipped in the browser bundle by design), not secrets. Documented example value.
+docs/ENV_AND_APIS_REQUIRED.md:supabase-anon-key-hardcoded:92
+docs/ENV_AND_APIS_REQUIRED.md:jwt:92
+
+# private-key false positive — test fixture PEM used to exercise Apple client-secret
+# signing; not a live key.
+supabase/functions/_shared/__tests__/appleClientSecret.test.ts:private-key:47
