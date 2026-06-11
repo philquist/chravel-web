@@ -26,7 +26,11 @@ const FooterSection = lazy(() =>
   import('./FooterSection').then(module => ({ default: module.FooterSection })),
 );
 
-// Premium Black & Gold Design System
+// Premium Black & Gold Design System.
+// Source of truth: src/index.css (:root gold tokens) + tailwind.config.ts
+// (gold-primary/gold-light/gold-dark/gold-mid). Inline copies exist because
+// these feed canvas/inline-style gradients — keep hexes in sync when the
+// palette changes.
 const DESIGN_TOKENS = {
   pureBlack: '#000000',
   richBlack: '#0a0a0a',

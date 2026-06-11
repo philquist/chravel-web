@@ -163,7 +163,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
               value={formData.company}
               onChange={e => setFormData({ ...formData, company: e.target.value })}
               placeholder={placeholders.company}
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-glass-orange/50"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50"
               required
             />
           </div>
@@ -177,7 +177,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
               value={formData.programName}
               onChange={e => setFormData({ ...formData, programName: e.target.value })}
               placeholder={placeholders.program}
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-glass-orange/50"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50"
               required
             />
           </div>
@@ -191,7 +191,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
               value={formData.membershipNumber}
               onChange={e => setFormData({ ...formData, membershipNumber: e.target.value })}
               placeholder={placeholders.number}
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-glass-orange/50"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50"
               required
             />
           </div>
@@ -205,7 +205,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
               value={formData.tier}
               onChange={e => setFormData({ ...formData, tier: e.target.value })}
               placeholder="Gold, Platinum, etc."
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-glass-orange/50"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-3 py-3 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
           <div className="flex items-center gap-2 min-h-[44px]">
@@ -223,7 +223,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
           <div className="flex gap-3">
             <button
               type="submit"
-              className="bg-glass-orange hover:bg-glass-orange/80 text-white px-4 py-3 min-h-[44px] rounded-lg font-medium transition-colors"
+              className="bg-primary hover:bg-primary/80 text-primary-foreground px-4 py-3 min-h-[44px] rounded-lg font-medium transition-colors"
             >
               Save Program
             </button>
@@ -309,7 +309,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
           {program.tier && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">Status:</span>
-              <span className="text-glass-orange font-medium">{program.tier}</span>
+              <span className="text-primary font-medium">{program.tier}</span>
             </div>
           )}
         </div>
@@ -472,11 +472,11 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
     <div className="space-y-6">
       {/* Account Summary Band */}
       <section
-        className="bg-gradient-to-br from-glass-orange/18 to-glass-orange/4 border border-glass-orange/25 shadow-sm rounded-2xl p-5 md:p-6"
+        className="bg-gradient-to-br from-gold-primary/15 to-gold-primary/5 border border-primary/25 shadow-sm rounded-2xl p-5 md:p-6"
         aria-label="Wallet account summary"
       >
         <div className="flex items-center gap-3 mb-3">
-          <Wallet size={24} className="text-glass-orange" />
+          <Wallet size={24} className="text-primary" />
           <h2 className="text-lg font-bold text-white">Travel Wallet</h2>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
@@ -534,7 +534,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
             <button
               type="button"
               onClick={() => setShowAddForm(true)}
-              className="bg-glass-orange hover:bg-glass-orange/80 text-white px-4 py-2.5 min-h-[44px] rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glass-orange/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              className="bg-primary hover:bg-primary/80 text-primary-foreground px-4 py-2.5 min-h-[44px] rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
               Add Loyalty Program
             </button>
@@ -578,12 +578,12 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            <Wallet size={24} className="text-glass-orange" />
+            <Wallet size={24} className="text-primary" />
             Loyalty Programs
           </h3>
           <button
             onClick={() => setShowAddForm(true)}
-            className="bg-glass-orange hover:bg-glass-orange/80 text-white px-4 py-3 min-h-[44px] rounded-lg flex items-center gap-2 font-medium transition-colors"
+            className="bg-primary hover:bg-primary/80 text-primary-foreground px-4 py-3 min-h-[44px] rounded-lg flex items-center gap-2 font-medium transition-colors"
             aria-label="Add a new loyalty program"
           >
             <Plus size={16} />
@@ -608,7 +608,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center justify-center sm:justify-start gap-2 px-3 py-3 sm:px-4 sm:py-3 min-h-[44px] text-sm sm:text-base font-medium transition-colors min-w-0 shrink-0 ${
                   activeTab === tab.id
-                    ? 'text-glass-orange sm:border-b-2 sm:border-glass-orange bg-white/5 sm:bg-transparent'
+                    ? 'text-primary sm:border-b-2 sm:border-primary bg-white/5 sm:bg-transparent'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
@@ -642,7 +642,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
               <p className="text-red-400/80 text-sm mt-1">{loadError}</p>
               <button
                 onClick={loadPrograms}
-                className="mt-2 text-sm text-glass-orange hover:underline min-h-[44px] px-3 py-2 -ml-3"
+                className="mt-2 text-sm text-primary hover:underline min-h-[44px] px-3 py-2 -ml-3"
                 aria-label="Retry loading loyalty programs"
               >
                 Try Again
@@ -674,7 +674,7 @@ export const TravelWallet = ({ userId }: TravelWalletProps) => {
               <div className="text-gray-400 mb-4">No {activeTab} programs added yet</div>
               <button
                 onClick={() => setShowAddForm(true)}
-                className="bg-glass-orange hover:bg-glass-orange/80 text-white px-6 py-3 min-h-[44px] rounded-lg font-medium transition-colors"
+                className="bg-primary hover:bg-primary/80 text-primary-foreground px-6 py-3 min-h-[44px] rounded-lg font-medium transition-colors"
                 aria-label={`Add your first ${activeTab.slice(0, -1)} program`}
               >
                 Add Your First Program

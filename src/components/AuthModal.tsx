@@ -184,7 +184,7 @@ export const AuthModal = ({
               setMode('signin');
               setResetEmailSent(false);
             }}
-            className="text-glass-orange hover:text-glass-yellow transition-colors"
+            className="text-primary hover:text-gold-light transition-colors"
           >
             Return to Sign In
           </button>
@@ -206,7 +206,7 @@ export const AuthModal = ({
                 required
                 autoFocus
                 autoComplete="email"
-                className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-4 py-3 text-base text-white placeholder-white/60 focus:outline-none focus:border-glass-orange"
+                className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-4 py-3 text-base text-white placeholder-white/60 focus:outline-none focus:border-primary"
               />
             </div>
           </div>
@@ -214,7 +214,7 @@ export const AuthModal = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-glass-orange to-glass-yellow text-white font-medium py-3 rounded-xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 min-h-[44px]"
+            className="w-full bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground font-medium py-3 rounded-xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 min-h-[44px]"
           >
             {isLoading ? 'Sending...' : 'Send Reset Link'}
           </button>
@@ -239,7 +239,7 @@ export const AuthModal = ({
                 autoComplete="given-name"
                 inputMode="text"
                 enterKeyHint="next"
-                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-base text-white placeholder-white/60 focus:outline-none focus:border-glass-orange min-h-[48px]"
+                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-base text-white placeholder-white/60 focus:outline-none focus:border-primary min-h-[48px]"
               />
             </div>
             <div>
@@ -253,7 +253,7 @@ export const AuthModal = ({
                 autoComplete="family-name"
                 inputMode="text"
                 enterKeyHint="next"
-                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-base text-white placeholder-white/60 focus:outline-none focus:border-glass-orange min-h-[48px]"
+                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-base text-white placeholder-white/60 focus:outline-none focus:border-primary min-h-[48px]"
               />
             </div>
           </div>
@@ -277,7 +277,7 @@ export const AuthModal = ({
             autoComplete="email"
             inputMode="email"
             enterKeyHint="next"
-            className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-4 py-3 text-base text-white placeholder-white/60 focus:outline-none focus:border-glass-orange min-h-[48px]"
+            className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-4 py-3 text-base text-white placeholder-white/60 focus:outline-none focus:border-primary min-h-[48px]"
           />
         </div>
       </div>
@@ -293,7 +293,7 @@ export const AuthModal = ({
             required
             autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
             enterKeyHint={mode === 'signup' ? 'done' : 'go'}
-            className="w-full bg-white/10 border border-white/20 rounded-xl pl-4 pr-10 py-3 text-base text-white placeholder-white/60 focus:outline-none focus:border-glass-orange min-h-[48px]"
+            className="w-full bg-white/10 border border-white/20 rounded-xl pl-4 pr-10 py-3 text-base text-white placeholder-white/60 focus:outline-none focus:border-primary min-h-[48px]"
           />
           <button
             type="button"
@@ -311,7 +311,7 @@ export const AuthModal = ({
                 setMode('forgot');
                 setError('');
               }}
-              className="text-xs text-glass-orange hover:text-glass-yellow transition-colors"
+              className="text-xs text-primary hover:text-gold-light transition-colors"
             >
               Forgot password?
             </button>
@@ -322,7 +322,7 @@ export const AuthModal = ({
       <button
         type="submit"
         disabled={isLoading || awaitingAuth}
-        className="w-full bg-gradient-to-r from-glass-orange to-glass-yellow text-white font-medium py-3 rounded-xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 min-h-[44px]"
+        className="w-full bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground font-medium py-3 rounded-xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 min-h-[44px]"
       >
         {awaitingAuth
           ? 'Signing you in...'
@@ -340,7 +340,7 @@ export const AuthModal = ({
             href="/terms"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-glass-orange hover:text-glass-yellow underline"
+            className="text-primary hover:text-gold-light underline"
           >
             Terms of Service
           </a>{' '}
@@ -349,7 +349,7 @@ export const AuthModal = ({
             href="/privacy"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-glass-orange hover:text-glass-yellow underline"
+            className="text-primary hover:text-gold-light underline"
           >
             Privacy Policy
           </a>
@@ -437,7 +437,7 @@ export const AuthModal = ({
                   }}
                   className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
                     mode === 'signin'
-                      ? 'bg-gradient-to-r from-glass-orange to-glass-yellow text-white shadow-md'
+                      ? 'bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground shadow-md'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -453,7 +453,7 @@ export const AuthModal = ({
                   }}
                   className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
                     mode === 'signup'
-                      ? 'bg-gradient-to-r from-glass-orange to-glass-yellow text-white shadow-md'
+                      ? 'bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground shadow-md'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >

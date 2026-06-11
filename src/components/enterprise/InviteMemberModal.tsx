@@ -70,7 +70,7 @@ export const InviteMemberModal = ({ open, onClose, organizationId }: InviteMembe
       >
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
-            <Mail size={20} className="text-glass-orange" />
+            <Mail size={20} className="text-primary" />
             Invite Team Member
           </DialogTitle>
         </DialogHeader>
@@ -131,7 +131,7 @@ export const InviteMemberModal = ({ open, onClose, organizationId }: InviteMembe
             </Button>
             <Button
               type="submit"
-              className="flex-1 bg-glass-orange hover:bg-glass-orange/80 min-h-[44px]"
+              className="flex-1 bg-primary hover:bg-primary/80 min-h-[44px]"
               disabled={loading}
               aria-label={loading ? 'Sending invitation' : 'Send invitation'}
             >

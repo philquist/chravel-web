@@ -129,6 +129,9 @@ export const NativeTabBar = ({
       )}
       style={{
         paddingBottom: 'env(safe-area-inset-bottom)',
+        // Landscape notch: keep tab touch targets clear of the sensor housing
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)',
       }}
     >
       <div className="flex items-center justify-around h-[49px]">

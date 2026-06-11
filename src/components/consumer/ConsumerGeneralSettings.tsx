@@ -210,7 +210,7 @@ export const ConsumerGeneralSettings = () => {
                   description: `Language set to ${e.target.value}.`,
                 });
               }}
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-glass-orange/50"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option>English</option>
               <option>Spanish</option>
@@ -232,7 +232,7 @@ export const ConsumerGeneralSettings = () => {
                   description: `Time zone set to ${e.target.value}.`,
                 });
               }}
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-glass-orange/50"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option>Pacific Time (PT)</option>
               <option>Mountain Time (MT)</option>
@@ -254,7 +254,7 @@ export const ConsumerGeneralSettings = () => {
                   description: `Date format set to ${e.target.value}.`,
                 });
               }}
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-glass-orange/50"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option>MM/DD/YYYY</option>
               <option>DD/MM/YYYY</option>
@@ -303,7 +303,7 @@ export const ConsumerGeneralSettings = () => {
               <div className="text-white font-medium">Clear Cache</div>
               <div className="text-sm text-gray-400">Clear stored app data to free up space</div>
             </div>
-            <div className={cacheClearSuccess ? 'text-green-400' : 'text-glass-orange'}>
+            <div className={cacheClearSuccess ? 'text-green-400' : 'text-primary'}>
               {cacheClearSuccess ? 'Done!' : 'Clear'}
             </div>
           </button>
@@ -362,7 +362,7 @@ export const ConsumerGeneralSettings = () => {
                 Contact our safety team for urgent moderation help
               </div>
             </div>
-            <div className="text-glass-orange">Report</div>
+            <div className="text-primary">Report</div>
           </a>
           <div className="pt-1">
             <div className="text-white font-medium mb-2">Blocked Users</div>

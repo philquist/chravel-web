@@ -484,7 +484,7 @@ export const TripHeader = ({
                   )}
                   {trip.dateRange && (
                     <>
-                      <span className="text-gray-500">•</span>
+                      <span className="text-ink-3">•</span>
                       <span className="flex items-center gap-1">
                         <Calendar size={18} className="text-primary" />
                         {trip.dateRange}
@@ -627,7 +627,7 @@ export const TripHeader = ({
               tripId={trip.id.toString()}
               description={trip.description}
               onUpdate={onDescriptionUpdate || (() => {})}
-              className="text-gray-300 text-lg leading-relaxed"
+              className="text-ink-2 text-lg leading-relaxed"
               externalEditTrigger={descEditTick}
               hideInlineButtonOnLg
             />
@@ -648,12 +648,12 @@ export const TripHeader = ({
                 {isMembersLoading ? (
                   <span className="w-6 h-4 bg-white/10 rounded animate-pulse" />
                 ) : (
-                  <span className="text-gray-400 text-sm">
+                  <span className="text-ink-2 text-sm">
                     {Math.max(mergedParticipants.length, trip.created_by ? 1 : 0)}
                   </span>
                 )}
                 <button
-                  className="text-xs font-medium underline text-gray-200 hover:text-white"
+                  className="text-xs font-medium underline text-ink-2 hover:text-white"
                   onClick={() => setShowAllCollaborators(true)}
                   aria-label="Show all members"
                 >
@@ -662,7 +662,7 @@ export const TripHeader = ({
                 {onManageUsers && (
                   <button
                     onClick={onManageUsers}
-                    className="text-gray-400 hover:text-gold-primary transition-colors p-1 rounded-lg hover:bg-white/10"
+                    className="text-ink-2 hover:text-gold-primary transition-colors p-1 rounded-lg hover:bg-white/10"
                     title="Manage users"
                   >
                     <Settings size={16} />
@@ -741,8 +741,8 @@ export const TripHeader = ({
                 className={cn(
                   'flex items-center justify-center gap-1 text-xs font-medium py-1.5 px-2.5 rounded-lg transition-all duration-200 shrink-0',
                   canExport
-                    ? 'bg-gray-800/50 hover:bg-gray-700/50 text-white border border-gray-700 hover:border-gray-600'
-                    : 'bg-gray-700/50 text-gray-400 cursor-not-allowed border border-gray-600/50',
+                    ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-primary/30'
+                    : 'bg-white/5 text-ink-3 cursor-not-allowed border border-white/10',
                 )}
                 title={canExport ? recapActionLabel : 'Upgrade for PDF recap'}
                 aria-label={recapActionLabel}
@@ -754,7 +754,7 @@ export const TripHeader = ({
               {/* Right-aligned: Leave Trip */}
               <button
                 onClick={() => setShowExitConfirm(true)}
-                className="flex items-center justify-center gap-1 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 hover:border-gray-600 text-[#EF4444] text-xs font-medium py-1.5 px-2.5 rounded-lg transition-all duration-200 shrink-0"
+                className="flex items-center justify-center gap-1 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-red-500/40 text-red-400 text-xs font-medium py-1.5 px-2.5 rounded-lg transition-all duration-200 shrink-0"
                 title="Leave this trip"
               >
                 <LogOut size={14} />
@@ -768,7 +768,7 @@ export const TripHeader = ({
         <div className="hidden lg:block absolute bottom-2 left-2 z-20">
           <button
             onClick={() => setDescEditTick(t => t + 1)}
-            className="p-1.5 border border-white/20 rounded-lg transition-all shadow-lg backdrop-blur-sm bg-white/10 hover:bg-white/20 text-gray-400 hover:text-white"
+            className="p-1.5 border border-white/20 rounded-lg transition-all shadow-lg backdrop-blur-sm bg-white/10 hover:bg-white/20 text-ink-2 hover:text-white"
             title="Edit description"
           >
             <Edit size={14} />
@@ -836,7 +836,7 @@ export const TripHeader = ({
               <h3 className="text-xl font-bold text-white">Leave Trip?</h3>
             </div>
 
-            <p className="text-gray-300 mb-6">
+            <p className="text-ink-2 mb-6">
               Are you sure you want to leave "{trip.title}"? You'll lose access to all trip
               information, chat history, and won't receive updates.
               {isProOrEvent && (

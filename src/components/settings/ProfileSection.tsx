@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Mail, Phone, Building } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { useTripVariant } from '../../contexts/TripVariantContext';
 import { AvatarUpload } from './AvatarUpload';
 import { useToast } from '../../hooks/use-toast';
 
@@ -13,7 +12,6 @@ interface ProfileSectionProps {
 
 export const ProfileSection = ({ userOrganization }: ProfileSectionProps) => {
   const { user, updateProfile } = useAuth();
-  const { accentColors } = useTripVariant();
   const { toast } = useToast();
   const [displayNameDraft, setDisplayNameDraft] = useState('');
   const [savingDisplayName, setSavingDisplayName] = useState(false);
@@ -107,13 +105,9 @@ export const ProfileSection = ({ userOrganization }: ProfileSectionProps) => {
         <p className="text-gray-400 text-sm">{user.email || user.phone}</p>
         {userOrganization && (
           <div className="mt-2">
-            <div
-              className={`inline-flex items-center gap-2 bg-${accentColors.primary}/20 px-3 py-1 rounded-full`}
-            >
-              <Building size={14} className={`text-${accentColors.primary}`} />
-              <span className={`text-${accentColors.primary} text-sm font-medium`}>
-                {userOrganization.name}
-              </span>
+            <div className={`inline-flex items-center gap-2 bg-primary/20 px-3 py-1 rounded-full`}>
+              <Building size={14} className={`text-primary`} />
+              <span className={`text-primary text-sm font-medium`}>{userOrganization.name}</span>
             </div>
           </div>
         )}
@@ -128,7 +122,7 @@ export const ProfileSection = ({ userOrganization }: ProfileSectionProps) => {
             onChange={e => setDisplayNameDraft(e.target.value)}
             onBlur={() => void handleSaveDisplayName()}
             disabled={savingDisplayName}
-            className={`w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-${accentColors.primary}`}
+            className={`w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-primary`}
           />
         </div>
 
@@ -159,7 +153,7 @@ export const ProfileSection = ({ userOrganization }: ProfileSectionProps) => {
               aria-checked={!!user.showEmail}
               aria-label="Show email in trips"
               className={`relative w-12 h-6 rounded-full transition-colors ${
-                user.showEmail ? `bg-${accentColors.primary}` : 'bg-gray-600'
+                user.showEmail ? `bg-primary` : 'bg-gray-600'
               }`}
             >
               <div
@@ -186,7 +180,7 @@ export const ProfileSection = ({ userOrganization }: ProfileSectionProps) => {
               aria-checked={!!user.showPhone}
               aria-label="Show phone in trips"
               className={`relative w-12 h-6 rounded-full transition-colors ${
-                user.showPhone ? `bg-${accentColors.primary}` : 'bg-gray-600'
+                user.showPhone ? `bg-primary` : 'bg-gray-600'
               }`}
             >
               <div

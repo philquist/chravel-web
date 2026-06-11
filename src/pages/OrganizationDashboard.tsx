@@ -339,8 +339,8 @@ export const OrganizationDashboard = () => {
           </button>
 
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-glass-orange to-glass-yellow rounded-xl flex items-center justify-center">
-              <Building size={24} className="text-white" />
+            <div className="w-12 h-12 bg-gradient-to-r from-gold-primary to-gold-mid rounded-xl flex items-center justify-center">
+              <Building size={24} className="text-primary-foreground" />
             </div>
             <div>
               <h1 className="text-xl font-bold">{currentOrg.display_name}</h1>
@@ -369,7 +369,7 @@ export const OrganizationDashboard = () => {
           {isAdmin && (
             <Button
               onClick={() => setShowInviteModal(true)}
-              className="w-full bg-glass-orange hover:bg-glass-orange/80 min-h-[44px]"
+              className="w-full bg-primary hover:bg-primary/80 min-h-[44px]"
               aria-label="Invite a new team member"
             >
               <UserPlus size={16} className="mr-2" />
@@ -444,8 +444,8 @@ export const OrganizationDashboard = () => {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-glass-orange to-glass-yellow rounded-xl flex items-center justify-center">
-                <Building size={32} className="text-white" />
+              <div className="w-16 h-16 bg-gradient-to-r from-gold-primary to-gold-mid rounded-xl flex items-center justify-center">
+                <Building size={32} className="text-primary-foreground" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold">{currentOrg.display_name}</h1>
@@ -456,7 +456,7 @@ export const OrganizationDashboard = () => {
             {isAdmin && (
               <Button
                 onClick={() => setShowInviteModal(true)}
-                className="bg-glass-orange hover:bg-glass-orange/80 min-h-[44px]"
+                className="bg-primary hover:bg-primary/80 min-h-[44px]"
                 aria-label="Invite a new team member"
               >
                 <UserPlus size={16} className="mr-2" />
@@ -505,7 +505,7 @@ export const OrganizationDashboard = () => {
                 aria-label="Seat usage progress"
               >
                 <div
-                  className="bg-glass-orange h-2 rounded-full transition-all"
+                  className="bg-primary h-2 rounded-full transition-all"
                   style={{ width: `${seatUsage}%` }}
                 />
               </div>
@@ -526,20 +526,20 @@ export const OrganizationDashboard = () => {
         {/* Desktop Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="bg-white/5 border border-white/10">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-glass-orange">
+            <TabsTrigger value="overview">
               <Building size={16} className="mr-2" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="team" className="data-[state=active]:bg-glass-orange">
+            <TabsTrigger value="team">
               <Users size={16} className="mr-2" />
               Team ({members.length})
             </TabsTrigger>
-            <TabsTrigger value="trips" className="data-[state=active]:bg-glass-orange">
+            <TabsTrigger value="trips">
               <Briefcase size={16} className="mr-2" />
               Trips
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="settings" className="data-[state=active]:bg-glass-orange">
+              <TabsTrigger value="settings">
                 <Settings size={16} className="mr-2" />
                 Settings
               </TabsTrigger>
@@ -648,7 +648,7 @@ export const OrganizationDashboard = () => {
                       />
                     )}
                     <CardHeader>
-                      <CardTitle className="text-white group-hover:text-glass-orange transition-colors">
+                      <CardTitle className="text-white group-hover:text-primary transition-colors">
                         {trip.name}
                       </CardTitle>
                       <p className="text-sm text-gray-400">{trip.destination}</p>

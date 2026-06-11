@@ -65,8 +65,8 @@ export const MobileTeamMemberCard = ({
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1">
-            <div className="w-10 h-10 bg-gradient-to-r from-glass-orange to-glass-yellow rounded-full flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">
+            <div className="w-10 h-10 bg-gradient-to-r from-gold-primary to-gold-mid rounded-full flex items-center justify-center">
+              <span className="text-primary-foreground font-semibold text-sm">
                 {member.name.charAt(0).toUpperCase()}
               </span>
             </div>

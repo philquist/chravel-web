@@ -36,7 +36,7 @@ export const BillingSection = ({ organization, onCreateOrganization }: BillingSe
               {onCreateOrganization && (
                 <button
                   onClick={onCreateOrganization}
-                  className="inline-flex items-center gap-2 bg-glass-orange hover:bg-glass-orange/80 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                  className="inline-flex items-center gap-2 bg-primary hover:bg-primary/80 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors text-sm"
                 >
                   <Plus size={16} />
                   Create Organization
@@ -116,7 +116,7 @@ export const BillingSection = ({ organization, onCreateOrganization }: BillingSe
             <button className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-lg font-medium transition-colors">
               Manage Billing
             </button>
-            <button className="bg-glass-orange hover:bg-glass-orange/80 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+            <button className="bg-primary hover:bg-primary/80 text-primary-foreground px-6 py-3 rounded-lg font-medium transition-colors">
               Upgrade Plan
             </button>
           </div>
@@ -164,7 +164,7 @@ export const BillingSection = ({ organization, onCreateOrganization }: BillingSe
                     <ul className="space-y-1.5 text-sm text-gray-300">
                       {tier.features.map((feature, index) => (
                         <li key={index} className="flex items-start gap-2">
-                          <div className="w-1.5 h-1.5 bg-glass-orange rounded-full mt-2 flex-shrink-0"></div>
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
                           {feature}
                         </li>
                       ))}
@@ -172,12 +172,12 @@ export const BillingSection = ({ organization, onCreateOrganization }: BillingSe
                     {!organization ? (
                       <button
                         onClick={onCreateOrganization}
-                        className="mt-4 bg-glass-orange hover:bg-glass-orange/80 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        className="mt-4 bg-primary hover:bg-primary/80 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors"
                       >
                         Create Organization to Subscribe
                       </button>
                     ) : !isCurrentPlan ? (
-                      <button className="mt-4 bg-glass-orange hover:bg-glass-orange/80 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                      <button className="mt-4 bg-primary hover:bg-primary/80 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors">
                         Upgrade to {tier.name}
                       </button>
                     ) : null}

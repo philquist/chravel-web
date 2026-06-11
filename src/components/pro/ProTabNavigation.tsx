@@ -1,6 +1,5 @@
 import React from 'react';
 import { Crown, Lock } from 'lucide-react';
-import { useTripVariant } from '../../contexts/TripVariantContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoMode } from '../../hooks/useDemoMode';
 import { useSuperAdmin } from '../../hooks/useSuperAdmin';
@@ -20,7 +19,6 @@ export const ProTabNavigation = ({
   onTabChange,
   category,
 }: ProTabNavigationProps) => {
-  const { accentColors } = useTripVariant();
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
   const { isSuperAdmin } = useSuperAdmin();
@@ -61,7 +59,7 @@ export const ProTabNavigation = ({
           >
             {Icon && <Icon size={16} />}
             {displayLabel}
-            {tab.proOnly && <Crown size={14} className={`text-${accentColors.primary}`} />}
+            {tab.proOnly && <Crown size={14} className={`text-primary`} />}
             {isReadOnly && <Lock size={12} className="text-gray-400" />}
           </button>
         );

@@ -138,7 +138,7 @@ export const TripSettings = ({
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-colors min-h-[44px] ${
                     activeTab === tab.id
-                      ? 'bg-glass-orange/20 text-glass-orange border border-glass-orange/30'
+                      ? 'bg-primary/20 text-primary border border-primary/30'
                       : 'text-gray-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
@@ -176,7 +176,7 @@ export const TripSettings = ({
                   <select
                     value={showCustomInput ? 'Other' : tripCategory}
                     onChange={e => handleCategoryChange(e.target.value)}
-                    className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-glass-orange/50 focus:border-glass-orange/50"
+                    className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50"
                   >
                     {TRIP_CATEGORIES.map(category => (
                       <option key={category} value={category}>
@@ -192,14 +192,14 @@ export const TripSettings = ({
                         value={customCategory}
                         onChange={e => setCustomCategory(e.target.value)}
                         placeholder="Enter custom category..."
-                        className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-glass-orange/50 focus:border-glass-orange/50"
+                        className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50"
                       />
                     </div>
                   )}
 
                   <button
                     onClick={handleSaveCategory}
-                    className="mt-3 bg-glass-orange hover:bg-glass-orange/80 text-white px-6 py-2 rounded-xl transition-colors font-medium"
+                    className="mt-3 bg-primary hover:bg-primary/80 text-primary-foreground px-6 py-2 rounded-xl transition-colors font-medium"
                   >
                     Save Category
                   </button>
@@ -211,7 +211,7 @@ export const TripSettings = ({
                   <input
                     type="text"
                     defaultValue={tripName}
-                    className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-glass-orange/50 focus:border-glass-orange/50"
+                    className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50"
                   />
                 </div>
 
@@ -223,7 +223,7 @@ export const TripSettings = ({
                   <textarea
                     rows={4}
                     placeholder="Describe your trip..."
-                    className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-glass-orange/50 focus:border-glass-orange/50 resize-none"
+                    className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 resize-none"
                   />
                 </div>
               </div>
@@ -241,7 +241,7 @@ export const TripSettings = ({
                 <p className="text-gray-400 mb-6">View system events and activity for this trip.</p>
                 <button
                   onClick={() => setShowEventLog(true)}
-                  className="inline-flex items-center gap-2 min-h-[44px] bg-glass-orange hover:bg-glass-orange/80 text-white px-6 py-3 rounded-xl transition-colors font-medium"
+                  className="inline-flex items-center gap-2 min-h-[44px] bg-primary hover:bg-primary/80 text-primary-foreground px-6 py-3 rounded-xl transition-colors font-medium"
                 >
                   <ScrollText size={18} />
                   Open Event Log

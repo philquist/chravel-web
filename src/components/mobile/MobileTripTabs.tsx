@@ -596,7 +596,7 @@ export const MobileTripTabs = ({
                         ? 'accent-ring-idle text-muted-foreground hover:bg-muted/70 hover:text-foreground'
                         : variant === 'event'
                           ? 'accent-ring-idle text-muted-foreground'
-                          : 'bg-white/5 text-gray-500 opacity-40 grayscale cursor-not-allowed'
+                          : 'bg-white/5 text-ink-3 opacity-40 grayscale cursor-not-allowed'
                   }
                 `}
               >

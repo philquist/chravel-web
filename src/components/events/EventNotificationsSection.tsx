@@ -236,7 +236,7 @@ export const EventNotificationsSection = () => {
   return (
     <div className="space-y-3">
       <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-        <Bell size={24} className="text-glass-orange" />
+        <Bell size={24} className="text-primary" />
         Event Notifications
       </h3>
       <p className="text-gray-300">
@@ -289,7 +289,7 @@ export const EventNotificationsSection = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
             <div className="flex items-center gap-3">
-              <Bell size={16} className="text-glass-orange" />
+              <Bell size={16} className="text-primary" />
               <div>
                 <span className="text-white font-medium">Push Notifications</span>
                 <p className="text-sm text-gray-400">Real-time notifications on your device</p>

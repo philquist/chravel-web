@@ -307,11 +307,11 @@ export const ProTripCard = ({
   // Share trip data structure
 
   const cardShellClass =
-    'group w-full min-w-0 bg-gradient-to-br backdrop-blur-xl border border-white/15 hover:border-white/30 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-black/30 relative';
+    'group w-full min-w-0 bg-gradient-to-br backdrop-blur-xl border border-white/15 hover:border-primary/25 rounded-2xl overflow-hidden transition-all duration-300 motion-safe:hover:-translate-y-1 shadow-enterprise hover:shadow-enterprise-md relative';
   const actionButtonClass = cn(
     buttonVariants({ variant: 'ghost', size: 'sm' }),
     // Ghost applies hover:text-accent-foreground (black); keep CTA labels white when pressed/hovered.
-    'min-h-[44px] bg-black/30 hover:bg-black/40 text-white border border-white/20 hover:border-white/30 hover:text-white active:text-white focus-visible:text-white disabled:opacity-50 disabled:cursor-not-allowed md:text-sm text-xs px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
+    'min-h-[44px] bg-black/30 hover:bg-black/40 text-white border border-white/20 hover:border-primary/30 hover:text-white active:text-white focus-visible:text-white disabled:opacity-50 disabled:cursor-not-allowed md:text-sm text-xs px-2 md:px-3 py-2.5 md:py-3 rounded-xl',
   );
 
   const shareTrip = {

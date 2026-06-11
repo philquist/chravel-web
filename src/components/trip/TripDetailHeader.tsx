@@ -2,8 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
-import { useTripVariant } from '../../contexts/TripVariantContext';
-
 interface TripDetailHeaderProps {
   tripContext: any;
   showInbox: boolean;
@@ -22,7 +20,6 @@ export const TripDetailHeader = ({
   onShowAuth,
 }: TripDetailHeaderProps) => {
   const navigate = useNavigate();
-  const { accentColors } = useTripVariant();
 
   return (
     <div className="flex items-center justify-between mb-4">
@@ -31,7 +28,7 @@ export const TripDetailHeader = ({
         className="flex items-center gap-3 text-gray-300 hover:text-white transition-colors group"
       >
         <div
-          className={`bg-gray-800 p-2 rounded-lg shadow-lg group-hover:shadow-${accentColors.primary}/20 transition-all border border-gray-700 hover:border-${accentColors.primary}/50`}
+          className={`bg-gray-800 p-2 rounded-lg shadow-lg group-hover:shadow-gold-primary/20 transition-all border border-gray-700 hover:border-gold-primary/50`}
         >
           <ArrowLeft size={20} />
         </div>

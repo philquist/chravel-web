@@ -213,8 +213,8 @@ export const ConsumerProfileSection = () => {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-12 h-12 bg-gradient-to-r from-glass-orange to-glass-yellow rounded-xl flex items-center justify-center">
-          <User size={24} className="text-white" />
+        <div className="w-12 h-12 bg-gradient-to-r from-gold-primary to-gold-mid rounded-xl flex items-center justify-center">
+          <User size={24} className="text-primary-foreground" />
         </div>
         <div>
           <h3 className="text-2xl font-bold text-white">Profile Settings</h3>
@@ -226,11 +226,11 @@ export const ConsumerProfileSection = () => {
       <div className="bg-white/5 border border-white/10 rounded-xl p-3">
         <h4 className="text-base font-semibold text-white mb-2">Profile Photo</h4>
         <div className="flex flex-col items-center gap-4">
-          <div className="w-20 h-20 bg-gradient-to-r from-glass-orange to-glass-yellow rounded-full flex items-center justify-center overflow-hidden">
+          <div className="w-20 h-20 bg-gradient-to-r from-gold-primary to-gold-mid rounded-full flex items-center justify-center overflow-hidden">
             {currentUser.avatar ? (
               <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" />
             ) : (
-              <User size={24} className="text-white" />
+              <User size={24} className="text-primary-foreground" />
             )}
           </div>
           <input
@@ -272,7 +272,7 @@ export const ConsumerProfileSection = () => {
               aria-label="Real name"
               value={realName}
               onChange={e => setRealName(e.target.value)}
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-glass-orange/50"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="Enter your real name"
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -296,7 +296,7 @@ export const ConsumerProfileSection = () => {
               aria-label="Display name"
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-glass-orange/50"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="Nickname or role (e.g., Tour Manager, Security)"
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -313,7 +313,7 @@ export const ConsumerProfileSection = () => {
               aria-label="Phone number"
               value={phone}
               onChange={e => setPhone(e.target.value)}
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-glass-orange/50"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="+1 (555) 123-4567"
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -328,7 +328,7 @@ export const ConsumerProfileSection = () => {
             onClick={handleSave}
             disabled={isSaving || (!user && !showDemoContent)}
             aria-label="Save profile changes"
-            className="bg-glass-orange hover:bg-glass-orange/80 text-white font-medium px-6 py-2 min-h-[44px] rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-primary hover:bg-primary/80 text-primary-foreground font-medium px-6 py-2 min-h-[44px] rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? (
               <>

@@ -115,7 +115,7 @@ export const TripUserManagement = ({
                   <div className="flex items-center gap-2">
                     <span className="text-white font-medium">{tripUser.name}</span>
                     {tripUser.id === currentUserId && (
-                      <span className="text-xs bg-glass-orange/20 text-glass-orange px-2 py-1 rounded">
+                      <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded">
                         You
                       </span>
                     )}

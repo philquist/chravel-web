@@ -37,8 +37,8 @@ export const OrganizationSection = ({
   return (
     <div className="space-y-6 min-w-0 overflow-x-hidden">
       <div className="flex items-center gap-3 mb-3 min-w-0">
-        <div className="w-12 h-12 flex-shrink-0 bg-gradient-to-r from-glass-orange to-glass-yellow rounded-xl flex items-center justify-center">
-          <Building size={24} className="text-white" />
+        <div className="w-12 h-12 flex-shrink-0 bg-gradient-to-r from-gold-primary to-gold-mid rounded-xl flex items-center justify-center">
+          <Building size={24} className="text-primary-foreground" />
         </div>
         <div className="min-w-0">
           <h3 className="text-2xl font-bold text-white break-words">Organization Settings</h3>
@@ -58,7 +58,7 @@ export const OrganizationSection = ({
                 type="button"
                 onClick={onCreateOrganization}
                 aria-label="Create a new organization"
-                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-glass-orange hover:bg-glass-orange/80 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm text-center min-h-[44px]"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-primary hover:bg-primary/80 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors text-sm text-center min-h-[44px]"
               >
                 <Plus size={16} className="flex-shrink-0" />
                 Create Organization
@@ -203,7 +203,7 @@ const OrganizationCard = ({ organization, badge, onSave }: OrganizationCardProps
   return (
     <div className="relative bg-white/5 border border-white/10 rounded-xl p-4 space-y-4 min-w-0">
       {badge !== undefined && (
-        <div className="absolute top-4 right-4 w-7 h-7 rounded-full bg-glass-orange/30 flex items-center justify-center text-sm font-semibold text-glass-orange">
+        <div className="absolute top-4 right-4 w-7 h-7 rounded-full bg-primary/30 flex items-center justify-center text-sm font-semibold text-primary">
           {badge}
         </div>
       )}
@@ -232,7 +232,7 @@ const OrganizationCard = ({ organization, badge, onSave }: OrganizationCardProps
               aria-describedby={
                 validationErrors.orgName ? `org-name-error-${organization.id}` : undefined
               }
-              className={`w-full bg-gray-800/50 border ${validationErrors.orgName ? 'border-red-500' : 'border-gray-600'} text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-glass-orange/50 min-h-[44px]`}
+              className={`w-full bg-gray-800/50 border ${validationErrors.orgName ? 'border-red-500' : 'border-gray-600'} text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]`}
             />
             {validationErrors.orgName && (
               <p
@@ -257,7 +257,7 @@ const OrganizationCard = ({ organization, badge, onSave }: OrganizationCardProps
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
               placeholder="Enter display name"
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-glass-orange/50 min-h-[44px]"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]"
             />
           </div>
           <div className="md:col-span-2">
@@ -281,7 +281,7 @@ const OrganizationCard = ({ organization, badge, onSave }: OrganizationCardProps
               aria-describedby={
                 validationErrors.billingEmail ? `billing-email-error-${organization.id}` : undefined
               }
-              className={`w-full bg-gray-800/50 border ${validationErrors.billingEmail ? 'border-red-500' : 'border-gray-600'} text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-glass-orange/50 min-h-[44px]`}
+              className={`w-full bg-gray-800/50 border ${validationErrors.billingEmail ? 'border-red-500' : 'border-gray-600'} text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]`}
             />
             {validationErrors.billingEmail && (
               <p
@@ -307,7 +307,7 @@ const OrganizationCard = ({ organization, badge, onSave }: OrganizationCardProps
             value={description}
             onChange={e => setDescription(e.target.value)}
             placeholder="Describe your organization's mission and focus..."
-            className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-glass-orange/50 resize-none"
+            className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
             rows={3}
           />
         </div>
@@ -333,7 +333,7 @@ const OrganizationCard = ({ organization, badge, onSave }: OrganizationCardProps
               value={contactName}
               onChange={e => setContactName(e.target.value)}
               placeholder="John Smith"
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-glass-orange/50 min-h-[44px]"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]"
             />
           </div>
           <div>
@@ -356,7 +356,7 @@ const OrganizationCard = ({ organization, badge, onSave }: OrganizationCardProps
               aria-describedby={
                 validationErrors.contactEmail ? `contact-email-error-${organization.id}` : undefined
               }
-              className={`w-full bg-gray-800/50 border ${validationErrors.contactEmail ? 'border-red-500' : 'border-gray-600'} text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-glass-orange/50 min-h-[44px]`}
+              className={`w-full bg-gray-800/50 border ${validationErrors.contactEmail ? 'border-red-500' : 'border-gray-600'} text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]`}
             />
             {validationErrors.contactEmail && (
               <p
@@ -381,7 +381,7 @@ const OrganizationCard = ({ organization, badge, onSave }: OrganizationCardProps
               value={contactJobTitle}
               onChange={e => setContactJobTitle(e.target.value)}
               placeholder="e.g. Travel Coordinator"
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-glass-orange/50 min-h-[44px]"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]"
             />
           </div>
           <div>
@@ -397,7 +397,7 @@ const OrganizationCard = ({ organization, badge, onSave }: OrganizationCardProps
               value={contactPhone}
               onChange={e => setContactPhone(e.target.value)}
               placeholder="+1 (555) 123-4567"
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-glass-orange/50 min-h-[44px]"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]"
             />
           </div>
         </div>
@@ -410,9 +410,7 @@ const OrganizationCard = ({ organization, badge, onSave }: OrganizationCardProps
           disabled={isSaving}
           aria-label={isSaving ? 'Saving organization settings' : 'Save organization settings'}
           className={`flex items-center gap-2 ${
-            saveSuccess
-              ? 'bg-green-600 hover:bg-green-500'
-              : 'bg-glass-orange hover:bg-glass-orange/80'
+            saveSuccess ? 'bg-green-600 hover:bg-green-500' : 'bg-primary hover:bg-primary/80'
           } text-white px-6 py-2 rounded-lg font-medium transition-colors min-h-[44px] disabled:opacity-50`}
         >
           {isSaving ? (

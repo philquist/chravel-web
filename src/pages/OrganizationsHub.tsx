@@ -76,7 +76,7 @@ export const OrganizationsHub = () => {
           <p className="text-gray-400 mb-6">{error.message}</p>
           <Button
             onClick={fetchUserOrganizations}
-            className="bg-glass-orange hover:bg-glass-orange/80 min-h-[44px]"
+            className="bg-primary hover:bg-primary/80 min-h-[44px]"
             aria-label="Retry loading organizations"
           >
             <RefreshCw size={16} className="mr-2" />
@@ -99,7 +99,7 @@ export const OrganizationsHub = () => {
             </div>
             <Button
               onClick={() => setShowCreateModal(true)}
-              className="bg-glass-orange hover:bg-glass-orange/80 min-h-[44px]"
+              className="bg-primary hover:bg-primary/80 min-h-[44px]"
               aria-label="Create a new organization"
             >
               <Plus size={16} className="mr-2" />
@@ -119,7 +119,7 @@ export const OrganizationsHub = () => {
               </p>
               <Button
                 onClick={() => setShowCreateModal(true)}
-                className="bg-glass-orange hover:bg-glass-orange/80 min-h-[44px]"
+                className="bg-primary hover:bg-primary/80 min-h-[44px]"
                 aria-label="Create your first organization"
               >
                 <Plus size={16} className="mr-2" />
@@ -151,11 +151,11 @@ export const OrganizationsHub = () => {
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-r from-glass-orange to-glass-yellow rounded-xl flex items-center justify-center">
-                          <Building size={24} className="text-white" />
+                        <div className="w-12 h-12 bg-gradient-to-r from-gold-primary to-gold-mid rounded-xl flex items-center justify-center">
+                          <Building size={24} className="text-primary-foreground" />
                         </div>
                         <div>
-                          <CardTitle className="text-white group-hover:text-glass-orange transition-colors">
+                          <CardTitle className="text-white group-hover:text-primary transition-colors">
                             {org.display_name}
                           </CardTitle>
                           <p className="text-sm text-gray-400">{org.name}</p>
@@ -163,7 +163,7 @@ export const OrganizationsHub = () => {
                       </div>
                       <ChevronRight
                         size={20}
-                        className="text-gray-500 group-hover:text-glass-orange transition-colors"
+                        className="text-gray-500 group-hover:text-primary transition-colors"
                       />
                     </div>
                   </CardHeader>
@@ -214,7 +214,7 @@ export const OrganizationsHub = () => {
                         aria-label={`Seat usage: ${org.seats_used} of ${org.seat_limit}`}
                       >
                         <div
-                          className="bg-glass-orange h-2 rounded-full transition-all"
+                          className="bg-primary h-2 rounded-full transition-all"
                           style={{ width: `${seatUsage}%` }}
                         />
                       </div>

@@ -41,12 +41,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             animationDelay: '0.05s',
           }}
         >
-          <h2
-            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight text-white"
-            style={{
-              textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
-            }}
-          >
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight text-gradient-gold">
             ChravelApp
           </h2>
         </div>
@@ -65,7 +60,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
 
         {/* New Subtitle */}
         <p
-          className="text-sm sm:text-base md:text-lg lg:text-xl text-white font-medium max-w-3xl mx-auto mb-3 tablet:mb-4 animate-fade-in"
+          className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 font-medium max-w-3xl mx-auto mb-3 tablet:mb-4 animate-fade-in"
           style={{
             animationDelay: '0.05s',
             textShadow: '0 2px 4px rgba(0,0,0,0.4)',
@@ -98,7 +93,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
         {/* Mobile CTA - centered below preview */}
         <Button
           onClick={onSignUp}
-          className="mt-4 px-6 py-3 accent-fill-gold backdrop-blur-md rounded-lg text-base font-semibold animate-fade-in lg:hidden"
+          className="mt-4 px-6 py-3 accent-fill-gold backdrop-blur-md rounded-xl text-base font-semibold animate-fade-in lg:hidden"
           style={{ animationDelay: '0.2s' }}
         >
           Login or Signup

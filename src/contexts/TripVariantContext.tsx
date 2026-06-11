@@ -12,14 +12,19 @@ interface TripVariantContextType {
   };
 }
 
+// Single gold accent across all trip variants. The old per-variant palettes
+// (orange/crimson/blue "glass" colors) were never defined in Tailwind, so they
+// never rendered — trip types are differentiated by badges/labels, not accent hue.
+const GOLD_ACCENT = {
+  primary: 'gold-primary',
+  secondary: 'gold-mid',
+  gradient: 'from-gold-primary to-gold-mid',
+  badge: 'from-gold-primary to-gold-mid',
+};
+
 const TripVariantContext = createContext<TripVariantContextType>({
   variant: 'consumer',
-  accentColors: {
-    primary: 'glass-orange',
-    secondary: 'glass-yellow',
-    gradient: 'from-glass-orange to-glass-yellow',
-    badge: 'from-glass-orange to-glass-yellow',
-  },
+  accentColors: GOLD_ACCENT,
 });
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -31,27 +36,7 @@ interface TripVariantProviderProps {
 }
 
 export const TripVariantProvider = ({ variant, children }: TripVariantProviderProps) => {
-  const accentColors =
-    variant === 'pro'
-      ? {
-          primary: 'glass-crimson',
-          secondary: 'glass-crimson-light',
-          gradient: 'from-glass-crimson to-glass-crimson-light',
-          badge: 'from-glass-crimson to-glass-crimson-light',
-        }
-      : variant === 'events'
-        ? {
-            primary: 'glass-blue',
-            secondary: 'glass-blue-light',
-            gradient: 'from-glass-blue to-glass-blue-light',
-            badge: 'from-glass-blue to-glass-blue-light',
-          }
-        : {
-            primary: 'gold-primary',
-            secondary: 'gold-dark',
-            gradient: 'from-gold-primary to-gold-dark',
-            badge: 'from-gold-primary to-gold-dark',
-          };
+  const accentColors = GOLD_ACCENT;
 
   return (
     <TripVariantContext.Provider value={{ variant, accentColors }}>

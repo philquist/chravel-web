@@ -51,7 +51,7 @@ export const MessageInbox = () => {
     } else if (message.tripId) {
       return 'bg-primary/15 text-primary border-primary/30';
     } else if (message.tourId) {
-      return 'bg-glass-orange/20 text-glass-orange border-glass-orange/30';
+      return 'bg-primary/20 text-primary border-primary/30';
     }
     return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
   };
@@ -60,7 +60,7 @@ export const MessageInbox = () => {
     <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <MessageCircle size={24} className="text-glass-orange" />
+          <MessageCircle size={24} className="text-primary" />
           <div>
             <h2 className="text-xl font-semibold text-white">Message Inbox</h2>
             <p className="text-slate-400 text-sm">{getTotalUnreadCount()} unread messages</p>
@@ -79,7 +79,7 @@ export const MessageInbox = () => {
           placeholder="Search messages, people, or trips..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl pl-12 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-glass-orange"
+          className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl pl-12 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-primary"
         />
       </div>
 
@@ -91,7 +91,7 @@ export const MessageInbox = () => {
             onClick={() => setFilter(filterType as any)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
               filter === filterType
-                ? 'bg-glass-orange text-white'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-white/10 text-gray-300 hover:bg-white/20'
             }`}
           >
@@ -111,7 +111,7 @@ export const MessageInbox = () => {
               key={message.id}
               onClick={() => handleMessageClick(message)}
               className={`p-4 rounded-xl cursor-pointer transition-all hover:bg-white/10 ${
-                !message.isRead ? 'bg-white/5 border-l-4 border-glass-orange' : 'bg-white/2'
+                !message.isRead ? 'bg-white/5 border-l-4 border-primary' : 'bg-white/2'
               }`}
             >
               <div className="flex items-start gap-3">
@@ -148,7 +148,7 @@ export const MessageInbox = () => {
                     </div>
                   )}
                 </div>
-                {!message.isRead && <div className="w-2 h-2 bg-glass-orange rounded-full"></div>}
+                {!message.isRead && <div className="w-2 h-2 bg-primary rounded-full"></div>}
               </div>
             </div>
           );

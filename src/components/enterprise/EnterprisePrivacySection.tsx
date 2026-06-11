@@ -83,8 +83,8 @@ export const EnterprisePrivacySection = () => {
               aria-checked={settings.useRealName}
               aria-label="Use Real Name"
               onClick={() => handleToggle('useRealName')}
-              className={`relative w-12 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-glass-orange focus:ring-offset-2 focus:ring-offset-transparent ${
-                settings.useRealName ? 'bg-glass-orange' : 'bg-white/20'
+              className={`relative w-12 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent ${
+                settings.useRealName ? 'bg-primary' : 'bg-white/20'
               }`}
             >
               <div
@@ -107,8 +107,8 @@ export const EnterprisePrivacySection = () => {
               aria-checked={settings.showJobTitle}
               aria-label="Show Job Title"
               onClick={() => handleToggle('showJobTitle')}
-              className={`relative w-12 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-glass-orange focus:ring-offset-2 focus:ring-offset-transparent ${
-                settings.showJobTitle ? 'bg-glass-orange' : 'bg-white/20'
+              className={`relative w-12 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent ${
+                settings.showJobTitle ? 'bg-primary' : 'bg-white/20'
               }`}
             >
               <div
@@ -154,7 +154,7 @@ export const EnterprisePrivacySection = () => {
                 }
               }}
               placeholder="e.g. Travel Coordinator"
-              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-glass-orange/50"
+              className="w-full bg-gray-800/50 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
             <p className="text-xs text-gray-500 mt-1">
               Shown in organization directory when &quot;Show Job Title&quot; is on
@@ -175,7 +175,7 @@ export const EnterprisePrivacySection = () => {
               <div className="text-white font-medium">Change Password</div>
               <div className="text-sm text-gray-400">Update your account password</div>
             </div>
-            <div className="text-glass-orange">→</div>
+            <div className="text-primary">→</div>
           </button>
         </div>
       </div>

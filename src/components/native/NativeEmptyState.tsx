@@ -182,7 +182,7 @@ export const NativeEmptyState = ({
               onClick={handleAction}
               className={cn(
                 'w-full py-3 rounded-xl font-semibold text-[17px]',
-                'bg-primary text-white',
+                'bg-primary text-primary-foreground',
                 'active:scale-[0.98] transition-transform',
               )}
             >

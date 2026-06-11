@@ -129,7 +129,7 @@ export const EnterpriseSettings = ({
           <p className="text-sm text-gray-400 text-center mb-4 max-w-sm">{error.message}</p>
           <button
             onClick={() => fetchUserOrganizations()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-glass-orange hover:bg-glass-orange/80 text-white font-medium transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-primary-foreground font-medium transition-colors"
           >
             <RefreshCw size={16} />
             Try again

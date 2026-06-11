@@ -37,7 +37,7 @@ export const BlockedUsersList = () => {
               type="button"
               onClick={() => unblockUser(blocked.id)}
               disabled={pending}
-              className="shrink-0 text-xs text-glass-orange transition-colors hover:text-glass-yellow disabled:opacity-50"
+              className="shrink-0 text-xs text-primary transition-colors hover:text-gold-light disabled:opacity-50"
             >
               {pending ? 'Unblocking…' : 'Unblock'}
             </button>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTripVariant } from '../../contexts/TripVariantContext';
 import {
   AlertCircle,
   Clock,
@@ -42,7 +41,6 @@ export const ProTripNotFound = ({
   onRetry,
 }: ProTripNotFoundProps) => {
   const navigate = useNavigate();
-  const { accentColors } = useTripVariant();
 
   const getIcon = () => {
     const iconClass = 'h-12 w-12 mx-auto mb-4';
@@ -107,7 +105,7 @@ export const ProTripNotFound = ({
         {reason === 'auth_required' ? (
           <button
             onClick={handleLogin}
-            className={`w-full bg-gradient-to-r ${accentColors.gradient} text-white px-6 py-3 min-h-[44px] rounded-xl flex items-center justify-center gap-2 mb-3`}
+            className={`w-full bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground px-6 py-3 min-h-[44px] rounded-xl flex items-center justify-center gap-2 mb-3`}
             aria-label="Log in to access this trip"
           >
             <LogIn className="h-4 w-4" />
@@ -116,7 +114,7 @@ export const ProTripNotFound = ({
         ) : reason === 'pending_approval' ? (
           <button
             onClick={() => navigate('/')}
-            className={`w-full bg-gradient-to-r ${accentColors.gradient} text-white px-6 py-3 min-h-[44px] rounded-xl flex items-center justify-center gap-2 mb-3`}
+            className={`w-full bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground px-6 py-3 min-h-[44px] rounded-xl flex items-center justify-center gap-2 mb-3`}
             aria-label="View your join request status"
           >
             <ArrowRight className="h-4 w-4" />
@@ -125,7 +123,7 @@ export const ProTripNotFound = ({
         ) : reason === 'no_access' ? (
           <button
             onClick={handleContactHost}
-            className={`w-full bg-gradient-to-r ${accentColors.gradient} text-white px-6 py-3 min-h-[44px] rounded-xl flex items-center justify-center gap-2 mb-3`}
+            className={`w-full bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground px-6 py-3 min-h-[44px] rounded-xl flex items-center justify-center gap-2 mb-3`}
             aria-label="Contact the trip host for access"
           >
             <Mail className="h-4 w-4" />
@@ -134,7 +132,7 @@ export const ProTripNotFound = ({
         ) : (
           <button
             onClick={() => navigate('/')}
-            className={`w-full bg-gradient-to-r ${accentColors.gradient} text-white px-6 py-3 min-h-[44px] rounded-xl mb-3`}
+            className={`w-full bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground px-6 py-3 min-h-[44px] rounded-xl mb-3`}
             aria-label="Return to dashboard"
           >
             Go to Dashboard

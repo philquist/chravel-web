@@ -437,7 +437,7 @@ export const AIConciergeChat = ({
                   type="button"
                   onClick={() => setShowUpsellModal(true)}
                   data-testid="concierge-limit-upgrade-cta"
-                  className="text-[11px] font-medium text-white bg-gradient-to-r from-glass-orange to-glass-yellow rounded-full px-3 py-1 active:scale-95 transition-transform"
+                  className="text-[11px] font-medium text-primary-foreground bg-gradient-to-r from-gold-primary to-gold-mid rounded-full px-3 py-1 active:scale-95 transition-transform"
                 >
                   Upgrade — get more asks
                 </button>

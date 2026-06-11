@@ -220,8 +220,8 @@ export const AcceptOrganizationInvite = () => {
       <Card className="bg-white/5 border-white/10 max-w-md w-full">
         <CardHeader>
           <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-glass-orange to-glass-yellow rounded-xl flex items-center justify-center">
-              <Building size={32} className="text-white" />
+            <div className="w-16 h-16 bg-gradient-to-r from-gold-primary to-gold-mid rounded-xl flex items-center justify-center">
+              <Building size={32} className="text-primary-foreground" />
             </div>
           </div>
           <CardTitle className="text-center text-2xl">Organization Invitation</CardTitle>
@@ -252,7 +252,7 @@ export const AcceptOrganizationInvite = () => {
             <Button
               onClick={handleAcceptInvite}
               disabled={accepting}
-              className="w-full bg-glass-orange hover:bg-glass-orange/80 min-h-[44px]"
+              className="w-full bg-primary hover:bg-primary/80 min-h-[44px]"
               aria-label={accepting ? 'Accepting invitation' : 'Accept organization invitation'}
             >
               {accepting ? (

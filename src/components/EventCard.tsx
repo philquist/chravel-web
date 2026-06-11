@@ -15,7 +15,6 @@ import { CardStatItem } from './ui/CardStatItem';
 import { CalendarGlyph } from './ui/CalendarGlyph';
 import { useShallow } from 'zustand/react/shallow';
 import { EventData } from '../types/events';
-import { useTripVariant } from '../contexts/TripVariantContext';
 import { ArchiveConfirmDialog } from './ArchiveConfirmDialog';
 import { DeleteTripConfirmDialog } from './DeleteTripConfirmDialog';
 import { InviteModal } from './InviteModal';
@@ -76,7 +75,6 @@ export const EventCard = ({
   const [showShareModal, setShowShareModal] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { accentColors } = useTripVariant();
   const { isDemoMode } = useDemoMode();
   const { deleteTrip, isDeleting } = useDeleteTrip();
 
@@ -219,7 +217,7 @@ export const EventCard = ({
   const actionButtonClass = cn(
     buttonVariants({ variant: 'ghost', size: 'sm' }),
     // Match TripCard/ProTripCard: ghost hover text would be accent-foreground (black) on glass CTAs.
-    'bg-black/30 hover:bg-black/40 text-white border border-white/20 hover:border-white/30 hover:text-white active:text-white focus-visible:text-white md:min-h-[44px] md:text-sm text-xs px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl',
+    'bg-black/30 hover:bg-black/40 text-white border border-white/20 hover:border-primary/30 hover:text-white active:text-white focus-visible:text-white md:min-h-[44px] md:text-sm text-xs px-3 py-2.5 md:py-3 rounded-xl',
   );
 
   // Build share trip data for ShareTripModal
@@ -236,13 +234,13 @@ export const EventCard = ({
   return (
     <div
       className={cn(
-        'bg-gradient-to-br backdrop-blur-xl border border-white/15 hover:border-white/30 rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 shadow-black/30 hover:scale-[1.02] hover:shadow-2xl relative group',
+        'bg-gradient-to-br backdrop-blur-xl border border-white/15 hover:border-primary/25 rounded-2xl overflow-hidden transition-all duration-300 shadow-enterprise motion-safe:hover:-translate-y-1 hover:shadow-enterprise-md relative group',
         eventColor.cardGradient,
       )}
     >
       {/* Header */}
       <div
-        className={`on-media relative h-48 bg-gradient-to-br from-${accentColors.primary}/20 to-${accentColors.secondary}/20 p-6`}
+        className={`on-media relative h-48 bg-gradient-to-br from-gold-primary/20 to-gold-mid/20 p-6`}
       >
         {/* Cover photo overlay if available */}
         {event.coverPhoto ? (

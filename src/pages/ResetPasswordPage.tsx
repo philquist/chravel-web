@@ -93,7 +93,7 @@ const ResetPasswordPage = () => {
               If this takes too long, your reset link may have expired.{' '}
               <button
                 onClick={() => navigate('/auth', { replace: true })}
-                className="text-glass-orange hover:text-glass-yellow transition-colors"
+                className="text-primary hover:text-gold-light transition-colors"
               >
                 Request a new one
               </button>
@@ -122,7 +122,7 @@ const ResetPasswordPage = () => {
                   required
                   autoFocus
                   autoComplete="new-password"
-                  className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-10 py-3 text-base text-white placeholder-gray-400 focus:outline-none focus:border-glass-orange min-h-[48px]"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-10 py-3 text-base text-white placeholder-gray-400 focus:outline-none focus:border-primary min-h-[48px]"
                 />
                 <button
                   type="button"
@@ -148,7 +148,7 @@ const ResetPasswordPage = () => {
                   placeholder="Confirm new password"
                   required
                   autoComplete="new-password"
-                  className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-4 py-3 text-base text-white placeholder-gray-400 focus:outline-none focus:border-glass-orange min-h-[48px]"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-4 py-3 text-base text-white placeholder-gray-400 focus:outline-none focus:border-primary min-h-[48px]"
                 />
               </div>
             </div>
@@ -156,7 +156,7 @@ const ResetPasswordPage = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-glass-orange to-glass-yellow text-white font-medium py-3 rounded-xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 min-h-[44px]"
+              className="w-full bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground font-medium py-3 rounded-xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 min-h-[44px]"
             >
               {isSubmitting ? 'Updating...' : 'Update Password'}
             </button>

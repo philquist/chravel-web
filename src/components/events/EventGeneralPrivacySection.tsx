@@ -9,7 +9,7 @@ import { Settings, Info } from 'lucide-react';
 export const EventGeneralPrivacySection = () => (
   <div className="space-y-3">
     <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-      <Settings size={24} className="text-glass-orange" />
+      <Settings size={24} className="text-primary" />
       General & Privacy
     </h3>
 

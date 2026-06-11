@@ -189,3 +189,27 @@ All wrappers should consume `Button` + constrained tokens only.
 2. Add `Text` typography wrapper + migration docs.
 3. Add lint checks for raw palette + arbitrary text sizes in feature code.
 4. Normalize the top 10 highest-drift screens first (mobile trip/event surfaces + auth flows).
+
+## Status update — 2026-06 premium polish pass
+
+Landed on `claude/chravelapp-premium-design-mdx6r1`:
+
+- **Dead utility classes removed repo-wide.** `glass-orange` / `glass-yellow` /
+  `glass-crimson` / `glass-blue` were referenced in 31 files but never defined in
+  Tailwind — auth submit buttons, upgrade-modal toggles, org-dashboard tab accents,
+  and many focus rings rendered with no styling. All remapped to the gold token
+  system; `TripVariantContext` now serves literal gold classes (dynamic
+  `${...}` class interpolation removed — Tailwind cannot scan it).
+- **Contrast fixed on gold fills:** `text-primary-foreground` (black) replaces
+  white text/icons on all solid-gold surfaces.
+- **Primitives upgraded:** Skeleton shimmer, Button `premium` variant + universal
+  press feedback, Tabs gold active ring, Badge `gold` variant, Dialog enterprise
+  shadow, `.modal-backdrop` canonical class.
+- **Cards/empty states/trip shell:** hover lift + enterprise shadows, ink tokens
+  in TripTabs/TripHeader/MobileTripTabs, radius canon (controls `rounded-xl`,
+  cards `rounded-2xl`).
+- **Dead code removed:** `MobileBottomNav` (never mounted; `NativeTabBar` is the
+  real mobile nav).
+
+Remaining drift metrics above are unchanged in scope (raw palette/typography
+migration is still opportunistic, per Phase 3).
