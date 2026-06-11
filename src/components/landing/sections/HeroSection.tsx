@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Button } from '../../ui/button';
-import demoPreviewHero from '@/assets/demo-preview-hero.webp';
+
 // Real-product-walkthrough video built from Tokyo Adventure demo screenshots.
 // Source: remotion/src/compositions/HomepageHeroDemo60.tsx
 // Regenerate via: cd remotion && node scripts/render-remotion.mjs /mnt/documents/chravel-homepage-demo-60.mp4 HomepageHeroDemo60
