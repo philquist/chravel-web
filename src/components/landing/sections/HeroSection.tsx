@@ -109,9 +109,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
               </video>
             ) : (
               <img
-                src={demoPreviewHero}
-                alt="ChravelApp trip dashboard preview"
-                className="w-full h-auto"
+                src={HERO_VIDEO_POSTER}
+                alt="ChravelApp Tokyo Adventure trip dashboard preview"
+                className="w-full h-full object-cover"
                 fetchPriority="high"
                 decoding="async"
               />
