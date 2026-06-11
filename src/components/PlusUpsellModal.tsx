@@ -37,7 +37,7 @@ export const PlusUpsellModal = ({ isOpen, onClose }: PlusUpsellModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="modal-backdrop z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto pb-[max(2rem,env(safe-area-inset-bottom))]">
         <div
           className="flex items-start justify-between mb-6 gap-4"
@@ -52,10 +52,10 @@ export const PlusUpsellModal = ({ isOpen, onClose }: PlusUpsellModalProps) => {
               }`}
             >
               {selectedTier === 'explorer' && (
-                <Globe size={20} className="text-white sm:w-6 sm:h-6" />
+                <Globe size={20} className="text-primary-foreground sm:w-6 sm:h-6" />
               )}
               {selectedTier === 'frequent-chraveler' && (
-                <Sparkles size={20} className="text-white sm:w-6 sm:h-6" />
+                <Sparkles size={20} className="text-primary-foreground sm:w-6 sm:h-6" />
               )}
             </div>
             <div className="min-w-0">

@@ -197,8 +197,8 @@ export const EditTripModal = ({ isOpen, onClose, trip, onUpdate }: EditTripModal
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 max-w-md w-full animate-scale-in relative">
+    <div className="modal-backdrop z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-card/95 backdrop-blur-xl border border-white/10 rounded-3xl shadow-enterprise-lg p-6 max-w-md w-full animate-scale-in relative">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white">Edit Trip Details</h2>

@@ -61,8 +61,8 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl shadow-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="modal-backdrop z-50 flex items-center justify-center p-4">
+      <div className="bg-card/95 backdrop-blur-xl border border-white/10 rounded-3xl shadow-enterprise-lg p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-bold text-white">Choose Your Plan</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
@@ -121,9 +121,11 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
                     : 'bg-gradient-to-r from-primary to-primary/80'
                 }`}
               >
-                {selectedPlan === 'explorer' && <Globe size={32} className="text-white" />}
+                {selectedPlan === 'explorer' && (
+                  <Globe size={32} className="text-primary-foreground" />
+                )}
                 {selectedPlan === 'frequent-chraveler' && (
-                  <Sparkles size={32} className="text-white" />
+                  <Sparkles size={32} className="text-primary-foreground" />
                 )}
               </div>
               <h3 className="text-2xl font-bold text-white mb-2 capitalize">

@@ -55,9 +55,9 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="modal-backdrop z-50 flex items-center justify-center p-4">
       <div
-        className={`bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl shadow-2xl ${
+        className={`bg-card/95 backdrop-blur-xl border border-white/10 rounded-3xl shadow-enterprise-lg ${
           isMobile
             ? 'w-full h-full overflow-y-auto p-4'
             : 'p-8 max-w-6xl w-full max-h-[90vh] overflow-y-auto'
@@ -70,7 +70,7 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
                 isMobile ? 'w-10 h-10' : 'w-12 h-12'
               }`}
             >
-              <Crown size={isMobile ? 20 : 24} className="text-white" />
+              <Crown size={isMobile ? 20 : 24} className="text-primary-foreground" />
             </div>
             <div>
               <h2 className={`font-bold text-white ${isMobile ? 'text-xl' : 'text-3xl'}`}>

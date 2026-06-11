@@ -387,7 +387,7 @@ export const CreateTripModal = ({ isOpen, onClose }: CreateTripModalProps) => {
   const sectionClassName = 'space-y-4 rounded-xl border border-border/60 bg-card/40 p-4';
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain">
+    <div className="modal-backdrop z-[70] flex items-center justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain">
       <div
         role="dialog"
         aria-modal="true"

@@ -59,7 +59,7 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
               onClick={() =>
                 window.open((resolvedMediaUrl ?? message.media_url) as string, '_blank')
               }
-              className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-lg opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
               aria-label="View full size"
             >
               <Maximize2 size={16} />
