@@ -1,12 +1,21 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Button } from '../../ui/button';
 import demoPreviewHero from '@/assets/demo-preview-hero.webp';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+
+const HERO_VIDEO_SRC = '/videos/chravel-homepage-hero.mp4';
+const HERO_VIDEO_POSTER = '/videos/chravel-homepage-hero-poster.jpg';
 
 interface HeroSectionProps {
   onSignUp: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
+  const reducedMotion = useReducedMotion();
+  const [videoFailed, setVideoFailed] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const showVideo = !reducedMotion && !videoFailed;
+
   return (
     <div
       className="relative container mx-auto px-4 flex flex-col min-h-[85vh] tablet:min-h-[90vh] text-center pb-8 tablet:pb-6"
@@ -77,14 +86,31 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
           className="w-full max-w-6xl mx-auto px-2 animate-fade-in"
           style={{ animationDelay: '0.1s' }}
         >
-          <div className="relative rounded-xl overflow-hidden shadow-2xl shadow-black/40 border border-white/10">
-            <img
-              src={demoPreviewHero}
-              alt="ChravelApp trip dashboard preview"
-              className="w-full h-auto"
-              fetchPriority="high"
-              decoding="async"
-            />
+          <div className="relative rounded-xl overflow-hidden shadow-2xl shadow-black/40 border border-white/10 aspect-video bg-[#070B1A]">
+            {showVideo ? (
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                poster={HERO_VIDEO_POSTER}
+                aria-label="ChravelApp trip dashboard product demo"
+                onError={() => setVideoFailed(true)}
+              >
+                <source src={HERO_VIDEO_SRC} type="video/mp4" />
+              </video>
+            ) : (
+              <img
+                src={demoPreviewHero}
+                alt="ChravelApp trip dashboard preview"
+                className="w-full h-auto"
+                fetchPriority="high"
+                decoding="async"
+              />
+            )}
             {/* Subtle overlay to blend edges */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#070B1A]/30 via-transparent to-transparent pointer-events-none" />
           </div>
