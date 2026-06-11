@@ -77,6 +77,27 @@ describe('MobileTripTabs tab navigation', () => {
     Element.prototype.scrollIntoView = vi.fn();
   });
 
+  it('keeps chat tab panel scroll-contained so the composer stays pinned', async () => {
+    render(
+      <MobileTripTabs
+        activeTab="chat"
+        onTabChange={vi.fn()}
+        tripId="trip-1"
+        basecamp={{ name: 'Hotel', address: 'Tokyo' }}
+      />,
+    );
+
+    expect(await screen.findByText('Chat tab')).toBeInTheDocument();
+
+    const chatPanel = document.querySelector('[data-tab-panel="chat"]');
+    expect(chatPanel).toBeTruthy();
+    expect(chatPanel?.getAttribute('data-scroll-contained')).toBe('true');
+
+    const style = (chatPanel as HTMLElement).style;
+    expect(style.overflowY).toBe('hidden');
+    expect(style.overscrollBehaviorY).toBe('none');
+  });
+
   it('lets users leave Concierge for Payments without the content pane taking horizontal gestures', async () => {
     const onTabChange = vi.fn();
 

@@ -1065,7 +1065,7 @@ export const TripChat = React.memo(
     );
 
     return (
-      <div className="flex flex-col h-full">
+      <div className="chat-screen flex flex-col h-full min-h-0 overflow-hidden">
         <PullToRefreshIndicator
           isRefreshing={isRefreshing}
           pullDistance={pullDistance}
@@ -1094,7 +1094,7 @@ export const TripChat = React.memo(
         )}
 
         {/* Chat Container - Messages with Integrated Filter Tabs */}
-        <div className="flex-1 flex flex-col min-h-0" data-chat-container>
+        <div className="chat-body flex-1 flex flex-col min-h-0 overflow-hidden" data-chat-container>
           <div
             ref={messagesContainerRef}
             className="rounded-2xl border border-border/60 bg-card/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden flex-1 flex flex-col relative min-h-0"
@@ -1215,8 +1215,11 @@ export const TripChat = React.memo(
         {/* Persistent Chat Input - Hidden when in Channels mode or user cannot post */}
         {messageFilter !== 'channels' && canPostToChat && (
           <div
-            className="chat-input-persistent w-full flex-shrink-0"
-            style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)' }}
+            className="chat-composer-tray chat-input-persistent w-full flex-shrink-0 bg-background"
+            style={{
+              paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
+              touchAction: 'manipulation',
+            }}
           >
             <div className="w-full">
               <ChatInput

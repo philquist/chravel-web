@@ -1521,6 +1521,27 @@
     }
   }
 
+  /* Trip chat shell — composer is a flex sibling, not part of the scroll area */
+  .chat-screen {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .chat-body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .chat-composer-tray {
+    flex-shrink: 0;
+    position: relative;
+    bottom: 0;
+  }
+
   /* Chat scroll container - no CSS smooth scroll to prevent iOS vibration during streaming */
   .chat-scroll-container {
     overflow-y: auto;

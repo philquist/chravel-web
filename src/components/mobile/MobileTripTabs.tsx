@@ -32,6 +32,9 @@ import { EventTabKey, resolveEventTabsForRole } from '@/lib/eventTabs';
 import { useEventTabSettings } from '@/hooks/useEventTabSettings';
 import { retryImport } from '@/lib/retryImport';
 
+/** Tabs that pin a bottom composer — parent panel must not scroll (only inner message list). */
+const FIXED_BOTTOM_COMPOSER_TABS = new Set(['chat', 'concierge']);
+
 // ⚡ PERFORMANCE: Lazy load all tab components for code splitting
 // retryImport handles stale-chunk failures with exponential backoff
 const TripChat = lazy(() =>
@@ -555,7 +558,7 @@ export const MobileTripTabs = ({
   }, [activeTab, isEventAdmin, onTabChange, tabs, variant]);
 
   return (
-    <>
+    <div className="flex flex-col flex-1 min-h-0">
       {/* Horizontal Scrollable Tab Bar - Fixed flex item, always visible */}
       <div className="flex-shrink-0 z-40 bg-black/95 backdrop-blur-md border-b border-white/10">
         <div
@@ -609,15 +612,8 @@ export const MobileTripTabs = ({
         </div>
       </div>
 
-      {/* Tab Content - bounded height ensures tab rail stays visible regardless of parent layout */}
-      <div
-        ref={contentRef}
-        className="bg-background flex flex-col min-h-0 flex-1 overflow-hidden"
-        style={{
-          height: 'calc(100dvh - var(--mobile-header-h, 73px) - var(--mobile-tabs-h, 52px))',
-          WebkitOverflowScrolling: 'touch',
-        }}
-      >
+      {/* Tab Content — flex-1 fills remaining shell height (header/demo bar/tab rail already reserved). */}
+      <div ref={contentRef} className="bg-background flex flex-col min-h-0 flex-1 overflow-hidden">
         {tabs
           .filter(t => variant === 'event' || t.enabled !== false)
           .map(tab => {
@@ -631,17 +627,23 @@ export const MobileTripTabs = ({
             // updates visitedTabs AFTER the first render, causing the tab to not mount
             if (!hasBeenVisited && !isActive) return null;
 
+            const scrollContained = isActive && FIXED_BOTTOM_COMPOSER_TABS.has(tab.id);
+
             return (
               <div
                 key={tab.id}
+                data-tab-panel={tab.id}
+                data-scroll-contained={scrollContained ? 'true' : 'false'}
                 style={{
                   display: isActive ? 'flex' : 'none',
                   flexDirection: 'column',
                   minHeight: 0,
-                  overflowY: isActive ? 'auto' : 'hidden',
+                  // Chat/concierge pin a bottom composer — never let the tab panel scroll.
+                  overflowY: isActive && !scrollContained ? 'auto' : 'hidden',
                   overflowX: 'hidden',
                   overscrollBehaviorX: 'none',
-                  WebkitOverflowScrolling: isActive ? 'touch' : undefined,
+                  overscrollBehaviorY: scrollContained ? 'none' : undefined,
+                  WebkitOverflowScrolling: isActive && !scrollContained ? 'touch' : undefined,
                 }}
                 className={isActive ? 'h-full flex-1 relative' : ''}
               >
@@ -674,6 +676,6 @@ export const MobileTripTabs = ({
       </div>
 
       <DisabledTabDialog open={showDisabledTabDialog} onOpenChange={setShowDisabledTabDialog} />
-    </>
+    </div>
   );
 };
