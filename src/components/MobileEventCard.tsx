@@ -204,7 +204,7 @@ export const MobileEventCard = ({
 
   return (
     <div
-      className={`bg-gradient-to-br ${eventColor.cardGradient} backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden transition-all duration-300 shadow-lg hover:scale-[1.02] group relative`}
+      className={`bg-gradient-to-br ${eventColor.cardGradient} backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden transition-all duration-300 shadow-enterprise motion-safe:hover:-translate-y-1 group relative`}
     >
       {/* Mobile Header */}
       <div

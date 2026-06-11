@@ -24,26 +24,18 @@ export const EmptyStateWithDemo = ({
 
   return (
     <div className="text-center py-12 px-4">
-      <div className="w-20 h-20 mx-auto mb-6 bg-muted/20 rounded-full flex items-center justify-center">
-        <Icon size={32} className="text-muted-foreground" />
+      <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/15 rounded-full flex items-center justify-center">
+        <Icon size={32} className="text-primary" />
       </div>
 
-      <h3 className="text-xl font-semibold text-foreground mb-3">{title}</h3>
+      <h3 className="text-xl font-semibold tracking-tight text-foreground mb-3">{title}</h3>
       <p className="text-muted-foreground mb-6 max-w-md mx-auto leading-relaxed">{description}</p>
 
       <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-        {actionLabel && onAction && (
-          <Button onClick={onAction} className="transition-all duration-200 hover:scale-105">
-            {actionLabel}
-          </Button>
-        )}
+        {actionLabel && onAction && <Button onClick={onAction}>{actionLabel}</Button>}
 
         {showDemoPrompt && !isDemoMode && (
-          <Button
-            onClick={enableDemoMode}
-            variant="outline"
-            className="transition-all duration-200 hover:scale-105"
-          >
+          <Button onClick={enableDemoMode} variant="outline">
             Show Demo Data
           </Button>
         )}
