@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { Button } from '../../ui/button';
 import demoPreviewHero from '@/assets/demo-preview-hero.webp';
+import heroVideoAsset from '@/assets/chravel-homepage-hero.mp4.asset.json';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
-const HERO_VIDEO_SRC = '/videos/chravel-homepage-hero.mp4';
-const HERO_VIDEO_POSTER = '/videos/chravel-homepage-hero-poster.jpg';
+const HERO_VIDEO_SRC = heroVideoAsset.url;
+const HERO_VIDEO_POSTER = demoPreviewHero;
 
 interface HeroSectionProps {
   onSignUp: () => void;
