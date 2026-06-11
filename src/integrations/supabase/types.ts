@@ -1771,6 +1771,42 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_responses: {
+        Row: {
+          biggest_chaos: string | null
+          chaos_score: number | null
+          created_at: string
+          desired_solution: string | null
+          frustration_level: string | null
+          id: string
+          scattered_apps: string[]
+          scroll_pain: string | null
+          user_id: string
+        }
+        Insert: {
+          biggest_chaos?: string | null
+          chaos_score?: number | null
+          created_at?: string
+          desired_solution?: string | null
+          frustration_level?: string | null
+          id?: string
+          scattered_apps?: string[]
+          scroll_pain?: string | null
+          user_id?: string
+        }
+        Update: {
+          biggest_chaos?: string | null
+          chaos_score?: number | null
+          created_at?: string
+          desired_solution?: string | null
+          frustration_level?: string | null
+          id?: string
+          scattered_apps?: string[]
+          scroll_pain?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       organization_billing: {
         Row: {
           billing_email: string
@@ -3820,7 +3856,6 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          notifications_muted: boolean
           role: string
           trip_id: string
           updated_at: string
@@ -3829,7 +3864,6 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          notifications_muted?: boolean
           role?: string
           trip_id: string
           updated_at?: string
@@ -3838,7 +3872,6 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          notifications_muted?: boolean
           role?: string
           trip_id?: string
           updated_at?: string
