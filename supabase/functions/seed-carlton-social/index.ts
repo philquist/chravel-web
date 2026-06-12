@@ -1,6 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { requireAuth } from '../_shared/requireAuth.ts';
+import { isSuperAdminEmail } from '../_shared/superAdmins.ts';
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 const CARLTON_ID = '11ba817d-f0c8-411d-9a75-b1bde6c4df4a';
