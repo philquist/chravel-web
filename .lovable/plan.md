@@ -1,51 +1,67 @@
-# Fix preview routing to marketing + hero wordmark legibility
+## Root cause
 
-## Problem 1 — Preview lands on `/auth` instead of marketing home
+1. **The preview is on `/index`, not `/`.** The previous override only handled `/`, `/home`, and `?marketing=1`, so `/index` still booted the full app shell instead of the marketing shell.
+2. **The installed-app auth gate is too broad for preview/web.** The full app uses `isInstalledApp()` to decide whether to show the mobile/native auth modal. That heuristic can be triggered by PWA/embedded/mobile-preview contexts, so the preview gets treated like an installed app instead of a browser marketing page.
+3. **The marketing shell has a second auth escape hatch.** Even when `main.tsx` forces marketing, `MarketingApp.tsx` still checks `isInstalledApp()` and can redirect to `/auth`, which bypasses the marketing homepage.
+4. **The gold `CHRAVEL` splash/spinner is from boot fallbacks.** `index.html` contains a static gold wordmark + spinner, and `main.tsx` renders a matching Suspense fallback. That was a boot/performance fallback, but it is wrong for the marketing homepage and wrong for preview.
+5. **The attached screenshot is the auth modal, not the marketing homepage.** That modal includes its own gold `ChravelApp` wordmark, which is why you also see gold branding inside the login surface.
 
-`src/main.tsx` decides between `MarketingApp` and the full `App` via `shouldUseMarketingBootstrap`. It returns `false` (→ boot full App, which then sends you through the auth gate) whenever **any** of these is true:
+## Fix plan
 
-- `isInstalledApp()` (PWA / Capacitor / native shell)
-- `hasAuthMarkerOnBoot` — a Supabase auth marker is present in `localStorage` / `sessionStorage` / cookies from a prior session
-- The path is not `/`
+### 1. Make Lovable preview always land on the marketing homepage
+- Treat these as marketing homepage routes in preview/browser context:
+  - `/`
+  - `/index`
+  - `/home`
+  - `?marketing=1`
+- Update the bootstrap logic so `/index` does not fall through to the full app router.
+- Keep native iOS/Android shells on their auth flow.
 
-In the current preview your browser has a stale auth marker from earlier testing, so the marketing shell is skipped and the in-app router immediately bounces an unauthenticated/expired session to `/auth?returnTo=/`. That's why you can't see the new Remotion hero video.
+### 2. Narrow the mobile/native auth gate
+- Add a focused platform helper for “native auth surface” instead of using broad `isInstalledApp()` everywhere for homepage routing.
+- Only route directly to auth for:
+  - Chravel native shell
+  - Capacitor/native WebView
+  - mobile standalone PWA on iOS/Android
+- Do **not** route desktop browser or Lovable preview to the mobile auth modal.
 
-### Fix
-Add a query-string escape hatch so previews can force the marketing landing without manually clearing storage:
+### 3. Remove homepage splash wordmark and spinner
+- Remove the static gold `Chravel` wordmark + spinner from `index.html` root fallback.
+- Replace the React root Suspense fallback in `main.tsx` with a blank dark shell, not a logo and not a spinner.
+- Replace marketing shell lazy-section spinners with non-branded blank fallbacks so the homepage does not flash a gold spinner.
 
-- In `src/lib/bootstrapShell.ts`, extend `MarketingBootstrapInput` with an optional `forceMarketing: boolean`. When `true` and `marketingSplitEnabled` is `true`, return `true` regardless of auth marker / installed shell / path.
-- In `src/main.tsx`, read `?marketing=1` (and also accept path `/home` as an alias) from `window.location` and pass `forceMarketing` into `shouldUseMarketingBootstrap`. Also clear the cached redirect so `MarketingApp`'s `PostAuthBoot` doesn't immediately punt back to `/` if the marker is genuinely stale (guarded behind the same `forceMarketing` flag).
-- Update `src/lib/__tests__/bootstrapShell.test.ts` with one new case asserting `forceMarketing: true` wins over `hasAuthMarker` / `isInstalledApp`.
+### 4. Stop the marketing shell from escaping to auth in preview
+- Update `MarketingApp.tsx` so forced marketing routes (`/`, `/index`, `/home`, `?marketing=1` in preview) bypass `InstalledShellEscape`.
+- Prevent logged-in/stale-auth preview sessions from auto-bouncing out of the landing page.
 
-Usage: open `<preview-url>/?marketing=1` to view the landing + hero video reliably. Zero impact on production users who don't pass the flag.
+### 5. Remove the unwanted gold auth modal wordmark
+- Remove the gold `ChravelApp` logo line from `AuthModal` so the login surface starts with the actual heading (`Welcome Back`, `Create Account`, etc.).
+- Leave auth functionality unchanged.
 
-## Problem 2 — "ChravelApp" gold-gradient wordmark unreadable on gold hero background
+## Files to touch
 
-In `src/components/landing/sections/HeroSection.tsx` the brand `<h2>` uses `text-gradient-gold`, which collides with the gold accent overlay behind the hero section. The H1 directly below it already uses solid white + a layered black text-shadow and reads cleanly.
-
-### Fix
-Match the H1 treatment so the wordmark pops off the gold background:
-
-- Replace `text-gradient-gold` on the `ChravelApp` `<h2>` with `text-white` and add the same `textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)'` inline style already used by the H1 and the "Less Chaos, More Coordination" subhead.
-- No other typography or spacing changes.
-
-This keeps the gold accent system intact for buttons / overlays where it has real contrast, and gives the wordmark guaranteed legibility on any hero variant.
-
-## Files touched
-
-- `src/lib/bootstrapShell.ts` — add `forceMarketing` to input + branch
-- `src/lib/__tests__/bootstrapShell.test.ts` — 1 new assertion
-- `src/main.tsx` — read `?marketing=1` / `/home`, pass `forceMarketing`
-- `src/components/landing/sections/HeroSection.tsx` — swap gradient class for white + shadow on the brand `<h2>`
+- `index.html` — remove static splash wordmark/spinner markup and styles.
+- `src/main.tsx` — route `/index` and preview homepage to marketing; remove branded Suspense fallback.
+- `src/MarketingApp.tsx` — respect preview/marketing override before installed-auth escape.
+- `src/pages/Index.tsx` — use the narrower native/mobile auth gate for unauthenticated users.
+- `src/utils/platformDetection.ts` — add a narrowly named helper for native/mobile auth gate.
+- `src/components/landing/FullPageLanding.tsx` — remove marketing spinners from lazy section fallbacks.
+- `src/components/AuthModal.tsx` — remove the gold wordmark at the top of the auth modal.
+- `src/lib/__tests__/bootstrapShell.test.ts` — add regression coverage for forced marketing routes, including `/index`.
 
 ## Verification
 
-1. Open the preview at `/?marketing=1` → marketing landing renders and the 60s Tokyo Adventure hero video autoplays.
-2. Open `/` with no query (and no stale auth marker) → marketing still renders as before.
-3. Open `/` with a real signed-in session → still boots full App (no regression).
-4. Hero wordmark "ChravelApp" is solid white with a soft black shadow, clearly legible over the gold accent overlay.
-5. `npm run typecheck && npm run lint && npm run build` pass; new bootstrap test passes.
+- Desktop preview `/index` shows the desktop marketing homepage immediately.
+- Desktop preview `/` shows the desktop marketing homepage immediately.
+- Desktop preview does **not** show:
+  - gold `CHRAVEL` splash
+  - spinner
+  - auth modal
+  - `/auth` redirect
+- `/?marketing=1` still forces marketing.
+- Native/mobile auth routes remain available for iOS/Android app contexts.
+- The Remotion hero video remains embedded on the marketing homepage.
 
 ## Rollback
 
-Revert the four files; no schema, no edge function, no dependency changes.
+Revert these routing/fallback/auth-modal edits; the existing auth and app routes are otherwise unchanged.
