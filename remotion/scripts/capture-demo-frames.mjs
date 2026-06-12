@@ -41,12 +41,17 @@ const results = [];
 
 /** Hide demo-mode chrome (Exit Demo pill/bar) so frames look like the real product. */
 async function hideDemoChrome(page) {
-  await page.addStyleTag({
-    content: `
-      [aria-label="Exit demo mode"] { display: none !important; }
-      div[class*="bg-orange-500"] { display: none !important; }
-    `,
-  });
+  try {
+    await page.addStyleTag({
+      content: `
+        [aria-label="Exit demo mode"] { display: none !important; }
+        div[class*="bg-orange-500"] { display: none !important; }
+      `,
+    });
+  } catch {
+    // Transient CSP/navigation noise can reject the injection; the style is
+    // re-applied on every settle() so a single miss is harmless.
+  }
 }
 
 /** Wait until skeleton/spinner indicators clear (best effort). */
@@ -308,6 +313,85 @@ async function capturePaymentsScene(page, dir) {
   await shoot(page, dir, 'payments', await tabBarClip(page));
 }
 
+/** Mobile Create Trip: open the full-screen modal on the dashboard and fill it. */
+async function captureMobileCreateTrip(page, dir) {
+  // Caller must already be on the demo dashboard. The action-bar button can be
+  // CSS-hidden on phone layouts, so dispatch the click instead of tapping.
+  const opened = await page.evaluate(() => {
+    const btn = document.querySelector('[aria-label="Create New Trip"]');
+    if (!btn) return false;
+    btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    return true;
+  });
+  if (!opened) {
+    console.warn('  ⚠ mobile Create New Trip button not found — skipping m-create-trip');
+    return;
+  }
+  await page.waitForSelector('input[placeholder="e.g., Summer in Paris"]', { timeout: 10000 });
+  await page.locator('input[placeholder="e.g., Summer in Paris"]').fill("Paul's Birthday Weekend");
+  await page.locator('input[placeholder="e.g., Paris, France"]').fill('Miami, FL');
+  const dateInputs = page.locator('input[type="date"]');
+  await dateInputs.nth(0).fill('2026-07-17');
+  await dateInputs.nth(1).fill('2026-07-19');
+  await settle(page, 600);
+  await shoot(page, dir, 'm-create-trip');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+}
+
+/** Mobile Broadcasts: chat Broadcasts filter with the storyboard message staged. */
+async function captureMobileBroadcasts(page, dir, tripPath, name) {
+  await page.goto(`${BASE_URL}${tripPath}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+  await settle(page, 1200);
+  await clickTab(page, 'chat');
+  const filtered = await page.evaluate(() => {
+    const chip = Array.from(document.querySelectorAll('button')).find(
+      el => (el.textContent || '').trim() === 'Broadcasts',
+    );
+    if (!chip) return false;
+    chip.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    return true;
+  });
+  if (!filtered) console.warn('  ⚠ mobile Broadcasts filter chip not found');
+  await page.waitForTimeout(800);
+  // The filtered list virtualizes rows; force a re-measure so bubbles don't
+  // render with stale offsets (overlapping), then settle at the latest items.
+  await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+  await page.waitForTimeout(700);
+  await scrollChatToBottom(page);
+  await page.waitForTimeout(900);
+  await scrollChatToBottom(page);
+  await page.waitForTimeout(600);
+  await shoot(page, dir, name);
+}
+
+/**
+ * Mobile calendar: demo events render for the device's "today" on trip 1
+ * desktop but the mobile day list can come up empty — try trip 1, tap the
+ * selected day to force a refresh, then fall back to trip 8.
+ */
+async function captureMobileCalendar(page, dir) {
+  for (const tripPath of ['/trip/1', '/trip/8', '/trip/2']) {
+    await page.goto(`${BASE_URL}${tripPath}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    await settle(page, 1200);
+    await clickTab(page, 'calendar');
+    await page.waitForTimeout(800);
+    const hasEvents = await page.evaluate(() => {
+      return !document.body.textContent?.includes('No events for this day');
+    });
+    if (hasEvents) {
+      await shoot(page, dir, 'm-calendar');
+      return;
+    }
+    console.warn(`  ⚠ mobile calendar empty on ${tripPath}, trying next trip`);
+  }
+  // Last resort: capture trip 1 anyway (month grid still reads well)
+  await page.goto(`${BASE_URL}/trip/1`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+  await settle(page, 1200);
+  await clickTab(page, 'calendar');
+  await shoot(page, dir, 'm-calendar');
+}
+
 async function main() {
   console.log(`\n🎬 Chravel demo-frame capture — ${BASE_URL}\n`);
   const browser = await chromium.launch({
@@ -364,11 +448,17 @@ async function main() {
 
     const mobileOpts = { clipToTabs: false };
     await shoot(mpage, OUT_MOBILE, 'm-dashboard');
+    await captureMobileCreateTrip(mpage, OUT_MOBILE);
     await captureTabShot(mpage, OUT_MOBILE, 'm-chat', '/trip/1', 'chat', mobileOpts);
-    await captureTabShot(mpage, OUT_MOBILE, 'm-calendar', '/trip/1', 'calendar', mobileOpts);
+    await captureMobileBroadcasts(mpage, OUT_MOBILE, '/trip/1', 'm-broadcasts');
+    await captureMobileCalendar(mpage, OUT_MOBILE);
     await captureTabShot(mpage, OUT_MOBILE, 'm-places', '/trip/8', 'places', mobileOpts);
+    await captureTabShot(mpage, OUT_MOBILE, 'm-tasks', '/trip/1', 'tasks', mobileOpts);
+    await captureTabShot(mpage, OUT_MOBILE, 'm-polls', '/trip/1', 'polls', mobileOpts);
+    await captureTabShot(mpage, OUT_MOBILE, 'm-media', '/trip/2', 'media', mobileOpts);
     await captureTabShot(mpage, OUT_MOBILE, 'm-payments', '/trip/1', 'payments', mobileOpts);
     await captureTabShot(mpage, OUT_MOBILE, 'm-concierge', '/trip/8', 'concierge', mobileOpts);
+    await captureTabShot(mpage, OUT_MOBILE, 'm-pro-team', PRO_TRIP_PATH, 'team', mobileOpts);
     await mpage.close();
     await mctx.close();
   } finally {

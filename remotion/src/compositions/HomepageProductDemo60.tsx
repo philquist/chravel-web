@@ -7,16 +7,20 @@ import { fontFamily } from '../fonts';
  * the running ChravelApp (captured via remotion/scripts/capture-demo-frames.mjs
  * against the built app in demo mode). No AI-generated UI, no mock DOM.
  *
+ * Every feature scene shows the desktop web app and the iPhone PWA side by
+ * side — same feature, both platforms.
+ *
  * Storyboard:
  *   0–4s    full-bleed dashboard (frame 0 == homepage poster), subtle push
- *   4–10s   create trip — Paul's Birthday Weekend, Miami (real modal, 3 stages)
- *   10–17s  trip group chat (real conversation, sent dinner question)
- *   17–24s  broadcasts (priority announcements + staged Komodo broadcast)
- *   24–31s  shared group calendar
- *   31–38s  places / Basecamp — desktop + iPhone PWA side by side
- *   38–48s  quick cuts: tasks → polls → media vault → payment split
- *   48–55s  Pro: tour crew roster + role-filtered broadcasts
- *   55–60s  finale split screen + "One app for every group trip."
+ *   4–10s   create trip — Paul's Birthday Weekend, Miami (real modal) + phone
+ *   10–16s  trip group chat + phone
+ *   16–22s  broadcasts (priority announcements) + phone
+ *   22–28s  AI Concierge itinerary + phone
+ *   28–34s  shared group calendar + phone
+ *   34–40s  places / Basecamp + phone
+ *   40–50s  quick cuts: tasks → polls → media vault → payment split (+ phones)
+ *   50–56s  Pro: tour crew roster ↔ broadcasts + phone roster
+ *   56–60s  finale split screen + "One app for every group trip."
  */
 
 const FPS = 30;
@@ -33,16 +37,17 @@ const FADE = 14;
 const T = {
   opening: { from: 0, dur: 120 },
   create: { from: 120, dur: 180 },
-  chat: { from: 300, dur: 210 },
-  broadcasts: { from: 510, dur: 210 },
-  calendar: { from: 720, dur: 210 },
-  places: { from: 930, dur: 210 },
-  tasks: { from: 1140, dur: 75 },
-  polls: { from: 1215, dur: 75 },
-  media: { from: 1290, dur: 75 },
-  payments: { from: 1365, dur: 75 },
-  pro: { from: 1440, dur: 210 },
-  finale: { from: 1650, dur: 150 },
+  chat: { from: 300, dur: 180 },
+  broadcasts: { from: 480, dur: 180 },
+  concierge: { from: 660, dur: 180 },
+  calendar: { from: 840, dur: 180 },
+  places: { from: 1020, dur: 180 },
+  tasks: { from: 1200, dur: 75 },
+  polls: { from: 1275, dur: 75 },
+  media: { from: 1350, dur: 75 },
+  payments: { from: 1425, dur: 75 },
+  pro: { from: 1500, dur: 180 },
+  finale: { from: 1680, dur: 120 },
 } as const;
 
 // ── Shared building blocks ──────────────────────────────────────────────────
@@ -55,7 +60,6 @@ const Backdrop: React.FC = () => (
   />
 );
 
-/** Fade a scene in/out against the backdrop. First/last scenes can pin ends. */
 const useSceneOpacity = (
   localFrame: number,
   dur: number,
@@ -172,7 +176,7 @@ const Push: React.FC<{ src: string; localFrame: number; dur: number; maxScale?: 
 /** Realistic iPhone frame around a real 390×844@3x PWA capture. */
 const Phone: React.FC<{ src: string; width?: number; x?: number; y?: number }> = ({
   src,
-  width = 330,
+  width = 310,
   x = 0,
   y = 0,
 }) => {
@@ -355,27 +359,49 @@ const OpeningScene: React.FC = () => {
   );
 };
 
-/** Generic full-screen desktop capture in browser chrome with caption. */
-const DesktopScene: React.FC<{
-  src: string;
+/**
+ * Standard feature scene: desktop capture in browser chrome on the left, the
+ * same feature on the iPhone PWA on the right, caption below.
+ */
+const DuoScene: React.FC<{
+  desktopSrc?: string;
+  phoneSrc: string;
   caption: string;
   dur: number;
+  /** Desktop captures: clipped tab shots are 3200×1504, full shots 3200×1800 */
   clipped?: boolean;
-  fadeIn?: boolean;
-}> = ({ src, caption, dur, clipped = true, fadeIn = true }) => {
+  /** Custom desktop content (e.g. multi-stage crossfades) instead of a single Push */
+  desktopChildren?: React.ReactNode;
+}> = ({ desktopSrc, phoneSrc, caption, dur, clipped = true, desktopChildren }) => {
   const f = useCurrentFrame();
-  const opacity = useSceneOpacity(f, dur, { fadeIn });
-  // Clipped captures are 3200×1504, full captures 3200×1800
-  const width = 1560;
+  const opacity = useSceneOpacity(f, dur);
+  const width = 1230;
   const contentHeight = clipped
     ? Math.round((width * 1504) / 3200)
     : Math.round((width * 1800) / 3200);
+  // Phone slides in slightly after the desktop frame; quick cuts get a faster ramp.
+  const quick = dur <= 90;
+  const inStart = quick ? 2 : 8;
+  const inEnd = quick ? 16 : 32;
+  const phoneSlide = interpolate(f, [inStart, inEnd], [60, 0], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+  const phoneOpacity = interpolate(f, [inStart, inEnd - 2], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
   return (
     <AbsoluteFill style={{ opacity }}>
       <Backdrop />
-      <Browser width={width} contentHeight={contentHeight} y={-28}>
-        <Push src={src} localFrame={f} dur={dur} />
+      <Browser width={width} contentHeight={contentHeight} x={-230} y={-40}>
+        {desktopChildren ?? (
+          <Push src={desktopSrc as string} localFrame={f} dur={dur} maxScale={1.025} />
+        )}
       </Browser>
+      <div style={{ position: 'absolute', inset: 0, opacity: phoneOpacity }}>
+        <Phone src={phoneSrc} width={310} x={650} y={-30 + phoneSlide} />
+      </div>
       <Caption text={caption} localFrame={f} dur={dur} />
     </AbsoluteFill>
   );
@@ -385,9 +411,6 @@ const DesktopScene: React.FC<{
 const CreateTripScene: React.FC = () => {
   const f = useCurrentFrame();
   const dur = T.create.dur;
-  const opacity = useSceneOpacity(f, dur);
-  const width = 1560;
-  const contentHeight = Math.round((width * 1800) / 3200);
   const stages = [
     'captures/desktop/create-trip-1-empty.png',
     'captures/desktop/create-trip-2-name.png',
@@ -395,98 +418,70 @@ const CreateTripScene: React.FC = () => {
   ];
   const stageDur = dur / stages.length;
   return (
-    <AbsoluteFill style={{ opacity }}>
-      <Backdrop />
-      <Browser width={width} contentHeight={contentHeight} y={-28}>
-        {stages.map((src, i) => {
-          const start = i * stageDur;
-          const o =
-            i === 0
-              ? interpolate(f, [start + stageDur - 10, start + stageDur], [1, 0], {
-                  extrapolateLeft: 'clamp',
-                  extrapolateRight: 'clamp',
-                })
-              : interpolate(
-                  f,
-                  [start - 10, start, start + stageDur - 10, start + stageDur],
-                  [0, 1, 1, i === stages.length - 1 ? 1 : 0],
-                  { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-                );
-          return (
-            <div key={src} style={{ position: 'absolute', inset: 0, opacity: o }}>
-              <Push src={src} localFrame={f} dur={dur} maxScale={1.02} />
-            </div>
-          );
-        })}
-      </Browser>
-      <Caption text="Create the trip — name, dates, cover, done" localFrame={f} dur={dur} />
-    </AbsoluteFill>
+    <DuoScene
+      phoneSrc="captures/mobile/m-create-trip.png"
+      caption="Create the trip — name, dates, cover, done"
+      dur={dur}
+      clipped={false}
+      desktopChildren={stages.map((src, i) => {
+        const start = i * stageDur;
+        const o =
+          i === 0
+            ? interpolate(f, [start + stageDur - 10, start + stageDur], [1, 0], {
+                extrapolateLeft: 'clamp',
+                extrapolateRight: 'clamp',
+              })
+            : interpolate(
+                f,
+                [start - 10, start, start + stageDur - 10, start + stageDur],
+                [0, 1, 1, i === stages.length - 1 ? 1 : 0],
+                { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+              );
+        return (
+          <div key={src} style={{ position: 'absolute', inset: 0, opacity: o }}>
+            <Push src={src} localFrame={f} dur={dur} maxScale={1.02} />
+          </div>
+        );
+      })}
+    />
   );
 };
 
-/** 31–38s: Places/Basecamp on desktop with the live mobile PWA beside it. */
-const PlacesScene: React.FC = () => {
-  const f = useCurrentFrame();
-  const dur = T.places.dur;
-  const opacity = useSceneOpacity(f, dur);
-  const width = 1230;
-  const contentHeight = Math.round((width * 1504) / 3200);
-  const phoneSlide = interpolate(f, [8, 34], [70, 0], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
-  const phoneOpacity = interpolate(f, [8, 30], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
-  return (
-    <AbsoluteFill style={{ opacity }}>
-      <Backdrop />
-      <Browser width={width} contentHeight={contentHeight} x={-230} y={-40}>
-        <Push src="captures/desktop/places.png" localFrame={f} dur={dur} />
-      </Browser>
-      <div style={{ position: 'absolute', inset: 0, opacity: phoneOpacity }}>
-        <Phone src="captures/mobile/m-places.png" width={310} x={650} y={-30 + phoneSlide} />
-      </div>
-      <Caption text="Hotels, reservations & your group Basecamp" localFrame={f} dur={dur} />
-    </AbsoluteFill>
-  );
-};
-
-/** 48–55s: Pro trips — crew roster then role-filtered broadcasts. */
+/** 50–56s: Pro trips — crew roster crossfading into role-filtered broadcasts. */
 const ProScene: React.FC = () => {
   const f = useCurrentFrame();
   const dur = T.pro.dur;
-  const opacity = useSceneOpacity(f, dur);
-  const width = 1560;
-  const contentHeight = Math.round((width * 1800) / 3200);
   const half = dur / 2;
   const teamO = interpolate(f, [half - 8, half + 8], [1, 0], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
   return (
-    <AbsoluteFill style={{ opacity }}>
-      <Backdrop />
-      <Browser width={width} contentHeight={contentHeight} y={-28}>
-        <div style={{ position: 'absolute', inset: 0, opacity: 1 - teamO }}>
-          <Push
-            src="captures/desktop/pro-broadcasts.png"
-            localFrame={f}
-            dur={dur}
-            maxScale={1.02}
-          />
-        </div>
-        <div style={{ position: 'absolute', inset: 0, opacity: teamO }}>
-          <Push src="captures/desktop/pro-team.png" localFrame={f} dur={dur} maxScale={1.02} />
-        </div>
-      </Browser>
-      <Caption text="Pro: roles, rosters & broadcasts for teams on tour" localFrame={f} dur={dur} />
-    </AbsoluteFill>
+    <DuoScene
+      phoneSrc="captures/mobile/m-pro-team.png"
+      caption="Pro: roles, rosters & broadcasts for teams on tour"
+      dur={dur}
+      clipped={false}
+      desktopChildren={
+        <>
+          <div style={{ position: 'absolute', inset: 0, opacity: 1 - teamO }}>
+            <Push
+              src="captures/desktop/pro-broadcasts.png"
+              localFrame={f}
+              dur={dur}
+              maxScale={1.02}
+            />
+          </div>
+          <div style={{ position: 'absolute', inset: 0, opacity: teamO }}>
+            <Push src="captures/desktop/pro-team.png" localFrame={f} dur={dur} maxScale={1.02} />
+          </div>
+        </>
+      }
+    />
   );
 };
 
-/** 55–60s: split-screen finale with headline and CTA. */
+/** 56–60s: split-screen finale with headline and CTA. */
 const FinaleScene: React.FC = () => {
   const f = useCurrentFrame();
   const dur = T.finale.dur;
@@ -576,45 +571,73 @@ export const HomepageProductDemo60: React.FC = () => {
         <CreateTripScene />
       </Sequence>
       <Sequence from={T.chat.from} durationInFrames={T.chat.dur}>
-        <DesktopScene
-          src="captures/desktop/chat.png"
+        <DuoScene
+          desktopSrc="captures/desktop/chat.png"
+          phoneSrc="captures/mobile/m-chat.png"
           caption="One group chat per trip — plans never get buried"
           dur={T.chat.dur}
         />
       </Sequence>
       <Sequence from={T.broadcasts.from} durationInFrames={T.broadcasts.dur}>
-        <DesktopScene
-          src="captures/desktop/broadcasts.png"
+        <DuoScene
+          desktopSrc="captures/desktop/broadcasts.png"
+          phoneSrc="captures/mobile/m-broadcasts.png"
           caption="Broadcasts for the updates everyone must see"
           dur={T.broadcasts.dur}
         />
       </Sequence>
+      <Sequence from={T.concierge.from} durationInFrames={T.concierge.dur}>
+        <DuoScene
+          desktopSrc="captures/desktop/concierge.png"
+          phoneSrc="captures/mobile/m-concierge.png"
+          caption="AI Concierge plans with your group's context"
+          dur={T.concierge.dur}
+        />
+      </Sequence>
       <Sequence from={T.calendar.from} durationInFrames={T.calendar.dur}>
-        <DesktopScene
-          src="captures/desktop/calendar.png"
+        <DuoScene
+          desktopSrc="captures/desktop/calendar.png"
+          phoneSrc="captures/mobile/m-calendar.png"
           caption="One shared calendar, always in sync"
           dur={T.calendar.dur}
         />
       </Sequence>
       <Sequence from={T.places.from} durationInFrames={T.places.dur}>
-        <PlacesScene />
+        <DuoScene
+          desktopSrc="captures/desktop/places.png"
+          phoneSrc="captures/mobile/m-places.png"
+          caption="Hotels, reservations & your group Basecamp"
+          dur={T.places.dur}
+        />
       </Sequence>
       <Sequence from={T.tasks.from} durationInFrames={T.tasks.dur}>
-        <DesktopScene src="captures/desktop/tasks.png" caption="Assign tasks" dur={T.tasks.dur} />
+        <DuoScene
+          desktopSrc="captures/desktop/tasks.png"
+          phoneSrc="captures/mobile/m-tasks.png"
+          caption="Assign tasks"
+          dur={T.tasks.dur}
+        />
       </Sequence>
       <Sequence from={T.polls.from} durationInFrames={T.polls.dur}>
-        <DesktopScene src="captures/desktop/polls.png" caption="Vote on plans" dur={T.polls.dur} />
+        <DuoScene
+          desktopSrc="captures/desktop/polls.png"
+          phoneSrc="captures/mobile/m-polls.png"
+          caption="Vote on plans"
+          dur={T.polls.dur}
+        />
       </Sequence>
       <Sequence from={T.media.from} durationInFrames={T.media.dur}>
-        <DesktopScene
-          src="captures/desktop/media.png"
+        <DuoScene
+          desktopSrc="captures/desktop/media.png"
+          phoneSrc="captures/mobile/m-media.png"
           caption="Photos & files in one vault"
           dur={T.media.dur}
         />
       </Sequence>
       <Sequence from={T.payments.from} durationInFrames={T.payments.dur}>
-        <DesktopScene
-          src="captures/desktop/payments.png"
+        <DuoScene
+          desktopSrc="captures/desktop/payments.png"
+          phoneSrc="captures/mobile/m-payments.png"
           caption="Split costs without spreadsheets"
           dur={T.payments.dur}
         />

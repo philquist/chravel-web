@@ -33,6 +33,8 @@ import {
 import { CreateEventModal } from './CreateEventModal';
 import { CalendarImportModal } from '@/features/calendar/components/CalendarImportModal';
 import { useCalendarEvents } from '@/features/calendar/hooks/useCalendarEvents';
+import { demoModeService } from '@/services/demoModeService';
+import { useDemoMode } from '@/hooks/useDemoMode';
 import { useBackgroundImport } from '@/features/calendar/hooks/useBackgroundImport';
 import { toast } from 'sonner';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
@@ -190,9 +192,20 @@ export const MobileGroupCalendar = ({
 
   const { exportTripEvents } = useCalendarExport(tripId);
 
+  const { isDemoMode } = useDemoMode();
+
   // Convert TripEvent[] to CalendarEvent[] format for UI
   const events = useMemo(() => {
-    const calendarEvents = tripEvents.map((event, index) => {
+    // Demo-mode parity with desktop GroupCalendar (useCalendarManagement):
+    // the Cancun demo trip injects dynamic events for the selected date so
+    // the day list is never empty while exploring.
+    let sourceEvents = tripEvents;
+    if (isDemoMode && tripId === '1') {
+      const dynamicDemoEvents = demoModeService.getDynamicDemoEventsForDate(tripId, selectedDate);
+      const existingIds = new Set(tripEvents.map(e => e.id));
+      sourceEvents = [...tripEvents, ...dynamicDemoEvents.filter(e => !existingIds.has(e.id))];
+    }
+    const calendarEvents = sourceEvents.map((event, index) => {
       const calendarEvent = {
         id: event.id,
         title: event.title,
@@ -211,7 +224,7 @@ export const MobileGroupCalendar = ({
       return calendarEvent;
     });
     return calendarEvents;
-  }, [tripEvents, tripMembers?.length]);
+  }, [tripEvents, tripMembers?.length, isDemoMode, tripId, selectedDate]);
 
   const { isRefreshing, pullDistance } = usePullToRefresh({
     onRefresh: async () => {
