@@ -28,6 +28,7 @@ import type { AIConciergeChatProps, AttachmentIntent } from '@/features/concierg
 import { useConciergeAttachments } from '@/features/concierge/hooks/useConciergeAttachments';
 import { useSmartImportActions } from '@/features/concierge/hooks/useSmartImportActions';
 import { useConciergeMessages } from '@/features/concierge/hooks/useConciergeMessages';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useConciergeVoice } from '@/features/concierge/hooks/useConciergeVoice';
 import { useConciergeStreaming } from '@/features/concierge/hooks/useConciergeStreaming';
 import { useSmartImportTaste } from '@/features/smart-import/hooks/useSmartImportTaste';
@@ -346,10 +347,10 @@ export const AIConciergeChat = ({
 
         {/* History loading skeleton — prevents flash of empty → populated */}
         {isHistoryLoading && messages.length === 0 && (
-          <div className="flex flex-col gap-3 p-4 animate-pulse flex-shrink-0">
-            <div className="h-8 bg-white/10 rounded-xl w-3/4" />
-            <div className="h-8 bg-white/10 rounded-xl w-1/2 self-end" />
-            <div className="h-8 bg-white/10 rounded-xl w-2/3" />
+          <div className="flex flex-col gap-3 p-4 flex-shrink-0">
+            <Skeleton className="h-8 rounded-xl w-3/4" />
+            <Skeleton className="h-8 rounded-xl w-1/2 self-end" />
+            <Skeleton className="h-8 rounded-xl w-2/3" />
           </div>
         )}
 

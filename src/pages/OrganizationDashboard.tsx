@@ -54,12 +54,12 @@ const OrgDashboardSkeleton = () => (
     <div className="container mx-auto p-6 max-w-7xl">
       {/* Header skeleton */}
       <div className="mb-8">
-        <Skeleton className="h-5 w-40 bg-white/10 mb-4" />
+        <Skeleton className="h-5 w-40 mb-4" />
         <div className="flex items-center gap-4">
-          <Skeleton className="w-16 h-16 rounded-xl bg-white/10" />
+          <Skeleton className="w-16 h-16 rounded-xl" />
           <div>
-            <Skeleton className="h-8 w-56 bg-white/10 mb-2" />
-            <Skeleton className="h-4 w-32 bg-white/10" />
+            <Skeleton className="h-8 w-56 mb-2" />
+            <Skeleton className="h-4 w-32" />
           </div>
         </div>
       </div>
@@ -69,21 +69,21 @@ const OrgDashboardSkeleton = () => (
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i} className="bg-white/5 border-white/10">
             <CardHeader className="pb-3">
-              <Skeleton className="h-4 w-24 bg-white/10" />
+              <Skeleton className="h-4 w-24" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-8 w-16 bg-white/10 mb-2" />
-              <Skeleton className="h-4 w-20 bg-white/10" />
+              <Skeleton className="h-8 w-16 mb-2" />
+              <Skeleton className="h-4 w-20" />
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Tabs skeleton */}
-      <Skeleton className="h-10 w-full bg-white/10 mb-6" />
+      <Skeleton className="h-10 w-full mb-6" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Skeleton className="h-64 bg-white/10 rounded-xl" />
-        <Skeleton className="h-64 bg-white/10 rounded-xl" />
+        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-64 rounded-xl" />
       </div>
     </div>
   </div>
@@ -92,22 +92,22 @@ const OrgDashboardSkeleton = () => (
 /** Skeleton placeholder for mobile org dashboard loading state */
 const MobileOrgDashboardSkeleton = () => (
   <div className="min-h-screen bg-black text-white p-4">
-    <Skeleton className="h-5 w-40 bg-white/10 mb-4" />
+    <Skeleton className="h-5 w-40 mb-4" />
     <div className="flex items-center gap-3 mb-4">
-      <Skeleton className="w-12 h-12 rounded-xl bg-white/10" />
+      <Skeleton className="w-12 h-12 rounded-xl" />
       <div>
-        <Skeleton className="h-6 w-40 bg-white/10 mb-1" />
-        <Skeleton className="h-4 w-24 bg-white/10" />
+        <Skeleton className="h-6 w-40 mb-1" />
+        <Skeleton className="h-4 w-24" />
       </div>
     </div>
     <div className="grid grid-cols-2 gap-3 mb-4">
-      <Skeleton className="h-20 bg-white/10 rounded-lg" />
-      <Skeleton className="h-20 bg-white/10 rounded-lg" />
+      <Skeleton className="h-20 rounded-lg" />
+      <Skeleton className="h-20 rounded-lg" />
     </div>
-    <Skeleton className="h-11 w-full bg-white/10 rounded-lg mb-6" />
-    <Skeleton className="h-6 w-32 bg-white/10 mb-3" />
+    <Skeleton className="h-11 w-full rounded-lg mb-6" />
+    <Skeleton className="h-6 w-32 mb-3" />
     {Array.from({ length: 3 }).map((_, i) => (
-      <Skeleton key={i} className="h-16 w-full bg-white/10 rounded-lg mb-3" />
+      <Skeleton key={i} className="h-16 w-full rounded-lg mb-3" />
     ))}
   </div>
 );
@@ -600,13 +600,13 @@ export const OrganizationDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <Card key={i} className="bg-white/5 border-white/10">
-                    <Skeleton className="h-32 bg-white/10 rounded-t-lg" />
+                    <Skeleton className="h-32 rounded-t-lg" />
                     <CardHeader>
-                      <Skeleton className="h-6 w-40 bg-white/10" />
-                      <Skeleton className="h-4 w-24 bg-white/10 mt-1" />
+                      <Skeleton className="h-6 w-40" />
+                      <Skeleton className="h-4 w-24 mt-1" />
                     </CardHeader>
                     <CardContent>
-                      <Skeleton className="h-4 w-32 bg-white/10" />
+                      <Skeleton className="h-4 w-32" />
                     </CardContent>
                   </Card>
                 ))}

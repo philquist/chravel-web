@@ -12,6 +12,8 @@ import { isLovablePreview } from './utils/env';
 import { hasAuthStorageMarker, shouldUseMarketingBootstrap } from './lib/bootstrapShell';
 import { isChravelNativeShell, isInstalledApp } from './utils/platformDetection';
 import { installChunkErrorRecovery, claimOneShotReload } from '@/utils/chunkRecovery';
+import { warmRouteChunksForPath } from './lib/routeChunks';
+import { getSafeStorage, safeGetItem, safeSetItem } from '@/utils/safeStorage';
 import './index.css';
 
 // Boot-timeline anchor: raw mark (not performanceService) so the entry chunk
@@ -33,27 +35,14 @@ const hasRequiredSupabaseEnv = missingEnvVars.length === 0;
 const App = hasRequiredSupabaseEnv ? lazy(() => import('./App.tsx')) : null;
 const MarketingApp = hasRequiredSupabaseEnv ? lazy(() => import('./MarketingApp.tsx')) : null;
 
-// Kick off the AuthPage chunk in parallel with App.tsx when the cold-start route
-// is /auth. Without this, AuthPage waits behind App.tsx parse + AuthProvider mount
-// before its own chunk request even leaves the device — adding a serial round trip
-// to the slowest part of the cold-start path inside the native WebView shell.
-if (
-  hasRequiredSupabaseEnv &&
-  typeof window !== 'undefined' &&
-  window.location.pathname.startsWith('/auth')
-) {
-  void import('./pages/AuthPage');
+// Kick off route-critical chunks in parallel with App.tsx. The manifest in
+// routeChunks.ts shares its import() loaders with App.tsx's lazy() routes, so
+// the warmed chunk can never drift from the chunk the router actually renders.
+if (hasRequiredSupabaseEnv && typeof window !== 'undefined') {
+  warmRouteChunksForPath(window.location.pathname);
 }
 
 // ── Imperative init (runs after all imports are resolved) ──────────────────
-
-const safeLocalStorageGet = (key: string): string | null => {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-};
 
 const safeCookieIncludes = (needle: string): boolean => {
   try {
@@ -63,11 +52,13 @@ const safeCookieIncludes = (needle: string): boolean => {
   }
 };
 
+// getSafeStorage: merely referencing `localStorage` throws in cookie-blocked
+// browsers — at module scope that would black-screen the app before boot.
 const hasAuthMarkerOnBoot =
   typeof window !== 'undefined' &&
   hasAuthStorageMarker({
-    localStorage,
-    sessionStorage,
+    localStorage: getSafeStorage('local'),
+    sessionStorage: getSafeStorage('session'),
     cookieIncludes: safeCookieIncludes,
   });
 
@@ -147,8 +138,12 @@ const isPublicAnonymousBootstrapRoute = (): boolean => {
     path.startsWith('/demo') ||
     path.startsWith('/healthz');
 
-  const likelyAuthenticated = Boolean(safeLocalStorageGet('chravel-auth-session'));
-  return isPublicRoute && !likelyAuthenticated;
+  // Same boot-time heuristic as the marketing split: a persisted auth *marker*
+  // (bootstrapShell.AUTH_STORAGE_MARKERS) means "likely authenticated" — it is
+  // NOT a verified session, just enough signal to decide whether a version-bust
+  // reload is worth paying a second cold load. Canonical session checks live in
+  // useAuth, after hydration.
+  return isPublicRoute && !hasAuthMarkerOnBoot;
 };
 
 // Native shell handles its own caching and lifecycle — service workers add startup
@@ -204,7 +199,7 @@ try {
 }
 
 // Initialize theme
-const theme = safeLocalStorageGet('theme');
+const theme = safeGetItem('local', 'theme');
 if (theme === 'light') {
   document.documentElement.classList.add('light');
 }
@@ -216,11 +211,11 @@ if (isLovablePreview()) {
   // Version-based cache busting: clear caches when app version changes
   const STORED_VERSION_KEY = 'chravel_host_version';
   const currentVersion = (import.meta.env.VITE_APP_VERSION as string) || '0';
-  const storedVersion = safeLocalStorageGet(STORED_VERSION_KEY);
+  const storedVersion = safeGetItem('local', STORED_VERSION_KEY);
 
   if (storedVersion !== null && storedVersion !== currentVersion) {
     clearAllCaches();
-    safeLocalStorageSet(STORED_VERSION_KEY, currentVersion);
+    safeSetItem('local', STORED_VERSION_KEY, currentVersion);
 
     // One-shot guard: if storage can't persist the new version (restricted WebView),
     // storedVersion stays stale and this would reload-loop into a blank screen.
@@ -230,7 +225,7 @@ if (isLovablePreview()) {
     // Tradeoff: on public anonymous routes we accept a potentially stale auth session snapshot
     // to avoid paying a second cold load on landing after cache/version invalidation.
   } else {
-    safeLocalStorageSet(STORED_VERSION_KEY, currentVersion);
+    safeSetItem('local', STORED_VERSION_KEY, currentVersion);
   }
 }
 

@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect } from 'react';
 import { BarChart3 } from 'lucide-react';
 import { Button } from './ui/button';
+import { Skeleton } from './ui/skeleton';
 import { Poll as PollType } from './poll/types';
 import { Poll } from './poll/Poll';
 import { CreatePollForm, PollSettings } from './poll/CreatePollForm';
@@ -274,14 +275,14 @@ export const PollComponent = ({
       {isLoading ? (
         <div className={POLL_CARD_STACK_CLASS} role="status" aria-label="Loading polls">
           {[0, 1].map(i => (
-            <div key={i} className={`${POLL_CARD_SHELL_CLASS} animate-pulse`}>
-              <div className="h-5 bg-white/10 rounded w-3/4" />
+            <div key={i} className={POLL_CARD_SHELL_CLASS}>
+              <Skeleton className="h-5 rounded w-3/4" />
               <div className="space-y-2">
-                <div className="h-10 bg-white/5 rounded-lg" />
-                <div className="h-10 bg-white/5 rounded-lg" />
-                <div className="h-10 bg-white/5 rounded-lg w-5/6" />
+                <Skeleton className="h-10 bg-muted/30" />
+                <Skeleton className="h-10 bg-muted/30" />
+                <Skeleton className="h-10 bg-muted/30 w-5/6" />
               </div>
-              <div className="h-3 bg-white/5 rounded w-1/4" />
+              <Skeleton className="h-3 rounded bg-muted/30 w-1/4" />
             </div>
           ))}
         </div>
