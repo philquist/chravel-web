@@ -37,6 +37,7 @@ import { classifyQuery, isTripRelatedClass } from '../_shared/concierge/queryCla
 import { getToolsForQueryClass } from '../_shared/concierge/toolRegistry.ts';
 import { assemblePrompt } from '../_shared/concierge/promptAssembler.ts';
 import { QUERY_CLASS_SLICES } from '../_shared/contextBuilder.ts';
+import { isSuperAdminEmail } from '../_shared/superAdmins.ts';
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 // DEPRECATED: Lovable gateway fallback is legacy. Gemini is the only production provider.
@@ -1093,12 +1094,24 @@ serve(async req => {
     //    Both paths preserve the NON-NEGOTIABLE language matching block verbatim.
     // 6. Save flight instruction: included conditionally for flight_search class via
     //    saveFlightInstructionLayer() — same content as the previous inline constant.
+    // SECURITY: config.systemPrompt would completely replace the corePersona()
+    // safety layer (content rules, booking safety, language policy). Only allow
+    // super-admin callers to override the system prompt. Non-admin overrides
+    // are silently dropped so the caller still gets a normal response.
+    const callerIsSuperAdmin = isSuperAdminEmail(user?.email ?? null);
+    const safeCustomSystemPrompt = callerIsSuperAdmin ? config.systemPrompt : undefined;
+    if (config.systemPrompt && !callerIsSuperAdmin) {
+      console.warn(
+        '[lovable-concierge] Ignored config.systemPrompt from non-super-admin caller',
+      );
+    }
+
     const systemPrompt = assemblePrompt({
       queryClass,
       tripContext: comprehensiveContext,
       ragContext,
       isVoice: false,
-      customSystemPrompt: config.systemPrompt,
+      customSystemPrompt: safeCustomSystemPrompt,
       imageIntentAddendum,
       useChainOfThought,
     });

@@ -1,17 +1,17 @@
 /**
  * Canonical super-admin email bypass list for edge functions.
  *
- * NOTE: `demo@chravelapp.com` is intentionally excluded from defaults.
- * It can be enabled explicitly via env for demo/staging workflows:
+ * SECURITY: Founder emails are NOT hardcoded here — they live in the
+ * `public.super_admins` database table (server-enforced) and/or the
+ * `SUPER_ADMIN_EMAILS` Supabase secret (env-enforced). This module only
+ * resolves env-configured emails; database-backed checks should use the
+ * `public.is_super_admin()` SQL function inside RLS policies.
+ *
+ * Demo bypass (`demo@chravelapp.com`) is opt-in:
  *   - SUPER_ADMIN_ENABLE_DEMO_EMAIL=true
- *   - or SUPER_ADMIN_EMAILS=demo@chravelapp.com
+ *   - or include in SUPER_ADMIN_EMAILS
  */
-export const FOUNDER_SUPER_ADMIN_EMAILS = [
-  'ccamechi@gmail.com',
-  'christian@chravelapp.com',
-  'phil@philquist.com',
-  'darren.hartgee@gmail.com',
-] as const;
+export const FOUNDER_SUPER_ADMIN_EMAILS: readonly string[] = [];
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
