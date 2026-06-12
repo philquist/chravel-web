@@ -84,7 +84,8 @@ const shouldUseMarketingSplit =
     isInstalledApp: isInstalledApp(),
     forceMarketing:
       window.location.search.includes('marketing=1') ||
-      window.location.pathname === '/home',
+      window.location.pathname === '/home' ||
+      window.location.pathname === '/index',
   });
 
 // Warm the cold-start route's page chunk in parallel with the App.tsx chunk —
@@ -290,14 +291,7 @@ createRoot(document.getElementById('root')!).render(
           <TripVariantProvider variant="consumer">
             <BasecampProvider>
               <Suspense
-                fallback={
-                  // Mirrors the static splash in index.html (same inline classes)
-                  // so the static → React handoff doesn't shift a pixel.
-                  <div className="app-suspense-fallback">
-                    <p className="app-splash-wordmark">Chravel</p>
-                    <div className="app-suspense-spinner app-suspense-spin app-splash-gold" />
-                  </div>
-                }
+                fallback={<div className="app-suspense-fallback" />}
               >
                 <App />
               </Suspense>

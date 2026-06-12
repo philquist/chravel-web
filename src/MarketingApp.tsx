@@ -34,9 +34,15 @@ function PostAuthBoot() {
 /**
  * Safety net: if an installed/native shell ever mounts MarketingApp (stale SW,
  * deep link race), jump to /auth so main.tsx boots the full App router.
+ * Respects the `?marketing=1` / `/home` / `/index` preview override.
  */
 function InstalledShellEscape() {
   useEffect(() => {
+    const forcedMarketing =
+      window.location.search.includes('marketing=1') ||
+      window.location.pathname === '/home' ||
+      window.location.pathname === '/index';
+    if (forcedMarketing) return;
     if (isInstalledApp()) {
       window.location.replace('/auth');
     }
@@ -46,7 +52,12 @@ function InstalledShellEscape() {
 
 export default function MarketingApp() {
   const [authMode, setAuthMode] = useState<'signin' | 'signup' | null>(null);
-  const installed = isInstalledApp();
+  const forcedMarketing =
+    typeof window !== 'undefined' &&
+    (window.location.search.includes('marketing=1') ||
+      window.location.pathname === '/home' ||
+      window.location.pathname === '/index');
+  const installed = !forcedMarketing && isInstalledApp();
 
   // The marketing shell mounted — its chunk loaded successfully. Clear the one-shot
   // chunk-recovery guard so a later, independent stale-chunk error can recover too.

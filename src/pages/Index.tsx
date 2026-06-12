@@ -798,8 +798,10 @@ const AuthIndex = () => {
       return <BootHydrationFallback />;
     }
 
-    // Installed app (PWA standalone or native webview) — show auth gate, not marketing
-    if (isInstalledApp()) {
+    // Only real native shells / installed PWA jump straight to the auth gate.
+    // Generic iOS WKWebViews (Instagram/Facebook in-app browsers, embedded
+    // previews) fall through to the marketing landing.
+    if (isNativeAuthSurface()) {
       return (
         <div className="min-h-screen bg-background">
           <Suspense fallback={null}>
@@ -819,6 +821,7 @@ const AuthIndex = () => {
       </div>
     );
   }
+
 
   // Show onboarding for new authenticated users — choose-your-own-adventure:
   // choice screen → (survey → personalized tour) | (tour) | (straight to dashboard).
@@ -1518,7 +1521,7 @@ const Index = () => {
   const { user, isLoading: authLoading } = useAuth();
   const { demoView } = useDemoMode();
   if (demoView === 'off' && !user) {
-    return <UnauthIndex authLoading={authLoading} isInstalled={isInstalledApp()} />;
+    return <UnauthIndex authLoading={authLoading} isInstalled={isNativeAuthSurface()} />;
   }
 
   return <AuthIndex />;
