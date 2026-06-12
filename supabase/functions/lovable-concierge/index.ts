@@ -1097,7 +1097,7 @@ serve(async req => {
     // safety layer (content rules, booking safety, language policy). Only allow
     // super-admin callers to override the system prompt. Non-admin overrides
     // are silently dropped so the caller still gets a normal response.
-    const callerIsSuperAdmin = isSuperAdminEmail(authedUser?.email ?? null);
+    const callerIsSuperAdmin = isSuperAdminEmail(user?.email ?? null);
     const safeCustomSystemPrompt = callerIsSuperAdmin ? config.systemPrompt : undefined;
     if (config.systemPrompt && !callerIsSuperAdmin) {
       console.warn(
