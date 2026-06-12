@@ -1,74 +1,51 @@
-# Hero Product Demo Video — Plan
+# Fix preview routing to marketing + hero wordmark legibility
 
-## Audit findings
+## Problem 1 — Preview lands on `/auth` instead of marketing home
 
-- **Remotion is already set up** at `/remotion/` (v4.0.447, musl compositor pinned, Tailwind plugin). Existing compositions live in `remotion/src/compositions/`: `TripCreationFlow`, `LiveSharedCalendar`, `AIConciergeAction`, `PaymentSplit`, `MediaVault`, `PollsAndTasks`, `TabNavigationHero`, `BeforeAfterChaos`, plus `ChravelLaunch` and `ProductLaunchV2`. Theme tokens in `remotion/src/theme.ts`. No need to install Remotion or recreate scene primitives.
-- **Hero today**: `src/components/landing/sections/HeroSection.tsx` renders a single `<img src={demoPreviewHero}>` from `src/assets/demo-preview-hero.webp` inside a rounded/bordered frame. That's the exact slot to swap.
-- **No `public/videos/` yet** and no `public/marketing/` folder — we'll create `public/videos/` for the rendered MP4 + poster.
-- Routes that map to the storyboard already exist (`MobileTripDetail`, trip detail, chat/calendar/concierge/places/payments/media tabs), so future iterations can capture real screenshots, but for v1 we reuse the existing Remotion mock scenes (they already use real product styling).
+`src/main.tsx` decides between `MarketingApp` and the full `App` via `shouldUseMarketingBootstrap`. It returns `false` (→ boot full App, which then sends you through the auth gate) whenever **any** of these is true:
 
-## Scope (consumer-only, per your blunt note)
+- `isInstalledApp()` (PWA / Capacitor / native shell)
+- `hasAuthMarkerOnBoot` — a Supabase auth marker is present in `localStorage` / `sessionStorage` / cookies from a prior session
+- The path is not `/`
 
-Skip Pro/Events/Recs/Enterprise in the hero loop. Stitch the existing consumer-flavored scenes into one 18–22s desktop hero and one 12–16s mobile vertical.
+In the current preview your browser has a stale auth marker from earlier testing, so the marketing shell is skipped and the in-app router immediately bounces an unauthenticated/expired session to `/auth?returnTo=/`. That's why you can't see the new Remotion hero video.
 
-## Deliverables
+### Fix
+Add a query-string escape hatch so previews can force the marketing landing without manually clearing storage:
 
-1. **`remotion/src/compositions/HomepageHeroDemo.tsx`** — new 1920×1080, 30fps, ~600 frames composition that sequences existing scene components with `TransitionSeries` + `fade`/`slide`:
-   - Scene 1 Dashboard (reuse `TripCreationFlow` end-state) — caption "Every group trip gets one private home."
-   - Scene 2 Trip opens — "Plans, people, places, and payments — together."
-   - Scene 3 Chat (new lightweight scene using theme tokens + realistic travel messages) — "No more plans buried in random group chats."
-   - Scene 4 Calendar (reuse `LiveSharedCalendar`) — "Everyone sees the latest schedule."
-   - Scene 5 Places/Basecamp (new minimal scene with pin card) — "Save addresses and reservations once."
-   - Scene 6 Payments (reuse `PaymentSplit`) — "Know who paid, who owes."
-   - Scene 7 AI Concierge (reuse `AIConciergeAction`, swap prompt to the Saturday summary example) — "AI that knows your trip."
-   - Scene 8 End card — "Less chaos. More coordination." + ChravelApp wordmark.
-   - Shared `SceneCaption` overlay component (new, in `remotion/src/components/`) for consistent caption styling (black/gold/white, restrained motion).
+- In `src/lib/bootstrapShell.ts`, extend `MarketingBootstrapInput` with an optional `forceMarketing: boolean`. When `true` and `marketingSplitEnabled` is `true`, return `true` regardless of auth marker / installed shell / path.
+- In `src/main.tsx`, read `?marketing=1` (and also accept path `/home` as an alias) from `window.location` and pass `forceMarketing` into `shouldUseMarketingBootstrap`. Also clear the cached redirect so `MarketingApp`'s `PostAuthBoot` doesn't immediately punt back to `/` if the marker is genuinely stale (guarded behind the same `forceMarketing` flag).
+- Update `src/lib/__tests__/bootstrapShell.test.ts` with one new case asserting `forceMarketing: true` wins over `hasAuthMarker` / `isInstalledApp`.
 
-2. **`remotion/src/compositions/MobileAppDemo.tsx`** — new 1080×1920 (9:16), ~450 frames. Reuses `TabNavigationHero` + condensed cuts of chat/calendar/places/payments/concierge in a `PhoneFrame` wrapper (new component) with rounded device chrome. End frame: "The group chat travel app."
+Usage: open `<preview-url>/?marketing=1` to view the landing + hero video reliably. Zero impact on production users who don't pass the flag.
 
-3. **`remotion/src/Root.tsx`** — register both new compositions alongside existing ones (do not remove any).
+## Problem 2 — "ChravelApp" gold-gradient wordmark unreadable on gold hero background
 
-4. **`remotion/package.json`** — add scripts:
-   - `render:homepage-hero` → `public/videos/chravel-homepage-hero.mp4` (in the main app's `public/`, written via `../public/videos/...`)
-   - `render:mobile-demo` → `public/videos/chravel-mobile-demo.mp4`
-   - `still:hero-poster` → `public/videos/chravel-homepage-hero-poster.jpg` (frame ~30 of HomepageHeroDemo)
-   - `still:mobile-poster` → `public/videos/chravel-mobile-demo-poster.jpg`
+In `src/components/landing/sections/HeroSection.tsx` the brand `<h2>` uses `text-gradient-gold`, which collides with the gold accent overlay behind the hero section. The H1 directly below it already uses solid white + a layered black text-shadow and reads cleanly.
 
-5. **Render outputs committed** to `public/videos/`:
-   - `chravel-homepage-hero.mp4` (target <8 MB, CRF 23, H.264)
-   - `chravel-homepage-hero.webm` (VP9, optional second source)
-   - `chravel-homepage-hero-poster.jpg`
-   - `chravel-mobile-demo.mp4` + poster
+### Fix
+Match the H1 treatment so the wordmark pops off the gold background:
 
-6. **`src/components/landing/sections/HeroSection.tsx`** — minimal surgical edit to the existing image frame only:
-   - Replace `<img>` with a `<HeroMedia>` block that renders:
-     - `<video autoPlay muted loop playsInline preload="metadata" poster="/videos/chravel-homepage-hero-poster.jpg">` with `<source>` mp4 (+ webm if produced).
-     - Static `<img src={demoPreviewHero}>` fallback shown when `prefers-reduced-motion: reduce` (via a small `useReducedMotion` hook in `src/hooks/`) OR when the `<video>` `onError` fires.
-   - Preserve existing rounded frame, border, shadow, overlay gradient, and `animate-fade-in` wrapper. No layout changes, no new deps.
+- Replace `text-gradient-gold` on the `ChravelApp` `<h2>` with `text-white` and add the same `textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)'` inline style already used by the H1 and the "Less Chaos, More Coordination" subhead.
+- No other typography or spacing changes.
 
-7. **`src/hooks/useReducedMotion.ts`** — tiny `matchMedia('(prefers-reduced-motion: reduce)')` hook (~15 lines).
+This keeps the gold accent system intact for buttons / overlays where it has real contrast, and gives the wordmark guaranteed legibility on any hero variant.
 
-8. **`remotion/README.md`** (append) — short note: how to render hero/mobile, where outputs land, how to swap caption copy, that captures are deterministic and require no live APIs/secrets.
+## Files touched
 
-## Technical details
+- `src/lib/bootstrapShell.ts` — add `forceMarketing` to input + branch
+- `src/lib/__tests__/bootstrapShell.test.ts` — 1 new assertion
+- `src/main.tsx` — read `?marketing=1` / `/home`, pass `forceMarketing`
+- `src/components/landing/sections/HeroSection.tsx` — swap gradient class for white + shadow on the brand `<h2>`
 
-- Reuses existing `remotion/src/theme.ts` (black/gold/white). No new fonts.
-- Captions use `interpolate` fade+slide, never CSS animation. Spring `{ damping: 200 }` for entrances; one accent spring per scene.
-- Transitions: `fade` (20 frames) between most scenes, one `slide` for Scene 1→2 to imply "opening" the trip.
-- Total HomepageHeroDemo duration: 600 frames @ 30fps = 20s, loopable (end card holds 30f then crossfades to dashboard via composition loop in `<video loop>`).
-- All scene data is hardcoded mock — no Supabase/Stripe/AI calls during render. Safe for CI and Vercel.
-- HeroSection change is presentation-only; no routing, auth, or query changes. Mobile breakpoint behavior preserved (video is fluid `w-full h-auto` like the current img).
-- Vercel: `public/videos/*.mp4` are static assets served with long cache; no build impact. Web Vitals respected via `preload="metadata"` (not `auto`) and `poster` paint for LCP.
+## Verification
 
-## Out of scope (explicit deferrals)
+1. Open the preview at `/?marketing=1` → marketing landing renders and the 60s Tokyo Adventure hero video autoplays.
+2. Open `/` with no query (and no stale auth marker) → marketing still renders as before.
+3. Open `/` with a real signed-in session → still boots full App (no regression).
+4. Hero wordmark "ChravelApp" is solid white with a soft black shadow, clearly legible over the gold accent overlay.
+5. `npm run typecheck && npm run lint && npm run build` pass; new bootstrap test passes.
 
-- Pro/Events/Recs scenes in the hero loop (your call — kept consumer-only).
-- Playwright real-route screenshot capture pipeline. v1 uses the existing Remotion mock scenes which already match product styling; we can add a `scripts/capture-marketing-screenshots.ts` later if you want literal app screenshots inside frames.
-- App Store / TestFlight preview crops — same `MobileAppDemo` source can be re-rendered at different durations later.
-- Replacing static below-the-fold screenshots — preserved as-is.
+## Rollback
 
-## Validation
-
-- `cd remotion && npm run render:homepage-hero` + `render:mobile-demo` + both `still:*` commands produce files under `public/videos/`.
-- `npm run lint && npm run typecheck && npm run build` pass in the main app after HeroSection edit.
-- Manual: load `/`, confirm hero loops muted, no CLS, reduced-motion toggle shows static image, mobile Safari autoplay works (muted+playsInline).
+Revert the four files; no schema, no edge function, no dependency changes.
