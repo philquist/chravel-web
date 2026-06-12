@@ -16,10 +16,10 @@ const OrgsHubSkeleton = () => (
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <Skeleton className="h-9 w-48 bg-white/10 mb-2" />
-            <Skeleton className="h-5 w-64 bg-white/10" />
+            <Skeleton className="h-9 w-48 mb-2" />
+            <Skeleton className="h-5 w-64" />
           </div>
-          <Skeleton className="h-10 w-44 bg-white/10 rounded-lg" />
+          <Skeleton className="h-10 w-44 rounded-lg" />
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -28,21 +28,21 @@ const OrgsHubSkeleton = () => (
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <Skeleton className="w-12 h-12 rounded-xl bg-white/10" />
+                  <Skeleton className="w-12 h-12 rounded-xl" />
                   <div>
-                    <Skeleton className="h-5 w-32 bg-white/10 mb-1" />
-                    <Skeleton className="h-4 w-20 bg-white/10" />
+                    <Skeleton className="h-5 w-32 mb-1" />
+                    <Skeleton className="h-4 w-20" />
                   </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-10 w-full bg-white/10 mb-4" />
-              <Skeleton className="h-2 w-full bg-white/10 mb-2 rounded-full" />
-              <Skeleton className="h-4 w-24 bg-white/10" />
+              <Skeleton className="h-10 w-full mb-4" />
+              <Skeleton className="h-2 w-full mb-2 rounded-full" />
+              <Skeleton className="h-4 w-24" />
               <div className="mt-4 pt-4 border-t border-white/10 flex gap-2">
-                <Skeleton className="h-9 flex-1 bg-white/10 rounded-lg" />
-                <Skeleton className="h-9 flex-1 bg-white/10 rounded-lg" />
+                <Skeleton className="h-9 flex-1 rounded-lg" />
+                <Skeleton className="h-9 flex-1 rounded-lg" />
               </div>
             </CardContent>
           </Card>

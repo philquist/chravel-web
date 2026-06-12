@@ -19,6 +19,8 @@ import type {
 } from './types';
 import { ConsoleProvider } from './providers/console';
 import { PostHogProvider } from './providers/posthog';
+import { bufferBootError, drainBootErrors } from './bootErrorBuffer';
+import { safeGetItem } from '@/utils/safeStorage';
 // ============================================================================
 // Default Configuration
 // ============================================================================
@@ -74,8 +76,9 @@ class TelemetryService {
       return;
     }
 
-    // Check demo mode
-    this.demoMode = localStorage.getItem('TRIPS_DEMO_MODE') === 'true';
+    // Check demo mode (safeGetItem: a raw localStorage read here would throw in
+    // cookie-blocked browsers and permanently abort telemetry init)
+    this.demoMode = safeGetItem('local', 'TRIPS_DEMO_MODE') === 'true';
 
     // Merge configuration
     this.config = { ...defaultConfig, ...configOverrides };
@@ -101,6 +104,10 @@ class TelemetryService {
 
     // Process any queued events
     this.flushQueue();
+
+    // Report errors captured before init — including ones persisted by a prior
+    // boot that crashed and hard-reloaded before providers existed.
+    this.flushBootErrors();
 
     if (this.config.debug) {
       console.log('[Telemetry] Initialized', {
@@ -212,6 +219,13 @@ class TelemetryService {
   captureError(error: Error, context?: Record<string, unknown>): void {
     if (!this.config.enabled) return;
 
+    // Pre-init there are no providers to deliver to — buffer durably so the
+    // error survives even a chunk-recovery hard reload, and report at init.
+    if (!this.initialized) {
+      bufferBootError(error, context);
+      return;
+    }
+
     const enrichedContext = {
       ...context,
       user_id: this.currentUser?.id,
@@ -284,6 +298,20 @@ class TelemetryService {
       if (item) {
         this.track(item.event, item.properties);
       }
+    }
+  }
+
+  private flushBootErrors(): void {
+    for (const buffered of drainBootErrors()) {
+      const error = new Error(buffered.message);
+      error.name = buffered.name;
+      if (buffered.stack) error.stack = buffered.stack;
+
+      this.captureError(error, {
+        ...buffered.context,
+        boot_buffered: true,
+        boot_error_ts: buffered.ts,
+      });
     }
   }
 

@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { sendChatMessage, sendRichChatMessage } from './chatService';
 import { calendarService } from './calendarService';
 import { shouldUseLegacyChatSync } from './stream/streamTransportGuards';
+import { deleteLegacyOfflineDatabases } from '@/offline/db';
 
 export { shouldUseLegacyChatSync };
 
@@ -210,6 +211,10 @@ export async function processGlobalSyncQueue(): Promise<{
  */
 export function setupGlobalSyncProcessor() {
   if (typeof window === 'undefined') return;
+
+  // Reclaim storage quota from IDB databases left behind by deleted legacy
+  // modules (chravel-chat-db, chravel-offline-queue). One-shot, fire-and-forget.
+  deleteLegacyOfflineDatabases();
 
   const handleOnline = async () => {
     try {

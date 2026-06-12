@@ -7,7 +7,11 @@
  * @module services/ogMetadataService
  */
 
-import { SUPABASE_PROJECT_URL, SUPABASE_PUBLIC_API_KEY } from '@/integrations/supabase/client';
+import {
+  supabase,
+  SUPABASE_PROJECT_URL,
+  SUPABASE_PUBLIC_API_KEY,
+} from '@/integrations/supabase/client';
 
 export interface OGMetadata {
   title?: string;
@@ -20,19 +24,21 @@ export interface OGMetadata {
 }
 
 /**
- * Fetches OG metadata from a URL
- * Uses a CORS proxy or edge function to avoid CORS issues
- *
- * @param url - URL to fetch metadata for
- * @returns Promise with OG metadata or error
+ * Fetches OG metadata from a URL via the authenticated edge function.
  */
 export async function fetchOGMetadata(url: string): Promise<OGMetadata> {
   try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) {
+      return { error: 'Authentication required' };
+    }
+
     const response = await fetch(`${SUPABASE_PROJECT_URL}/functions/v1/fetch-og-metadata`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${SUPABASE_PUBLIC_API_KEY}`,
+        Authorization: `Bearer ${accessToken}`,
         apikey: SUPABASE_PUBLIC_API_KEY,
       },
       body: JSON.stringify({ url }),
@@ -42,12 +48,8 @@ export async function fetchOGMetadata(url: string): Promise<OGMetadata> {
       throw new Error(`Failed to fetch metadata: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error) {
-    if (import.meta.env.DEV) {
-      // OG metadata fetch failed
-    }
     return {
       error: error instanceof Error ? error.message : 'Unknown error',
     };
@@ -56,10 +58,6 @@ export async function fetchOGMetadata(url: string): Promise<OGMetadata> {
 
 /**
  * Categorizes a URL based on domain and metadata
- *
- * @param url - URL to categorize
- * @param metadata - Optional OG metadata
- * @returns Category: 'receipt' | 'schedule' | 'booking' | 'general'
  */
 export function categorizeUrl(
   url: string,
@@ -69,7 +67,6 @@ export function categorizeUrl(
   const title = metadata?.title?.toLowerCase() || '';
   const description = metadata?.description?.toLowerCase() || '';
 
-  // Receipt indicators
   const receiptDomains = [
     'venmo.com',
     'paypal.com',
@@ -79,8 +76,6 @@ export function categorizeUrl(
     'invoice',
   ];
   const receiptKeywords = ['receipt', 'invoice', 'payment', 'paid', 'transaction', 'confirmation'];
-
-  // Schedule/Calendar indicators
   const scheduleDomains = ['calendar.google.com', 'outlook.com', 'calendly.com', 'doodle.com'];
   const scheduleKeywords = [
     'calendar',
@@ -90,8 +85,6 @@ export function categorizeUrl(
     'event',
     'reservation',
   ];
-
-  // Booking indicators
   const bookingDomains = [
     'airbnb.com',
     'booking.com',
@@ -114,14 +107,11 @@ export function categorizeUrl(
     'restaurant',
   ];
 
-  // Check domain matches
   if (receiptDomains.some(d => domain.includes(d))) return 'receipt';
   if (scheduleDomains.some(d => domain.includes(d))) return 'schedule';
   if (bookingDomains.some(d => domain.includes(d))) return 'booking';
 
-  // Check metadata keywords
   const combinedText = `${title} ${description}`;
-
   if (receiptKeywords.some(k => combinedText.includes(k))) return 'receipt';
   if (scheduleKeywords.some(k => combinedText.includes(k))) return 'schedule';
   if (bookingKeywords.some(k => combinedText.includes(k))) return 'booking';
@@ -131,30 +121,18 @@ export function categorizeUrl(
 
 /**
  * Batch fetch OG metadata for multiple URLs
- *
- * @param urls - Array of URLs to fetch metadata for
- * @param concurrency - Max concurrent requests (default: 3)
- * @returns Promise with array of metadata results
  */
 export async function batchFetchOGMetadata(
   urls: string[],
   concurrency: number = 3,
 ): Promise<Map<string, OGMetadata>> {
   const results = new Map<string, OGMetadata>();
-
-  // Process in batches to avoid overwhelming the server
   for (let i = 0; i < urls.length; i += concurrency) {
     const batch = urls.slice(i, i + concurrency);
-    const promises = batch.map(async url => {
-      const metadata = await fetchOGMetadata(url);
-      return { url, metadata };
-    });
-
-    const batchResults = await Promise.all(promises);
-    batchResults.forEach(({ url, metadata }) => {
-      results.set(url, metadata);
-    });
+    const batchResults = await Promise.all(
+      batch.map(async url => ({ url, metadata: await fetchOGMetadata(url) })),
+    );
+    batchResults.forEach(({ url, metadata }) => results.set(url, metadata));
   }
-
   return results;
 }

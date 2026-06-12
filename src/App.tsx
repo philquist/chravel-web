@@ -41,6 +41,7 @@ import {
 } from '@/utils/chunkRecovery';
 import { safeReload } from '@/utils/safeReload';
 import { retryImport } from '@/lib/retryImport';
+import { importAuthPage } from '@/lib/routeChunks';
 import { getPublicSeoRoute, SEO_LANDING_CONTENT } from '@/lib/seo';
 import { syncRobotsAndCanonical } from '@/components/seo/SeoHead';
 
@@ -103,7 +104,8 @@ const GmailCallbackPage = lazy(() =>
 );
 const DemoEntry = lazy(() => retryImport(() => import('./pages/DemoEntry')));
 const TripPreview = lazy(() => retryImport(() => import('./pages/TripPreview')));
-const AuthPage = lazy(() => retryImport(() => import('./pages/AuthPage')));
+// Shares its import() loader with main.tsx's boot warm-up via routeChunks.ts.
+const AuthPage = lazy(() => retryImport(importAuthPage));
 const ResetPasswordPage = lazy(() => retryImport(() => import('./pages/ResetPasswordPage')));
 const SeoLandingPage = lazy(() => retryImport(() => import('./pages/SeoLandingPage')));
 const DeviceTestMatrix = lazy(() => retryImport(() => import('./pages/DeviceTestMatrix')));

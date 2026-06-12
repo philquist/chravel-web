@@ -1,6 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { requireAuth } from '../_shared/requireAuth.ts';
+import { isSuperAdminEmail } from '../_shared/superAdmins.ts';
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 const CARLTON_ID = '11ba817d-f0c8-411d-9a75-b1bde6c4df4a';
@@ -1923,13 +1925,11 @@ serve(async req => {
 
   const headers = { ...getCorsHeaders(req), 'Content-Type': 'application/json' };
 
-  // Service-role auth gate (admin-only function)
-  const authHeader = req.headers.get('authorization');
-  if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'Authentication required' }), {
-      status: 401,
-      headers,
-    });
+  // Super-admin auth gate — validate JWT and require super-admin role.
+  const auth = await requireAuth(req, headers);
+  if (auth.error) return auth.response;
+  if (!isSuperAdminEmail(auth.user.email)) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers });
   }
 
   const supabase = createClient(

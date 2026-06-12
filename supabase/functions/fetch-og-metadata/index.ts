@@ -9,6 +9,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { requireAuth } from '../_shared/requireAuth.ts';
 import {
   FetchOGMetadataSchema,
   validateInput,
@@ -98,6 +99,11 @@ serve(async req => {
   }
 
   try {
+    // Require an authenticated user — prevents this endpoint from being used
+    // as an unauthenticated outbound HTTP relay attributed to Chravel's egress.
+    const auth = await requireAuth(req, corsHeaders);
+    if (auth.error) return auth.response;
+
     // Validate request body with Zod schema (SSRF protection)
     const rawBody = await req.json();
     const validation = validateInput(FetchOGMetadataSchema, rawBody);

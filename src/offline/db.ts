@@ -78,6 +78,34 @@ interface ChravelOfflineDB extends DBSchema {
 const DB_NAME = 'chravel-offline-sync';
 const DB_VERSION = 2;
 
+/**
+ * IndexedDB databases created by deleted legacy modules (services/chatStorage.ts,
+ * services/offlineMessageQueue.ts). No code reads or writes them anymore — the
+ * unified syncQueue/cache stores in this DB replaced them — but the orphaned
+ * databases still occupy storage quota on devices that ran older builds.
+ */
+const LEGACY_DB_NAMES = ['chravel-chat-db', 'chravel-offline-queue'] as const;
+
+let legacyCleanupStarted = false;
+
+/**
+ * Fire-and-forget deletion of orphaned legacy databases. Idempotent —
+ * deleteDatabase on a nonexistent DB is a no-op. Safe to call on every boot;
+ * only the first call per session does anything.
+ */
+export function deleteLegacyOfflineDatabases(): void {
+  if (legacyCleanupStarted) return;
+  legacyCleanupStarted = true;
+
+  try {
+    for (const name of LEGACY_DB_NAMES) {
+      indexedDB.deleteDatabase(name);
+    }
+  } catch {
+    // Restricted environment without IndexedDB — nothing to clean up.
+  }
+}
+
 let dbInstance: IDBPDatabase<ChravelOfflineDB> | null = null;
 
 export async function getOfflineDb(): Promise<IDBPDatabase<ChravelOfflineDB>> {

@@ -38,11 +38,16 @@ export async function fetchOpenGraphData(url: string): Promise<{
   domain: string;
 }> {
   try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) {
+      throw new Error('Authentication required for OG metadata fetch');
+    }
     const response = await fetch(`${SUPABASE_PROJECT_URL}/functions/v1/fetch-og-metadata`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${SUPABASE_PUBLIC_API_KEY}`,
+        Authorization: `Bearer ${accessToken}`,
         apikey: SUPABASE_PUBLIC_API_KEY,
       },
       body: JSON.stringify({ url }),
