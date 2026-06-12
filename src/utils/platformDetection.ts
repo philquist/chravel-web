@@ -109,3 +109,18 @@ export function isInstalledApp(): boolean {
   // Any standalone PWA (mobile or desktop) is a first-class app surface — same auth/OAuth rules.
   return isStandalonePWA();
 }
+
+/**
+ * Stricter than `isInstalledApp()` — only true for OUR real native shells
+ * (Capacitor build, ChravelNative WebView) or an installed standalone PWA.
+ *
+ * Critically, this does NOT treat generic iOS WKWebViews (Instagram/Facebook
+ * in-app browsers, embedded preview iframes) as installed. Those should see
+ * the marketing homepage, not the in-app auth gate.
+ */
+export function isNativeAuthSurface(): boolean {
+  if (isCapacitorNativeShell()) return true;
+  if (isChravelNativeShell()) return true;
+  if (isStandalonePWA()) return true;
+  return false;
+}
