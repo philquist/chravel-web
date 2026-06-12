@@ -82,6 +82,9 @@ const shouldUseMarketingSplit =
     pathname: window.location.pathname,
     hasAuthMarker: hasAuthMarkerOnBoot,
     isInstalledApp: isInstalledApp(),
+    forceMarketing:
+      window.location.search.includes('marketing=1') ||
+      window.location.pathname === '/home',
   });
 
 // Warm the cold-start route's page chunk in parallel with the App.tsx chunk —

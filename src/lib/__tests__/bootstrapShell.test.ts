@@ -60,6 +60,28 @@ describe('bootstrapShell', () => {
     it('skips marketing shell for non-root routes', () => {
       expect(shouldUseMarketingBootstrap({ ...base, pathname: '/trip/abc' })).toBe(false);
     });
+
+    it('forceMarketing wins over auth marker, installed shell, and non-root path', () => {
+      expect(
+        shouldUseMarketingBootstrap({
+          ...base,
+          hasAuthMarker: true,
+          isInstalledApp: true,
+          pathname: '/trip/abc',
+          forceMarketing: true,
+        }),
+      ).toBe(true);
+    });
+
+    it('forceMarketing still respects the marketingSplitEnabled kill switch', () => {
+      expect(
+        shouldUseMarketingBootstrap({
+          ...base,
+          marketingSplitEnabled: false,
+          forceMarketing: true,
+        }),
+      ).toBe(false);
+    });
   });
 
   describe('hasAuthStorageMarker', () => {
