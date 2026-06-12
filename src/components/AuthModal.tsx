@@ -374,14 +374,8 @@ export const AuthModal = ({
       <div className="relative flex min-h-full w-full items-center justify-center p-4 sm:p-6 pointer-events-none">
         <div data-testid="auth-modal-content" className="w-full max-w-md pointer-events-auto">
           <div className="bg-slate-950/95 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 sm:p-8 animate-scale-in max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] overflow-y-auto">
-            <div className="flex flex-col items-center mb-5">
-              <span
-                className="text-3xl font-bold text-gradient-gold select-none"
-                data-testid="auth-modal-logo"
-              >
-                ChravelApp
-              </span>
-            </div>
+            <div className="flex flex-col items-center mb-2" data-testid="auth-modal-logo" />
+
             <div className="relative flex items-center justify-center mb-6 min-h-[2.5rem]">
               <h2 className="text-2xl font-bold text-white text-center px-10">{authHeading}</h2>
               <button

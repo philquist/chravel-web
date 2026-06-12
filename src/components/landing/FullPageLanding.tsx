@@ -89,12 +89,8 @@ interface FullPageLandingProps {
   onSignUp: () => void;
 }
 
-// Loading fallback component
-const SectionLoader = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin h-12 w-12 gold-gradient-spinner" />
-  </div>
-);
+// Loading fallback — neutral, no spinner/wordmark so the homepage never flashes a splash.
+const SectionLoader = () => <div className="min-h-screen bg-background" />;
 
 export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) => {
   // Landing scrolls this element, not `window`. StickyLandingNav must listen here
