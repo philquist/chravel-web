@@ -13,6 +13,7 @@ import { hasAuthStorageMarker, shouldUseMarketingBootstrap } from './lib/bootstr
 import { isChravelNativeShell, isInstalledApp } from './utils/platformDetection';
 import { installChunkErrorRecovery, claimOneShotReload } from '@/utils/chunkRecovery';
 import { warmRouteChunksForPath } from './lib/routeChunks';
+import { getSafeStorage, safeGetItem, safeSetItem } from '@/utils/safeStorage';
 import './index.css';
 
 // ── Startup env validation ──────────────────────────────────────────────────
@@ -35,14 +36,6 @@ if (hasRequiredSupabaseEnv && typeof window !== 'undefined') {
 
 // ── Imperative init (runs after all imports are resolved) ──────────────────
 
-const safeLocalStorageGet = (key: string): string | null => {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-};
-
 const safeCookieIncludes = (needle: string): boolean => {
   try {
     return document.cookie.includes(needle);
@@ -51,11 +44,13 @@ const safeCookieIncludes = (needle: string): boolean => {
   }
 };
 
+// getSafeStorage: merely referencing `localStorage` throws in cookie-blocked
+// browsers — at module scope that would black-screen the app before boot.
 const hasAuthMarkerOnBoot =
   typeof window !== 'undefined' &&
   hasAuthStorageMarker({
-    localStorage,
-    sessionStorage,
+    localStorage: getSafeStorage('local'),
+    sessionStorage: getSafeStorage('session'),
     cookieIncludes: safeCookieIncludes,
   });
 
@@ -71,14 +66,6 @@ const shouldUseMarketingSplit =
     hasAuthMarker: hasAuthMarkerOnBoot,
     isInstalledApp: isInstalledApp(),
   });
-const safeLocalStorageSet = (key: string, value: string): void => {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // ignore storage failures in restricted environments (e.g. sandboxed previews)
-  }
-};
-
 const clearAllCaches = (): void => {
   if ('caches' in window) {
     caches
@@ -177,7 +164,7 @@ try {
 }
 
 // Initialize theme
-const theme = safeLocalStorageGet('theme');
+const theme = safeGetItem('local', 'theme');
 if (theme === 'light') {
   document.documentElement.classList.add('light');
 }
@@ -189,11 +176,11 @@ if (isLovablePreview()) {
   // Version-based cache busting: clear caches when app version changes
   const STORED_VERSION_KEY = 'chravel_host_version';
   const currentVersion = (import.meta.env.VITE_APP_VERSION as string) || '0';
-  const storedVersion = safeLocalStorageGet(STORED_VERSION_KEY);
+  const storedVersion = safeGetItem('local', STORED_VERSION_KEY);
 
   if (storedVersion !== null && storedVersion !== currentVersion) {
     clearAllCaches();
-    safeLocalStorageSet(STORED_VERSION_KEY, currentVersion);
+    safeSetItem('local', STORED_VERSION_KEY, currentVersion);
 
     // One-shot guard: if storage can't persist the new version (restricted WebView),
     // storedVersion stays stale and this would reload-loop into a blank screen.
@@ -203,7 +190,7 @@ if (isLovablePreview()) {
     // Tradeoff: on public anonymous routes we accept a potentially stale auth session snapshot
     // to avoid paying a second cold load on landing after cache/version invalidation.
   } else {
-    safeLocalStorageSet(STORED_VERSION_KEY, currentVersion);
+    safeSetItem('local', STORED_VERSION_KEY, currentVersion);
   }
 }
 

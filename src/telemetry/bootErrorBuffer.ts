@@ -12,6 +12,8 @@
  * which still covers the same-boot init-at-idle window.
  */
 
+import { safeGetItem, safeSetItem, safeRemoveItem } from '@/utils/safeStorage';
+
 export interface BufferedBootError {
   name: string;
   message: string;
@@ -26,9 +28,9 @@ const MAX_ENTRIES = 10;
 let memoryBuffer: BufferedBootError[] = [];
 
 function readPersisted(): BufferedBootError[] {
+  const raw = safeGetItem('session', STORAGE_KEY);
+  if (!raw) return [];
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     return Array.isArray(parsed) ? (parsed as BufferedBootError[]) : [];
   } catch {
@@ -49,11 +51,15 @@ export function bufferBootError(error: Error, context?: Record<string, unknown>)
     ts: Date.now(),
   };
 
-  try {
-    const entries = readPersisted();
-    entries.push(entry);
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(-MAX_ENTRIES)));
-  } catch {
+  const entries = readPersisted();
+  entries.push(entry);
+  const persisted = safeSetItem(
+    'session',
+    STORAGE_KEY,
+    JSON.stringify(entries.slice(-MAX_ENTRIES)),
+  );
+
+  if (!persisted) {
     memoryBuffer.push(entry);
     memoryBuffer = memoryBuffer.slice(-MAX_ENTRIES);
   }
@@ -65,11 +71,7 @@ export function bufferBootError(error: Error, context?: Record<string, unknown>)
  */
 export function drainBootErrors(): BufferedBootError[] {
   const persisted = readPersisted();
-  try {
-    sessionStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // ignore — restricted storage; readPersisted returned [] in that case anyway
-  }
+  safeRemoveItem('session', STORAGE_KEY);
 
   const drained = [...persisted, ...memoryBuffer];
   memoryBuffer = [];

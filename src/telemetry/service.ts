@@ -20,6 +20,7 @@ import type {
 import { ConsoleProvider } from './providers/console';
 import { PostHogProvider } from './providers/posthog';
 import { bufferBootError, drainBootErrors } from './bootErrorBuffer';
+import { safeGetItem } from '@/utils/safeStorage';
 // ============================================================================
 // Default Configuration
 // ============================================================================
@@ -75,8 +76,9 @@ class TelemetryService {
       return;
     }
 
-    // Check demo mode
-    this.demoMode = localStorage.getItem('TRIPS_DEMO_MODE') === 'true';
+    // Check demo mode (safeGetItem: a raw localStorage read here would throw in
+    // cookie-blocked browsers and permanently abort telemetry init)
+    this.demoMode = safeGetItem('local', 'TRIPS_DEMO_MODE') === 'true';
 
     // Merge configuration
     this.config = { ...defaultConfig, ...configOverrides };
