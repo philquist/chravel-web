@@ -13,6 +13,8 @@ export default tseslint.config(
       'supabase/**',
       'unfurl/**',
       'scripts/**',
+      // Node render scripts (same class as scripts/**); remotion/src stays linted
+      'remotion/scripts/**',
       'node_modules/**',
       '.ai/**',
       'docs/**',
