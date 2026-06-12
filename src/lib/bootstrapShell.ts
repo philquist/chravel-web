@@ -54,14 +54,19 @@ export interface MarketingBootstrapInput {
   hasAuthMarker: boolean;
   /** PWA standalone, Capacitor, or chravel-mobile native WebView */
   isInstalledApp: boolean;
+  /** Escape hatch (e.g. `?marketing=1`) to force the marketing shell regardless of auth marker / path. */
+  forceMarketing?: boolean;
 }
 
 /**
  * Anonymous browser visitors to `/` boot MarketingApp for faster first paint.
  * Native/TestFlight/PWA-installed shells always boot the full App.
+ * `forceMarketing` overrides the auth-marker, installed-shell, and path checks so the
+ * landing page can be previewed even when a stale Supabase session is cached.
  */
 export function shouldUseMarketingBootstrap(input: MarketingBootstrapInput): boolean {
   if (!input.marketingSplitEnabled) return false;
+  if (input.forceMarketing) return true;
   if (input.isInstalledApp) return false;
   return isAnonymousRootRoute(input.pathname, input.hasAuthMarker);
 }
