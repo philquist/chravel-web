@@ -10,12 +10,13 @@ const mockEnv = (values: Record<string, string | undefined>) => ({
 });
 
 describe('superAdmins', () => {
-  it('returns founder defaults and excludes demo by default', () => {
-    const emails = getSuperAdminEmails(mockEnv({}));
+  it('has no hardcoded founder emails in source', () => {
+    expect(FOUNDER_SUPER_ADMIN_EMAILS).toHaveLength(0);
+  });
 
-    for (const founder of FOUNDER_SUPER_ADMIN_EMAILS) {
-      expect(emails.has(founder.toLowerCase())).toBe(true);
-    }
+  it('returns empty set without env config and excludes demo by default', () => {
+    const emails = getSuperAdminEmails(mockEnv({}));
+    expect(emails.size).toBe(0);
     expect(emails.has('demo@chravelapp.com')).toBe(false);
   });
 

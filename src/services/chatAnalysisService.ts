@@ -91,7 +91,8 @@ Return ONLY valid JSON, no other text.`;
       message: aiPrompt,
       tripId,
       config: {
-        systemPrompt: 'You are a payment parsing assistant. Return only valid JSON.',
+        // NOTE: systemPrompt override is now restricted to super-admins server-side.
+        // The PAYMENT_PARSER_PROMPT is already embedded in the message itself.
         temperature: 0.3, // Lower temperature for more consistent parsing
       },
     });

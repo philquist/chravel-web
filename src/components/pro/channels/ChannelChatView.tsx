@@ -685,32 +685,36 @@ export const ChannelChatView = ({
       <div className="flex-1">
         {useStreamTransport && streamProChannel.isLoading ? (
           <div className="flex-1 overflow-y-auto p-4 space-y-4" aria-label="Loading messages">
+            {/* Token-driven bars under one animation per row — ~30 elements total,
+                so per-element Skeleton shimmer would cost real paint time here. */}
             {[...Array(6)].map((_, i) => (
               <div key={i} className="flex items-start gap-3 animate-pulse">
-                <div className="w-8 h-8 rounded-full bg-white/10 flex-shrink-0" />
+                <div className="w-8 h-8 rounded-full bg-muted/50 flex-shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="h-3 bg-white/10 rounded w-24" />
-                    <div className="h-2 bg-white/5 rounded w-16" />
+                    <div className="h-3 bg-muted/50 rounded w-24" />
+                    <div className="h-2 bg-muted/30 rounded w-16" />
                   </div>
-                  <div className="h-4 bg-white/10 rounded w-3/4" />
-                  {i % 2 === 0 && <div className="h-4 bg-white/10 rounded w-1/2" />}
+                  <div className="h-4 bg-muted/50 rounded w-3/4" />
+                  {i % 2 === 0 && <div className="h-4 bg-muted/50 rounded w-1/2" />}
                 </div>
               </div>
             ))}
           </div>
         ) : !useStreamTransport && loading ? (
           <div className="flex-1 overflow-y-auto p-4 space-y-4" aria-label="Loading messages">
+            {/* Token-driven bars under one animation per row — ~30 elements total,
+                so per-element Skeleton shimmer would cost real paint time here. */}
             {[...Array(6)].map((_, i) => (
               <div key={i} className="flex items-start gap-3 animate-pulse">
-                <div className="w-8 h-8 rounded-full bg-white/10 flex-shrink-0" />
+                <div className="w-8 h-8 rounded-full bg-muted/50 flex-shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="h-3 bg-white/10 rounded w-24" />
-                    <div className="h-2 bg-white/5 rounded w-16" />
+                    <div className="h-3 bg-muted/50 rounded w-24" />
+                    <div className="h-2 bg-muted/30 rounded w-16" />
                   </div>
-                  <div className="h-4 bg-white/10 rounded w-3/4" />
-                  {i % 2 === 0 && <div className="h-4 bg-white/10 rounded w-1/2" />}
+                  <div className="h-4 bg-muted/50 rounded w-3/4" />
+                  {i % 2 === 0 && <div className="h-4 bg-muted/50 rounded w-1/2" />}
                 </div>
               </div>
             ))}

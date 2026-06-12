@@ -11,6 +11,7 @@ import { MediaSearchBar } from './media/MediaSearchBar';
 import { supabase } from '@/integrations/supabase/client';
 import { mediaService } from '@/services/mediaService';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { MediaSearchResult } from '@/services/mediaSearchService';
 import { filterMediaByAITags } from '@/services/mediaAITagging';
 
@@ -191,11 +192,11 @@ export const UnifiedMediaHub = React.memo(
     if (loading) {
       return (
         <div className="space-y-4">
-          <div className="h-12 rounded-xl bg-white/10 animate-pulse" />
-          <div className="h-10 rounded-xl bg-white/5 animate-pulse" />
+          <Skeleton className="h-12 rounded-xl" />
+          <Skeleton className="h-10 rounded-xl bg-muted/30" />
           <div className="grid grid-cols-2 gap-3">
-            <div className="h-40 rounded-xl bg-white/5 animate-pulse" />
-            <div className="h-40 rounded-xl bg-white/5 animate-pulse" />
+            <Skeleton className="h-40 rounded-xl bg-muted/30" />
+            <Skeleton className="h-40 rounded-xl bg-muted/30" />
           </div>
         </div>
       );
