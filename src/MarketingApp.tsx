@@ -19,9 +19,13 @@ function PostAuthBoot() {
   const isLoading = auth?.isLoading ?? true;
 
   useEffect(() => {
-    if (!isLoading && user) {
-      window.location.assign('/');
-    }
+    if (isLoading || !user) return;
+    // Respect the `?marketing=1` / `/home` preview override — don't bounce a logged-in
+    // viewer out of the marketing landing when they're explicitly previewing it.
+    const forcedMarketing =
+      window.location.search.includes('marketing=1') || window.location.pathname === '/home';
+    if (forcedMarketing) return;
+    window.location.assign('/');
   }, [user, isLoading]);
 
   return null;
