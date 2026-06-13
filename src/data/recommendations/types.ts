@@ -1,6 +1,15 @@
 export interface Recommendation {
   id: number;
-  type: 'hotel' | 'restaurant' | 'activity' | 'tour' | 'experience' | 'transportation';
+  type:
+    | 'hotel'
+    | 'restaurant'
+    | 'activity'
+    | 'tour'
+    | 'experience'
+    | 'transportation'
+    | 'nightlife'
+    | 'sports'
+    | 'landmarks';
   title: string;
   location: string;
   city: string;

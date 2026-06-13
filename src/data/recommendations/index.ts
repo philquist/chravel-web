@@ -5,6 +5,9 @@ import { activityRecommendations } from './activities';
 import { tourRecommendations } from './tours';
 import { experienceRecommendations } from './experiences';
 import { transportationRecommendations } from './transportation';
+import { nightlifeRecommendations } from './nightlife';
+import { sportsRecommendations } from './sports';
+import { landmarkRecommendations } from './landmarks';
 
 export * from './types';
 
@@ -15,6 +18,9 @@ export const recommendationsData: Recommendation[] = [
   ...tourRecommendations,
   ...experienceRecommendations,
   ...transportationRecommendations,
+  ...nightlifeRecommendations,
+  ...sportsRecommendations,
+  ...landmarkRecommendations,
 ];
 
 export const getRecommendationsByType = (type?: string): Recommendation[] => {

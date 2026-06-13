@@ -11,6 +11,9 @@ import {
   Search,
   X,
   Bookmark,
+  Martini,
+  Trophy,
+  Landmark,
 } from 'lucide-react';
 
 interface RecommendationFiltersProps {
@@ -32,6 +35,9 @@ const filters = [
   { id: 'tour', label: 'Tours', icon: Camera },
   { id: 'experience', label: 'Experiences', icon: Star },
   { id: 'transportation', label: 'Transportation', icon: Car },
+  { id: 'nightlife', label: 'Nightlife', icon: Martini },
+  { id: 'sports', label: 'Sports', icon: Trophy },
+  { id: 'landmarks', label: 'Landmarks', icon: Landmark },
 ];
 
 export const RecommendationFilters = ({

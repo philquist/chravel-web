@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 450 300" role="img" aria-labelledby="title desc">
+  <title id="title">Los Angeles Rams mock recommendation image</title>
+  <desc id="desc">Generated Chravel mock card artwork for Los Angeles Rams in SoFi Stadium.</desc>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#003594"/>
+      <stop offset="0.55" stop-color="#111827"/>
+      <stop offset="1" stop-color="#020617"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="75%" cy="20%" r="65%">
+      <stop offset="0" stop-color="#FFA300" stop-opacity=".58"/>
+      <stop offset="1" stop-color="#FFA300" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="450" height="300" fill="url(#g)"/>
+  <rect width="450" height="300" fill="url(#glow)"/>
+  <g opacity=".36">
+    <circle cx="70" cy="58" r="2" fill="#fff"/><circle cx="120" cy="38" r="1.5" fill="#fff"/><circle cx="386" cy="62" r="2" fill="#fff"/><circle cx="335" cy="36" r="1.4" fill="#fff"/>
+  </g>
+  
+        <ellipse cx="225" cy="214" rx="172" ry="48" fill="rgba(255,255,255,.12)" stroke="#FFA300" stroke-width="5"/>
+        <rect x="86" y="128" width="278" height="96" rx="48" fill="rgba(0,0,0,.28)" stroke="rgba(255,255,255,.22)"/>
+        <circle cx="225" cy="176" r="30" fill="#FFA300" opacity=".9"/>
+  <rect x="22" y="24" width="118" height="28" rx="14" fill="rgba(0,0,0,.42)" stroke="#FFA300"/>
+  <text x="81" y="43" text-anchor="middle" font-size="13" font-family="Inter,Arial" font-weight="800" fill="#FFA300">NFL</text>
+  <text x="28" y="265" font-size="24" font-family="Inter,Arial" font-weight="900" fill="#fff">Los Angeles Rams</text>
+  <text x="29" y="285" font-size="13" font-family="Inter,Arial" font-weight="700" fill="rgba(255,255,255,.72)">Sports • SoFi Stadium</text>
+</svg>

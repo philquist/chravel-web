@@ -1,0 +1,99 @@
+import { Recommendation } from './types';
+import landmarkHollywoodSign from '@/assets/recommendations/rec-landmark-hollywood-sign.svg';
+import landmarkPyramidsGiza from '@/assets/recommendations/rec-landmark-pyramids-giza.svg';
+import landmarkTemploMayor from '@/assets/recommendations/rec-landmark-templo-mayor.svg';
+import landmarkEiffelTower from '@/assets/recommendations/rec-landmark-eiffel-tower.svg';
+import landmarkSydneyOperaHouse from '@/assets/recommendations/rec-landmark-sydney-opera-house.svg';
+
+export const landmarkRecommendations: Recommendation[] = [
+  {
+    id: 401,
+    type: 'landmarks',
+    title: 'Hollywood Sign — Los Angeles',
+    location: 'Griffith Park, Los Angeles, CA',
+    city: 'Los Angeles',
+    description:
+      'Plan a classic LA photo stop with official viewing guidance, trail context, and nearby Griffith Park ideas.',
+    rating: 4.8,
+    priceLevel: 1,
+    images: [landmarkHollywoodSign],
+    tags: ['Landmark', 'Photo Spot', 'Sightseeing'],
+    isSponsored: false,
+    ctaButton: { text: 'Plan Visit', action: 'view' },
+    externalLink: 'https://hollywoodsign.org/',
+    distance: 'Los Angeles landmark',
+    isAvailable: true,
+  },
+  {
+    id: 402,
+    type: 'landmarks',
+    title: 'Pyramids of Giza — Egypt',
+    location: 'Giza Plateau, Giza, Egypt',
+    city: 'Giza',
+    description:
+      'Explore one of the world’s most recognizable ancient sites with official tourism planning resources.',
+    rating: 4.9,
+    priceLevel: 2,
+    images: [landmarkPyramidsGiza],
+    tags: ['Landmark', 'Historic', 'Sightseeing'],
+    isSponsored: false,
+    ctaButton: { text: 'Explore Landmark', action: 'view' },
+    externalLink: 'https://egymonuments.gov.eg/archaeological-sites/giza-plateau/',
+    distance: 'Giza, Egypt',
+    isAvailable: true,
+  },
+  {
+    id: 403,
+    type: 'landmarks',
+    title: 'Templo Mayor / Aztec Ruins — Mexico City',
+    location: 'Centro Histórico, Mexico City, Mexico',
+    city: 'Mexico City',
+    description:
+      'Visit the archaeological remains of the Mexica capital beside Mexico City’s historic center.',
+    rating: 4.7,
+    priceLevel: 1,
+    images: [landmarkTemploMayor],
+    tags: ['Landmark', 'Historic', 'Museum'],
+    isSponsored: false,
+    ctaButton: { text: 'View Details', action: 'view' },
+    externalLink: 'https://www.inah.gob.mx/zonas/zona-arqueologica-templo-mayor',
+    distance: 'Mexico City historic center',
+    isAvailable: true,
+  },
+  {
+    id: 404,
+    type: 'landmarks',
+    title: 'Eiffel Tower — Paris',
+    location: 'Champ de Mars, Paris, France',
+    city: 'Paris',
+    description:
+      'Plan a visit to Paris’s iconic iron tower with official ticketing, access, and visitor details.',
+    rating: 4.8,
+    priceLevel: 3,
+    images: [landmarkEiffelTower],
+    tags: ['Landmark', 'Architecture', 'Photo Spot'],
+    isSponsored: false,
+    ctaButton: { text: 'Plan Visit', action: 'view' },
+    externalLink: 'https://www.toureiffel.paris/en',
+    distance: 'Paris landmark',
+    isAvailable: true,
+  },
+  {
+    id: 405,
+    type: 'landmarks',
+    title: 'Sydney Opera House — Sydney',
+    location: 'Bennelong Point, Sydney NSW, Australia',
+    city: 'Sydney',
+    description:
+      'Explore tours, performances, architecture, and harbor-side planning for Sydney’s signature landmark.',
+    rating: 4.8,
+    priceLevel: 2,
+    images: [landmarkSydneyOperaHouse],
+    tags: ['Landmark', 'Architecture', 'Sightseeing'],
+    isSponsored: false,
+    ctaButton: { text: 'Explore Landmark', action: 'view' },
+    externalLink: 'https://www.sydneyoperahouse.com/',
+    distance: 'Sydney Harbour',
+    isAvailable: true,
+  },
+];
