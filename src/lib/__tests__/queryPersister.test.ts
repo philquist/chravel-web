@@ -71,7 +71,7 @@ describe('queryPersister', () => {
   describe('shouldDehydrateQuery allowlist + demo firewall', () => {
     it('persists successful allowlisted UUID-scoped queries only', async () => {
       const { persistOptions } = await loadPersister();
-      const should = persistOptions.dehydrateOptions!.shouldDehydrateQuery!;
+      const should = persistOptions.dehydrateOptions!.shouldDehydrateQuery! as unknown as (q: unknown) => boolean;
 
       expect(should(fakeQuery(['trips', USER_A, false]))).toBe(true);
       expect(should(fakeQuery(['trip', TRIP_UUID, USER_A]))).toBe(true);
@@ -87,7 +87,7 @@ describe('queryPersister', () => {
 
     it('rejects demo-flagged keys and non-UUID (mock/demo) scope ids', async () => {
       const { persistOptions } = await loadPersister();
-      const should = persistOptions.dehydrateOptions!.shouldDehydrateQuery!;
+      const should = persistOptions.dehydrateOptions!.shouldDehydrateQuery! as unknown as (q: unknown) => boolean;
 
       // Layer 2: explicit demo boolean segment
       expect(should(fakeQuery(['tripTasks', TRIP_UUID, true]))).toBe(false);
@@ -100,7 +100,7 @@ describe('queryPersister', () => {
     it('persists nothing while demo mode is active', async () => {
       const { persistOptions } = await loadPersister();
       const { useDemoModeStore } = await import('@/store/demoModeStore');
-      const should = persistOptions.dehydrateOptions!.shouldDehydrateQuery!;
+      const should = persistOptions.dehydrateOptions!.shouldDehydrateQuery! as unknown as (q: unknown) => boolean;
 
       useDemoModeStore.setState({ isDemoMode: true, demoView: 'app-preview' });
       expect(should(fakeQuery(['trips', USER_A, false]))).toBe(false);
