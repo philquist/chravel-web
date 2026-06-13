@@ -56,7 +56,6 @@ export async function fetchOGMetadata(url: string): Promise<OGMetadata> {
   }
 }
 
-
 /**
  * Categorizes a URL based on domain and metadata
  */
@@ -68,15 +67,45 @@ export function categorizeUrl(
   const title = metadata?.title?.toLowerCase() || '';
   const description = metadata?.description?.toLowerCase() || '';
 
-  const receiptDomains = ['venmo.com', 'paypal.com', 'square.com', 'stripe.com', 'receipt', 'invoice'];
+  const receiptDomains = [
+    'venmo.com',
+    'paypal.com',
+    'square.com',
+    'stripe.com',
+    'receipt',
+    'invoice',
+  ];
   const receiptKeywords = ['receipt', 'invoice', 'payment', 'paid', 'transaction', 'confirmation'];
   const scheduleDomains = ['calendar.google.com', 'outlook.com', 'calendly.com', 'doodle.com'];
-  const scheduleKeywords = ['calendar', 'schedule', 'appointment', 'meeting', 'event', 'reservation'];
-  const bookingDomains = [
-    'airbnb.com', 'booking.com', 'expedia.com', 'hotels.com', 'kayak.com',
-    'priceline.com', 'tripadvisor.com', 'opentable.com', 'resy.com', 'tock.com',
+  const scheduleKeywords = [
+    'calendar',
+    'schedule',
+    'appointment',
+    'meeting',
+    'event',
+    'reservation',
   ];
-  const bookingKeywords = ['book', 'reservation', 'check-in', 'check-out', 'hotel', 'flight', 'restaurant'];
+  const bookingDomains = [
+    'airbnb.com',
+    'booking.com',
+    'expedia.com',
+    'hotels.com',
+    'kayak.com',
+    'priceline.com',
+    'tripadvisor.com',
+    'opentable.com',
+    'resy.com',
+    'tock.com',
+  ];
+  const bookingKeywords = [
+    'book',
+    'reservation',
+    'check-in',
+    'check-out',
+    'hotel',
+    'flight',
+    'restaurant',
+  ];
 
   if (receiptDomains.some(d => domain.includes(d))) return 'receipt';
   if (scheduleDomains.some(d => domain.includes(d))) return 'schedule';

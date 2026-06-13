@@ -285,9 +285,7 @@ createRoot(document.getElementById('root')!).render(
         ) : (
           <TripVariantProvider variant="consumer">
             <BasecampProvider>
-              <Suspense
-                fallback={<div className="app-suspense-fallback" />}
-              >
+              <Suspense fallback={<div className="app-suspense-fallback" />}>
                 <App />
               </Suspense>
             </BasecampProvider>

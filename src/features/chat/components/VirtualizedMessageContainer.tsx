@@ -98,6 +98,15 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
     getScrollElement: () => containerRef.current,
     estimateSize: index => (rows[index]?.type === 'date' ? DATE_ROW_HEIGHT : ROW_HEIGHT_ESTIMATE),
     overscan: 5,
+    // Key the measurement cache by item identity, not index: when a filter
+    // (e.g. chat → Broadcasts) shrinks the list, surviving rows shift index
+    // without remounting and would otherwise inherit another row's cached
+    // height, stacking bubbles on top of each other.
+    getItemKey: index => {
+      const row = rows[index];
+      if (!row) return index;
+      return row.type === 'date' ? `date-${row.date.getTime()}` : row.message.id;
+    },
   });
 
   const virtualItems = virtualizer.getVirtualItems();

@@ -2901,7 +2901,10 @@ serve(async req => {
   const auth = await requireAuth(req, jsonHeaders);
   if (auth.error) return auth.response;
   if (!isSuperAdminEmail(auth.user.email)) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: jsonHeaders });
+    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+      status: 403,
+      headers: jsonHeaders,
+    });
   }
 
   try {

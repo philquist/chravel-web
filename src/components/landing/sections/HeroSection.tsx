@@ -1,15 +1,15 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '../../ui/button';
 
-// Real-product-walkthrough video built from Tokyo Adventure demo screenshots.
-// Source: remotion/src/compositions/HomepageHeroDemo60.tsx
-// Regenerate via: cd remotion && node scripts/render-remotion.mjs /mnt/documents/chravel-homepage-demo-60.mp4 HomepageHeroDemo60
-import heroVideoAsset from '@/assets/chravel-homepage-demo-60.mp4.asset.json';
-import heroPosterAsset from '@/assets/chravel-homepage-demo-60-poster.jpg.asset.json';
+// Real-product-walkthrough video built from fresh demo-mode UI captures.
+// Source: remotion/src/compositions/HomepageProductDemo60.tsx
+// Regenerate: see public/videos/README.md (capture → render → poster).
+// Served from public/ so the file ships with every deploy — no external
+// asset store involved (a previous sandbox-only asset URL broke in prod).
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
-const HERO_VIDEO_SRC = heroVideoAsset.url;
-const HERO_VIDEO_POSTER = heroPosterAsset.url;
+const HERO_VIDEO_SRC = '/videos/chravel-homepage-demo-60.mp4';
+const HERO_VIDEO_POSTER = '/videos/chravel-homepage-demo-60-poster.jpg';
 
 interface HeroSectionProps {
   onSignUp: () => void;
@@ -18,7 +18,6 @@ interface HeroSectionProps {
 export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
   const reducedMotion = useReducedMotion();
   const [videoFailed, setVideoFailed] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const showVideo = !reducedMotion && !videoFailed;
 
   return (
@@ -99,8 +98,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
           <div className="relative rounded-xl overflow-hidden shadow-2xl shadow-black/40 border border-white/10 aspect-video bg-[#070B1A]">
             {showVideo ? (
               <video
-                ref={videoRef}
                 className="w-full h-full object-cover"
+                // src directly on <video> (not a <source> child) so a missing
+                // file fires onError here and the poster fallback engages.
+                src={HERO_VIDEO_SRC}
                 autoPlay
                 muted
                 loop
@@ -109,13 +110,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
                 poster={HERO_VIDEO_POSTER}
                 aria-label="ChravelApp trip dashboard product demo"
                 onError={() => setVideoFailed(true)}
-              >
-                <source src={HERO_VIDEO_SRC} type="video/mp4" />
-              </video>
+              />
             ) : (
               <img
                 src={HERO_VIDEO_POSTER}
-                alt="ChravelApp Tokyo Adventure trip dashboard preview"
+                alt="ChravelApp trips dashboard preview"
                 className="w-full h-full object-cover"
                 fetchPriority="high"
                 decoding="async"

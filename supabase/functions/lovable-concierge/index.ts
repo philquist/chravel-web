@@ -1101,9 +1101,7 @@ serve(async req => {
     const callerIsSuperAdmin = isSuperAdminEmail(user?.email ?? null);
     const safeCustomSystemPrompt = callerIsSuperAdmin ? config.systemPrompt : undefined;
     if (config.systemPrompt && !callerIsSuperAdmin) {
-      console.warn(
-        '[lovable-concierge] Ignored config.systemPrompt from non-super-admin caller',
-      );
+      console.warn('[lovable-concierge] Ignored config.systemPrompt from non-super-admin caller');
     }
 
     const systemPrompt = assemblePrompt({

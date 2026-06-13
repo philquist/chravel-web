@@ -5,8 +5,9 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const outArg = process.argv[2] || '/mnt/documents/chravel-homepage-demo-60.mp4';
-const compId = process.argv[3] || 'HomepageHeroDemo60';
+const outArg =
+  process.argv[2] || path.resolve(__dirname, '../../public/videos/chravel-homepage-demo-60.mp4');
+const compId = process.argv[3] || 'HomepageProductDemo60';
 
 console.log(`[render] bundling…`);
 const bundled = await bundle({
@@ -16,8 +17,12 @@ const bundled = await bundle({
 
 console.log(`[render] launching chromium…`);
 const browser = await openBrowser('chrome', {
-  browserExecutable: process.env.PUPPETEER_EXECUTABLE_PATH ?? '/bin/chromium',
+  browserExecutable:
+    process.env.PUPPETEER_EXECUTABLE_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   chromiumOptions: {
+    // Sandbox/CI proxies often resign TLS for fonts.gstatic.com (legacy
+    // compositions load Google Fonts at module scope).
+    ignoreCertificateErrors: true,
     args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
   },
   chromeMode: 'chrome-for-testing',
@@ -39,7 +44,7 @@ await renderMedia({
   puppeteerInstance: browser,
   muted: true,
   concurrency: 2,
-  crf: 23,
+  crf: Number(process.env.RENDER_CRF ?? 23),
   onProgress: ({ progress }) => {
     if (Math.round(progress * 100) % 10 === 0) {
       process.stdout.write(`  ${Math.round(progress * 100)}%\n`);
