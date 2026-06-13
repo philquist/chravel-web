@@ -203,7 +203,7 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
   maxAge: MAX_AGE_MS,
   buster: (import.meta.env.VITE_BUILD_ID as string | undefined) ?? 'dev',
   dehydrateOptions: {
-    shouldDehydrateQuery: shouldPersistQuery,
+    shouldDehydrateQuery: shouldPersistQuery as unknown as (query: unknown) => boolean,
   },
 };
 
