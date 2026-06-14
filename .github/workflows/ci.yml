@@ -73,10 +73,18 @@ jobs:
       - name: Lint migration files
         run: npx tsx scripts/lint-migrations.ts
 
-  unit-tests:
-    name: Unit Tests (Vitest)
+  # The Vitest suite (~290 files × jsdom + coverage) outgrew a single 30-min job.
+  # Split it across parallel shards so each finishes well under the timeout; a
+  # downstream gate job re-exposes the original "Unit Tests (Vitest)" status name
+  # so branch protection stays satisfied and only goes green when every shard does.
+  unit-tests-shard:
+    name: Unit Tests Shard
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
 
     steps:
       - name: Checkout code
@@ -92,8 +100,8 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --fund=false
 
-      - name: Run unit tests with coverage
-        run: npm run test:run:ci
+      - name: Run unit tests with coverage (shard ${{ matrix.shard }}/4)
+        run: npm run test:run:ci -- --shard=${{ matrix.shard }}/4
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v5
@@ -102,9 +110,30 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info
+          flags: unit-shard-${{ matrix.shard }}
           fail_ci_if_error: false
           disable_search: false
           verbose: true
+
+  # Stable required-check name. Aggregates the shard matrix into one status so
+  # branch protection can keep requiring "Unit Tests (Vitest)" unchanged.
+  unit-tests:
+    name: Unit Tests (Vitest)
+    runs-on: ubuntu-24.04
+    needs: unit-tests-shard
+    if: always()
+    timeout-minutes: 5
+
+    steps:
+      - name: Verify all shards passed
+        run: |
+          result="${{ needs.unit-tests-shard.result }}"
+          echo "Vitest shard matrix result: $result"
+          if [ "$result" != "success" ]; then
+            echo "::error::One or more Vitest shards failed or were cancelled."
+            exit 1
+          fi
+          echo "All Vitest shards passed."
 
   build:
     name: Build Web App
