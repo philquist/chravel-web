@@ -19,8 +19,8 @@ docs/ios/11-data-sync-architecture.md:jwt:28
 docs/ios/11-data-sync-architecture.md:supabase-anon-key-hardcoded:28
 src/integrations/supabase/client.ts:jwt:34
 src/integrations/supabase/client.ts:supabase-anon-key-hardcoded:34
-src/integrations/supabase/config.ts:jwt:23
-src/integrations/supabase/config.ts:supabase-anon-key-hardcoded:23
+src/integrations/supabase/config.ts:jwt:31
+src/integrations/supabase/config.ts:supabase-anon-key-hardcoded:31
 supabase/migrations/20251031214519_f794d8db-5e10-4d5c-8c11-9e86b7e744ba.sql:jwt:31
 supabase/migrations/20251031214519_f794d8db-5e10-4d5c-8c11-9e86b7e744ba.sql:supabase-anon-key-hardcoded:31
 
