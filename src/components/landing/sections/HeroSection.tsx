@@ -99,7 +99,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
           <div className="relative rounded-xl overflow-hidden shadow-2xl shadow-black/40 border border-white/10 aspect-video bg-[#070B1A]">
             {showVideo ? (
               <video
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover scale-[1.18]"
+
                 // src directly on <video> (not a <source> child) so a missing
                 // file fires onError here and the poster fallback engages.
                 src={HERO_VIDEO_SRC}
@@ -116,7 +117,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
               <img
                 src={HERO_VIDEO_POSTER}
                 alt="ChravelApp trips dashboard preview"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover scale-[1.18]"
                 fetchPriority="high"
                 decoding="async"
               />
