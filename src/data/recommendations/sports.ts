@@ -1,15 +1,5 @@
 import { Recommendation } from './types';
-import sportsLakers from '@/assets/recommendations/rec-sports-lakers.svg';
-import sportsClippers from '@/assets/recommendations/rec-sports-clippers.svg';
-import sportsRams from '@/assets/recommendations/rec-sports-rams.svg';
-import sportsChargers from '@/assets/recommendations/rec-sports-chargers.svg';
-import sportsDodgers from '@/assets/recommendations/rec-sports-dodgers.svg';
-import sportsAngels from '@/assets/recommendations/rec-sports-angels.svg';
-import sportsKings from '@/assets/recommendations/rec-sports-kings.svg';
-import sportsLafc from '@/assets/recommendations/rec-sports-lafc.svg';
-import sportsGalaxy from '@/assets/recommendations/rec-sports-galaxy.svg';
-import sportsUsc from '@/assets/recommendations/rec-sports-usc.svg';
-import sportsUcla from '@/assets/recommendations/rec-sports-ucla.svg';
+import { getRecommendationImage } from './generatedImages';
 
 export const sportsRecommendations: Recommendation[] = [
   {
@@ -22,7 +12,7 @@ export const sportsRecommendations: Recommendation[] = [
       'Explore Los Angeles Lakers NBA schedules, tickets, venue details, and official team information for an LA trip itinerary.',
     rating: 4.7,
     priceLevel: 4,
-    images: [sportsLakers],
+    images: [getRecommendationImage('sports-lakers')],
     tags: ['Sports', 'NBA', 'Los Angeles'],
     isSponsored: false,
     ctaButton: { text: 'View Team Site', action: 'view' },
@@ -40,7 +30,7 @@ export const sportsRecommendations: Recommendation[] = [
       'Explore Los Angeles Clippers NBA schedules, tickets, venue details, and official team information for an LA trip itinerary.',
     rating: 4.8,
     priceLevel: 3,
-    images: [sportsClippers],
+    images: [getRecommendationImage('sports-clippers')],
     tags: ['Sports', 'NBA', 'Inglewood'],
     isSponsored: false,
     ctaButton: { text: 'See Schedule', action: 'view' },
@@ -58,7 +48,7 @@ export const sportsRecommendations: Recommendation[] = [
       'Explore Los Angeles Rams NFL schedules, tickets, venue details, and official team information for an LA trip itinerary.',
     rating: 4.9,
     priceLevel: 3,
-    images: [sportsRams],
+    images: [getRecommendationImage('sports-rams')],
     tags: ['Sports', 'NFL', 'SoFi Stadium'],
     isSponsored: false,
     ctaButton: { text: 'Explore Tickets', action: 'view' },
@@ -76,7 +66,7 @@ export const sportsRecommendations: Recommendation[] = [
       'Explore Los Angeles Chargers NFL schedules, tickets, venue details, and official team information for an LA trip itinerary.',
     rating: 4.7,
     priceLevel: 3,
-    images: [sportsChargers],
+    images: [getRecommendationImage('sports-chargers')],
     tags: ['Sports', 'NFL', 'Los Angeles'],
     isSponsored: false,
     ctaButton: { text: 'See Schedule', action: 'view' },
@@ -94,7 +84,7 @@ export const sportsRecommendations: Recommendation[] = [
       'Explore Los Angeles Dodgers MLB schedules, tickets, venue details, and official team information for an LA trip itinerary.',
     rating: 4.8,
     priceLevel: 4,
-    images: [sportsDodgers],
+    images: [getRecommendationImage('sports-dodgers')],
     tags: ['Sports', 'MLB', 'Dodger Stadium'],
     isSponsored: false,
     ctaButton: { text: 'View Team Site', action: 'view' },
@@ -112,7 +102,7 @@ export const sportsRecommendations: Recommendation[] = [
       'Explore Los Angeles Angels MLB / Greater LA schedules, tickets, venue details, and official team information for an LA trip itinerary.',
     rating: 4.9,
     priceLevel: 3,
-    images: [sportsAngels],
+    images: [getRecommendationImage('sports-angels')],
     tags: ['Sports', 'MLB', 'Greater LA'],
     isSponsored: false,
     ctaButton: { text: 'See Schedule', action: 'view' },
@@ -130,7 +120,7 @@ export const sportsRecommendations: Recommendation[] = [
       'Explore Los Angeles Kings NHL schedules, tickets, venue details, and official team information for an LA trip itinerary.',
     rating: 4.7,
     priceLevel: 3,
-    images: [sportsKings],
+    images: [getRecommendationImage('sports-kings')],
     tags: ['Sports', 'NHL', 'Los Angeles'],
     isSponsored: false,
     ctaButton: { text: 'View Team Site', action: 'view' },
@@ -148,7 +138,7 @@ export const sportsRecommendations: Recommendation[] = [
       'Explore Los Angeles Football Club MLS schedules, tickets, venue details, and official team information for an LA trip itinerary.',
     rating: 4.8,
     priceLevel: 3,
-    images: [sportsLafc],
+    images: [getRecommendationImage('sports-lafc')],
     tags: ['Sports', 'MLS', 'BMO Stadium'],
     isSponsored: false,
     ctaButton: { text: 'Explore Tickets', action: 'view' },
@@ -166,7 +156,7 @@ export const sportsRecommendations: Recommendation[] = [
       'Explore LA Galaxy MLS / Greater LA schedules, tickets, venue details, and official team information for an LA trip itinerary.',
     rating: 4.9,
     priceLevel: 4,
-    images: [sportsGalaxy],
+    images: [getRecommendationImage('sports-galaxy')],
     tags: ['Sports', 'MLS', 'Greater LA'],
     isSponsored: false,
     ctaButton: { text: 'See Schedule', action: 'view' },
@@ -184,7 +174,7 @@ export const sportsRecommendations: Recommendation[] = [
       'Explore USC Trojans College Athletics schedules, tickets, venue details, and official team information for an LA trip itinerary.',
     rating: 4.7,
     priceLevel: 3,
-    images: [sportsUsc],
+    images: [getRecommendationImage('sports-usc')],
     tags: ['Sports', 'College Athletics', 'USC'],
     isSponsored: false,
     ctaButton: { text: 'View Team Site', action: 'view' },
@@ -202,7 +192,7 @@ export const sportsRecommendations: Recommendation[] = [
       'Explore UCLA Bruins College Athletics schedules, tickets, venue details, and official team information for an LA trip itinerary.',
     rating: 4.8,
     priceLevel: 3,
-    images: [sportsUcla],
+    images: [getRecommendationImage('sports-ucla')],
     tags: ['Sports', 'College Athletics', 'UCLA'],
     isSponsored: false,
     ctaButton: { text: 'View Team Site', action: 'view' },

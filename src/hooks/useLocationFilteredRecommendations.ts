@@ -10,8 +10,10 @@ export const useLocationFilteredRecommendations = (
   }, [activeFilter]);
 
   const filteredRecommendations = useMemo(() => {
-    // Return all sponsored items by default
-    let filtered = recommendations.filter(rec => rec.isSponsored);
+    // Mock-mode recommendations include both sponsored partner-style cards and
+    // organic curated cards. Keep all records here so organic categories such as
+    // Nightlife/Sports/Landmarks render on the primary Travel Recs surface.
+    let filtered = recommendations;
 
     // Only apply location filtering when manualLocation is explicitly provided
     if (manualLocation && manualLocation.trim()) {

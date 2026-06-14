@@ -1,14 +1,5 @@
 import { Recommendation } from './types';
-import nightlifeHighlightRoom from '@/assets/recommendations/rec-nightlife-highlight-room.svg';
-import nightlifeAcademyLa from '@/assets/recommendations/rec-nightlife-academy-la.svg';
-import nightlifeSoundNightclub from '@/assets/recommendations/rec-nightlife-sound-nightclub.svg';
-import nightlifeExchangeLa from '@/assets/recommendations/rec-nightlife-exchange-la.svg';
-import nightlifeWarwick from '@/assets/recommendations/rec-nightlife-warwick.svg';
-import nightlifeEpLp from '@/assets/recommendations/rec-nightlife-ep-lp.svg';
-import nightlifeEmployeesOnly from '@/assets/recommendations/rec-nightlife-employees-only.svg';
-import nightlifeRogerRoom from '@/assets/recommendations/rec-nightlife-roger-room.svg';
-import nightlifeMamaShelter from '@/assets/recommendations/rec-nightlife-mama-shelter.svg';
-import nightlifeBarLis from '@/assets/recommendations/rec-nightlife-bar-lis.svg';
+import { getRecommendationImage } from './generatedImages';
 
 export const nightlifeRecommendations: Recommendation[] = [
   [
@@ -18,7 +9,7 @@ export const nightlifeRecommendations: Recommendation[] = [
     'https://taogroup.com/venues/the-highlight-room-los-angeles/',
     'View Venue',
     ['Nightlife', 'Rooftop', 'Hollywood'],
-    nightlifeHighlightRoom,
+    getRecommendationImage('nightlife-highlight-room'),
   ],
   [
     'Academy LA',
@@ -27,7 +18,7 @@ export const nightlifeRecommendations: Recommendation[] = [
     'https://www.academy.la/',
     'Explore Nightlife',
     ['Nightlife', 'Club', 'Hollywood'],
-    nightlifeAcademyLa,
+    getRecommendationImage('nightlife-academy-la'),
   ],
   [
     'Sound Nightclub',
@@ -36,7 +27,7 @@ export const nightlifeRecommendations: Recommendation[] = [
     'https://www.soundnightclub.com/',
     'View Venue',
     ['Nightlife', 'Club', 'Music'],
-    nightlifeSoundNightclub,
+    getRecommendationImage('nightlife-sound-nightclub'),
   ],
   [
     'Exchange LA',
@@ -45,7 +36,7 @@ export const nightlifeRecommendations: Recommendation[] = [
     'https://exchangela.com/',
     'Plan Night Out',
     ['Nightlife', 'Club', 'Downtown LA'],
-    nightlifeExchangeLa,
+    getRecommendationImage('nightlife-exchange-la'),
   ],
   [
     'Warwick',
@@ -54,7 +45,7 @@ export const nightlifeRecommendations: Recommendation[] = [
     'https://warwickla.com/',
     'View Venue',
     ['Nightlife', 'Lounge', 'Hollywood'],
-    nightlifeWarwick,
+    getRecommendationImage('nightlife-warwick'),
   ],
   [
     'EP & LP',
@@ -63,7 +54,7 @@ export const nightlifeRecommendations: Recommendation[] = [
     'https://www.eplosangeles.com/',
     'Plan Night Out',
     ['Nightlife', 'Rooftop', 'Cocktails'],
-    nightlifeEpLp,
+    getRecommendationImage('nightlife-ep-lp'),
   ],
   [
     'Employees Only LA',
@@ -72,7 +63,7 @@ export const nightlifeRecommendations: Recommendation[] = [
     'https://www.employeesonlyla.com/',
     'View Venue',
     ['Nightlife', 'Cocktails', 'Lounge'],
-    nightlifeEmployeesOnly,
+    getRecommendationImage('nightlife-employees-only'),
   ],
   [
     'The Roger Room',
@@ -81,7 +72,7 @@ export const nightlifeRecommendations: Recommendation[] = [
     'https://therogerroom.com/',
     'Explore Nightlife',
     ['Nightlife', 'Cocktails', 'West Hollywood'],
-    nightlifeRogerRoom,
+    getRecommendationImage('nightlife-roger-room'),
   ],
   [
     'Mama Shelter Rooftop',
@@ -90,7 +81,7 @@ export const nightlifeRecommendations: Recommendation[] = [
     'https://mamashelter.com/los-angeles/rooftop/',
     'Plan Night Out',
     ['Nightlife', 'Rooftop', 'Hollywood'],
-    nightlifeMamaShelter,
+    getRecommendationImage('nightlife-mama-shelter'),
   ],
   [
     'Bar Lis',
@@ -99,7 +90,7 @@ export const nightlifeRecommendations: Recommendation[] = [
     'https://www.barlisla.com/',
     'View Venue',
     ['Nightlife', 'Rooftop', 'Lounge'],
-    nightlifeBarLis,
+    getRecommendationImage('nightlife-bar-lis'),
   ],
 ].map(([title, description, location, externalLink, ctaText, tags, image], index) => ({
   id: 301 + index,

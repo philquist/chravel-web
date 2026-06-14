@@ -49,3 +49,12 @@
 2026-06-13 — Recs image asset diffability follow-up
 - Replaced the 26 generated Recs PNG assets with generated SVG assets so the cards still render local mock artwork without binary-file diffs blocking branch update tooling.
 - Tightened recommendation category tests to assert new curated images resolve to SVG imports, preserving non-HTTP local asset behavior while avoiding binary assets in the PR diff.
+
+2026-06-13 — Recs no-asset image follow-up
+- Removed the generated recommendation image files entirely and moved mock artwork to inline SVG data URIs generated from TypeScript config, eliminating binary/image-file diffs from the branch.
+- Kept every new Recs card on a local non-HTTP image string and tightened tests to require data:image/svg+xml outputs for the curated categories.
+
+2026-06-14 — Recs merge-blocking parity fixes
+- Fixed the Travel Recs feed hook so organic mock categories (Nightlife, Sports, Landmarks) render on the primary consumer surface instead of being dropped by the sponsored-only gate.
+- Added shared recommendation category filter metadata and reused it in both home Recs pills and the admin Chravel Recs tab list so category UI stays in parity.
+- Added regression coverage for the location-filtered Travel Recs hook and category filter metadata parity.

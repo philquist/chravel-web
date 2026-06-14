@@ -15,6 +15,7 @@ import {
   Trophy,
   Landmark,
 } from 'lucide-react';
+import { recommendationCategoryFilters } from '@/data/recommendations/categories';
 
 interface RecommendationFiltersProps {
   activeFilter: string;
@@ -26,18 +27,28 @@ interface RecommendationFiltersProps {
   onSearchChange?: (query: string) => void;
 }
 
+const categoryIcons = {
+  hotel: Hotel,
+  restaurant: UtensilsCrossed,
+  activity: MapPin,
+  tour: Camera,
+  experience: Star,
+  transportation: Car,
+  nightlife: Martini,
+  sports: Trophy,
+  landmarks: Landmark,
+} satisfies Record<
+  (typeof recommendationCategoryFilters)[number]['id'],
+  React.ComponentType<{ className?: string }>
+>;
+
 const filters = [
   { id: 'all', label: 'All', icon: Star },
   { id: 'saved', label: 'Saved', icon: Bookmark },
-  { id: 'hotel', label: 'Hotels', icon: Hotel },
-  { id: 'restaurant', label: 'Dining', icon: UtensilsCrossed },
-  { id: 'activity', label: 'Activities', icon: MapPin },
-  { id: 'tour', label: 'Tours', icon: Camera },
-  { id: 'experience', label: 'Experiences', icon: Star },
-  { id: 'transportation', label: 'Transportation', icon: Car },
-  { id: 'nightlife', label: 'Nightlife', icon: Martini },
-  { id: 'sports', label: 'Sports', icon: Trophy },
-  { id: 'landmarks', label: 'Landmarks', icon: Landmark },
+  ...recommendationCategoryFilters.map(filter => ({
+    ...filter,
+    icon: categoryIcons[filter.id],
+  })),
 ];
 
 export const RecommendationFilters = ({

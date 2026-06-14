@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getRecommendationsByType, recommendationsData } from '@/data/recommendations';
+import { recommendationCategoryFilters } from '@/data/recommendations/categories';
 
 const newCategories = ['nightlife', 'sports', 'landmarks'] as const;
 
@@ -23,12 +24,18 @@ describe('recommendation category seed data', () => {
         expect(rec.externalLink).toMatch(/^https:\/\//);
         expect(rec.images).toHaveLength(1);
         expect(rec.images[0]).not.toMatch(/^https?:\/\//);
-        expect(rec.images[0]).toMatch(/(?:\.svg(?:\?|$)|^data:image\/svg\+xml)/);
+        expect(rec.images[0]).toMatch(/^data:image\/svg\+xml/);
         expect(rec.tags).toContain(
           category === 'landmarks' ? 'Landmark' : category === 'sports' ? 'Sports' : 'Nightlife',
         );
       }
     }
+  });
+
+  it('keeps shared category filter metadata in parity with curated categories', () => {
+    const categoryIds = recommendationCategoryFilters.map(filter => filter.id);
+
+    expect(categoryIds).toEqual(expect.arrayContaining(['nightlife', 'sports', 'landmarks']));
   });
 
   it('includes the requested LA teams and global landmarks', () => {

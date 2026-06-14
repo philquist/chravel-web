@@ -1,9 +1,5 @@
 import { Recommendation } from './types';
-import landmarkHollywoodSign from '@/assets/recommendations/rec-landmark-hollywood-sign.svg';
-import landmarkPyramidsGiza from '@/assets/recommendations/rec-landmark-pyramids-giza.svg';
-import landmarkTemploMayor from '@/assets/recommendations/rec-landmark-templo-mayor.svg';
-import landmarkEiffelTower from '@/assets/recommendations/rec-landmark-eiffel-tower.svg';
-import landmarkSydneyOperaHouse from '@/assets/recommendations/rec-landmark-sydney-opera-house.svg';
+import { getRecommendationImage } from './generatedImages';
 
 export const landmarkRecommendations: Recommendation[] = [
   {
@@ -16,7 +12,7 @@ export const landmarkRecommendations: Recommendation[] = [
       'Plan a classic LA photo stop with official viewing guidance, trail context, and nearby Griffith Park ideas.',
     rating: 4.8,
     priceLevel: 1,
-    images: [landmarkHollywoodSign],
+    images: [getRecommendationImage('landmark-hollywood-sign')],
     tags: ['Landmark', 'Photo Spot', 'Sightseeing'],
     isSponsored: false,
     ctaButton: { text: 'Plan Visit', action: 'view' },
@@ -34,7 +30,7 @@ export const landmarkRecommendations: Recommendation[] = [
       'Explore one of the world’s most recognizable ancient sites with official tourism planning resources.',
     rating: 4.9,
     priceLevel: 2,
-    images: [landmarkPyramidsGiza],
+    images: [getRecommendationImage('landmark-pyramids-giza')],
     tags: ['Landmark', 'Historic', 'Sightseeing'],
     isSponsored: false,
     ctaButton: { text: 'Explore Landmark', action: 'view' },
@@ -52,7 +48,7 @@ export const landmarkRecommendations: Recommendation[] = [
       'Visit the archaeological remains of the Mexica capital beside Mexico City’s historic center.',
     rating: 4.7,
     priceLevel: 1,
-    images: [landmarkTemploMayor],
+    images: [getRecommendationImage('landmark-templo-mayor')],
     tags: ['Landmark', 'Historic', 'Museum'],
     isSponsored: false,
     ctaButton: { text: 'View Details', action: 'view' },
@@ -70,7 +66,7 @@ export const landmarkRecommendations: Recommendation[] = [
       'Plan a visit to Paris’s iconic iron tower with official ticketing, access, and visitor details.',
     rating: 4.8,
     priceLevel: 3,
-    images: [landmarkEiffelTower],
+    images: [getRecommendationImage('landmark-eiffel-tower')],
     tags: ['Landmark', 'Architecture', 'Photo Spot'],
     isSponsored: false,
     ctaButton: { text: 'Plan Visit', action: 'view' },
@@ -88,7 +84,7 @@ export const landmarkRecommendations: Recommendation[] = [
       'Explore tours, performances, architecture, and harbor-side planning for Sydney’s signature landmark.',
     rating: 4.8,
     priceLevel: 2,
-    images: [landmarkSydneyOperaHouse],
+    images: [getRecommendationImage('landmark-sydney-opera-house')],
     tags: ['Landmark', 'Architecture', 'Sightseeing'],
     isSponsored: false,
     ctaButton: { text: 'Explore Landmark', action: 'view' },
