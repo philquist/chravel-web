@@ -822,7 +822,6 @@ const AuthIndex = () => {
     );
   }
 
-
   // Show onboarding for new authenticated users — choose-your-own-adventure:
   // choice screen → (survey → personalized tour) | (tour) | (straight to dashboard).
   if (showOnboarding) {

@@ -20,7 +20,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
   // prefers-reduced-motion. Fallback to poster only on real load error.
   const showVideo = !videoFailed;
 
-
   return (
     <div
       className="relative container mx-auto px-4 flex flex-col min-h-[85vh] tablet:min-h-[90vh] text-center pb-8 tablet:pb-6"
@@ -100,7 +99,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             {showVideo ? (
               <video
                 className="w-full h-full object-cover object-bottom scale-[1.08] origin-bottom"
-
                 // src directly on <video> (not a <source> child) so a missing
                 // file fires onError here and the poster fallback engages.
                 src={HERO_VIDEO_SRC}

@@ -24,7 +24,11 @@ describe('recommendation category seed data', () => {
         expect(rec.externalLink).toMatch(/^https:\/\//);
         expect(rec.images).toHaveLength(1);
         expect(rec.images[0]).not.toMatch(/^https?:\/\//);
-        expect(rec.images[0]).toMatch(/^data:image\/svg\+xml/);
+        // Images are bundled locally — either a generated inline SVG data URI or
+        // an imported asset path (real venue/team/landmark art via
+        // realImageOverrides) — never a remote or protocol-relative URL. The
+        // curated records intentionally moved from inline-SVG-only to real assets.
+        expect(rec.images[0]).toMatch(/^(data:image\/|\/(?!\/))/);
         expect(rec.tags).toContain(
           category === 'landmarks' ? 'Landmark' : category === 'sports' ? 'Sports' : 'Nightlife',
         );

@@ -402,4 +402,3 @@ const realImageOverrides: Partial<Record<RecommendationImageKey, string>> = {
 
 export const getRecommendationImage = (key: RecommendationImageKey) =>
   realImageOverrides[key] ?? buildRecommendationImage(imageConfigs[key]);
-
