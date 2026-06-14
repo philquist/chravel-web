@@ -4,6 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NativeSettings } from '../NativeSettings';
 
+const navigateMock = vi.fn();
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => navigateMock,
+}));
+
 vi.mock('@/hooks/useTheme', () => ({
   useTheme: () => ({ isDarkMode: false, toggleTheme: vi.fn() }),
 }));
@@ -44,23 +49,18 @@ describe('NativeSettings', () => {
     expect(onNavigate).toHaveBeenCalledWith('subscription');
   });
 
-  // App Store Guideline 5.1.1: a signed-in user must be able to reach in-app
-  // account deletion. The native settings screen exposes a "Delete Account" row
-  // that delegates to the host's deletion route.
-  it('routes the Delete Account row to the in-app deletion flow for signed-in users', async () => {
-    const onNavigate = vi.fn();
+  // App Store Guideline 5.1.1: a signed-in user must be able to reach the
+  // actionable in-app account-deletion flow. The Delete Account row must open
+  // the General Settings deletion surface (?openSettings=settings) — NOT the
+  // public /delete-account informational page.
+  it('opens the actionable in-app deletion surface from the Delete Account row', async () => {
     const user = userEvent.setup();
 
-    render(
-      <NativeSettings
-        user={{ id: 'u1', email: 'reviewer@example.com', name: 'Reviewer' }}
-        onNavigate={onNavigate}
-      />,
-    );
+    render(<NativeSettings user={{ id: 'u1', email: 'reviewer@example.com', name: 'Reviewer' }} />);
 
     await user.click(screen.getByRole('button', { name: /delete account/i }));
 
-    expect(onNavigate).toHaveBeenCalledWith('delete-account');
+    expect(navigateMock).toHaveBeenCalledWith('/?openSettings=settings');
   });
 
   it('does not render the Delete Account row when no user is signed in', () => {

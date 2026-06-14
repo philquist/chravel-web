@@ -9,6 +9,13 @@ describe('getSettingsRouteIntent', () => {
     });
   });
 
+  it('opens General Settings (account-deletion surface) for openSettings=settings', () => {
+    expect(getSettingsRouteIntent('?openSettings=settings')).toEqual({
+      shouldOpen: true,
+      consumerSection: 'settings',
+    });
+  });
+
   it('does not open settings for unknown values', () => {
     expect(getSettingsRouteIntent('?openSettings=unknown')).toEqual({ shouldOpen: false });
   });

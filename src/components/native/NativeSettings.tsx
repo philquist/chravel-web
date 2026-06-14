@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/hooks/useTheme';
 import {
   User,
@@ -56,6 +57,18 @@ export const NativeSettings = ({
   const [buildNumber, setBuildNumber] = useState<string>('1');
 
   const { preferences, updatePreference } = useNotificationPreferences();
+  const navigate = useNavigate();
+
+  const handleDeleteAccount = useCallback(async () => {
+    await hapticService.warning();
+    // Route to the actionable in-app deletion surface — the General Settings
+    // section (ConsumerGeneralSettings → Account Management → Delete Account,
+    // which runs request_account_deletion with password re-auth). We navigate
+    // to the real `?openSettings=settings` deep link rather than delegating an
+    // opaque nav key, so the destination is guaranteed and never resolves to
+    // the public `/delete-account` *informational* page (Guideline 5.1.1).
+    navigate('/?openSettings=settings');
+  }, [navigate]);
 
   // Appearance settings
   const { isDarkMode, toggleTheme } = useTheme();
@@ -276,10 +289,10 @@ export const NativeSettings = ({
             />
           </NativeListSection>
 
-          {/* Account — delegates to the host's in-app account-deletion flow
-              (request_account_deletion RPC, 30-day grace), matching the route
-              used by ConsumerGeneralSettings. Required for App Store Guideline
-              5.1.1 (in-app account deletion). */}
+          {/* Account — opens the actionable in-app deletion flow
+              (request_account_deletion RPC + password re-auth, 30-day grace)
+              that lives in ConsumerGeneralSettings. Required for App Store
+              Guideline 5.1.1 (in-app account deletion). */}
           {user && (
             <NativeListSection
               header="Account"
@@ -290,7 +303,7 @@ export const NativeSettings = ({
                 label="Delete Account"
                 destructive
                 showChevron
-                onPress={() => handleNavigate('delete-account')}
+                onPress={handleDeleteAccount}
               />
             </NativeListSection>
           )}
