@@ -19,6 +19,7 @@ import {
   Star,
   Info,
   Calendar,
+  Trash2,
 } from 'lucide-react';
 import { hapticService } from '@/services/hapticService';
 import { NativeList, NativeListSection, NativeListItem, NativeToggleItem } from './NativeList';
@@ -274,6 +275,25 @@ export const NativeSettings = ({
               value={platform === 'ios' ? 'iOS' : platform === 'android' ? 'Android' : 'Web'}
             />
           </NativeListSection>
+
+          {/* Account — delegates to the host's in-app account-deletion flow
+              (request_account_deletion RPC, 30-day grace), matching the route
+              used by ConsumerGeneralSettings. Required for App Store Guideline
+              5.1.1 (in-app account deletion). */}
+          {user && (
+            <NativeListSection
+              header="Account"
+              footer="Deleting your account schedules permanent removal of your data after a 30-day grace period."
+            >
+              <NativeListItem
+                icon={<Trash2 size={18} />}
+                label="Delete Account"
+                destructive
+                showChevron
+                onPress={() => handleNavigate('delete-account')}
+              />
+            </NativeListSection>
+          )}
 
           {/* Logout */}
           {user && (
