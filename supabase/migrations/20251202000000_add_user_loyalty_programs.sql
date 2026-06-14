@@ -1,4 +1,8 @@
 -- Create user loyalty programs table for Travel Wallet
+-- NOTE: the original file for this change used an 8-digit (date-only) prefix
+-- (20251202_*), which the Supabase migration tooling never tracked, so the
+-- table was never created in production. Re-issued here with a valid
+-- 14-digit YYYYMMDDHHMMSS version and made fully idempotent.
 CREATE TABLE IF NOT EXISTS public.user_loyalty_programs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -16,16 +20,19 @@ CREATE TABLE IF NOT EXISTS public.user_loyalty_programs (
 ALTER TABLE public.user_loyalty_programs ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policy: Users can manage their own loyalty programs
+DROP POLICY IF EXISTS "Users can manage their own loyalty programs" ON public.user_loyalty_programs;
 CREATE POLICY "Users can manage their own loyalty programs"
 ON public.user_loyalty_programs
 FOR ALL
-USING (auth.uid() = user_id);
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
 
 -- Create indexes for better performance
-CREATE INDEX idx_user_loyalty_programs_user_id ON public.user_loyalty_programs(user_id);
-CREATE INDEX idx_user_loyalty_programs_type ON public.user_loyalty_programs(program_type);
+CREATE INDEX IF NOT EXISTS idx_user_loyalty_programs_user_id ON public.user_loyalty_programs(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_loyalty_programs_type ON public.user_loyalty_programs(program_type);
 
 -- Create trigger for automatic timestamp updates
+DROP TRIGGER IF EXISTS update_user_loyalty_programs_updated_at ON public.user_loyalty_programs;
 CREATE TRIGGER update_user_loyalty_programs_updated_at
   BEFORE UPDATE ON public.user_loyalty_programs
   FOR EACH ROW
