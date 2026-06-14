@@ -9,6 +9,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { recommendationCategoryFilters } from '@/data/recommendations/categories';
 
 export const ChravelRecsPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
@@ -127,28 +128,15 @@ export const ChravelRecsPage = () => {
 
           <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full">
             <ScrollArea className="w-full mb-6 md:mb-0">
-              <TabsList className="inline-flex w-auto md:grid md:w-full md:grid-cols-7 mb-6">
+              <TabsList className="inline-flex w-auto mb-6">
                 <TabsTrigger value="all" className="whitespace-nowrap">
                   All
                 </TabsTrigger>
-                <TabsTrigger value="hotel" className="whitespace-nowrap">
-                  Hotels
-                </TabsTrigger>
-                <TabsTrigger value="restaurant" className="whitespace-nowrap">
-                  Dining
-                </TabsTrigger>
-                <TabsTrigger value="activity" className="whitespace-nowrap">
-                  Activities
-                </TabsTrigger>
-                <TabsTrigger value="tour" className="whitespace-nowrap">
-                  Tours
-                </TabsTrigger>
-                <TabsTrigger value="experience" className="whitespace-nowrap">
-                  Experiences
-                </TabsTrigger>
-                <TabsTrigger value="transportation" className="whitespace-nowrap">
-                  Transport
-                </TabsTrigger>
+                {recommendationCategoryFilters.map(filter => (
+                  <TabsTrigger key={filter.id} value={filter.id} className="whitespace-nowrap">
+                    {filter.label}
+                  </TabsTrigger>
+                ))}
               </TabsList>
               <ScrollBar orientation="horizontal" className="md:hidden" />
             </ScrollArea>
