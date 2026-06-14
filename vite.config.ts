@@ -47,8 +47,6 @@ const VENDOR_CHUNKS: Record<string, string[]> = {
   pdf: ['jspdf', 'jspdf-autotable', 'html2canvas'],
   // exceljs (~950 KB) — only needed when importing a spreadsheet, lazy-loaded
   exceljs: ['exceljs'],
-  // RevenueCat web billing SDK (808 KB) — only needed when user hits paywall
-  'revenuecat-web': ['@revenuecat/purchases-js'],
 };
 
 const PACKAGE_TO_CHUNK = new Map<string, string>();
