@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/hooks/useTheme';
 import {
   User,
@@ -19,6 +20,7 @@ import {
   Star,
   Info,
   Calendar,
+  Trash2,
 } from 'lucide-react';
 import { hapticService } from '@/services/hapticService';
 import { NativeList, NativeListSection, NativeListItem, NativeToggleItem } from './NativeList';
@@ -55,6 +57,18 @@ export const NativeSettings = ({
   const [buildNumber, setBuildNumber] = useState<string>('1');
 
   const { preferences, updatePreference } = useNotificationPreferences();
+  const navigate = useNavigate();
+
+  const handleDeleteAccount = useCallback(async () => {
+    await hapticService.warning();
+    // Route to the actionable in-app deletion surface — the General Settings
+    // section (ConsumerGeneralSettings → Account Management → Delete Account,
+    // which runs request_account_deletion with password re-auth). We navigate
+    // to the real `?openSettings=settings` deep link rather than delegating an
+    // opaque nav key, so the destination is guaranteed and never resolves to
+    // the public `/delete-account` *informational* page (Guideline 5.1.1).
+    navigate('/?openSettings=settings');
+  }, [navigate]);
 
   // Appearance settings
   const { isDarkMode, toggleTheme } = useTheme();
@@ -274,6 +288,25 @@ export const NativeSettings = ({
               value={platform === 'ios' ? 'iOS' : platform === 'android' ? 'Android' : 'Web'}
             />
           </NativeListSection>
+
+          {/* Account — opens the actionable in-app deletion flow
+              (request_account_deletion RPC + password re-auth, 30-day grace)
+              that lives in ConsumerGeneralSettings. Required for App Store
+              Guideline 5.1.1 (in-app account deletion). */}
+          {user && (
+            <NativeListSection
+              header="Account"
+              footer="Deleting your account schedules permanent removal of your data after a 30-day grace period."
+            >
+              <NativeListItem
+                icon={<Trash2 size={18} />}
+                label="Delete Account"
+                destructive
+                showChevron
+                onPress={handleDeleteAccount}
+              />
+            </NativeListSection>
+          )}
 
           {/* Logout */}
           {user && (

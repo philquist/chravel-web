@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useConsumerSubscription } from '../hooks/useConsumerSubscription';
 import { supabase } from '@/integrations/supabase/client';
+import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
 import { toast } from 'sonner';
 import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
 
@@ -44,7 +45,12 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
       // Handle Travel Pro upgrade - use Pro Starter by default
       try {
         const { data, error } = await supabase.functions.invoke('create-checkout', {
-          body: { tier: 'pro-starter' },
+          body: {
+            tier: 'pro-starter',
+            // Defense-in-depth: forward platform so the edge function can enforce
+            // the Apple IAP boundary if tier classification ever regresses.
+            platform: detectNativeBillingPlatform(navigator.userAgent || '', isNativeWebView()),
+          },
         });
 
         if (error) throw error;

@@ -4,6 +4,7 @@ import { SUBSCRIPTION_TIERS } from '../types/pro';
 import { useIsMobile } from '../hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { SUBSCRIPTION_TIER_MAP } from '@/constants/stripe';
+import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
 import { toast } from 'sonner';
 
 interface ProUpgradeModalProps {
@@ -24,7 +25,13 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { tier: SUBSCRIPTION_TIER_MAP[tier as keyof typeof SUBSCRIPTION_TIER_MAP] },
+        body: {
+          tier: SUBSCRIPTION_TIER_MAP[tier as keyof typeof SUBSCRIPTION_TIER_MAP],
+          // Defense-in-depth: forward platform so the edge function can enforce
+          // the Apple IAP boundary if tier classification ever regresses. Pro is
+          // B2B-exempt today, so this does not block the current Stripe path.
+          platform: detectNativeBillingPlatform(navigator.userAgent || '', isNativeWebView()),
+        },
       });
 
       if (error) throw error;

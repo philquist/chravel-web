@@ -135,6 +135,14 @@ export default defineConfig(({ mode }) => ({
     // Asset inlining threshold
     assetsInlineLimit: 4096,
   },
+  // Strip developer console noise from production bundles only.
+  // `console.log/debug/info` return undefined and their result is always unused,
+  // so esbuild's minifier drops these pure-annotated calls — while `console.error`
+  // and `console.warn` (used for Sentry/error reporting) are intentionally kept.
+  // Dev builds are unaffected, so logs remain visible during local development.
+  esbuild: {
+    pure: mode === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
+  },
   // Optimize dependencies
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
