@@ -341,5 +341,65 @@ const buildRecommendationImage = ({
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
+// Realistic photo overrides for the formerly placeholder-illustration categories
+// (Sports, Nightlife, Landmarks). Falls back to the SVG mock if no real asset
+// is mapped for a key — keeping the build resilient to new keys.
+import sportsLakers from '@/assets/recommendations/sports-lakers.jpg';
+import sportsClippers from '@/assets/recommendations/sports-clippers.jpg';
+import sportsRams from '@/assets/recommendations/sports-rams.jpg';
+import sportsChargers from '@/assets/recommendations/sports-chargers.jpg';
+import sportsDodgers from '@/assets/recommendations/sports-dodgers.jpg';
+import sportsAngels from '@/assets/recommendations/sports-angels.jpg';
+import sportsKings from '@/assets/recommendations/sports-kings.jpg';
+import sportsLafc from '@/assets/recommendations/sports-lafc.jpg';
+import sportsGalaxy from '@/assets/recommendations/sports-galaxy.jpg';
+import sportsUsc from '@/assets/recommendations/sports-usc.jpg';
+import sportsUcla from '@/assets/recommendations/sports-ucla.jpg';
+import nlHighlightRoom from '@/assets/recommendations/nightlife-highlight-room.jpg';
+import nlAcademyLa from '@/assets/recommendations/nightlife-academy-la.jpg';
+import nlSoundNightclub from '@/assets/recommendations/nightlife-sound-nightclub.jpg';
+import nlExchangeLa from '@/assets/recommendations/nightlife-exchange-la.jpg';
+import nlWarwick from '@/assets/recommendations/nightlife-warwick.jpg';
+import nlEpLp from '@/assets/recommendations/nightlife-ep-lp.jpg';
+import nlEmployeesOnly from '@/assets/recommendations/nightlife-employees-only.jpg';
+import nlRogerRoom from '@/assets/recommendations/nightlife-roger-room.jpg';
+import nlMamaShelter from '@/assets/recommendations/nightlife-mama-shelter.jpg';
+import nlBarLis from '@/assets/recommendations/nightlife-bar-lis.jpg';
+import landmarkHollywoodSign from '@/assets/recommendations/landmark-hollywood-sign.jpg';
+import landmarkPyramidsGiza from '@/assets/recommendations/landmark-pyramids-giza.jpg';
+import landmarkTemploMayor from '@/assets/recommendations/landmark-templo-mayor.jpg';
+import landmarkEiffelTower from '@/assets/recommendations/landmark-eiffel-tower.jpg';
+import landmarkSydneyOperaHouse from '@/assets/recommendations/landmark-sydney-opera-house.jpg';
+
+const realImageOverrides: Partial<Record<RecommendationImageKey, string>> = {
+  'sports-lakers': sportsLakers,
+  'sports-clippers': sportsClippers,
+  'sports-rams': sportsRams,
+  'sports-chargers': sportsChargers,
+  'sports-dodgers': sportsDodgers,
+  'sports-angels': sportsAngels,
+  'sports-kings': sportsKings,
+  'sports-lafc': sportsLafc,
+  'sports-galaxy': sportsGalaxy,
+  'sports-usc': sportsUsc,
+  'sports-ucla': sportsUcla,
+  'nightlife-highlight-room': nlHighlightRoom,
+  'nightlife-academy-la': nlAcademyLa,
+  'nightlife-sound-nightclub': nlSoundNightclub,
+  'nightlife-exchange-la': nlExchangeLa,
+  'nightlife-warwick': nlWarwick,
+  'nightlife-ep-lp': nlEpLp,
+  'nightlife-employees-only': nlEmployeesOnly,
+  'nightlife-roger-room': nlRogerRoom,
+  'nightlife-mama-shelter': nlMamaShelter,
+  'nightlife-bar-lis': nlBarLis,
+  'landmark-hollywood-sign': landmarkHollywoodSign,
+  'landmark-pyramids-giza': landmarkPyramidsGiza,
+  'landmark-templo-mayor': landmarkTemploMayor,
+  'landmark-eiffel-tower': landmarkEiffelTower,
+  'landmark-sydney-opera-house': landmarkSydneyOperaHouse,
+};
+
 export const getRecommendationImage = (key: RecommendationImageKey) =>
-  buildRecommendationImage(imageConfigs[key]);
+  realImageOverrides[key] ?? buildRecommendationImage(imageConfigs[key]);
+
