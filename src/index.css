@@ -946,8 +946,19 @@
 
 /* iOS Keyboard Handling */
 .keyboard-visible {
-  /* Adjust layout when keyboard is visible */
+  /* Legacy fallback — mobile shells use --visual-viewport-height directly. */
   height: calc(100vh - var(--keyboard-height, 0px));
+}
+
+.keyboard-visible .mobile-trip-shell {
+  height: var(--visual-viewport-height, 100dvh);
+  max-height: var(--visual-viewport-height, 100dvh);
+}
+
+.keyboard-visible .chat-composer-tray,
+.keyboard-visible .chat-composer {
+  /* Home-indicator inset is covered by the keyboard — keep only tap buffer. */
+  padding-bottom: 8px !important;
 }
 
 /* Calendar modal: replace browser time square with explicit clock affordance */

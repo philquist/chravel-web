@@ -6,7 +6,7 @@ import {
   BarChart3,
   Camera,
   MapPin,
-  Sparkles,
+  Headset,
   CreditCard,
   Lock,
   Users,
@@ -264,7 +264,7 @@ export const MobileTripTabs = ({
     const baseTabs = [
       { id: 'chat', label: 'Chat', icon: MessageCircle, enabled: features.showChat },
       { id: 'calendar', label: 'Calendar', icon: Calendar, enabled: features.showCalendar },
-      { id: 'concierge', label: 'Concierge', icon: Sparkles, enabled: features.showConcierge },
+      { id: 'concierge', label: 'Concierge', icon: Headset, enabled: features.showConcierge },
       { id: 'media', label: 'Media', icon: Camera, enabled: features.showMedia },
       { id: 'payments', label: 'Payments', icon: CreditCard, enabled: features.showPayments },
       { id: 'places', label: 'Places', icon: MapPin, enabled: features.showPlaces },

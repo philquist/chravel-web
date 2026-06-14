@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 450 300" role="img" aria-labelledby="title desc">
+  <title id="title">EP &amp; LP mock recommendation image</title>
+  <desc id="desc">Generated Chravel mock card artwork for EP &amp; LP in West Hollywood.</desc>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#064E3B"/>
+      <stop offset="0.55" stop-color="#111827"/>
+      <stop offset="1" stop-color="#020617"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="75%" cy="20%" r="65%">
+      <stop offset="0" stop-color="#FBBF24" stop-opacity=".58"/>
+      <stop offset="1" stop-color="#FBBF24" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="450" height="300" fill="url(#g)"/>
+  <rect width="450" height="300" fill="url(#glow)"/>
+  <g opacity=".36">
+    <circle cx="70" cy="58" r="2" fill="#fff"/><circle cx="120" cy="38" r="1.5" fill="#fff"/><circle cx="386" cy="62" r="2" fill="#fff"/><circle cx="335" cy="36" r="1.4" fill="#fff"/>
+  </g>
+  
+        <path d="M68 232 H382 V178 C336 152 300 138 253 158 C210 176 176 144 132 164 C98 180 80 204 68 232Z" fill="rgba(0,0,0,.32)"/>
+        <rect x="82" y="122" width="56" height="110" rx="6" fill="rgba(255,255,255,.12)"/><rect x="156" y="92" width="72" height="140" rx="8" fill="rgba(255,255,255,.16)"/><rect x="250" y="114" width="92" height="118" rx="8" fill="rgba(255,255,255,.13)"/>
+        <circle cx="332" cy="88" r="30" fill="#FBBF24" opacity=".85"/><path d="M317 87 L327 98 L348 72" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="22" y="24" width="118" height="28" rx="14" fill="rgba(0,0,0,.42)" stroke="#FBBF24"/>
+  <text x="81" y="43" text-anchor="middle" font-size="13" font-family="Inter,Arial" font-weight="800" fill="#FBBF24">Rooftop</text>
+  <text x="28" y="265" font-size="24" font-family="Inter,Arial" font-weight="900" fill="#fff">EP &amp; LP</text>
+  <text x="29" y="285" font-size="13" font-family="Inter,Arial" font-weight="700" fill="rgba(255,255,255,.72)">Cocktails • West Hollywood</text>
+</svg>

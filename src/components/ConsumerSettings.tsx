@@ -8,7 +8,7 @@ import {
   Wallet,
   Archive,
   Bookmark,
-  Sparkles,
+  Headset,
   KeyRound,
 } from 'lucide-react';
 import { TravelWallet } from './TravelWallet';
@@ -34,7 +34,7 @@ interface ConsumerSettingsProps {
 const ALL_SECTIONS: (SettingsSection & { demoOnly?: boolean })[] = [
   { id: 'profile', label: 'Profile', icon: User },
   { id: 'billing', label: 'Billing', icon: CreditCard },
-  { id: 'ai-concierge', label: 'Concierge', icon: Sparkles },
+  { id: 'ai-concierge', label: 'Concierge', icon: Headset },
   { id: 'travel-wallet', label: 'Travel Wallet', icon: Wallet },
   { id: 'saved-recs', label: 'Saved Places', icon: Bookmark, demoOnly: true },
   { id: 'notifications', label: 'Notifications', icon: Bell },

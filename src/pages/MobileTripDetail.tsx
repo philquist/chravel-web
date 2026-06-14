@@ -329,7 +329,10 @@ export const MobileTripDetail = () => {
   if (loading || isAuthLoading) {
     return (
       <MobileErrorBoundary>
-        <div className="flex flex-col h-[100dvh] bg-black overflow-hidden" aria-hidden="true">
+        <div
+          className="mobile-trip-shell flex flex-col h-[100dvh] bg-black overflow-hidden"
+          aria-hidden="true"
+        >
           {/* Skeleton Header */}
           <div className="flex-shrink-0 z-50 bg-black/95 backdrop-blur-md border-b border-white/[0.06] mobile-safe-header">
             <div className="px-4 py-2">
@@ -550,7 +553,7 @@ export const MobileTripDetail = () => {
 
   return (
     <MobileErrorBoundary>
-      <div className="flex flex-col h-[100dvh] bg-black overflow-hidden">
+      <div className="mobile-trip-shell flex flex-col h-[100dvh] bg-black overflow-hidden">
         {/* Mobile Header - Fixed flex item (not sticky) for reliable iOS PWA visibility */}
         <div
           ref={headerRef}

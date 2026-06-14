@@ -7,7 +7,6 @@ import type { Channel } from 'stream-chat';
 import { demoModeService } from '@/services/demoModeService';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { useChatComposer } from '../hooks/useChatComposer';
-import { useKeyboardHandler } from '@/hooks/useKeyboardHandler';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { ChatInput } from './ChatInput';
@@ -481,16 +480,18 @@ export const TripChat = React.memo(
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const _containerRef = useRef<HTMLDivElement>(null);
 
-    // Handle keyboard visibility for better UX
-    const { isKeyboardVisible: _isKeyboardVisible } = useKeyboardHandler({
-      preventZoom: true,
-      adjustViewport: true,
-      onShow: () => {
+    // Scroll latest messages into view when the iOS keyboard opens (page shell owns viewport vars).
+    useEffect(() => {
+      const handleViewportResize = () => {
+        if (!document.body.classList.contains('keyboard-visible')) return;
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 300);
-      },
-    });
+      };
+
+      window.visualViewport?.addEventListener('resize', handleViewportResize);
+      return () => window.visualViewport?.removeEventListener('resize', handleViewportResize);
+    }, []);
 
     // Swipe gestures for mobile navigation
     const swipeRef = useRef<HTMLDivElement>(null);
@@ -1215,8 +1216,11 @@ export const TripChat = React.memo(
         {/* Persistent Chat Input - Hidden when in Channels mode or user cannot post */}
         {messageFilter !== 'channels' && canPostToChat && (
           <div
-            className="chat-input-persistent w-full flex-shrink-0"
-            style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)' }}
+            className="chat-composer-tray chat-input-persistent w-full flex-shrink-0 bg-background"
+            style={{
+              paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
+              touchAction: 'manipulation',
+            }}
           >
             <div className="w-full">
               <ChatInput

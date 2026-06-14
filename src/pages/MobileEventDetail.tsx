@@ -389,7 +389,7 @@ export const MobileEventDetail = () => {
 
   return (
     <MobileErrorBoundary>
-      <div className="flex flex-col h-[100dvh] bg-black overflow-hidden">
+      <div className="mobile-trip-shell flex flex-col h-[100dvh] bg-black overflow-hidden">
         {/* Mobile Header - Fixed flex item (not sticky) for reliable iOS PWA visibility */}
         <div
           ref={headerRef}
