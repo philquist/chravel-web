@@ -89,7 +89,8 @@ export const RecommendationFilters = ({
                     ? // Gold border + translucent gold fill is the selected signal.
                       // Text stays WHITE so the label is always legible on the dark UI.
                       'border-gold-primary bg-gold-primary/15 text-white hover:bg-gold-primary/25 hover:text-white'
-                    : 'border-border/50 hover:border-accent/50'
+                    : // Keep text WHITE in idle + hover on dark UI; only the border tints gold on hover.
+                      'border-border/50 text-white hover:border-gold-primary/60 hover:bg-gold-primary/10 hover:text-white'
                 }`}
                 onClick={() => onFilterChange(filter.id)}
               >
