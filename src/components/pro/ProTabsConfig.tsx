@@ -5,7 +5,7 @@ import {
   ClipboardList,
   BarChart3,
   Camera,
-  Sparkles,
+  Headset,
   MapPin,
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
@@ -24,7 +24,7 @@ export interface ProTab {
 export const proTabs: ProTab[] = [
   { id: 'chat', label: 'Chat', icon: null },
   { id: 'calendar', label: 'Calendar', icon: CalendarIcon },
-  { id: 'ai-chat', label: 'Concierge', icon: Sparkles },
+  { id: 'ai-chat', label: 'Concierge', icon: Headset },
   { id: 'media', label: 'Media', icon: Camera },
   { id: 'payments', label: 'Payments', icon: DollarSign },
   { id: 'places', label: 'Places', icon: MapPin },
