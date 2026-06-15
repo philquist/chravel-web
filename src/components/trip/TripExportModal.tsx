@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { X, Download, FileText, Crown, Gift, Sparkles, Check } from 'lucide-react';
+import { X, Download, FileText, Crown, Gift, Check } from 'lucide-react';
 import { ExportSection } from '@/types/tripExport';
 import { isConsumerTrip } from '@/utils/tripTierDetector';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
@@ -221,7 +221,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
                     variant="secondary"
                     className="bg-[#c49746]/20 text-[#feeaa5] text-[10px] border border-[#c49746]/30"
                   >
-                    <Sparkles size={10} className="mr-1 text-[#e8af48]" />
+                    <Crown size={10} className="mr-1 text-[#e8af48]" />
                     Unlimited Exports
                   </Badge>
                 </div>

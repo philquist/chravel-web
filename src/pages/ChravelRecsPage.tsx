@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Compass, Bookmark, TrendingUp, MapPin, Search, X, Sparkles } from 'lucide-react';
+import { Compass, Bookmark, TrendingUp, MapPin, Search, X, Star } from 'lucide-react';
 import { SavedRecommendations } from '@/components/SavedRecommendations';
 import { RecommendationCard } from '@/components/RecommendationCard';
 import { useRecommendations } from '@/hooks/useRecommendations';
@@ -70,7 +70,7 @@ export const ChravelRecsPage = () => {
             variant="outline"
             className="gap-1 border-gold-primary/40 bg-gold-primary/10 text-gold-primary text-xs font-medium"
           >
-            <Sparkles className="h-3 w-3" />
+            <Star className="h-3 w-3" />
             Admin Preview · Mock Data
           </Badge>
         </div>

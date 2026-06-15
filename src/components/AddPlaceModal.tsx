@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, CheckCircle, MapPin, Search, Globe } from 'lucide-react';
+import { X, Wand2, CheckCircle, MapPin, Search, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import { BasecampLocation, PlaceWithDistance } from '../types/basecamp';
 import { usePlaceResolution } from '../hooks/usePlaceResolution';
@@ -310,7 +310,7 @@ export const AddPlaceModal = ({ isOpen, onClose, onPlaceAdded, basecamp }: AddPl
               className="w-4 h-4 text-primary bg-slate-800 border-slate-600 rounded focus:ring-primary"
             />
             <label htmlFor="ai-sorting" className="flex items-center gap-2 text-sm text-slate-300">
-              <Sparkles size={16} className="text-primary" />
+              <Wand2 size={16} className="text-primary" />
               Auto-categorize based on place type
             </label>
           </div>

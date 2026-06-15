@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Check, Globe, Sparkles, Clock } from 'lucide-react';
+import { Check, Globe, Crown, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
 import { toast } from 'sonner';
@@ -40,7 +40,7 @@ const passes = [
     name: 'Frequent Chraveler Trip Pass',
     duration: `${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays} days`,
     price: TRIP_PASS_DISPLAY['frequent-chraveler'].price,
-    icon: <Sparkles size={24} />,
+    icon: <Crown size={24} />,
     description: 'Full Frequent Chraveler features for multi-city trips',
     features: [
       'Everything in Explorer Trip Pass',

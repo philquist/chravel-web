@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   X,
   Building,
-  Sparkles,
+  Crown,
   Users,
   Shield,
   Star,
@@ -98,7 +98,7 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
                   : 'text-gray-300 hover:text-white'
               }`}
             >
-              <Sparkles size={16} />
+              <Crown size={16} />
               Frequent Chraveler
             </button>
             <button
@@ -131,7 +131,7 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
                   <Globe size={32} className="text-primary-foreground" />
                 )}
                 {selectedPlan === 'frequent-chraveler' && (
-                  <Sparkles size={32} className="text-primary-foreground" />
+                  <Crown size={32} className="text-primary-foreground" />
                 )}
               </div>
               <h3 className="text-2xl font-bold text-white mb-2 capitalize">

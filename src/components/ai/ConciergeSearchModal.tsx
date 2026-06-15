@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import {
   Search,
   X,
-  Sparkles,
+  Wand2,
   Calendar,
   CheckSquare,
   BarChart2,
@@ -124,7 +124,7 @@ export const ConciergeSearchModal = ({
   const getIcon = (type: ContentType) => {
     switch (type) {
       case 'concierge':
-        return <Sparkles size={14} className="text-emerald-400" />;
+        return <Wand2 size={14} className="text-emerald-400" />;
       case 'calendar':
         return <Calendar size={14} className="text-blue-400" />;
       case 'task':
@@ -309,7 +309,7 @@ export const ConciergeSearchModal = ({
           {!query && (
             <div className="py-16 text-center px-6">
               <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
-                <Sparkles className="text-emerald-400" size={24} />
+                <Wand2 className="text-emerald-400" size={24} />
               </div>
               <h3 className="text-white font-medium mb-1">Trip Search</h3>
               <p className="text-sm text-neutral-500 max-w-xs mx-auto mb-6">

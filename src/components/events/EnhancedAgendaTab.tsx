@@ -12,7 +12,7 @@ import {
   User,
   X,
   Edit2,
-  Sparkles,
+  Wand2,
   Eye,
   Image,
   AlertCircle,
@@ -298,7 +298,7 @@ export const EnhancedAgendaTab = ({
                 variant="outline"
                 className="flex-1 sm:flex-none border-primary/30 text-primary"
               >
-                <Sparkles size={16} className="mr-2" />
+                <Wand2 size={16} className="mr-2" />
                 Smart Import
               </Button>
             ) : (

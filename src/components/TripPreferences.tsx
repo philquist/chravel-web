@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import {
   TripPreferences as TripPreferencesType,
   DIETARY_OPTIONS,
@@ -130,7 +130,7 @@ export const TripPreferences = ({
     <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
       <div className="flex items-center gap-3 mb-6">
         <div className={`bg-gradient-to-r from-gold-primary/30 to-gold-mid/30 p-2 rounded-xl`}>
-          <Sparkles size={20} className="text-gold-primary" />
+          <SlidersHorizontal size={20} className="text-gold-primary" />
         </div>
         <div>
           <h3 className="text-lg font-semibold text-white">Trip Preferences</h3>

@@ -25,7 +25,7 @@ import {
   Lock,
   WifiOff,
   UserX,
-  Sparkles,
+  Star,
 } from 'lucide-react';
 import { CalendarGlyph } from '../components/ui/CalendarGlyph';
 import {
@@ -934,7 +934,7 @@ const JoinTrip = () => {
             if (!urgency) return null;
             return (
               <div className="flex items-center gap-2 mb-6 px-3 py-2 bg-gold-primary/10 border border-gold-primary/20 rounded-xl">
-                <Sparkles size={14} className="text-gold-primary flex-shrink-0" />
+                <Star size={14} className="text-gold-primary flex-shrink-0" />
                 <span className="text-gold-primary text-sm font-medium">{urgency}</span>
               </div>
             );

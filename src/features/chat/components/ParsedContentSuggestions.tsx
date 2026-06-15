@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Calendar, CheckSquare, Receipt, X, Sparkles } from 'lucide-react';
+import { Calendar, CheckSquare, Receipt, X, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ParsedContent, applySuggestion } from '@/services/chatContentParser';
@@ -75,7 +75,7 @@ export const ParsedContentSuggestions: React.FC<ParsedContentSuggestionsProps> =
       case 'extract_receipt':
         return <Receipt className="w-4 h-4" />;
       default:
-        return <Sparkles className="w-4 h-4" />;
+        return <Wand2 className="w-4 h-4" />;
     }
   };
 
@@ -110,7 +110,7 @@ export const ParsedContentSuggestions: React.FC<ParsedContentSuggestionsProps> =
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-blue-400" />
+            <Wand2 className="w-5 h-5 text-blue-400" />
             <div>
               <CardTitle className="text-sm font-semibold text-white">{getTitle()}</CardTitle>
               <CardDescription className="text-xs text-gray-400 mt-1">

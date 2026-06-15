@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, MessageCircle, Settings, Zap, Camera, Globe, Ticket } from 'lucide-react';
+import { X, Crown, MessageCircle, Settings, Zap, Camera, Globe, Ticket } from 'lucide-react';
 import { useConsumerSubscription } from '../hooks/useConsumerSubscription';
 import { CONSUMER_PRICING } from '../types/consumer';
 import { TripPassModal } from './conversion/TripPassModal';
@@ -55,7 +55,7 @@ export const PlusUpsellModal = ({ isOpen, onClose }: PlusUpsellModalProps) => {
                 <Globe size={20} className="text-primary-foreground sm:w-6 sm:h-6" />
               )}
               {selectedTier === 'frequent-chraveler' && (
-                <Sparkles size={20} className="text-primary-foreground sm:w-6 sm:h-6" />
+                <Crown size={20} className="text-primary-foreground sm:w-6 sm:h-6" />
               )}
             </div>
             <div className="min-w-0">
@@ -99,7 +99,7 @@ export const PlusUpsellModal = ({ isOpen, onClose }: PlusUpsellModalProps) => {
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <div className="bg-gradient-to-br from-primary/10 to-primary/10 border border-primary/20 rounded-2xl p-6">
             <div className="w-12 h-12 bg-gradient-to-r from-primary to-primary/80 rounded-xl flex items-center justify-center mb-4">
-              <Sparkles size={24} className="text-white" />
+              <Crown size={24} className="text-white" />
             </div>
             <h3 className="text-lg font-bold text-white mb-2">Concierge</h3>
             <p className="text-gray-300 text-sm">

@@ -17,7 +17,7 @@ import {
   FileSpreadsheet,
   Image,
   Type,
-  Sparkles,
+  Wand2,
   Globe,
   Link,
   Mail,
@@ -507,7 +507,7 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
                     disabled={!pasteText.trim()}
                     className="w-full min-h-[44px]"
                   >
-                    <Sparkles className="w-4 h-4 mr-2" />
+                    <Wand2 className="w-4 h-4 mr-2" />
                     Extract Events with AI
                   </Button>
                 </div>

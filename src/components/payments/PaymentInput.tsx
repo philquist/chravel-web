@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { DollarSign, Users, CheckSquare, Sparkles, Check } from 'lucide-react';
+import { DollarSign, Users, CheckSquare, Wand2, Check } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
@@ -273,7 +273,7 @@ export const PaymentInput = ({
                     </span>
                   )}
                 </h4>
-                {isAnalyzing && <Sparkles size={14} className="text-emerald-400 animate-pulse" />}
+                {isAnalyzing && <Wand2 size={14} className="text-emerald-400 animate-pulse" />}
               </div>
               <button
                 type="button"
@@ -299,7 +299,7 @@ export const PaymentInput = ({
                       onClick={() => toggleParticipant(suggestion.userId)}
                     >
                       {member.name}
-                      {suggestion.confidence >= 0.7 && <Sparkles size={10} className="ml-1" />}
+                      {suggestion.confidence >= 0.7 && <Wand2 size={10} className="ml-1" />}
                     </Badge>
                   );
                 })}

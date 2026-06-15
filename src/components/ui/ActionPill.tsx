@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -41,7 +41,7 @@ export const ActionPill = React.forwardRef<HTMLButtonElement, ActionPillProps>(
         {...rest}
       >
         {/* AI variant auto-prepends star when no custom leftIcon is given */}
-        {variant === 'aiOutline' && !leftIcon && <Sparkles size={16} className="flex-shrink-0" />}
+        {variant === 'aiOutline' && !leftIcon && <Wand2 size={16} className="flex-shrink-0" />}
         {leftIcon && <span className="flex-shrink-0 [&>svg]:h-4 [&>svg]:w-4">{leftIcon}</span>}
         {children}
       </button>

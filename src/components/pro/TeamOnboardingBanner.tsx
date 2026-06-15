@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, X, CheckCircle, Settings, Sparkles } from 'lucide-react';
+import { Users, X, CheckCircle, Settings, PartyPopper } from 'lucide-react';
 import { Button } from '../ui/button';
 
 interface TeamOnboardingBannerProps {
@@ -60,7 +60,7 @@ export const TeamOnboardingBanner = ({
         <div className="flex-1 space-y-3">
           <div>
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Sparkles size={18} className="text-yellow-400" />
+              <PartyPopper size={18} className="text-yellow-400" />
               Assign Roles to Your Team
             </h3>
             <p className="text-gray-300 text-sm mt-1">

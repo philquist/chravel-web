@@ -4,7 +4,7 @@ import { supabase } from '../integrations/supabase/client';
 import { useAuth } from '../hooks/useAuth';
 import { useDemoMode } from '../hooks/useDemoMode';
 import { tripsData } from '../data/tripsData';
-import { Users, MapPin, Share2, ExternalLink, Sparkles } from 'lucide-react';
+import { Users, MapPin, Share2, ExternalLink, Star } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { CalendarGlyph } from '../components/ui/CalendarGlyph';
@@ -509,7 +509,7 @@ const TripPreview = () => {
             if (!urgency) return null;
             return (
               <div className="flex items-center gap-2 mb-6 px-3 py-2 bg-gold-primary/10 border border-gold-primary/20 rounded-xl">
-                <Sparkles className="h-4 w-4 text-gold-primary flex-shrink-0" />
+                <Star className="h-4 w-4 text-gold-primary flex-shrink-0" />
                 <span className="text-gold-primary text-sm font-medium">{urgency}</span>
               </div>
             );

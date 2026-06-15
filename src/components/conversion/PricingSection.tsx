@@ -9,7 +9,7 @@ import {
   Users,
   Shield,
   Zap,
-  Sparkles,
+  Crown,
   Globe,
   Camera,
   MessageSquare,
@@ -103,7 +103,7 @@ const consumerTiers: PricingTier[] = [
     annualPrice: CONSUMER_PRICE_DISPLAY['frequent-chraveler'].annual,
     originalPrice: CONSUMER_PRICE_DISPLAY['frequent-chraveler'].originalAnnual,
     description: `For Frequent Flyers, Teams, and Tours. Or grab a Trip Pass for ${TRIP_PASS_DISPLAY['frequent-chraveler'].price} (${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays} days).`,
-    icon: <Sparkles size={24} />,
+    icon: <Crown size={24} />,
     features: [
       'Everything in Explorer',
       'Unlimited AI queries (24/7 concierge)',

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Sparkles, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { Wand2, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -260,7 +260,7 @@ export const SmartImportGmail: React.FC<SmartImportGmailProps> = ({
           <div className="flex items-center gap-2">
             <GmailIcon className="h-5 w-5" />
             <h4 className="font-medium text-sm">Smart Import from Gmail</h4>
-            <Sparkles className="h-3 w-3 text-yellow-500" />
+            <Wand2 className="h-3 w-3 text-yellow-500" />
           </div>
           <p className="text-xs text-muted-foreground max-w-[280px]">
             We'll securely scan your inbox for recent travel reservations matching this trip's

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Crown, Globe, Sparkles, Building, TrendingUp, Shield } from 'lucide-react';
+import { Crown, Globe, Building, TrendingUp, Shield } from 'lucide-react';
 import { useConsumerSubscription } from '../../hooks/useConsumerSubscription';
 import { CONSUMER_PRICING } from '../../types/consumer';
 import { CONSUMER_PRICE_DISPLAY } from '@/billing/pricingDisplay';
@@ -169,7 +169,7 @@ export const ConsumerBillingSection = () => {
       name: 'Frequent Chraveler',
       price: CONSUMER_PRICING['frequent-chraveler'].monthly,
       annualPrice: CONSUMER_PRICING['frequent-chraveler'].annual,
-      icon: Sparkles,
+      icon: Crown,
       features: [
         'Everything in Explorer',
         'Unlimited AI queries',

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogOut, Sparkles } from 'lucide-react';
+import { LogOut, FlaskConical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { ExitDemoModal } from './ExitDemoModal';
@@ -23,7 +23,7 @@ export const DemoTripBar: React.FC = () => {
     <>
       <div className="flex-shrink-0 z-40 flex items-center justify-between gap-2 px-4 py-1.5 bg-orange-500/10 border-b border-orange-500/20">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Sparkles size={12} className="flex-shrink-0 text-orange-400" />
+          <FlaskConical size={12} className="flex-shrink-0 text-orange-400" />
           <span className="text-[11px] font-medium text-orange-300 truncate">
             Demo Mode — exploring sample data
           </span>

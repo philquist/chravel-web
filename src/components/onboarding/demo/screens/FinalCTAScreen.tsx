@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Plane, Sparkles } from 'lucide-react';
+import { Plane, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion as motionPreset } from '../tokens';
 
@@ -78,7 +78,7 @@ export const FinalCTAScreen = ({ onCreateTrip, onExploreDemoTrip }: FinalCTAScre
           className="w-full text-muted-foreground"
           onClick={onExploreDemoTrip}
         >
-          <Sparkles className="w-4 h-4 mr-2" />
+          <Compass className="w-4 h-4 mr-2" />
           Explore demo trip
         </Button>
       </motion.div>
