@@ -75,6 +75,12 @@ serve(async req => {
   if (req.method === 'OPTIONS') return createOptionsResponse(req);
   if (req.method !== 'GET') return createErrorResponse('Method not allowed', 405, req);
 
+  // Require authentication to prevent open-relay / Google Maps quota abuse.
+  const auth = await requireAuth(req, getCorsHeaders(req));
+  if (auth.error) return auth.response;
+
+
+
   const url = new URL(req.url);
   const placePhotoName = url.searchParams.get('placePhotoName');
   const rawUrl = url.searchParams.get('url');
