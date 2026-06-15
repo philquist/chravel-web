@@ -3856,7 +3856,6 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          notifications_muted: boolean
           role: string
           trip_id: string
           updated_at: string
@@ -3865,7 +3864,6 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          notifications_muted?: boolean
           role?: string
           trip_id: string
           updated_at?: string
@@ -3874,7 +3872,6 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          notifications_muted?: boolean
           role?: string
           trip_id?: string
           updated_at?: string
@@ -4659,6 +4656,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_loyalty_programs: {
+        Row: {
+          company_name: string
+          created_at: string
+          id: string
+          is_preferred: boolean | null
+          membership_number: string
+          program_name: string
+          program_type: string
+          tier: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          id?: string
+          is_preferred?: boolean | null
+          membership_number: string
+          program_name: string
+          program_type: string
+          tier?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          id?: string
+          is_preferred?: boolean | null
+          membership_number?: string
+          program_name?: string
+          program_type?: string
+          tier?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_payment_methods: {
         Row: {
           created_at: string
@@ -4790,6 +4826,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string
+        }
+        Relationships: []
       }
       web_push_subscriptions: {
         Row: {
