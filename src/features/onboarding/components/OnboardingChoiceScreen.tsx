@@ -12,7 +12,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Play, ArrowRight, ChevronRight } from 'lucide-react';
+import { Bomb, Play, ArrowRight, ChevronRight } from 'lucide-react';
 
 interface ChoiceOption {
   icon: React.ComponentType<{ className?: string }>;
@@ -37,7 +37,7 @@ export const OnboardingChoiceScreen = ({
 }: OnboardingChoiceScreenProps) => {
   const options: ChoiceOption[] = [
     {
-      icon: Sparkles,
+      icon: Bomb,
       title: 'Get my Trip Chaos Score',
       subcopy: '5 quick questions, then a demo tuned to your biggest pain. ~45 seconds.',
       onClick: onTakeSurvey,
@@ -82,7 +82,7 @@ export const OnboardingChoiceScreen = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        Welcome to Chravel
+        Welcome to ChravelApp
       </motion.h1>
       <motion.p
         className="text-ink-2 text-base sm:text-lg mb-8 text-center max-w-sm relative z-10"
