@@ -82,7 +82,7 @@ export const OnboardingChoiceScreen = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        Welcome to Chravel
+        Welcome to ChravelApp
       </motion.h1>
       <motion.p
         className="text-ink-2 text-base sm:text-lg mb-8 text-center max-w-sm relative z-10"
