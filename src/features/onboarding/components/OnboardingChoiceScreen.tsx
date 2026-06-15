@@ -37,7 +37,7 @@ export const OnboardingChoiceScreen = ({
 }: OnboardingChoiceScreenProps) => {
   const options: ChoiceOption[] = [
     {
-      icon: Sparkles,
+      icon: Bomb,
       title: 'Get my Trip Chaos Score',
       subcopy: '5 quick questions, then a demo tuned to your biggest pain. ~45 seconds.',
       onClick: onTakeSurvey,
