@@ -50,7 +50,8 @@
     "permissions:generate": "node scripts/generate-permission-matrix.mjs",
     "permissions:drift": "node scripts/check-permission-matrix-drift.mjs",
     "lint:dal": "bash scripts/check-duplicate-service-wrappers.sh",
-    "health:metrics": "node scripts/codebase-health-metrics.cjs"
+    "health:metrics": "node scripts/codebase-health-metrics.cjs",
+    "qa:android15-edge": "node scripts/qa/check-android-15-edge-to-edge.cjs --require-native"
   },
   "overrides": {
     "@tanstack/query-async-storage-persister": {

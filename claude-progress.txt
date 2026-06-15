@@ -58,3 +58,8 @@
 - Fixed the Travel Recs feed hook so organic mock categories (Nightlife, Sports, Landmarks) render on the primary consumer surface instead of being dropped by the sponsored-only gate.
 - Added shared recommendation category filter metadata and reused it in both home Recs pills and the admin Chravel Recs tab list so category UI stays in parity.
 - Added regression coverage for the location-filtered Travel Recs hook and category filter metadata parity.
+
+2026-06-15 — Android 15 Play Console edge-to-edge release gate
+- Diagnosed the Play Console 1.0.0 warning as native Android artifact behavior from React Native/Material callsites, not current web source code.
+- Added an Android 15 edge-to-edge QA gate that fails Android release checks when the native `android/` project is missing and scans native sources for status/nav bar color writes, deprecated cutout modes, and legacy system UI flags when present.
+- Added a mobile runbook for the native fixes, dependency-upgrade targets, and Android 15 manual verification matrix before Play promotion.
