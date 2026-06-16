@@ -1,0 +1,21 @@
+# Chravel
+
+> Chravel is the group chat travel app. It coordinates itineraries, chat, places, polls, tasks, payments, and shared media for friends, families, touring teams, and events — replacing the spreadsheet-plus-15-apps approach to group travel.
+
+Chravel ships as a mobile-first web app (also installable as a PWA) for three audiences: consumer travel groups, professional touring/sports/corporate teams, and event organizers. Core modules are Chat & Broadcasts, Calendar/Itinerary, Places & Links, AI Concierge, Polls, Tasks, Payments, and Media. Pricing is freemium with paid Plus, Pro, and Events tiers.
+
+## Pages
+
+- [Home](/): Product overview and primary entry point.
+- [Trip planner](/trip-planner): How Chravel works as a trip planner across itinerary, tasks, budget, and group decisions.
+- [Group trip planner](/group-trip-planner): Coordinating friends, families, and teams in one shared workspace.
+- [Group travel](/group-travel): Group travel coordination for consumer trips, events, and pro teams.
+- [How to plan a trip with friends](/how-to-plan-a-trip-with-friends): Step-by-step guide to planning group trips without group-chat chaos.
+- [Teams](/teams): Pro and enterprise use cases — touring crews, sports orgs, corporate travel.
+- [Support](/support): Help and contact.
+- [Privacy](/privacy): Privacy policy.
+- [Terms](/terms): Terms of service.
+
+## Optional
+
+- [Sitemap](/sitemap.xml): Machine-readable list of indexable pages.
