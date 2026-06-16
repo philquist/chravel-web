@@ -108,9 +108,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             textShadow: '0 2px 6px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)',
           }}
         >
-          Built for every type of group that travels together: Friends, Families, Sports, Touring, Clubs,
-          Vacations, Work.. Built for group planning. All your important info in one place for
-          everybody to see.
+          Built for group planning. All your trip's important info. In one place.
         </p>
       </div>
 
