@@ -47,24 +47,25 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
 
       {/* Top Section: Brand + Headline + Subtitle */}
       <div className="flex-shrink-0 pt-4 tablet:pt-8">
-        {/* Brand Name */}
+        {/* Brand Name (styled div — not a heading, to preserve h1→h2→h3 order) */}
         <div
           className="inline-block animate-fade-in mb-2 tablet:mb-3"
           style={{
             animationDelay: '0.05s',
           }}
         >
-          <h2
+          <div
             className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight"
             style={{
               textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
             }}
+            aria-hidden="true"
           >
             ChravelApp
-          </h2>
+          </div>
         </div>
 
-        {/* Pain-First Headline */}
+        {/* Pain-First Headline — primary H1 for the page */}
         <div className="w-full flex items-center justify-center px-2 tablet:px-4 mb-2 tablet:mb-3">
           <h1
             className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight animate-fade-in text-center w-full"
@@ -75,6 +76,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             The Group Chat Travel App
           </h1>
         </div>
+
 
         {/* New Subtitle */}
         <p
