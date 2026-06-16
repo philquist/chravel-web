@@ -145,7 +145,7 @@ export const ReplacesGrid = () => {
           className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-bold"
           style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)' }}
         >
-          ChravelApp's 8 core tabs cover almost all trip needs—with one app.
+          ChravelApp's 8 core tabs cover most of your&nbsp; trips' information.
         </p>
       </div>
     </section>
