@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 
 const scenarios = [
   {
-    title: 'Family Hubs, Schedules & Carpools',
+    title: 'Use as a Household Hub: Schedules & Responsibilities',
     subtitle: 'Practices · pickups · errands · roommates · season planning',
     before: 'Missed email updates. Missed pickups. Confusion spread across multiple threads.',
     expandCTA: 'ChravelApp helps families stay organized',
@@ -24,9 +24,9 @@ const scenarios = [
     badge: 'Fewer mistakes · smoother tours',
   },
   {
-    title: 'Bach Parties → Wedding Weekends',
+    title: 'Bacheleor/ette Parties → Wedding Weekends',
     subtitle: 'Bachelor & bachelorette trips · guests · families · vendors',
-    before: 'Dozens of chats. Guests constantly asking where to be and when.',
+    before: 'Dozens of chats with too many guests constantly asking where to be and when.',
     expandCTA: 'ChravelApp helps celebrations run smoothly',
     after: 'Shared itinerary, pinned locations, live photos — no confusion, just celebration.',
     badge: 'Fewer questions · more memories',
@@ -96,7 +96,7 @@ export const UseCasesSection = () => {
                 '0 2px 6px rgba(0,0,0,0.65), 0 4px 14px rgba(0,0,0,0.45)',
             }}
           >
-            Work trips, vacations, sports, tours, local events — ChravelApp handles it all.
+            Friend Trips, Family Vacations, Sports Travel, Touring Teams, & local events like Run Clubs & Dog Park Meetups — ChravelApp handles it all.
           </p>
         </div>
 

@@ -66,7 +66,7 @@ export const ProblemSolutionSection = () => {
           className="text-lg sm:text-xl md:text-2xl font-semibold text-white/90"
           style={{ textShadow: '2px 2px 6px rgba(0, 0, 0, 0.6)' }}
         >
-          From zero → organized in under 60 seconds
+          From Zero → Organized in under 60 seconds
         </p>
       </motion.div>
 
