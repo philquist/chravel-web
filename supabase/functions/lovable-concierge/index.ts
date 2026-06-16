@@ -1788,6 +1788,11 @@ serve(async req => {
       let aiResponse = '';
       let groundingMetadata = null;
       let functionCallResults: any[] = [];
+      // Set when a follow-up Gemini turn errors and we fall back to a canned
+      // "had trouble generating a summary" string. Used below to skip the quota
+      // increment so users aren't charged for a failed AI response.
+      let followUpFailed = false;
+
 
       let candidate = data.candidates?.[0];
       if (!candidate) {
@@ -1894,8 +1899,10 @@ serve(async req => {
           candidate = null;
           aiResponse =
             'I completed the action, but had trouble generating a summary. Check your trip tabs for the update.';
+          followUpFailed = true;
           break;
         }
+
       }
 
       if (candidate) {
@@ -1933,7 +1940,13 @@ serve(async req => {
 
       const resolvedTripId = comprehensiveContext?.tripMetadata?.id || tripId || 'unknown';
 
-      if (!serverDemoMode && user && tripQueryLimit !== null && resolvedTripId !== 'unknown') {
+      if (
+        !serverDemoMode &&
+        user &&
+        tripQueryLimit !== null &&
+        resolvedTripId !== 'unknown' &&
+        !followUpFailed
+      ) {
         const incrementUsageResult = await incrementConciergeTripUsage(
           supabase,
           resolvedTripId,
@@ -1950,6 +1963,7 @@ serve(async req => {
           return buildTripLimitReachedResponse(corsHeaders, usagePlan);
         }
       }
+
 
       // Skip database storage in demo mode
       if (!serverDemoMode) {
