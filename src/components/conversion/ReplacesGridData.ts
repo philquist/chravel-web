@@ -141,7 +141,7 @@ export const CATEGORIES: Category[] = [
     title: 'Polls',
     subtitle: '',
     icon: '📊',
-    benefit: 'Make group decisions without endless debates or buried votes.',
+    benefit: 'Make group decisions without endless debates or scrolling for buried votes.',
     hero: [
       { name: 'Doodle' },
       { name: 'Google Forms' },
