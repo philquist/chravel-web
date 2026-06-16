@@ -80,20 +80,24 @@ export const UseCasesSection = () => {
       <div className="container mx-auto px-4 relative z-10 flex flex-col items-center space-y-12">
         {/* Headline - positioned higher to avoid towel overlap */}
         <div className="text-center space-y-4 max-w-4xl">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
-            Built for Every Journey
-          </h2>
-          <div
-            className="inline-block px-6 py-4 rounded-xl"
+          <h2
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight"
             style={{
-              backgroundColor: 'rgba(30, 30, 30, 0.7)',
-              backdropFilter: 'blur(8px)',
+              textShadow:
+                '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4), 0 0 36px rgba(196,151,70,0.18)',
             }}
           >
-            <p className="text-xl sm:text-2xl md:text-3xl text-foreground">
-              Work trips, vacations, sports, tours, local events — ChravelApp handles it all.
-            </p>
-          </div>
+            Built for Every Journey
+          </h2>
+          <p
+            className="text-xl sm:text-2xl md:text-3xl text-white font-semibold max-w-3xl mx-auto"
+            style={{
+              textShadow:
+                '0 2px 6px rgba(0,0,0,0.65), 0 4px 14px rgba(0,0,0,0.45)',
+            }}
+          >
+            Work trips, vacations, sports, tours, local events — ChravelApp handles it all.
+          </p>
         </div>
 
         {/* Scenarios Grid — single column on phones, 2-col on tablets (768px+), 3-col on desktop */}
