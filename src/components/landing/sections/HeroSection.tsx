@@ -47,17 +47,32 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
 
       {/* Top Section: Brand + Headline + Subtitle */}
       <div className="flex-shrink-0 pt-4 tablet:pt-8">
+        {/* Eyebrow chip — gold rule + label, premium signal */}
+        <div
+          className="flex items-center justify-center gap-3 mb-3 tablet:mb-4 animate-fade-in"
+          style={{ animationDelay: '0.02s' }}
+          aria-hidden="true"
+        >
+          <span className="h-px w-8 sm:w-12 bg-gradient-to-r from-transparent to-[#c49746]" />
+          <span
+            className="text-[10px] sm:text-xs font-semibold tracking-[0.32em] uppercase text-[#feeaa5]"
+            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}
+          >
+            Less Chaos · More Coordination
+          </span>
+          <span className="h-px w-8 sm:w-12 bg-gradient-to-l from-transparent to-[#c49746]" />
+        </div>
+
         {/* Brand Name (styled div — not a heading, to preserve h1→h2→h3 order) */}
         <div
           className="inline-block animate-fade-in mb-2 tablet:mb-3"
-          style={{
-            animationDelay: '0.05s',
-          }}
+          style={{ animationDelay: '0.05s' }}
         >
           <div
-            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight"
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight tracking-tight"
             style={{
-              textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
+              textShadow:
+                '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4), 0 0 32px rgba(196,151,70,0.22)',
             }}
             aria-hidden="true"
           >
@@ -66,24 +81,31 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
         </div>
 
         {/* Pain-First Headline — primary H1 for the page */}
-        <div className="w-full flex items-center justify-center px-2 tablet:px-4 mb-2 tablet:mb-3">
+        <div className="w-full flex items-center justify-center px-2 tablet:px-4 mb-3 tablet:mb-4">
           <h1
-            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight animate-fade-in text-center w-full"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.05] tracking-tight animate-fade-in text-center w-full"
             style={{
-              textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
+              textShadow:
+                '0 2px 8px rgba(0,0,0,0.6), 0 4px 18px rgba(0,0,0,0.45), 0 0 44px rgba(196,151,70,0.28)',
             }}
           >
             The Group Chat Travel App
           </h1>
         </div>
 
+        {/* Gold divider — premium accent */}
+        <div
+          className="mx-auto h-px w-24 sm:w-32 bg-gradient-to-r from-transparent via-[#c49746] to-transparent mb-3 tablet:mb-4 animate-fade-in"
+          style={{ animationDelay: '0.08s' }}
+          aria-hidden="true"
+        />
 
         {/* New Subtitle */}
         <p
-          className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 font-medium max-w-3xl mx-auto mb-3 tablet:mb-4 animate-fade-in"
+          className="text-sm sm:text-base md:text-lg lg:text-xl text-white/95 font-medium max-w-3xl mx-auto mb-3 tablet:mb-4 animate-fade-in"
           style={{
-            animationDelay: '0.05s',
-            textShadow: '0 2px 4px rgba(0,0,0,0.4)',
+            animationDelay: '0.1s',
+            textShadow: '0 2px 6px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)',
           }}
         >
           For Friend & Family trips, Team Travel, Touring Crews, Local Community Clubs, & Anybody
