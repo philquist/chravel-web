@@ -108,8 +108,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             textShadow: '0 2px 6px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)',
           }}
         >
-          For Anybody that's been part of a group trip: Friends & Family, Team Travel, Touring Crews,
-          Local Community Clubs
+          Built for every type of group that travels together: Friends, Families, Sports, Touring, Clubs,
+          Vacations, Work.. Built for group planning. All your important info in one place for
+          everybody to see.
         </p>
       </div>
 
@@ -174,7 +175,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
               textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
             }}
           >
-            Less Chaos, More Coordination
+            {"\n"}
           </h3>
         </div>
 
@@ -186,7 +187,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
           }}
         >
-          Plans, photos, places, and payments — one private place for every trip.
+          Plans, Photos, Places, & Payments — one Private Place for each specific trip.
         </p>
       </div>
     </div>
