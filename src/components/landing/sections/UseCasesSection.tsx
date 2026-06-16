@@ -26,14 +26,14 @@ const scenarios = [
   {
     title: 'Bacheleor/ette Parties → Wedding Weekends',
     subtitle: 'Bachelor & bachelorette trips · guests · families · vendors',
-    before: 'Dozens of chats with too many guests constantly asking where to be and when.',
+    before: 'Dozens of chats with too many guests asking the same questions over and over. ',
     expandCTA: 'ChravelApp helps celebrations run smoothly',
     after: 'Shared itinerary, pinned locations, live photos — no confusion, just celebration.',
     badge: 'Fewer questions · more memories',
   },
   {
     title: 'Fraternities/Sororities & Similar Organizations',
-    subtitle: 'Rush · formals · retreats · philanthropy · chapter ops',
+    subtitle: 'Rush · Formals · retreats · philanthropy · chapter ops',
     before:
       'One giant group chat — endless scrollback, mixed events, sensitive moments living forever in one thread.',
     expandCTA: 'ChravelApp helps chapters stay private',
@@ -52,8 +52,8 @@ const scenarios = [
   },
   {
     title: 'Local Community Groups',
-    subtitle: 'Run clubs · dog park crews · faith groups · recurring meetups',
-    before: 'Plans scattered across DMs, texts, and random calendar invites.',
+    subtitle: 'Run clubs · Dog park Crews· Faith groups · Recurring meetups',
+    before: 'Plans scattered across DMs, texts, and random calendar invites or flyers',
     expandCTA: 'ChravelApp helps groups stay connected',
     after: 'One shared home for meetups, locations, and photos. Your group stays connected.',
     badge: 'Consistency · better turnout',
