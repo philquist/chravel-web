@@ -20,7 +20,7 @@ const scenarios = [
     before: 'Spreadsheets, endless texts, missed details. Overwhelmed managers, annoyed artists.',
     expandCTA: 'ChravelApp helps tours stay in sync',
     after:
-      'Show days, off days, crew channels, logistics, and payments—all in one place. Everyone aligned, every city.',
+      'Show days, Rehearsal times, off days, crew channels, logistics, and payments—all in one place. Everyone aligned, every city.',
     badge: 'Fewer mistakes · smoother tours',
   },
   {
@@ -28,14 +28,14 @@ const scenarios = [
     subtitle: 'Bachelor & bachelorette trips · guests · families · vendors',
     before: 'Dozens of chats with too many guests asking the same questions over and over. ',
     expandCTA: 'ChravelApp helps celebrations run smoothly',
-    after: 'Shared itinerary, pinned locations, live photos — no confusion, just celebration.',
+    after: 'Shared itinerary, approved wedding looks, pinned locations, group sharing of wedding photos — less confusion, more celebration.',
     badge: 'Fewer questions · more memories',
   },
   {
     title: 'Fraternities/Sororities & Similar Organizations',
     subtitle: 'Rush · Formals · retreats · philanthropy · chapter ops',
     before:
-      'One giant group chat — endless scrollback, mixed events, sensitive moments living forever in one thread.',
+      'One giant group chat — endless scrollback, mixed events , sensitive moments living forever in one thread.',
     expandCTA: 'ChravelApp helps chapters stay private',
     after:
       'Separate vaults per event — Rush, Formal, Retreat. Chat and media stay compartmentalized. Access controlled, moments stay private.',
