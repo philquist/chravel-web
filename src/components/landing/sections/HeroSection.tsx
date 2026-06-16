@@ -108,8 +108,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             textShadow: '0 2px 6px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)',
           }}
         >
-          For Friend & Family trips, Team Travel, Touring Crews, Local Community Clubs, & Anybody
-          Organizing a Group
+          For Anybody that's been part of a group trip: Friends & Family, Team Travel, Touring Crews,
+          Local Community Clubs
         </p>
       </div>
 
