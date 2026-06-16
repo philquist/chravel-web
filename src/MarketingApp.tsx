@@ -88,7 +88,9 @@ export default function MarketingApp() {
       <AuthProvider>
         <PostAuthBoot />
         <Suspense fallback={fallback}>
-          <FullPageLanding onSignUp={() => setAuthMode('signup')} />
+          <main>
+            <FullPageLanding onSignUp={() => setAuthMode('signup')} />
+          </main>
           {authMode && (
             <AuthModal isOpen initialMode={authMode} onClose={() => setAuthMode(null)} />
           )}
