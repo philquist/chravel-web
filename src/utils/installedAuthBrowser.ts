@@ -48,7 +48,7 @@ function getChravelNativeOpenOAuthUrl(): ((url: string) => void | Promise<void>)
 export async function openInstalledAuthBrowser(url: string): Promise<void> {
   const browser = getCapacitorBrowser();
   if (browser) {
-    await browser.open({ url, presentationStyle: 'popover' });
+    await browser.open({ url, presentationStyle: 'fullscreen' });
     return;
   }
 

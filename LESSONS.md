@@ -436,3 +436,6 @@ Long-press drag activation on iOS/webview conflicts with scroll, context gesture
 
 ### Play Console native warnings require the artifact-producing native source
 When Google Play reports Android framework/library callsites, first verify the checked-out repo contains the native project that produced the AAB; otherwise add a release gate/runbook rather than making web-only changes that cannot affect the artifact.
+
+### App Review compliance paths must be directly discoverable, not merely present
+For account deletion, having a backend/RPC and a nested settings flow is insufficient if reviewers cannot find it quickly; expose the action from the obvious signed-in account/profile row and keep it routed to the same canonical deletion flow. *Evidence: June 17, 2026 App Review 5.1.1(v) remediation added Profile → Account → Delete Account as a direct entry point while preserving ConsumerGeneralSettings as the single deletion flow.*
