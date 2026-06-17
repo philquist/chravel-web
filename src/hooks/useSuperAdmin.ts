@@ -32,9 +32,13 @@ export const useSuperAdmin = () => {
       return Boolean(data);
     },
     enabled: Boolean(user?.id),
-    staleTime: 5 * 60 * 1000,
+    // Always re-verify on app launch so PWA/mobile caches can't hide admin-only
+    // surfaces (e.g. Chravel Recs) after a permission change on the server.
+    staleTime: 0,
     gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnMount: 'always',
+    refetchOnReconnect: 'always',
+    refetchOnWindowFocus: true,
   });
 
   return { isSuperAdmin: envMatch || Boolean(serverMatch) };
