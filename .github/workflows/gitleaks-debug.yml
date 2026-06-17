@@ -1,0 +1,27 @@
+name: Gitleaks Debug (temporary)
+
+# TEMPORARY: prints exact gitleaks findings (path:rule:line) so stale
+# .gitleaksignore fingerprints can be corrected. Delete after use.
+on:
+  push:
+    branches: [claude/skills-pika-mcp-setup-XkSBy]
+
+jobs:
+  gitleaks-debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz \
+            | tar xz -C /usr/local/bin gitleaks
+
+      - name: Run Gitleaks (verbose, report to stdout)
+        run: |
+          gitleaks detect --source . --config .gitleaks.toml --no-git \
+            --verbose --report-format json --report-path gitleaks-report.json || true
+          echo "================ FINGERPRINTS ================"
+          python3 -c "import json;[print(d['File']+':'+d['RuleID']+':'+str(d['StartLine'])) for d in json.load(open('gitleaks-report.json'))]"
+          echo "================ END FINGERPRINTS ============"
