@@ -63,3 +63,9 @@
 - Diagnosed the Play Console 1.0.0 warning as native Android artifact behavior from React Native/Material callsites, not current web source code.
 - Added an Android 15 edge-to-edge QA gate that fails Android release checks when the native `android/` project is missing and scans native sources for status/nav bar color writes, deprecated cutout modes, and legacy system UI flags when present.
 - Added a mobile runbook for the native fixes, dependency-upgrade targets, and Android 15 manual verification matrix before Play promotion.
+
+2026-06-17 — App Store rejection remediation: account deletion discoverability + iPad Apple OAuth
+- Classified June 17, 2026 App Review issues: in-app account deletion and Sign in with Apple need code/review-proof hardening; background audio and privacy tracking declarations require native/App Store Connect changes outside this web repo.
+- Added a visible Delete Account action directly to the signed-in Profile → Account row, routing to the existing actionable General Settings deletion flow; preserved the existing Native Settings deletion row and account-deletion RPC/backend path.
+- Switched installed-app OAuth browser presentation from iPad popover to fullscreen for Apple/Google external auth sessions to reduce iPad no-op/popover presentation risk.
+- Verified targeted tests, typecheck, lint:check (baseline warnings), build; merge preflight still cannot fetch origin/main in this environment.

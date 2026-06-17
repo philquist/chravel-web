@@ -18,7 +18,7 @@ describe('openInstalledAuthBrowser', () => {
 
     expect(open).toHaveBeenCalledWith({
       url: 'https://oauth.example/start',
-      presentationStyle: 'popover',
+      presentationStyle: 'fullscreen',
     });
   });
 

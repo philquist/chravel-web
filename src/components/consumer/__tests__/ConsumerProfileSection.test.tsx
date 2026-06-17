@@ -4,6 +4,11 @@ import { render, screen } from '@testing-library/react';
 
 import { ConsumerProfileSection } from '../ConsumerProfileSection';
 
+const navigateMock = vi.fn();
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => navigateMock,
+}));
+
 const mockUpdateProfile = vi.fn();
 const mockSignOut = vi.fn();
 const mockToast = vi.fn();
@@ -73,6 +78,7 @@ describe('ConsumerProfileSection', () => {
     mockShowDemoContent = false;
     mockGetConsistentAvatar.mockReset();
     mockGetConsistentAvatar.mockReturnValue('https://example.com/demo-avatar.png');
+    navigateMock.mockReset();
     vi.clearAllMocks();
   });
 
@@ -93,6 +99,13 @@ describe('ConsumerProfileSection', () => {
     expect(mockGetConsistentAvatar).toHaveBeenCalledWith('Demo User');
     const avatar = screen.getByRole('img', { name: /profile/i });
     expect(avatar).toHaveAttribute('src', 'https://example.com/demo-avatar.png');
+  });
+
+  it('surfaces account deletion from the signed-in profile account row', () => {
+    render(<ConsumerProfileSection />);
+
+    const deleteButton = screen.getByRole('button', { name: /delete account/i });
+    expect(deleteButton).toBeInTheDocument();
   });
 
   it('does not render a Camera overlay button', () => {
