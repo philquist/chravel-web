@@ -100,4 +100,25 @@ describe('MobileTripTabs tab navigation', () => {
     const activePanel = container.querySelector('[style*="overflow-x: hidden"]');
     expect(activePanel).toBeTruthy();
   });
+
+  it('sizes the tab-content pane to the visual viewport so the pinned composer stays above the iOS keyboard', () => {
+    // Regression: the content height must track --visual-viewport-height (set by
+    // useKeyboardHandler when the keyboard opens), not a fixed 100dvh. Otherwise the
+    // composer is pushed below the shrunk shell and WebKit scrolls the whole webview.
+    const { container } = render(
+      <MobileTripTabs
+        activeTab="chat"
+        onTabChange={vi.fn()}
+        tripId="trip-1"
+        basecamp={{ name: 'Hotel', address: 'Tokyo' }}
+        variant="consumer"
+      />,
+    );
+
+    const contentPane = container.querySelector('[style*="--visual-viewport-height"]');
+    expect(contentPane).toBeTruthy();
+    expect((contentPane as HTMLElement).style.height).toContain('--visual-viewport-height');
+    // Falls back to 100dvh when no keyboard is open.
+    expect((contentPane as HTMLElement).style.height).toContain('100dvh');
+  });
 });

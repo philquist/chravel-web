@@ -616,12 +616,19 @@ export const MobileTripTabs = ({
         </div>
       </div>
 
-      {/* Tab Content - bounded height ensures tab rail stays visible regardless of parent layout */}
+      {/* Tab Content - bounded height ensures tab rail stays visible regardless of parent layout.
+          Height tracks --visual-viewport-height (set by useKeyboardHandler) so when the iOS
+          keyboard opens the content area shrinks to the visible viewport. This keeps the pinned
+          composer (the bottom flex child of internal-scroll tabs) sitting directly above the
+          keyboard and lets only the message list scroll — native iMessage/WhatsApp behavior —
+          instead of WebKit scrolling the whole webview to reveal the focused input. Falls back to
+          100dvh when no keyboard is open. */}
       <div
         ref={contentRef}
         className="bg-background flex flex-col min-h-0 flex-1 overflow-hidden"
         style={{
-          height: 'calc(100dvh - var(--mobile-header-h, 73px) - var(--mobile-tabs-h, 52px))',
+          height:
+            'calc(var(--visual-viewport-height, 100dvh) - var(--mobile-header-h, 73px) - var(--mobile-tabs-h, 52px))',
           WebkitOverflowScrolling: 'touch',
         }}
       >
