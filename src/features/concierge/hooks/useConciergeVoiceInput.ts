@@ -22,10 +22,12 @@ const PREFERRED_MIME_TYPES = [
 
 function pickMimeType(): string | undefined {
   if (typeof MediaRecorder === 'undefined') return undefined;
+  const check = (MediaRecorder as unknown as { isTypeSupported?: (t: string) => boolean })
+    .isTypeSupported;
+  if (!check) return undefined;
   for (const t of PREFERRED_MIME_TYPES) {
     try {
-      // @ts-expect-error — older lib.dom may not type isTypeSupported
-      if (MediaRecorder.isTypeSupported?.(t)) return t;
+      if (check(t)) return t;
     } catch {
       /* ignore */
     }
