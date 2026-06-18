@@ -73,6 +73,29 @@ describe('useKeyboardHandler', () => {
     );
   });
 
+  it('keeps viewport CSS vars synchronized on visual viewport scroll as the iOS keyboard settles', () => {
+    renderHook(() => useKeyboardHandler({ adjustViewport: true }));
+
+    act(() => {
+      fireViewportResize(500);
+    });
+
+    expect(document.documentElement.style.getPropertyValue('--visual-viewport-height')).toBe(
+      '500px',
+    );
+
+    act(() => {
+      mockVisualViewport.height = 480;
+      mockVisualViewport.offsetTop = 20;
+      visualViewportListeners.get('scroll')?.forEach(listener => listener(new Event('scroll')));
+    });
+
+    expect(document.documentElement.style.getPropertyValue('--visual-viewport-height')).toBe(
+      '480px',
+    );
+    expect(document.documentElement.style.getPropertyValue('--keyboard-height')).toBe('320px');
+  });
+
   it('does not scroll fixed bottom chat composers into view on focus', () => {
     const scrollIntoView = vi.fn();
     HTMLElement.prototype.scrollIntoView = scrollIntoView;

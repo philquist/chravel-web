@@ -107,12 +107,14 @@ export const useKeyboardHandler = (options: KeyboardHandlerOptions = {}) => {
     // Add event listeners
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', handleViewportChange);
+      window.visualViewport.addEventListener('scroll', handleViewportChange);
     }
     document.addEventListener('focusin', handleFocusIn);
 
     return () => {
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', handleViewportChange);
+        window.visualViewport.removeEventListener('scroll', handleViewportChange);
       }
       document.removeEventListener('focusin', handleFocusIn);
 

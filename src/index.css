@@ -945,6 +945,20 @@
 }
 
 /* iOS Keyboard Handling */
+.mobile-trip-shell {
+  /*
+   * Native-chat invariant: trip detail screens own the viewport. The document
+   * must never become the scroll container, or iOS will rubber-band the entire
+   * webview and drag the composer with it before/while the keyboard opens.
+   */
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: var(--visual-viewport-height, 100dvh);
+  max-height: var(--visual-viewport-height, 100dvh);
+  overscroll-behavior: none;
+}
+
 .keyboard-visible {
   /* Legacy fallback — mobile shells use --visual-viewport-height directly. */
   height: calc(100vh - var(--keyboard-height, 0px));

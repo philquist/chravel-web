@@ -443,3 +443,14 @@ Known security anti-patterns discovered during audits. Reference this before int
 **Required Tests:** `src/lib/__tests__/bootstrapShell.test.ts` — installed + anonymous `/` must not use marketing shell.
 **Regression Surfaces:** Any change to `main.tsx` cold-start routing or `VITE_MARKETING_SPLIT`.
 **Fixed in:** `src/lib/bootstrapShell.ts`, `src/main.tsx`, `src/MarketingApp.tsx` (June 2026)
+
+## iOS chat composer moves with entire webview
+- **Status:** confirmed
+- **Subsystem:** mobile trip chat / concierge layout
+- **Bug class:** iOS visual viewport + document scroll ownership
+- **Symptom:** Message list scroll or keyboard focus drags the whole chat screen/composer instead of keeping the composer pinned like iMessage/WhatsApp.
+- **Likely root cause:** The chat pane may size to the visual viewport, but if `.mobile-trip-shell` remains in normal document flow, WebKit can still make the page/body the scroll container during rubber-band or keyboard reveal.
+- **Smallest safe fix:** Make the mobile trip shell own the viewport (`position: fixed; inset: 0; height: var(--visual-viewport-height, 100dvh); overflow-hidden`) and keep chat/concierge as internal-scroll tabs only.
+- **Required tests:** Verify `useKeyboardHandler` updates viewport vars on both `visualViewport.resize` and `visualViewport.scroll`; verify mobile tab content continues to size from `--visual-viewport-height`.
+- **Regression risks:** Applying fixed-shell behavior too broadly can break non-trip pages; scope the class to mobile trip detail shells only.
+- **Fixed in:** `src/index.css`, `src/hooks/useKeyboardHandler.ts` (June 2026 follow-up after PR #721)

@@ -69,3 +69,8 @@
 - Added a visible Delete Account action directly to the signed-in Profile → Account row, routing to the existing actionable General Settings deletion flow; preserved the existing Native Settings deletion row and account-deletion RPC/backend path.
 - Switched installed-app OAuth browser presentation from iPad popover to fullscreen for Apple/Google external auth sessions to reduce iPad no-op/popover presentation risk.
 - Verified targeted tests, typecheck, lint:check (baseline warnings), build; merge preflight still cannot fetch origin/main in this environment.
+
+2026-06-18 — Mobile chat shell document-scroll lock
+- Diagnosed the continued iOS chat composer drift as a second root cause after the visual-viewport sizing fix: the mobile trip shell still lived in normal document flow, so iOS could rubber-band/scroll the entire webview and move the composer instead of limiting scroll to the message list.
+- Pinned `.mobile-trip-shell` to the viewport with visual-viewport height and no shell overscroll, preserving the existing internal chat/concierge scroll ownership and keeping the composer as a bottom flex sibling.
+- Added visualViewport `scroll` listener coverage so CSS viewport vars stay synchronized during iOS keyboard settle animations; targeted keyboard/MobileTripTabs tests, typecheck, lint:check, and build pass. Merge preflight remains blocked by origin/main fetch in this environment.
