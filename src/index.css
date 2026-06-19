@@ -952,7 +952,15 @@
    * webview and drag the composer with it before/while the keyboard opens.
    */
   position: fixed;
-  inset: 0;
+  /*
+   * Track visualViewport.offsetTop (set by useKeyboardHandler) so the fixed shell
+   * follows the visible region when iOS scrolls the visual viewport to reveal a
+   * focused input. This keeps the bottom-pinned composer sitting directly on the
+   * keyboard instead of floating up with a dead gap below it.
+   */
+  top: var(--visual-viewport-offset-top, 0px);
+  left: 0;
+  right: 0;
   width: 100%;
   height: var(--visual-viewport-height, 100dvh);
   max-height: var(--visual-viewport-height, 100dvh);

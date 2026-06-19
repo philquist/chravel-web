@@ -454,3 +454,13 @@ Known security anti-patterns discovered during audits. Reference this before int
 - **Required tests:** Verify `useKeyboardHandler` updates viewport vars on both `visualViewport.resize` and `visualViewport.scroll`; verify mobile tab content continues to size from `--visual-viewport-height`.
 - **Regression risks:** Applying fixed-shell behavior too broadly can break non-trip pages; scope the class to mobile trip detail shells only.
 - **Fixed in:** `src/index.css`, `src/hooks/useKeyboardHandler.ts` (June 2026 follow-up after PR #721)
+
+## iOS chat composer floats above keyboard with a dead gap
+- **Status:** confirmed
+- **Subsystem:** mobile trip chat / concierge layout
+- **Bug class:** iOS visual viewport offsetTop not compensated
+- **Symptom:** Tapping the chat input opens the keyboard, but the text field floats up toward the top with empty space between the field and the keyboard (instead of sitting directly on the keyboard like iMessage/WhatsApp).
+- **Root cause:** `.mobile-trip-shell` is `position: fixed` and sizes to `--visual-viewport-height`, but iOS scrolls the *visual* viewport (`visualViewport.offsetTop > 0`) to reveal the focused input while the *layout* viewport — and the fixed shell — stays pinned at y=0. The bottom-pinned composer ends up `offsetTop` px above the keyboard.
+- **Smallest safe fix:** Track `visualViewport.offsetTop` into `--visual-viewport-offset-top` (in `useKeyboardHandler`, alongside `--visual-viewport-height`) and apply it as the shell's `top` so the fixed shell follows the visible region. Clear the var on keyboard hide.
+- **Required tests:** Verify `useKeyboardHandler` sets `--visual-viewport-offset-top` from `visualViewport.offsetTop` on resize/scroll and clears it on hide (`src/hooks/__tests__/useKeyboardHandler.test.tsx`).
+- **Fixed in:** `src/index.css`, `src/hooks/useKeyboardHandler.ts` (June 2026 follow-up after PR #722)
