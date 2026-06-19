@@ -147,6 +147,9 @@ export const ConsumerAIConciergeSection = () => {
         initialPreferences={preferences || undefined}
       />
 
+      {/* Voice Picker */}
+      <ConciergeVoicePicker />
+
       {/* Active Filters Summary */}
       {preferences && (
         <div className="bg-white/5 border border-white/10 rounded-xl p-4">
