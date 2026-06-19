@@ -241,15 +241,53 @@ export function useConciergeReadAloud(
         const resolvedVoiceId = voiceIdProp || preferredVoice || DEFAULT_CONCIERGE_VOICE;
         const sentences = splitIntoSentences(speechText);
 
+        // Attempt SSE PCM streaming for the FIRST sentence so playback can
+        // begin while the audio is still being generated. On any failure we
+        // fall back to the original blob-based first-sentence fetch.
+        let firstStreamed = false;
+        try {
+          const stream = streamPcmSpeech({
+            url: TTS_URL,
+            accessToken,
+            apikey: SUPABASE_PUBLIC_ANON_KEY,
+            signal: abortController.signal,
+            body: {
+              text: sentences[0],
+              voice: resolvedVoiceId,
+              tripId,
+              messageId,
+            },
+            onPlaybackStart: () => setPlaybackState('playing'),
+            onMeta: ({ usedFallbackVoice: fb }) => {
+              if (fb) setUsedFallbackVoice(true);
+            },
+          });
+          // Track the streaming stop so the hook's stop() interrupts it.
+          const prevAudio = audioRef.current;
+          audioRef.current = {
+            pause: stream.stop,
+            removeAttribute: () => {},
+            load: () => {},
+          } as unknown as HTMLAudioElement;
+          await stream.done;
+          audioRef.current = prevAudio;
+          firstStreamed = true;
+        } catch (streamErr) {
+          if (abortController.signal.aborted) return;
+          console.warn('[concierge-tts] streaming first chunk failed; falling back', streamErr);
+        }
+
         // Fire first AND second sentence fetches in parallel for overlap
-        const firstPromise = fetchSentenceAudio(
-          sentences[0],
-          resolvedVoiceId,
-          accessToken,
-          abortController.signal,
-          tripId,
-          messageId,
-        );
+        const firstPromise = firstStreamed
+          ? null
+          : fetchSentenceAudio(
+              sentences[0],
+              resolvedVoiceId,
+              accessToken,
+              abortController.signal,
+              tripId,
+              messageId,
+            );
 
         // Start pre-fetching sentence 2 immediately (overlaps with sentence 1 fetch)
         const secondPromise =
@@ -263,6 +301,7 @@ export function useConciergeReadAloud(
                 messageId,
               ).catch(() => null)
             : null;
+
 
         // Pre-fetch remaining sentences (3+) in parallel
         const remainingPromises: Promise<{ blobUrl: string; usedFallback: boolean } | null>[] = [];
