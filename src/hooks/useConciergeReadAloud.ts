@@ -336,7 +336,7 @@ export function useConciergeReadAloud(
         cleanup();
       }
     },
-    [voiceIdProp, tripId, stop, cleanup],
+    [voiceIdProp, preferredVoice, tripId, stop, cleanup],
   );
 
   useEffect(() => {
