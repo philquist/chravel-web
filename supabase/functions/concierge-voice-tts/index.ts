@@ -51,7 +51,7 @@ serve(async (req: Request) => {
   const auth = await requireAuth(req, cors);
   if (auth.error) return auth.response;
 
-  let body: { text?: unknown; voice?: unknown; format?: unknown };
+  let body: { text?: unknown; voice?: unknown; format?: unknown; stream?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -79,8 +79,19 @@ serve(async (req: Request) => {
   const resolvedVoice = VOICE_SET.has(requestedVoice) ? requestedVoice : DEFAULT_VOICE;
   const usedFallback = requestedVoice !== '' && resolvedVoice !== requestedVoice;
 
+  const wantsStream = body.stream === true;
   const requestedFormat = typeof body.format === 'string' ? body.format.toLowerCase() : 'mp3';
-  const format = FORMAT_MIME[requestedFormat] ? requestedFormat : 'mp3';
+  // For SSE streaming we use PCM (raw 24kHz 16-bit signed LE mono) so the
+  // client can decode and schedule chunks as they arrive via WebAudio.
+  const format = wantsStream ? 'pcm' : FORMAT_MIME[requestedFormat] ? requestedFormat : 'mp3';
+
+  const gatewayPayload: Record<string, unknown> = {
+    model: TTS_MODEL,
+    input: text,
+    voice: resolvedVoice,
+    response_format: format,
+  };
+  if (wantsStream) gatewayPayload.stream_format = 'sse';
 
   let res: Response;
   try {
@@ -90,14 +101,13 @@ serve(async (req: Request) => {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: TTS_MODEL,
-        input: text,
-        voice: resolvedVoice,
-        response_format: format,
-      }),
+      body: JSON.stringify(gatewayPayload),
+      signal: req.signal,
     });
   } catch (err) {
+    if (req.signal.aborted) {
+      return new Response(null, { status: 499, headers: cors });
+    }
     console.error('[concierge-voice-tts] Gateway fetch failed:', err);
     return new Response(JSON.stringify({ error: 'Voice service unreachable' }), {
       status: 502,
@@ -133,15 +143,32 @@ serve(async (req: Request) => {
     });
   }
 
+  if (wantsStream) {
+    // Pass the SSE body through untouched so the client can decode PCM deltas
+    // and start playback before generation finishes.
+    return new Response(res.body, {
+      status: 200,
+      headers: {
+        ...cors,
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-store',
+        'x-voice': resolvedVoice,
+        'x-voice-fallback': usedFallback ? 'true' : 'false',
+        'x-tts-stream': 'sse-pcm-24000',
+      },
+    });
+  }
+
   const audioBuffer = await res.arrayBuffer();
   return new Response(audioBuffer, {
     status: 200,
     headers: {
       ...cors,
-      'Content-Type': FORMAT_MIME[format],
+      'Content-Type': FORMAT_MIME[format] || 'audio/mpeg',
       'x-voice': resolvedVoice,
       'x-voice-fallback': usedFallback ? 'true' : 'false',
       'Cache-Control': 'no-store',
     },
   });
 });
+
