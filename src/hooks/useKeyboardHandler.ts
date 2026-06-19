@@ -23,6 +23,7 @@ export const useKeyboardHandler = (options: KeyboardHandlerOptions = {}) => {
     const clearViewportVars = () => {
       document.documentElement.style.removeProperty('--keyboard-height');
       document.documentElement.style.removeProperty('--visual-viewport-height');
+      document.documentElement.style.removeProperty('--visual-viewport-offset-top');
     };
 
     const handleViewportChange = () => {
@@ -38,6 +39,16 @@ export const useKeyboardHandler = (options: KeyboardHandlerOptions = {}) => {
         document.documentElement.style.setProperty(
           '--visual-viewport-height',
           `${currentHeight}px`,
+        );
+        // iOS scrolls the *visual* viewport (offsetTop > 0) to reveal a focused
+        // input, but the *layout* viewport — and our position:fixed shell — stays
+        // pinned at y=0. Without compensating, the bottom-pinned composer floats
+        // up by offsetTop, leaving a dead gap between the field and the keyboard.
+        // Tracking offsetTop lets the shell follow the visible region so the
+        // composer sits directly on the keyboard (iMessage/WhatsApp behavior).
+        document.documentElement.style.setProperty(
+          '--visual-viewport-offset-top',
+          `${window.visualViewport.offsetTop || 0}px`,
         );
       }
 

@@ -71,6 +71,10 @@ describe('useKeyboardHandler', () => {
     expect(document.documentElement.style.getPropertyValue('--visual-viewport-height')).toBe(
       '500px',
     );
+    // No visual-viewport scroll yet → shell stays at layout-viewport top.
+    expect(document.documentElement.style.getPropertyValue('--visual-viewport-offset-top')).toBe(
+      '0px',
+    );
   });
 
   it('keeps viewport CSS vars synchronized on visual viewport scroll as the iOS keyboard settles', () => {
@@ -94,6 +98,34 @@ describe('useKeyboardHandler', () => {
       '480px',
     );
     expect(document.documentElement.style.getPropertyValue('--keyboard-height')).toBe('320px');
+    // iOS scrolled the visual viewport down by 20px to reveal the focused input;
+    // the fixed shell must follow so the composer stays pinned to the keyboard
+    // instead of floating up and leaving a dead gap below it.
+    expect(document.documentElement.style.getPropertyValue('--visual-viewport-offset-top')).toBe(
+      '20px',
+    );
+  });
+
+  it('clears viewport offset and height vars when the keyboard closes', () => {
+    renderHook(() => useKeyboardHandler({ adjustViewport: true }));
+
+    act(() => {
+      fireViewportResize(500, 20);
+    });
+
+    expect(document.documentElement.style.getPropertyValue('--visual-viewport-offset-top')).toBe(
+      '20px',
+    );
+
+    act(() => {
+      fireViewportResize(800, 0);
+    });
+
+    expect(document.body.classList.contains('keyboard-visible')).toBe(false);
+    expect(document.documentElement.style.getPropertyValue('--visual-viewport-height')).toBe('');
+    expect(document.documentElement.style.getPropertyValue('--visual-viewport-offset-top')).toBe(
+      '',
+    );
   });
 
   it('does not scroll fixed bottom chat composers into view on focus', () => {
