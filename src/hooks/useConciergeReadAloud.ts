@@ -143,6 +143,7 @@ export function useConciergeReadAloud(
   options: UseConciergeReadAloudOptions = {},
 ): UseConciergeReadAloudReturn {
   const { voiceId: voiceIdProp, tripId } = options;
+  const { voice: preferredVoice } = useConciergeVoicePreference();
 
   const [playbackState, setPlaybackState] = useState<TTSPlaybackState>('idle');
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
