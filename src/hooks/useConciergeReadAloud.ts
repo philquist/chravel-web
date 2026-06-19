@@ -318,14 +318,33 @@ export function useConciergeReadAloud(
           );
         }
 
-        // Wait for first sentence
-        const first = await firstPromise;
-        if (abortController.signal.aborted) return;
+        // Wait for first sentence (skipped when SSE streaming already played it)
+        if (firstPromise) {
+          const first = await firstPromise;
+          if (abortController.signal.aborted) return;
 
-        blobUrlsRef.current.push(first.blobUrl);
-        if (first.usedFallback) setUsedFallbackVoice(true);
+          blobUrlsRef.current.push(first.blobUrl);
+          if (first.usedFallback) setUsedFallbackVoice(true);
 
-        // Play a sentence and wait for it to finish
+          // Play a sentence and wait for it to finish
+          const playAudio = async (blobUrl: string, index: number) => {
+            if (abortController.signal.aborted) return;
+            const audio = new Audio(blobUrl);
+            audioRef.current = audio;
+            return new Promise<void>((resolve, reject) => {
+              audio.onended = () => resolve();
+              audio.onerror = () => reject(new Error('Audio playback failed'));
+              if (index === 0) setPlaybackState('playing');
+              audio.play().catch(reject);
+            });
+          };
+
+          // Play first sentence immediately
+          await playAudio(first.blobUrl, 0);
+          if (abortController.signal.aborted) return;
+        }
+
+        // Helper for non-first sentences.
         const playAudio = async (blobUrl: string, index: number) => {
           if (abortController.signal.aborted) return;
           const audio = new Audio(blobUrl);
@@ -338,9 +357,6 @@ export function useConciergeReadAloud(
           });
         };
 
-        // Play first sentence immediately
-        await playAudio(first.blobUrl, 0);
-        if (abortController.signal.aborted) return;
 
         // Play second sentence (already fetching in parallel)
         if (secondPromise) {
