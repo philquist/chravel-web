@@ -1,113 +1,56 @@
-# Concierge MVP Voice — Record → STT → Existing Text Pipeline → TTS
+# Concierge TTS: Lovable Voices + Fix Speaker Button + Settings Picker
 
-## Goal
-Replace the brittle Web Speech API dictation in the AI Concierge with a reliable, cross-platform MVP:
-**MediaRecorder → secure backend STT (Lovable AI Gateway) → existing typed concierge send path → existing response render → existing TTS (`useConciergeReadAloud` / `concierge-tts`) for optional playback.**
+## Why nothing happened when you tapped the speaker
 
-No duplex live voice. No new providers. No browser-exposed keys. Typed concierge path is untouched.
+The current speaker button calls `supabase/functions/gemini-tts` (Google Gemini's 8-voice TTS — `Charon`, `Puck`, etc.), not the OpenAI/Lovable voice set. Edge-function logs for both `gemini-tts` and `concierge-tts` show **no recent invocations**, meaning the request is either failing before it leaves the client or 500-ing silently because `GEMINI_TTS_API_KEY` isn't set in this environment. Either way: the "Google voices" path is not the right thing to ship — Lovable AI Gateway already provides 10 OpenAI voices (`alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`, `cedar`) with `LOVABLE_API_KEY` (already provisioned, same key used by `concierge-stt`). One pipeline, no extra secrets, paid voices for everyone on a paid plan.
 
-## Current state (verified)
-- Shipped voice = `useConciergeVoice` → `useWebSpeechVoice` (browser Web Speech API only). Works on Chrome/Android, flaky on iOS Safari, broken in iOS PWA.
-- `VoiceButton` toggles dictation; transcript is appended to the input field, user reviews + taps Send. So the voice path already funnels through the existing typed send handler (good — we keep that contract).
-- Duplex voice is already disabled behind `DUPLEX_VOICE_ENABLED = false` in `AIConciergeChat.tsx`. Leave it dormant; no changes.
-- TTS: `useConciergeReadAloud` + `supabase/functions/concierge-tts` already work. Keep as-is.
-- Edge functions present: `lovable-concierge` (text pipeline), `concierge-tts`, `gemini-tts`, `google-tts`. No `concierge-stt` yet.
-- Lovable AI Gateway supports STT (`openai/gpt-4o-mini-transcribe`) via `LOVABLE_API_KEY` — secret already provisioned.
+## Recommended default voice
 
-## Architecture (smallest durable change)
+**coral** — warm, conversational, female-presenting; best fit for the "premium travel concierge" tone. Good runner-ups: `sage` (calm/neutral), `alloy` (balanced/androgynous). Going with **coral as the default**.
 
-```text
-[mic tap]
-  -> useConciergeVoiceInput (new hook)
-     - getUserMedia + MediaRecorder (webm/mp4 fallback per browser)
-     - recording state machine: idle | recording | transcribing | error
-     - AbortController, cleanup on unmount/route change
-     - blob size/duration guards (reject <1KB, cap ~25MB)
-  -> POST multipart/form-data to supabase/functions/concierge-stt
-     - requireAuth (existing _shared/requireAuth)
-     - forwards to https://ai.gateway.lovable.dev/v1/audio/transcriptions
-       model: openai/gpt-4o-mini-transcribe, stream=false for MVP
-     - returns { transcript }
-  -> transcript piped into existing input setter, then existing send handler
-     (same code path as typed message — no fork in lovable-concierge logic)
-  -> existing assistant response renders in chat
-  -> existing TTS speaker button (useConciergeReadAloud) plays response
-```
+## Scope
 
-Web Speech dictation is removed from the production path. `useWebSpeechVoice` file stays (referenced by tests) but is no longer wired into the concierge; we can delete in a follow-up once tests are migrated.
+1. **New edge function** `supabase/functions/concierge-voice-tts/index.ts`
+   - Auth-gated (`requireAuth`), CORS via `_shared/cors.ts`.
+   - Body: `{ text: string, voice?: string, format?: 'mp3' }` (default `voice = 'coral'`, `format = 'mp3'`).
+   - Validates `voice` against the 10-voice allowlist; falls back to `coral` on unknown.
+   - Caps `text` at 4000 chars; rejects empty.
+   - Calls `POST https://ai.gateway.lovable.dev/v1/audio/speech` with `model: 'openai/gpt-4o-mini-tts'`, `response_format: 'mp3'`, **non-streaming** (single buffered MP3 — matches existing `<Audio>`/`blob` playback in `useConciergeReadAloud`).
+   - Surfaces 402/429/403 from Gateway as JSON errors (`{ error, code }`); returns MP3 bytes with `Content-Type: audio/mpeg` on success.
+   - Adds `x-voice` response header with the resolved voice for debugging.
 
-## Files to change
+2. **Edit `src/hooks/useConciergeReadAloud.ts`**
+   - Repoint `TTS_URL` to the new `concierge-voice-tts` function. Drop `VITE_CONCIERGE_TTS_ENABLED` branching and the legacy `concierge-tts`/`gemini-tts` payload shapes.
+   - Read the user's chosen voice from a new `useConciergeVoicePreference` hook (below); fall back to `'coral'`.
+   - Keep the sentence-chunking + parallel pre-fetch logic exactly as-is (preserves fast time-to-voice).
+   - Keep `usedFallbackVoice` plumbing but drive it off the `x-voice` header diff (selected vs returned).
 
-**New**
-- `supabase/functions/concierge-stt/index.ts` — auth-gated multipart proxy to Lovable AI Gateway transcriptions. CORS via `_shared/cors.ts`. 25MB cap. Returns `{ transcript }`.
-- `src/features/concierge/hooks/useConciergeVoiceInput.ts` — MediaRecorder state machine + STT call via `supabase.functions.invoke('concierge-stt', { body: formData })`.
+3. **New hook `src/features/concierge/hooks/useConciergeVoicePreference.ts`**
+   - Reads/writes `concierge_voice` from `localStorage` (per-device, no DB migration needed for MVP).
+   - Exposes `{ voice, setVoice, isPaid }` — `isPaid` from existing subscription/entitlement selector (reuse whichever hook the rest of settings uses; will confirm during build).
+   - Free users: forced to `coral`; `setVoice` is a no-op and the picker is disabled.
 
-**Edited**
-- `src/features/concierge/hooks/useConciergeVoice.ts` — swap `useWebSpeechVoice` for `useConciergeVoiceInput`; preserve `{ convoVoiceState, handleConvoToggle }` shape so `AIConciergeChat` is unchanged.
-- `src/features/chat/components/VoiceButton.tsx` — extend `VoiceState` mapping for `recording | transcribing | error`; reuse existing pulse/connecting visuals. No new props.
-- `src/config/voiceFeatureFlags.ts` — add single `VITE_CONCIERGE_VOICE_ENABLED` (default true). Keep `VITE_VOICE_LIVE_ENABLED` separate for dormant duplex.
-- `src/features/concierge/hooks/__tests__/useConciergeVoice.test.ts` — update mock from `useWebSpeechVoice` to `useConciergeVoiceInput`.
+4. **New component `src/features/concierge/components/ConciergeVoicePicker.tsx`**
+   - 10-option radio list with short descriptors (e.g. "Coral — warm, conversational"), preview button per voice that POSTs a short sample ("Hi, I'm your Chravel concierge.") through `concierge-voice-tts` and plays it.
+   - Disabled state for free users with an upsell line ("Upgrade to choose a voice.").
+   - Saves on selection; toasts "Voice updated."
 
-**Untouched (explicitly)**
-- `lovable-concierge` edge function, prompts, tools, RAG, usage counters.
-- `useConciergeReadAloud` + `concierge-tts` (TTS stays).
-- `AIConciergeChat.tsx` business logic (only the hook contract is reused).
-- Duplex stack (`useGeminiLive`, `gemini-voice-session`, `circuitBreaker`, `audioCapture/Playback`, `VoiceLiveOverlay`) — left dormant, no deletes in this PR.
+5. **Wire picker into existing Concierge settings**
+   - Add a "Voice" section to whichever concierge settings surface already exists (will locate during build — likely under `src/features/concierge/` or `src/pages/Settings*`); no new route.
 
-## State machine (hook)
+## Out of scope (deferred, captured here)
 
-`idle` → tap → request mic → `recording` → stop → `transcribing` → success: emit transcript + back to `idle` | error: `error` (auto-reset 3s)
-Cancel/unmount at any state stops tracks, aborts fetch, releases AudioContext refs.
-
-## Edge function contract
-
-```
-POST /functions/v1/concierge-stt
-Authorization: Bearer <user JWT>   (verified via requireAuth)
-Content-Type: multipart/form-data
-fields: audio (Blob, <=25MB), mimeType (string)
-
-200 { transcript: string }
-400 invalid audio / empty
-401 unauthorized
-413 too large
-429 rate limited (passthrough)
-402 credits exhausted (passthrough message)
-500 upstream failure
-```
-
-Server forwards to Lovable AI Gateway with `model=openai/gpt-4o-mini-transcribe`, names the file with the correct extension derived from the incoming MIME type (per `ai-speech-to-text` knowledge — webm/mp4/wav).
-
-## Edge cases handled
-- mic denied / no device / unsupported MediaRecorder → button shows disabled-with-tooltip, typed input stays fully functional.
-- iOS Safari `audio/mp4` fallback; Chrome `audio/webm`. Detect via `MediaRecorder.isTypeSupported`.
-- empty/silent blob (<1KB) → never uploaded, user sees "didn't catch that".
-- double-tap → guarded by state machine.
-- route unmount mid-recording → tracks stopped, fetch aborted.
-- 402/429 from Gateway → surface toast, no retry loop.
-- Capacitor: requires `NSMicrophoneUsageDescription` (iOS) and `RECORD_AUDIO` (Android). Audit in a follow-up if those strings aren't already present; not changed in this PR unless missing.
-
-## Out of scope / deferred
-- Streaming STT (`stream=true` SSE) — keep non-streaming for MVP simplicity; trivial to flip later.
-- Removing `useWebSpeechVoice.ts` and its tests — defer until after MVP burn-in.
-- Reviving / deleting `VoiceLiveOverlay` and duplex code — separate PR.
-- Migrating TTS off `concierge-tts` onto Lovable Gateway TTS — already works, no benefit yet.
+- Server-side persistence of voice pref (DB column on `profiles`) — `localStorage` is fine for MVP; will add a migration once we need cross-device sync.
+- Streaming/SSE TTS (lower TTFB) — current chunked-sentence + parallel fetch already delivers good TTFB; SSE PCM is a future perf pass.
+- Removing/retiring `gemini-tts` and `concierge-tts` edge functions — leave them deployed but unused for one release in case of rollback; delete next cycle.
 
 ## Validation
-1. `npm run lint:check && npm run typecheck && npm run build`
-2. Vitest: updated `useConciergeVoice.test.ts` + new tests for `useConciergeVoiceInput` state machine (mock MediaRecorder + `supabase.functions.invoke`).
-3. Manual QA in a real trip on desktop Chrome (happy path), desktop Safari (mp4 fallback), mobile Safari (permission prompt + send), Android Chrome.
-4. Verify no `lovable-concierge` changes in git diff.
-5. Verify network panel: no `LOVABLE_API_KEY` or service-role secret in any client request.
-6. Edge function logs: STT calls succeed and 401 for unauthenticated callers.
+
+- `npm run lint:check && npm run typecheck && npm run build`
+- Manual: tap speaker on a concierge message → audio plays in coral voice. Open Concierge settings on a paid account → switch to `sage` → tap speaker again → voice changes. Free account → picker disabled, locked to coral.
+- Edge function logs show `concierge-voice-tts` invocations with 200s.
+- No `LOVABLE_API_KEY` in client bundle (grep build output).
 
 ## Rollback
-Set `VITE_CONCIERGE_VOICE_ENABLED=false` — `VoiceButton` hides; typed concierge unaffected. Revert the two new files + 4 edits if needed; no DB migrations.
 
-## Definition of done
-- Voice flow in AI Concierge works on desktop Chrome and at least one mobile browser through the existing typed send handler.
-- Backend STT is auth-gated and key-free on the client.
-- TTS playback unchanged.
-- Typed concierge regression-free.
-- One flag toggles the feature.
-- Tests/lint/typecheck/build green.
+Revert the `TTS_URL` change in `useConciergeReadAloud.ts` (one line) and the new function/component are dormant. No DB changes.

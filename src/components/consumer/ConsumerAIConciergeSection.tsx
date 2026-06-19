@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { userPreferencesService } from '../../services/userPreferencesService';
 import { toast } from 'sonner';
 import { useDemoMode } from '../../hooks/useDemoMode';
+import { ConciergeVoicePicker } from '@/features/concierge/components/ConciergeVoicePicker';
 
 export const ConsumerAIConciergeSection = () => {
   useConsumerSubscription();
@@ -145,6 +146,9 @@ export const ConsumerAIConciergeSection = () => {
         onPreferencesChange={handlePreferencesChange}
         initialPreferences={preferences || undefined}
       />
+
+      {/* Voice Picker */}
+      <ConciergeVoicePicker />
 
       {/* Active Filters Summary */}
       {preferences && (
