@@ -99,19 +99,13 @@ async function fetchSentenceAudio(
   tripId?: string,
   messageId?: string,
 ): Promise<{ blobUrl: string; usedFallback: boolean }> {
-  const body = USE_GEMINI_TTS
-    ? {
-        text: sentence,
-        voiceName: voiceId,
-        style: CONCIERGE_VOICE_STYLE,
-        tripId,
-        messageId,
-      }
-    : {
-        speech_text: sentence,
-        voice_id: voiceId,
-        output_format: 'mp3',
-      };
+  const body = {
+    text: sentence,
+    voice: voiceId,
+    format: 'mp3',
+    tripId,
+    messageId,
+  };
 
   const response = await fetch(TTS_URL, {
     method: 'POST',
