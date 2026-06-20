@@ -97,10 +97,13 @@ export const ConciergeVoicePicker: React.FC = () => {
           </span>
         )}
       </div>
-      <p className="text-gray-400 text-sm mb-4">
+      <p className="text-gray-400 text-sm mb-1">
         {isPaid
           ? 'Choose how the concierge sounds when you tap the speaker on a response.'
           : `Free plan uses ${CONCIERGE_VOICES[0].label} by default. Upgrade to choose any of 10 voices.`}
+      </p>
+      <p className="text-gray-500 text-xs mb-4 italic">
+        Tap ▶ to preview a voice — previewing never changes your saved selection. Tap the row to save.
       </p>
 
       <div className="space-y-2">
