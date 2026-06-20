@@ -9,8 +9,8 @@
 
 # Supabase anon key (public-facing client credential — same value as VITE_SUPABASE_ANON_KEY)
 # Matches both the built-in `jwt` rule and our custom `supabase-anon-key-hardcoded` rule.
-docs/ENV_AND_APIS_REQUIRED.md:jwt:92
-docs/ENV_AND_APIS_REQUIRED.md:supabase-anon-key-hardcoded:92
+docs/ENV_AND_APIS_REQUIRED.md:jwt:93
+docs/ENV_AND_APIS_REQUIRED.md:supabase-anon-key-hardcoded:93
 docs/RAG_CRON_SETUP.md:jwt:31
 docs/RAG_CRON_SETUP.md:supabase-anon-key-hardcoded:31
 docs/_archive/root/LOVABLE_DEPLOYMENT_ANALYSIS.md:jwt:27
@@ -50,9 +50,6 @@ scripts/__tests__/validate-env.test.ts:generic-api-key:511
 # used to strip the armor before passing to crypto.subtle.importKey().
 supabase/functions/_shared/vertexAuth.ts:private-key:47
 supabase/functions/send-push/index.ts:private-key:134
-# appleClientSecret.test.ts: generates an ephemeral P-256 keypair at runtime and builds
-# a PEM string from it (the match is the `-----BEGIN PRIVATE KEY-----` armor literal).
-supabase/functions/_shared/__tests__/appleClientSecret.test.ts:private-key:47
 
 # gcp-api-key in test fixture (fake key used to test error sanitization)
 supabase/functions/_shared/__tests__/errorSanitization.test.ts:gcp-api-key:72
