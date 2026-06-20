@@ -67,9 +67,18 @@ export function useConciergeVoicePreference() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  // Reconcile with server on mount / auth change (cross-device sync).
+  // Reconcile with server on mount / auth change + live Realtime updates
+  // from other devices so a tap on Device A propagates to Device B instantly.
   useEffect(() => {
     let cancelled = false;
+    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+
+    const applyRemote = (remote: unknown) => {
+      if (typeof remote !== 'string' || !VALID_IDS.has(remote)) return;
+      if (remote === readStoredVoice()) return;
+      writeStoredVoice(remote as ConciergeVoiceId);
+      setVoiceState(remote as ConciergeVoiceId);
+    };
 
     const reconcile = async () => {
       try {
@@ -85,11 +94,9 @@ export function useConciergeVoicePreference() {
           .maybeSingle();
         if (cancelled || error) return;
         const remote = data?.concierge_voice as string | null | undefined;
-        if (remote && VALID_IDS.has(remote) && remote !== readStoredVoice()) {
-          writeStoredVoice(remote as ConciergeVoiceId);
-          setVoiceState(remote as ConciergeVoiceId);
-        } else if (!remote) {
-          // No server value yet — seed it from local cache if non-default.
+        if (remote) {
+          applyRemote(remote);
+        } else {
           const local = readStoredVoice();
           if (local !== DEFAULT_CONCIERGE_VOICE) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,6 +105,26 @@ export function useConciergeVoicePreference() {
               .eq('id', user.id);
           }
         }
+
+        // Subscribe to live profile updates for this user (other devices).
+        if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+        realtimeChannel = supabase
+          .channel(`concierge-voice:${user.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'profiles',
+              filter: `id=eq.${user.id}`,
+            },
+            (payload) => {
+              const next = (payload.new as { concierge_voice?: string } | null)
+                ?.concierge_voice;
+              applyRemote(next);
+            },
+          )
+          .subscribe();
       } catch {
         /* network failure — keep local */
       }
@@ -112,6 +139,7 @@ export function useConciergeVoicePreference() {
     return () => {
       cancelled = true;
       subscription.unsubscribe();
+      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
     };
   }, []);
 
