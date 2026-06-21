@@ -65,4 +65,19 @@ describe('deleteAccountImmediately', () => {
       message: 'Your account and data have been permanently deleted.',
     });
   });
+
+  it('returns a network error when fetch throws', async () => {
+    mockGetSession.mockResolvedValue({
+      data: { session: { access_token: 'jwt-token' } },
+      error: null,
+    });
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+
+    const result = await deleteAccountImmediately();
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Network error. Please check your connection and retry.',
+    });
+  });
 });

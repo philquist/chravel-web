@@ -150,4 +150,16 @@ describe('ConsumerGeneralSettings account deletion', () => {
     });
     expect(mockDeleteAccountImmediately).toHaveBeenCalledTimes(1);
   });
+
+  it('clears the DELETE confirmation when the dialog is dismissed', async () => {
+    const user = userEvent.setup();
+    render(<ConsumerGeneralSettings />);
+
+    await user.click(screen.getByRole('button', { name: /delete account/i }));
+    await user.type(screen.getByPlaceholderText(/type delete to confirm/i), 'DELETE');
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+
+    await user.click(screen.getByRole('button', { name: /delete account/i }));
+    expect(screen.getByRole('button', { name: /delete account permanently/i })).toBeDisabled();
+  });
 });

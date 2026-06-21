@@ -102,7 +102,7 @@ export const ConsumerGeneralSettings = () => {
         description: result.message,
       });
 
-      await supabase.auth.signOut();
+      await supabase.auth.signOut().catch(() => undefined);
       navigate('/', { replace: true });
     } catch {
       toast({
@@ -308,6 +308,7 @@ export const ConsumerGeneralSettings = () => {
         onOpenChange={open => {
           setShowDeleteDialog(open);
           if (!open) {
+            setConfirmText('');
             setReAuthPassword('');
             setReAuthError('');
           }
