@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { logAuthEvent } from '@/utils/authTelemetry';
+import { userHasEmailPasswordIdentity } from '@/utils/authProviders';
 import { useTheme } from '@/hooks/useTheme';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -47,7 +48,7 @@ function saveAppPreferences(prefs: AppPreferences): void {
 }
 
 export const ConsumerGeneralSettings = () => {
-  const { user, signOut } = useAuth();
+  const { user, session } = useAuth();
   const { showDemoContent } = useDemoMode();
   const { isDarkMode, toggleTheme } = useTheme();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -59,6 +60,7 @@ export const ConsumerGeneralSettings = () => {
   const [isCancelling, setIsCancelling] = useState(false);
   const [appPrefs, setAppPrefs] = useState<AppPreferences>(loadAppPreferences);
   const [cacheClearSuccess, setCacheClearSuccess] = useState(false);
+  const requiresPasswordReauth = useMemo(() => userHasEmailPasswordIdentity(session), [session]);
 
   // Check if account deletion is already scheduled
   useEffect(() => {
@@ -119,12 +121,15 @@ export const ConsumerGeneralSettings = () => {
   }, []);
 
   const handleDeleteAccount = useCallback(async () => {
-    if (confirmText !== 'DELETE' || !reAuthPassword) return;
+    if (confirmText !== 'DELETE') return;
+    if (requiresPasswordReauth && !reAuthPassword) return;
+
     setIsDeleting(true);
     setReAuthError('');
     try {
-      // Re-authenticate before scheduling deletion
-      if (user?.email) {
+      // Email/password users must re-authenticate. OAuth-only users (Google/Apple)
+      // are already verified by their active session.
+      if (requiresPasswordReauth && user?.email) {
         const { error: authErr } = await supabase.auth.signInWithPassword({
           email: user.email,
           password: reAuthPassword,
@@ -163,7 +168,7 @@ export const ConsumerGeneralSettings = () => {
     } finally {
       setIsDeleting(false);
     }
-  }, [confirmText, reAuthPassword, user?.email]);
+  }, [confirmText, reAuthPassword, requiresPasswordReauth, user?.email]);
 
   return (
     <div className="space-y-3">
@@ -410,19 +415,28 @@ export const ConsumerGeneralSettings = () => {
                 className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500/50"
                 disabled={isDeleting}
               />
-              <p className="pt-2">Enter your password to verify your identity:</p>
-              <input
-                type="password"
-                value={reAuthPassword}
-                onChange={e => {
-                  setReAuthPassword(e.target.value);
-                  setReAuthError('');
-                }}
-                placeholder="Enter your password"
-                className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500/50"
-                disabled={isDeleting}
-              />
-              {reAuthError && <p className="text-red-400 text-sm">{reAuthError}</p>}
+              {requiresPasswordReauth ? (
+                <>
+                  <p className="pt-2">Enter your password to verify your identity:</p>
+                  <input
+                    type="password"
+                    value={reAuthPassword}
+                    onChange={e => {
+                      setReAuthPassword(e.target.value);
+                      setReAuthError('');
+                    }}
+                    placeholder="Enter your password"
+                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                    disabled={isDeleting}
+                  />
+                  {reAuthError && <p className="text-red-400 text-sm">{reAuthError}</p>}
+                </>
+              ) : (
+                <p className="pt-2 text-sm text-gray-400">
+                  You signed in with Google or Apple, so no password is required. Confirming below
+                  will schedule deletion using your active session.
+                </p>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -434,7 +448,11 @@ export const ConsumerGeneralSettings = () => {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteAccount}
-              disabled={confirmText !== 'DELETE' || !reAuthPassword || isDeleting}
+              disabled={
+                confirmText !== 'DELETE' ||
+                (requiresPasswordReauth && !reAuthPassword) ||
+                isDeleting
+              }
               className="bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
             >
               {isDeleting ? 'Submitting...' : 'Schedule Account Deletion'}

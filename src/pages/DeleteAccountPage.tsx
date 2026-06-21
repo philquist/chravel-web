@@ -36,8 +36,13 @@ export default function DeleteAccountPage() {
               <li>
                 Tap <strong>"Delete Account"</strong>
               </li>
-              <li>Confirm your identity by re-entering your password</li>
-              <li>Confirm the deletion</li>
+              <li>
+                Confirm the deletion by typing <strong>DELETE</strong>
+              </li>
+              <li>
+                If you signed up with email and password, re-enter your password to verify your
+                identity
+              </li>
             </ol>
           </section>
 

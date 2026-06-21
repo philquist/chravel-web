@@ -63,7 +63,7 @@ export const NativeSettings = ({
     await hapticService.warning();
     // Route to the actionable in-app deletion surface — the General Settings
     // section (ConsumerGeneralSettings → Account Management → Delete Account,
-    // which runs request_account_deletion with password re-auth). We navigate
+    // which runs request_account_deletion with password re-auth for email users only).
     // to the real `?openSettings=settings` deep link rather than delegating an
     // opaque nav key, so the destination is guaranteed and never resolves to
     // the public `/delete-account` *informational* page (Guideline 5.1.1).
@@ -290,7 +290,7 @@ export const NativeSettings = ({
           </NativeListSection>
 
           {/* Account — opens the actionable in-app deletion flow
-              (request_account_deletion RPC + password re-auth, 30-day grace)
+              (request_account_deletion RPC + optional password re-auth for email users, 30-day grace)
               that lives in ConsumerGeneralSettings. Required for App Store
               Guideline 5.1.1 (in-app account deletion). */}
           {user && (
