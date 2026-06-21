@@ -1,54 +1,36 @@
-## Goal
+## Why "Blog" and "Use Cases" appear to do nothing
 
-Replace the 6th use case on the homepage ("Local Community Groups" — run clubs / dog park crews) with a B2B-focused **Travel Concierge Companies** card, and tighten the section subtitle so it no longer leads with "Run Clubs & Dog Park Meetups". The longer narrative you drafted stays reserved for the dedicated `/use-cases/travel-concierge` page (not built here).
+- **Blog** in `StickyLandingNav.tsx` (line 150) is a real `<Link to="/blog">` and the route exists (`App.tsx:608`). It does navigate — but the destination page reuses the same dark landing chrome, and the visual change is subtle (the FAQ section above the footer in your screenshot is the landing page's FAQ, not blog content). My read: it's navigating, but possibly to an empty/near-empty blog index that looks like "nothing happened." I'll confirm by clicking it in the running preview once we're building, and fix the destination if it's broken.
+- **Use Cases** is *not* a link at all — it's only one of the small dots in the section-dot row (`sections` array, line 16). Clicking it just smooth-scrolls to the in-page Use Cases section on the home page. From the `/use-cases` route or from anywhere else it does nothing useful, which matches your report.
 
-## Scope (single file)
+## Desired desktop header layout
 
-`src/components/landing/sections/UseCasesSection.tsx` only. No new page, no new route, no design/layout changes — only content swap inside the existing 6-card grid and the section subtitle.
+```
+[ChravelApp]   Blog  For Teams        • • • • • • • •        Home  Use Cases   [Log In]
+```
+
+- **Left of dots:** Blog, For Teams (persistent `<Link>`s — already correct)
+- **Right of dots:** Home, Use Cases (persistent `<Link>`s — new)
+- Remove the current "active section name" text block on the right (lines 187–189) since "Home" now lives there as a real link.
+- Keep the section dots unchanged in the middle.
 
 ## Changes
 
-**1. Section subtitle (line 99)**
+**`src/components/landing/StickyLandingNav.tsx`**
+1. Replace the active-section-label `<div>` (lines 187–189) with a right-side link group:
+   - `<Link to="/">Home</Link>`
+   - `<Link to="/use-cases">Use Cases</Link>`
+   - Same styling as the existing Blog / For Teams links for visual parity.
+2. Remove `'use-cases'` from the `sections` dots array (it's now a top-level page link, no longer a scroll target dot — avoids duplicate affordance). The in-page Use Cases section keeps its `id="section-use-cases"` so deep links still work; we just stop showing a dot for it.
+3. No changes to scroll/IntersectionObserver logic.
 
-Before:
-> Friend Trips, Family Vacations, Sports Travel, Touring Teams, & local events like Run Clubs & Dog Park Meetups — ChravelApp handles it all.
-
-After:
-> Family Vacations, Friend Trips, Sports Travel, Touring Teams, Wedding Weekends & **Travel Concierge Companies serving premium clients** — ChravelApp handles it all.
-
-Rationale: removes the casual/free-tier framing, leads with the higher-LTV segments, and surfaces the new B2B angle in the hero copy so the 6th card has narrative support above it.
-
-**2. Sixth scenario card (lines 53–60)**
-
-Replace the entire `Local Community Groups` object with:
-
-```text
-title:      Travel Concierge Companies
-subtitle:   Luxury planners · family offices · destination specialists · VIP travel
-before:     WhatsApp threads, iMessage chains, PDFs in Drive, emailed
-            itineraries, screenshots of confirmations — a premium price tag
-            delivered through a messy stack of consumer apps.
-expandCTA:  ChravelApp helps concierge teams deliver a premium client experience
-after:      A polished, private trip portal per client. Itinerary, calendar,
-            files, receipts, base camps, recommendations, tasks, and
-            broadcasts — preloaded before the client even opens the app.
-badge:      Look more buttoned-up · stop chasing the same questions
-```
-
-Tone matches the other cards (short Before / longer After / one-line badge) and pulls the strongest beats from your draft: the "messy stack" framing, the "preloaded so it doesn't feel blank" payoff, and the "premium service shouldn't be delivered through chaos" pitch.
-
-**3. Card order — unchanged**
-
-Households (hero) stays first. Concierge slots into position 6 (bottom-right on desktop, last card on mobile) — same slot the community card occupied, so no layout reshuffle.
+**`src/components/landing/MobileLandingNav.tsx`** — already lists Use Cases, Blog, For Teams in the sheet. Add **Home** (`to="/"`) at the top so mobile matches desktop parity. No layout changes.
 
 ## Out of scope
+- No changes to `/blog` or `/use-cases` page content. If clicking Blog after the fix still feels "empty," I'll raise it as a follow-up with a screenshot of what's actually rendering.
+- No design-token, color, or spacing changes.
 
-- The full long-form `/use-cases/travel-concierge` page, SEO title/meta, H1, and Feature Map table from your draft. Flag if you want that built next — it's a separate route + sitemap entry.
-- The "Built for Every Journey" headline stays as-is.
-- No design tokens, no card structure, no animation changes.
-
-## Validation
-
+## Verification
 - `npm run lint && npm run typecheck && npm run build`
-- Visual check at desktop (3-col), tablet (2-col), and mobile (1-col) viewports — the concierge card should render in the existing slot with no overflow on its slightly longer `before` copy.
-- Confirm the subtitle wraps cleanly on mobile (it's one line longer than before).
+- Manual: at desktop (≥1024px) on `/`, scroll past hero → confirm nav row reads `Blog · For Teams · [dots] · Home · Use Cases · Log In`. Click Home (stays on `/`, scrolls to top), click Use Cases (navigates to `/use-cases`), click Blog (navigates to `/blog`), click For Teams (navigates to `/teams`).
+- Mobile: open hamburger → confirm Home, Use Cases, Blog, For Teams all present and route correctly.

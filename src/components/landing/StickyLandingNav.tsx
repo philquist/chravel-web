@@ -13,7 +13,6 @@ const sections: NavSection[] = [
   { id: 'features', label: 'Features' },
   { id: 'how', label: 'How It Works' },
   { id: 'ai', label: 'AI' },
-  { id: 'use-cases', label: 'Use Cases' },
   { id: 'storage', label: 'Storage' },
   { id: 'proof', label: 'Reviews' },
   { id: 'replaces', label: 'Compare' },
