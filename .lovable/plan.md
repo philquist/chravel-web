@@ -1,39 +1,54 @@
-## Diagnosis
+## Goal
 
-The hero MP4 itself is fine: H.264 1920×1080, 60s, 1.15 Mbps, faststart-muxed, 8.3 MB. The **poster renders** because the file loads — but the video element's autoplay silently fails on desktop browsers and in the Lovable preview iframe.
+Replace the 6th use case on the homepage ("Local Community Groups" — run clubs / dog park crews) with a B2B-focused **Travel Concierge Companies** card, and tighten the section subtitle so it no longer leads with "Run Clubs & Dog Park Meetups". The longer narrative you drafted stays reserved for the dedicated `/use-cases/travel-concierge` page (not built here).
 
-Three concrete causes:
+## Scope (single file)
 
-1. **No `play()` promise handling in `HeroSection.tsx`.** `<video autoplay>` returns a rejected promise from its internal `play()` when blocked. `onError` only fires for load/decode failures, not autoplay rejections — so the poster sits there forever with no signal. Mobile Safari/Chrome are more permissive with muted + `playsInline` autoplay, which is why mobile "works".
-2. **Lovable preview iframe lacks `allow="autoplay"`.** That permission is set by Lovable's outer wrapper, not by our code, so we can't fix it inside the iframe — but we *can* give visitors a way to start it manually.
-3. **No user-interaction fallback.** When autoplay is denied, there's currently no UI for the visitor to start playback.
+`src/components/landing/sections/UseCasesSection.tsx` only. No new page, no new route, no design/layout changes — only content swap inside the existing 6-card grid and the section subtitle.
 
-## Fix (single file: `src/components/landing/sections/HeroSection.tsx`)
+## Changes
 
-1. Add `videoRef` and a `useEffect` that calls `videoRef.current.play()` explicitly with `.catch()`.
-2. Add an `autoplayBlocked` state. On `.play()` rejection, overlay a translucent centered play-button on top of the still-rendered `<video>` (poster visible). One click invokes `play()` again under user gesture — guaranteed to satisfy autoplay policy.
-3. Trigger the first play attempt via `IntersectionObserver` when the hero scrolls into view (handles tab-switch and slow first-paint cases where the autoplay heuristic has already decided).
-4. Retry once on the video's `canplay` event if the initial attempt failed before metadata loaded.
-5. Keep existing `onError` → poster-only fallback for true file/decode failures (unchanged behavior for 404s).
+**1. Section subtitle (line 99)**
 
-## Verify
+Before:
+> Friend Trips, Family Vacations, Sports Travel, Touring Teams, & local events like Run Clubs & Dog Park Meetups — ChravelApp handles it all.
 
-1. `npm run typecheck` passes.
-2. Update `HeroSection.video.test.tsx` to:
-   - assert `videoRef.current.play()` is invoked on mount/intersection
-   - assert the play-button overlay renders when the play promise rejects
-   - keep the existing onError → poster fallback assertion
-3. Manual: open desktop preview, desktop published URL, and mobile. Confirm:
-   - Desktop published: video autoplays on scroll-in (or shows click-to-play if browser blocks).
-   - Lovable preview iframe: poster + play overlay; one click starts it.
-   - Mobile: autoplays as today (no regression).
-4. Visit `/?sw=off` once if a stale service worker is suspected (rare; current preview console doesn't show one).
+After:
+> Family Vacations, Friend Trips, Sports Travel, Touring Teams, Wedding Weekends & **Travel Concierge Companies serving premium clients** — ChravelApp handles it all.
 
-## Out of scope (surfaced, not fixed)
+Rationale: removes the casual/free-tier framing, leads with the higher-LTV segments, and surfaces the new B2B angle in the hero copy so the 6th card has narrative support above it.
 
-- The Lovable preview iframe's missing `allow="autoplay"` — that's controlled by Lovable's outer page, not us. The click-to-play overlay is the correct in-iframe mitigation.
-- Re-encoding the MP4 / adding WebM source — the bytes already arrive fine; the problem is the play decision, not download.
+**2. Sixth scenario card (lines 53–60)**
 
-## Risk
+Replace the entire `Local Community Groups` object with:
 
-LOW. One component file + its matching test. No deps, no schema, no auth/RLS, no asset regeneration.
+```text
+title:      Travel Concierge Companies
+subtitle:   Luxury planners · family offices · destination specialists · VIP travel
+before:     WhatsApp threads, iMessage chains, PDFs in Drive, emailed
+            itineraries, screenshots of confirmations — a premium price tag
+            delivered through a messy stack of consumer apps.
+expandCTA:  ChravelApp helps concierge teams deliver a premium client experience
+after:      A polished, private trip portal per client. Itinerary, calendar,
+            files, receipts, base camps, recommendations, tasks, and
+            broadcasts — preloaded before the client even opens the app.
+badge:      Look more buttoned-up · stop chasing the same questions
+```
+
+Tone matches the other cards (short Before / longer After / one-line badge) and pulls the strongest beats from your draft: the "messy stack" framing, the "preloaded so it doesn't feel blank" payoff, and the "premium service shouldn't be delivered through chaos" pitch.
+
+**3. Card order — unchanged**
+
+Households (hero) stays first. Concierge slots into position 6 (bottom-right on desktop, last card on mobile) — same slot the community card occupied, so no layout reshuffle.
+
+## Out of scope
+
+- The full long-form `/use-cases/travel-concierge` page, SEO title/meta, H1, and Feature Map table from your draft. Flag if you want that built next — it's a separate route + sitemap entry.
+- The "Built for Every Journey" headline stays as-is.
+- No design tokens, no card structure, no animation changes.
+
+## Validation
+
+- `npm run lint && npm run typecheck && npm run build`
+- Visual check at desktop (3-col), tablet (2-col), and mobile (1-col) viewports — the concierge card should render in the existing slot with no overflow on its slightly longer `before` copy.
+- Confirm the subtitle wraps cleanly on mobile (it's one line longer than before).

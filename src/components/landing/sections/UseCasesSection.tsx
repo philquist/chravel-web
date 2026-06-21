@@ -51,12 +51,14 @@ const scenarios = [
     badge: 'Fewer errors · faster decisions',
   },
   {
-    title: 'Local Community Groups',
-    subtitle: 'Run clubs · Dog park Crews· Faith groups · Recurring meetups',
-    before: 'Plans scattered across DMs, texts, and random calendar invites or flyers',
-    expandCTA: 'ChravelApp helps groups stay connected',
-    after: 'One shared home for meetups, locations, and photos. Your group stays connected.',
-    badge: 'Consistency · better turnout',
+    title: 'Travel Concierge Companies',
+    subtitle: 'Luxury planners · family offices · destination specialists · VIP travel',
+    before:
+      'WhatsApp threads, iMessage chains, PDFs in Drive, emailed itineraries, and screenshots of confirmations — a premium price tag delivered through a messy stack of consumer apps.',
+    expandCTA: 'ChravelApp helps concierge teams deliver a premium client experience',
+    after:
+      'A polished, private trip portal per client. Itinerary, calendar, files, receipts, base camps, recommendations, tasks, and broadcasts — preloaded before the client even opens the app.',
+    badge: 'Look more buttoned-up · stop chasing the same questions',
   },
 ];
 
