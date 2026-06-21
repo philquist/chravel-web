@@ -160,20 +160,42 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
         >
           <div className="relative rounded-xl overflow-hidden shadow-2xl shadow-black/40 border border-white/10 aspect-video bg-[#070B1A]">
             {showVideo ? (
-              <video
-                className="w-full h-full object-cover object-bottom scale-[1.08] origin-bottom"
-                // src directly on <video> (not a <source> child) so a missing
-                // file fires onError here and the poster fallback engages.
-                src={HERO_VIDEO_SRC}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                poster={HERO_VIDEO_POSTER}
-                aria-label="ChravelApp trip dashboard product demo"
-                onError={() => setVideoFailed(true)}
-              />
+              <>
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover object-bottom scale-[1.08] origin-bottom"
+                  // src directly on <video> (not a <source> child) so a missing
+                  // file fires onError here and the poster fallback engages.
+                  src={HERO_VIDEO_SRC}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  poster={HERO_VIDEO_POSTER}
+                  aria-label="ChravelApp trip dashboard product demo"
+                  onError={() => setVideoFailed(true)}
+                  onCanPlay={() => {
+                    // Retry once if our initial play() lost the race with metadata.
+                    if (autoplayBlocked) attemptPlay();
+                  }}
+                  onPlaying={() => setAutoplayBlocked(false)}
+                />
+                {autoplayBlocked && (
+                  <button
+                    type="button"
+                    onClick={handleManualPlay}
+                    aria-label="Play product demo video"
+                    className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[1px] group focus:outline-none focus:ring-2 focus:ring-[#c49746]"
+                  >
+                    <span className="flex items-center justify-center w-20 h-20 rounded-full bg-black/55 border border-white/30 group-hover:scale-105 transition-transform">
+                      <svg viewBox="0 0 24 24" className="w-9 h-9 ml-1 fill-white" aria-hidden="true">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </span>
+                  </button>
+                )}
+              </>
             ) : (
               <img
                 src={HERO_VIDEO_POSTER}
