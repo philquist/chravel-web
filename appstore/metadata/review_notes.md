@@ -88,6 +88,19 @@ Test Universal Links by:
 2. Open Safari and paste the URL
 3. The app should open directly to the trip
 
+### 10. Account Deletion (1 minute) — Guideline 5.1.1(v)
+Chravel provides in-app account deletion:
+1. Tap the profile icon (top right) → **Settings**
+2. Scroll to the **Account** section → tap **Delete Account**
+3. In the confirmation dialog, re-enter your password and type **DELETE** to confirm
+4. Confirm — this **permanently** removes the account and all associated data
+   (profile, trips, messages, media, payment history, AI history) after a
+   30-day grace period during which the user can cancel by signing back in.
+   Sign in with Apple grants are revoked as part of deletion.
+
+**Note for reviewer:** A screen recording of this full deletion flow on a
+physical device is attached / available on request.
+
 ---
 
 ## Features Requiring Login
@@ -170,16 +183,20 @@ Notifications alert users to:
 ### Data Privacy
 - We do not sell user data
 - We do not use advertising identifiers (IDFA)
+- **We do not track users** across apps or websites owned by other companies.
+  No data is used for tracking as defined by Guideline 5.1.2 / ATT, so the app
+  does not present an App Tracking Transparency prompt. Our App Privacy labels
+  declare **"Data Used to Track You: None"** (see PRIVACY_MAPPING.md).
 - All data is encrypted in transit and at rest
-- Users can delete their account and all associated data
+- Users can delete their account and all associated data (in-app, see step 10 above)
 
 ---
 
 ## Known Limitations
 
-1. **iPad:** The app is optimized for iPhone. It runs on iPad in compatibility mode but is not yet iPad-native.
+1. **iPad:** The app is fully functional on iPad (iPhone-optimized layout scaled to iPad). All flows — including **Sign in with Apple** and **account deletion** — work on both iPhone and iPad.
 
-2. **Apple Sign In:** If using Sign in with Apple, the user can choose to hide their email. The app handles this gracefully.
+2. **Apple Sign In:** Works on both iPhone and iPad. If using Sign in with Apple, the user can choose to hide their email; the app handles the private-relay address gracefully.
 
 3. **Offline limitations:** While cached content is viewable offline, real-time features (chat, AI) require internet.
 
