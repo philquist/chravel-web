@@ -108,3 +108,44 @@ export const shouldNoindex = (path: string): boolean =>
 
 export const getPublicSeoRoute = (path: string): SeoConfig | undefined =>
   PUBLIC_SEO_ROUTES.find(route => route.path === path);
+
+// --- Shared JSON-LD builders ---------------------------------------------------
+// Reused by SEO pages so the schema.org shapes have one source of truth.
+
+type JsonLdObject = Record<string, unknown>;
+
+/** Organization + WebSite + SoftwareApplication identity, common to every public SEO page. */
+export const siteIdentityJsonLd = (): JsonLdObject[] => [
+  { '@context': 'https://schema.org', '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: SITE_NAME,
+    applicationCategory: 'TravelApplication',
+    operatingSystem: 'Web, iOS, Android',
+    url: SITE_URL,
+  },
+];
+
+export const faqJsonLd = (faq: Array<{ q: string; a: string }>): JsonLdObject => ({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faq.map(item => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
+});
+
+/** BreadcrumbList from an ordered list of crumbs. Use path '/' for the site root. */
+export const breadcrumbJsonLd = (crumbs: Array<{ name: string; path: string }>): JsonLdObject => ({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: crumbs.map((crumb, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: crumb.name,
+    item: canonicalUrl(crumb.path),
+  })),
+});
