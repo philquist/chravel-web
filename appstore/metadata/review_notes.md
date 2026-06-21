@@ -92,10 +92,11 @@ Test Universal Links by:
 Chravel provides in-app account deletion:
 1. Tap the profile icon (top right) → **Settings**
 2. Scroll to the **Account** section → tap **Delete Account**
-3. In the confirmation dialog, re-enter your password and type **DELETE** to confirm
-4. Confirm — this **permanently** removes the account and all associated data
-   (profile, trips, messages, media, payment history, AI history) after a
-   30-day grace period during which the user can cancel by signing back in.
+3. In the confirmation dialog, type **delete** (and re-enter your password if you signed up with email/password)
+4. Confirm — this **immediately and permanently** removes the account and all
+   associated data (profile, trips, messages, media, payment history, AI
+   history). There is no waiting period or grace period; the user is signed
+   out and the auth record is destroyed as part of the same request.
    Sign in with Apple grants are revoked as part of deletion.
 
 **Note for reviewer:** A screen recording of this full deletion flow on a
