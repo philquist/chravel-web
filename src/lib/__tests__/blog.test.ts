@@ -28,6 +28,7 @@ describe('blog registry', () => {
       'travel-concierge-better-client-experience-after-booking',
       'how-to-share-itineraries-files-receipts-with-travel-clients',
       'why-whatsapp-google-drive-not-enough-luxury-travel-planning',
+      'how-to-create-client-trip-portal-without-custom-app',
     ]) {
       const post = getBlogPost(slug);
       expect(post, `${slug} should resolve`).toBeDefined();
@@ -40,6 +41,17 @@ describe('blog registry', () => {
         '/use-cases/travel-concierge-client-portal',
       );
     }
+  });
+
+  it('the wedding-photos post resolves and links to the weddings use-case page', () => {
+    const post = getBlogPost('collect-wedding-guest-photos-iphone-android');
+    expect(post).toBeDefined();
+    const links = [
+      ...post!.related.map(r => r.to),
+      ...post!.sections.flatMap(s => (s.link ? [s.link.to] : [])),
+      post!.cta.secondaryTo ?? '',
+    ];
+    expect(links).toContain('/use-cases/wedding-guest-coordination-app');
   });
 
   it('returns undefined for unknown slugs', () => {

@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { FullPageLandingSection } from './FullPageLandingSection';
 import { StickyLandingNav } from './StickyLandingNav';
+import { MobileLandingNav } from './MobileLandingNav';
 import { HeroSection } from './sections/HeroSection';
 import { ProblemSolutionSection } from './sections/ProblemSolutionSection';
 
@@ -115,6 +116,9 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
     <>
       {/* Sticky Navigation - desktop only */}
       <StickyLandingNav onSignUp={onSignUp} scrollRoot={landingScrollEl} />
+
+      {/* Mobile/tablet navigation - hamburger menu (desktop nav is hidden below lg) */}
+      <MobileLandingNav onSignUp={onSignUp} />
 
       {/* Full-Page Scrolling Container with PWA safe-area support */}
       <div

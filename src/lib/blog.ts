@@ -388,6 +388,200 @@ export const BLOG_POSTS: BlogPost[] = [
       secondaryTo: '/use-cases/travel-concierge-client-portal',
     },
   },
+  {
+    slug: 'how-to-create-client-trip-portal-without-custom-app',
+    title: 'How to Create a Client Trip Portal Without Building a Custom App',
+    description:
+      'You don’t need a custom app or a white-label build to give travel clients a premium trip portal. Here’s how to stand one up today — and what a portal actually needs to deliver.',
+    h1: 'How to create a client trip portal without building a custom app',
+    excerpt:
+      'A polished client portal sounds like a six-figure software project. It isn’t. Here’s what a trip portal actually needs — and how to create one for your next client without writing a line of code.',
+    datePublished: '2026-06-20',
+    author: BLOG_AUTHOR,
+    tags: ['Travel Concierge', 'Client Experience'],
+    sections: [
+      {
+        paragraphs: [
+          'Ask a travel concierge what would make their post-booking experience feel more premium and many will say the same thing: “a client portal.” Then they picture what that takes — a developer, a design budget, months of build time, ongoing maintenance — and the idea dies on the spot.',
+          'It does not have to. You can give clients a genuine trip portal today, without commissioning a custom app or paying for a white-label platform. The trick is to be clear about what a portal actually needs to do, and then use a tool that already does it.',
+        ],
+      },
+      {
+        heading: 'What a client trip portal actually needs',
+        paragraphs: [
+          'Strip away the branding fantasy and a useful client portal comes down to a short list:',
+        ],
+        list: [
+          'One place that holds the whole trip — itinerary, documents, locations, and to-dos.',
+          'A live itinerary, not a PDF that goes stale the moment a reservation moves.',
+          'Documents and receipts the client can pull up on the spot.',
+          'A way to push an update once and have everyone see it.',
+          'Access from any phone or browser, with no setup friction for the client.',
+        ],
+      },
+      {
+        heading: 'Why a custom build is the wrong first move',
+        paragraphs: [
+          'Building your own portal means paying for development, waiting months, and then owning the maintenance, security, and support forever. You would be rebuilding calendars, file storage, notifications, and access control that already exist — and doing it as a side project to your actual business, which is planning travel. For all but the largest agencies, a custom build is cost and risk in exchange for a feature set you can get off the shelf.',
+        ],
+      },
+      {
+        heading: 'Create the portal from a trip workspace instead',
+        paragraphs: [
+          'Instead of building software, assemble the portal out of a trip. Create one trip per client, put the itinerary on the calendar, attach confirmations and receipts, pin the hotel and meeting points as base camps, save recommendations as places, and add any pre-trip tasks. Then invite the client. They open one organized space that already feels planned — which is exactly what a portal is supposed to feel like — and you did it in minutes, not months.',
+        ],
+        link: {
+          label: 'See how Chravel works as a travel concierge client portal',
+          to: '/use-cases/travel-concierge-client-portal',
+        },
+      },
+      {
+        heading: 'Stand up your first client portal in minutes',
+        list: [
+          'Create a trip for the client or family.',
+          'Add the itinerary to the calendar — or import it from confirmation emails and PDFs.',
+          'Attach receipts, vouchers, and reservations.',
+          'Pin the hotel and meeting points, and save your recommendations.',
+          'Assign any pre-trip tasks, then invite the client and send one welcome broadcast.',
+        ],
+      },
+      {
+        heading: 'When does a custom build make sense?',
+        paragraphs: [
+          'Eventually, a large agency with very specific workflows and the budget to maintain software might want something bespoke or white-labeled. But that is a later optimization, not a starting point. The fastest way to look more premium today is to stop sending folders and start sharing a trip — and you can do that for your very next client.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Isn’t a “portal” supposed to be branded with my company?',
+        a: 'Clients care far more about whether the trip is organized and current than about a custom logo. You can deliver a premium, branded-feeling experience without a white-label build; bespoke branding can come later if you ever need it.',
+      },
+      {
+        q: 'How long does it take to set up?',
+        a: 'Minutes per client. You create a trip, preload the details (or import them), and invite the client — no development or onboarding project required.',
+      },
+      {
+        q: 'What does the client have to install?',
+        a: 'Nothing mandatory. It runs on the web and as an installable app on iOS and Android, so clients can open their trip from a link on any device.',
+      },
+      {
+        q: 'Can my team run portals for many clients at once?',
+        a: 'Yes. With role-based access, multiple planners can each run client trips with the right permissions, using the same repeatable structure.',
+      },
+    ],
+    related: [
+      {
+        label: 'Chravel for travel concierge companies',
+        to: '/use-cases/travel-concierge-client-portal',
+      },
+      {
+        label: 'How to share itineraries, files, and receipts with clients',
+        to: '/blog/how-to-share-itineraries-files-receipts-with-travel-clients',
+      },
+      { label: 'All Chravel use cases', to: '/use-cases' },
+    ],
+    cta: {
+      heading: 'Give your next client a portal, not a folder',
+      subtext:
+        'Create a client-ready trip in minutes — no custom app, no white-label build — and invite the client into one organized space.',
+      primaryLabel: 'Create a client trip',
+      primaryTo: '/auth',
+      secondaryLabel: 'See Chravel for travel concierge',
+      secondaryTo: '/use-cases/travel-concierge-client-portal',
+    },
+  },
+  {
+    slug: 'collect-wedding-guest-photos-iphone-android',
+    title: 'The Best Way to Collect Wedding Guest Photos from iPhone and Android',
+    description:
+      'iCloud Shared Albums leave Android guests out and AirDrop is iPhone-only. Here’s the best way to collect wedding guest photos from every device — in one shared album everyone can use.',
+    h1: 'The best way to collect wedding guest photos from iPhone and Android',
+    excerpt:
+      'Your guests are shooting hundreds of photos on a mix of iPhones and Androids — and most of them never reach the couple. Here’s how to collect every guest’s photos in one album, regardless of device.',
+    datePublished: '2026-06-16',
+    author: BLOG_AUTHOR,
+    tags: ['Weddings', 'Photo Sharing'],
+    sections: [
+      {
+        paragraphs: [
+          'Across a wedding weekend, guests capture the moments the photographer cannot — the table laughing, the dance floor at midnight, the quiet aside during cocktail hour. The problem is that those photos almost never make it back to the couple. They stay trapped on individual phones, scattered across a mix of iPhones and Androids.',
+          'Most of the “solutions” people reach for quietly exclude half the guests. There is a better way, and it starts with not assuming everyone is on the same kind of phone.',
+        ],
+      },
+      {
+        heading: 'Why the usual methods fall short',
+        list: [
+          'iCloud Shared Albums are Apple-only — every Android guest is locked out.',
+          'AirDrop is iPhone-to-iPhone, so it cannot collect from the whole party.',
+          'Texting photos compresses them and buries them in dozens of separate threads.',
+          'A wedding group chat turns photos into endless scrollback no one can sort later.',
+          'Asking guests to “email me your pics” almost guarantees you will never see most of them.',
+        ],
+      },
+      {
+        heading: 'What actually works: one shared album for every device',
+        paragraphs: [
+          'The reliable approach is a single shared album any guest can upload to from any phone — iPhone or Android — without a clumsy sign-up. When the album lives on the wedding trip everyone is already using for the schedule and locations, uploading photos becomes a natural part of the weekend instead of a chore you have to chase afterward.',
+          'Because it is one place, the couple sees candid moments roll in during the weekend — not weeks later — and nobody has to text their best shots one at a time.',
+        ],
+        link: {
+          label: 'See how Chravel works as a wedding guest coordination app',
+          to: '/use-cases/wedding-guest-coordination-app',
+        },
+      },
+      {
+        heading: 'Set up a shared wedding album guests will actually use',
+        list: [
+          'Create the wedding trip and invite guests (a link or QR code at the tables works well).',
+          'Turn on the shared media album so anyone can upload from iPhone or Android.',
+          'Add a quick note in the schedule asking guests to upload each night.',
+          'Keep the album as the single home for photos — not the group chat.',
+          'After the weekend, the couple has every guest’s photos in one place to download and keep.',
+        ],
+      },
+      {
+        heading: 'Make it effortless for guests',
+        paragraphs: [
+          'The fewer steps between a guest and the upload button, the more photos you get. Share the album with a link or QR code, make sure it works on any device, and remind guests once or twice during the weekend. Pair it with the rest of the trip — schedule, dress code, locations — and guests have one place for everything, which is exactly why they will actually use it.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Do Android and iPhone guests really use the same album?',
+        a: 'Yes. The shared media album works on the web and on iOS and Android, so every guest uploads to the same place regardless of device.',
+      },
+      {
+        q: 'Do guests need to create an account?',
+        a: 'Guests join the wedding trip and can upload to the shared album — there is no clumsy, photographer-style gallery sign-up to slow them down.',
+      },
+      {
+        q: 'When should we share the album?',
+        a: 'Before the weekend, so early arrivals and welcome events are captured too. A link or QR code at the tables makes it easy for everyone to join.',
+      },
+      {
+        q: 'Can the couple download everything afterward?',
+        a: 'Yes — because all the photos land in one album, the couple has a single place to view and save every guest’s shots after the wedding.',
+      },
+    ],
+    related: [
+      {
+        label: 'Chravel for wedding guest coordination',
+        to: '/use-cases/wedding-guest-coordination-app',
+      },
+      { label: 'All Chravel use cases', to: '/use-cases' },
+    ],
+    cta: {
+      heading: 'Collect every guest’s photos in one place',
+      subtext:
+        'Set up a shared wedding album that works on iPhone and Android — and keep the schedule, locations, and dress code in the same trip.',
+      primaryLabel: 'Create a wedding trip',
+      primaryTo: '/auth',
+      secondaryLabel: 'See Chravel for weddings',
+      secondaryTo: '/use-cases/wedding-guest-coordination-app',
+    },
+  },
 ];
 
 const MONTHS = [
