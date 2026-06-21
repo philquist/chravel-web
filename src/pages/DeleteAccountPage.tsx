@@ -87,13 +87,12 @@ export default function DeleteAccountPage() {
           <section className="mb-8">
             <div className="flex items-center gap-3 mb-4">
               <Clock className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-semibold m-0">30-Day Cancellation Window</h2>
+              <h2 className="text-2xl font-semibold m-0">Immediate Deletion</h2>
             </div>
             <p className="text-foreground/90">
-              After requesting deletion, your account enters a <strong>30-day grace period</strong>.
-              During this time, you can cancel the deletion by signing back in and choosing to
-              restore your account. After 30 days, the deletion is{' '}
-              <strong>permanent and irreversible</strong>.
+              Account deletion is processed <strong>immediately</strong> after you confirm. You will
+              be signed out and your account data will be permanently removed. This action is{' '}
+              <strong>irreversible</strong>.
             </p>
           </section>
 
