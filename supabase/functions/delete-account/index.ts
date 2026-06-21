@@ -247,16 +247,36 @@ serve(async req => {
 
     try {
       const body = await req.json();
-      if (body.confirmation !== 'DELETE') {
+      const confirmation = typeof body?.confirmation === 'string' ? body.confirmation.trim() : '';
+      if (confirmation.toLowerCase() !== 'delete') {
         logStep('ERROR: Invalid confirmation');
         return errorResponse(
-          'Invalid confirmation. Please type DELETE to confirm.',
+          'Invalid confirmation. Please type "delete" to confirm.',
           400,
           corsHeaders,
         );
       }
     } catch {
       // Body is optional for backwards compatibility
+    }
+
+    // Backend audit event — written BEFORE any destructive work so that
+    // log inspectors can prove the request was received and acted on
+    // immediately (App Store 5.1.1(v) verification).
+    try {
+      await supabaseAdmin.from('security_audit_log').insert({
+        action: 'account_deletion_started',
+        table_name: 'auth.users',
+        user_id: userId,
+        metadata: {
+          email: user.email,
+          started_at: new Date().toISOString(),
+          source: 'delete-account-edge-function',
+          immediate: true,
+        },
+      });
+    } catch (err) {
+      logStep('Warning: Failed to write deletion_started audit log', { error: String(err) });
     }
 
     const deletionReport: Record<string, unknown> = { userId, startedAt: new Date().toISOString() };
@@ -305,6 +325,30 @@ serve(async req => {
 
     deletionReport.completedAt = new Date().toISOString();
     logStep('Account deletion completed', deletionReport);
+
+    // Backend audit event — written AFTER auth.users delete so logs prove
+    // the full delete pipeline ran end-to-end in a single request.
+    try {
+      await supabaseAdmin.from('security_audit_log').insert({
+        action: 'account_deletion_completed',
+        table_name: 'auth.users',
+        user_id: userId,
+        metadata: {
+          email: user.email,
+          completed_at: deletionReport.completedAt,
+          auth_user_deleted: deletionReport.authUserDeleted === true,
+          storage: deletionReport.storage,
+          trips: deletionReport.trips,
+          messages: deletionReport.messages,
+          deleted_records: deletionReport.deletedRecords,
+          profile_anonymized: deletionReport.profileAnonymized,
+          apple_revocation: deletionReport.appleRevocation,
+          immediate: true,
+        },
+      });
+    } catch (err) {
+      logStep('Warning: Failed to write deletion_completed audit log', { error: String(err) });
+    }
 
     return successResponse(
       { message: 'Your account and data have been permanently deleted.', report: deletionReport },

@@ -62,8 +62,21 @@ export const ConsumerGeneralSettings = () => {
   const requiresPasswordReauth = useMemo(() => userHasEmailPasswordIdentity(session), [session]);
 
   const handleDeleteAccount = useCallback(async () => {
-    if (confirmText !== 'DELETE') return;
+    if (confirmText.trim().toLowerCase() !== 'delete') return;
     if (requiresPasswordReauth && !reAuthPassword) return;
+
+    // Final, stronger confirmation right before the destructive API call.
+    // App Store reviewers must clearly see that deletion is immediate + irreversible.
+    const finalConfirmed = window.confirm(
+      'FINAL CONFIRMATION\n\n' +
+        'This will IMMEDIATELY and PERMANENTLY delete your Chravel account and all ' +
+        'associated data — profile, trips you own, messages, uploaded media, payment ' +
+        'history, AI Concierge history, notifications, and preferences.\n\n' +
+        'There is NO 30-day grace period. There is NO way to recover this account or ' +
+        'its data after you click OK.\n\n' +
+        'Click OK to delete your account right now, or Cancel to keep your account.',
+    );
+    if (!finalConfirmed) return;
 
     setIsDeleting(true);
     setReAuthError('');
