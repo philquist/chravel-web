@@ -1,9 +1,34 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const scenarios = [
+interface Scenario {
+  title: string;
+  subtitle: string;
+  before: string;
+  expandCTA: string;
+  after: string;
+  badge: string;
+  isHero?: boolean;
+  /** Links to the matching /use-cases page when one exists. */
+  href?: string;
+}
+
+const scenarios: Scenario[] = [
+  {
+    title: 'Travel Concierge & Advisors',
+    subtitle: 'Luxury planners · travel advisors · client trips · families',
+    before:
+      'After the client pays, the trip still arrives as scattered WhatsApp messages, PDFs, Google Drive links, and email chains.',
+    expandCTA: 'ChravelApp helps you deliver a premium client experience',
+    after:
+      'Preload the itinerary, attachments, reservations, base camps, and tasks, then invite the client to one polished portal that already feels planned.',
+    badge: 'Look more premium · fewer client questions',
+    isHero: true,
+    href: '/use-cases/travel-concierge-client-portal',
+  },
   {
     title: 'Use as a Household Hub: Schedules & Responsibilities',
     subtitle: 'Practices · pickups · errands · roommates · season planning',
@@ -12,7 +37,6 @@ const scenarios = [
     after:
       'One shared space for family logistics. Calendars, tasks, and chat in sync — everyone knows where to be.',
     badge: 'Fewer drop-offs missed · more time together',
-    isHero: true,
   },
   {
     title: 'Touring Artists & Crews',
@@ -20,22 +44,25 @@ const scenarios = [
     before: 'Spreadsheets, endless texts, missed details. Overwhelmed managers, annoyed artists.',
     expandCTA: 'ChravelApp helps tours stay in sync',
     after:
-      'Show days, Rehearsal times, off days, crew channels, logistics, and payments—all in one place. Everyone aligned, every city.',
+      'Show days, rehearsal times, off days, crew channels, logistics, and payments — all in one place. Everyone aligned, every city.',
     badge: 'Fewer mistakes · smoother tours',
+    href: '/use-cases/music-tour-coordination',
   },
   {
-    title: 'Bacheleor/ette Parties → Wedding Weekends',
+    title: 'Bachelor & Bachelorette Parties → Wedding Weekends',
     subtitle: 'Bachelor & bachelorette trips · guests · families · vendors',
-    before: 'Dozens of chats with too many guests asking the same questions over and over. ',
+    before: 'Dozens of chats with too many guests asking the same questions over and over.',
     expandCTA: 'ChravelApp helps celebrations run smoothly',
-    after: 'Shared itinerary, approved wedding looks, pinned locations, group sharing of wedding photos — less confusion, more celebration.',
+    after:
+      'Shared itinerary, approved wedding looks, pinned locations, group sharing of wedding photos — less confusion, more celebration.',
     badge: 'Fewer questions · more memories',
+    href: '/use-cases/wedding-guest-coordination-app',
   },
   {
     title: 'Fraternities/Sororities & Similar Organizations',
     subtitle: 'Rush · Formals · retreats · philanthropy · chapter ops',
     before:
-      'One giant group chat — endless scrollback, mixed events , sensitive moments living forever in one thread.',
+      'One giant group chat — endless scrollback, mixed events, sensitive moments living forever in one thread.',
     expandCTA: 'ChravelApp helps chapters stay private',
     after:
       'Separate vaults per event — Rush, Formal, Retreat. Chat and media stay compartmentalized. Access controlled, moments stay private.',
@@ -47,12 +74,13 @@ const scenarios = [
     before: 'Staff juggling travel, practices, and logistics across too many tools.',
     expandCTA: 'ChravelApp helps programs stay aligned',
     after:
-      'Role-based access, team schedules, and instant updates—built to scale from Amateur to the Pros.',
+      'Role-based access, team schedules, and instant updates — built to scale from Amateur to the Pros.',
     badge: 'Fewer errors · faster decisions',
+    href: '/use-cases/sports-team-travel-coordination',
   },
   {
     title: 'Local Community Groups',
-    subtitle: 'Run clubs · Dog park Crews· Faith groups · Recurring meetups',
+    subtitle: 'Run clubs · Dog park crews · Faith groups · Recurring meetups',
     before: 'Plans scattered across DMs, texts, and random calendar invites or flyers',
     expandCTA: 'ChravelApp helps groups stay connected',
     after: 'One shared home for meetups, locations, and photos. Your group stays connected.',
@@ -92,11 +120,11 @@ export const UseCasesSection = () => {
           <p
             className="text-xl sm:text-2xl md:text-3xl text-white font-semibold max-w-3xl mx-auto"
             style={{
-              textShadow:
-                '0 2px 6px rgba(0,0,0,0.65), 0 4px 14px rgba(0,0,0,0.45)',
+              textShadow: '0 2px 6px rgba(0,0,0,0.65), 0 4px 14px rgba(0,0,0,0.45)',
             }}
           >
-            Friend Trips, Family Vacations, Sports Travel, Touring Teams, & local events like Run Clubs & Dog Park Meetups — ChravelApp handles it all.
+            Friend Trips, Family Vacations, Sports Travel, Touring Teams, & local events like Run
+            Clubs & Dog Park Meetups — ChravelApp handles it all.
           </p>
         </div>
 
@@ -179,6 +207,20 @@ export const UseCasesSection = () => {
                           <span className="text-primary">🟠</span>
                           {scenario.badge}
                         </div>
+
+                        {/* Link to the full use-case page (when one exists) */}
+                        {scenario.href && (
+                          <div>
+                            <Link
+                              to={scenario.href}
+                              onClick={e => e.stopPropagation()}
+                              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+                            >
+                              See how ChravelApp helps
+                              <ArrowRight className="w-4 h-4" />
+                            </Link>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   )}
@@ -187,6 +229,15 @@ export const UseCasesSection = () => {
             );
           })}
         </div>
+
+        {/* Explore the full cluster */}
+        <Link
+          to="/use-cases"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/40 bg-card/50 px-6 py-3 text-base font-semibold text-primary backdrop-blur-sm transition-colors hover:bg-primary/10"
+        >
+          Explore all use cases
+          <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
     </div>
   );

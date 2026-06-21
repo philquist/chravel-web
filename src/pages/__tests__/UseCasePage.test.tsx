@@ -30,9 +30,11 @@ describe('UseCasePage', () => {
     expect(screen.getByText(/available yet/i)).toBeInTheDocument();
   });
 
-  it('does not render a page for coming-soon slugs', () => {
+  it('renders a newly published page (weddings)', () => {
     renderAt('/use-cases/wedding-guest-coordination-app');
-    expect(screen.getByText(/available yet/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: /wedding guest coordination/i }),
+    ).toBeInTheDocument();
   });
 });
 

@@ -173,11 +173,85 @@ export const USE_CASES: Array<UseCaseSummary | UseCaseDetail> = [
   },
   {
     slug: 'wedding-guest-coordination-app',
-    status: 'coming-soon',
+    status: 'published',
     cardTitle: 'Weddings',
     cardTagline:
       'Keep guests, the wedding party, photos, dress codes, and weekend events in one shared hub.',
-    cardCtaLabel: 'Coming soon',
+    cardCtaLabel: 'See Chravel for weddings',
+    seo: {
+      title: 'Wedding Guest Coordination App | Plan the Whole Weekend with Chravel',
+      description:
+        'Chravel keeps wedding guests, the wedding party, schedules, dress codes, locations, and a shared photo album in one place — so everyone knows where to be, what to wear, and where to upload photos.',
+    },
+    h1: 'The wedding guest coordination app for the whole weekend',
+    intro:
+      'A wedding isn’t one event anymore — it’s a weekend. Chravel gives the couple, the wedding party, and every guest one shared place for the schedule, dress codes, locations, tasks, and photos.',
+    body: [
+      'Weddings are full weekends now: welcome drinks, the rehearsal dinner, ceremony call times, shuttle pickups, the afterparty, brunch, dress codes, hotel blocks, family obligations, and a dozen side chats. The couple has a website, the planner has a timeline, the wedding party has a group chat, and guests still ask where to be, what to wear, and when to arrive.',
+      'Chravel turns the weekend into one shared hub. Add every event to the Calendar, pin the hotel as a Base Camp alongside the ceremony and reception venues, and upload the schedule, menus, and dress-code references as Attachments. Save the rehearsal spot, the brunch place, and nearby coffee in Explorer, and create Tasks for the wedding party. Instead of digging through an old flyer or scrolling a thread, everyone checks one place.',
+      'The shared photo album is one of the strongest reasons to run a wedding on Chravel. Guests take hundreds of photos across the weekend, but they get trapped across iPhones, Android phones, and private camera rolls. Chravel’s shared Media album gives everyone one place to upload, on any device — so the couple sees candid moments without waiting on the photographer, and nobody has to text pictures one at a time.',
+      'It works for the wedding party too. The couple, planner, and party can use Tasks for attire deadlines, speeches, welcome-bag prep, and day-of responsibilities, and a single Broadcast to push an update when a time or location changes. For destination weddings it earns its keep twice over — guests aren’t just attending a ceremony, they’re traveling, switching hotels, and following a multi-day itinerary.',
+      'Replace scattered WhatsApp threads, lost links, and repeated questions with one shared wedding hub. Everyone gets the schedule, the dress code, the locations, and the photo album in their pocket.',
+    ],
+    featureMap: [
+      { pain: 'Guests lose track of weekend events', solution: 'Shared Calendar' },
+      {
+        pain: '“What’s the dress code?” asked on repeat',
+        solution: 'Attachments (lookbooks & notes)',
+      },
+      {
+        pain: 'Guests ask the same logistics questions',
+        solution: 'Broadcasts + centralized details',
+      },
+      { pain: 'The wedding party needs accountability', solution: 'Tasks' },
+      { pain: 'Ceremony, reception, and hotel are scattered', solution: 'Base Camps + Explorer' },
+      { pain: 'Guest photos trapped across phones', solution: 'Shared Media album' },
+      {
+        pain: 'Destination guests juggling travel',
+        solution: 'Calendar + Attachments + locations',
+      },
+    ],
+    workflow: {
+      heading: 'Set up your wedding weekend',
+      steps: [
+        'Create the trip and invite guests — or just the wedding party.',
+        'Add every event — welcome drinks, ceremony, reception, brunch — to the Calendar.',
+        'Pin the hotel as a Base Camp, add the ceremony and reception venues, and drop nearby spots in Explorer.',
+        'Upload the schedule and dress-code or lookbook references as Attachments, and assign wedding-party Tasks.',
+        'Turn on the shared Media album so every guest uploads photos to one place, on any device.',
+      ],
+    },
+    faq: [
+      {
+        q: 'Can guests upload photos from both iPhone and Android?',
+        a: 'Yes. The shared Media album works on the web and on iOS and Android, so every guest uploads to the same place regardless of device.',
+      },
+      {
+        q: 'Do guests need the app to see the schedule?',
+        a: 'Chravel runs on the web and as an installable app on iOS and Android. Guests open the trip and see the latest schedule, locations, and dress code.',
+      },
+      {
+        q: 'Can we keep the wedding party separate from all guests?',
+        a: 'Yes. You control who is on the trip and their roles, so the wedding party can coordinate tasks separately from the full guest list.',
+      },
+      {
+        q: 'Is this a replacement for our wedding website?',
+        a: 'It complements it. The website tells the story; Chravel is the live, in-pocket hub for schedule changes, locations, dress code, tasks, and the shared photo album.',
+      },
+      {
+        q: 'Does it work for destination weddings?',
+        a: 'Especially well — guests get the multi-day itinerary, hotel Base Camps, pinned locations, and travel documents in one place.',
+      },
+    ],
+    cta: {
+      heading: 'Make the whole wedding weekend easier',
+      subtext:
+        'Put the schedule, locations, dress codes, tasks, and a shared photo album in one wedding hub — then invite the guests.',
+      primaryLabel: 'Create a wedding trip',
+      primaryTo: '/auth',
+      secondaryLabel: 'Browse all use cases',
+      secondaryTo: '/use-cases',
+    },
   },
   {
     slug: 'group-travel-planning-app',
@@ -191,19 +265,149 @@ export const USE_CASES: Array<UseCaseSummary | UseCaseDetail> = [
   },
   {
     slug: 'sports-team-travel-coordination',
-    status: 'coming-soon',
+    status: 'published',
     cardTitle: 'Sports Teams',
     cardTagline:
       'Coordinate players, parents, coaches, hotels, games, and travel updates without chasing group chats.',
-    cardCtaLabel: 'Coming soon',
+    cardCtaLabel: 'See Chravel for sports teams',
+    seo: {
+      title: 'Sports Team Travel Coordination App | Organize Teams with Chravel',
+      description:
+        'Chravel helps coaches, team managers, parents, and players coordinate sports travel — schedules, hotels, locations, forms, tasks, broadcasts, and a shared photo album in one workspace.',
+    },
+    h1: 'A sports team travel app for coaches, players, parents, and managers',
+    intro:
+      'Sports travel breaks down when the details live in too many places. Chravel gives the whole travel party — coaches, players, parents, and managers — one shared workspace for schedules, hotels, locations, and updates.',
+    body: [
+      'The coach has the schedule, the team parent has the hotel block, players are in one chat and parents in another, the bracket changes, the bus time moves, someone misses the team meal, someone can’t find the gym. For AAU, high school, college, and club programs, the load falls on a few people who repeat the same updates over and over.',
+      'Chravel gives the team one workspace. Put game times, practices, meals, bus departures, and check-ins on the Calendar, mark the team hotel as the Base Camp, and save gyms, stadiums, airports, and meeting points in Explorer. Upload waivers, rooming lists, packing lists, and tournament rules as Attachments. When something changes, send one Broadcast instead of texting every subgroup.',
+      'Tasks keep everyone accountable: players bring uniforms, submit forms, pack specific gear, and arrive by a set time; parents confirm travel, pickups, and meal preferences. It all lives in the trip instead of one parent’s spreadsheet or buried in a thread, and role-based access keeps staff, players, and parents in the right lanes.',
+      'Chravel isn’t trying to replace your stats or film platform — it’s the travel coordination layer for the trips where communication, movement, and timing matter: tournament weekends, road games, showcases, retreats, and championship runs. Afterward, the shared Media album gives the team one place for everyone’s photos.',
+      'Keep the whole team on the same page — schedules, hotels, locations, forms, tasks, and updates in one place, without chasing everyone across text chains.',
+    ],
+    featureMap: [
+      { pain: 'Schedule changes cause confusion', solution: 'Broadcasts + Calendar' },
+      { pain: 'Parents and players are in different chats', solution: 'One shared workspace' },
+      { pain: 'Hotel, gym, and meal info gets buried', solution: 'Base Camps + Explorer' },
+      { pain: 'Waivers and forms are hard to track', solution: 'Attachments' },
+      { pain: 'Players forget gear or deadlines', solution: 'Tasks' },
+      { pain: 'Travel costs to collect', solution: 'Payments' },
+      { pain: 'Tournament photos scattered', solution: 'Shared Media album' },
+    ],
+    workflow: {
+      heading: 'Set up a team trip',
+      steps: [
+        'Create the trip and add coaches, managers, players, and parents.',
+        'Put games, practices, meals, and bus times on the Calendar.',
+        'Mark the team hotel as a Base Camp and pin gyms, stadiums, and airports in Explorer.',
+        'Upload waivers, rooming lists, and packing lists as Attachments, then assign player and parent Tasks.',
+        'Broadcast changes to everyone at once, and collect travel costs with Payments.',
+      ],
+    },
+    faq: [
+      {
+        q: 'Can parents and players have different access?',
+        a: 'Yes. Chravel supports role-based access, so staff, players, and parents each see what is relevant to them.',
+      },
+      {
+        q: 'Is this only for elite or pro teams?',
+        a: 'No — it works for AAU, youth, high school, college, club, and pro programs. Anywhere a travel party needs schedules, locations, and updates in one place.',
+      },
+      {
+        q: 'How do last-minute changes reach everyone?',
+        a: 'Send a single Broadcast; it reaches the whole trip instead of relying on separate group texts.',
+      },
+      {
+        q: 'Can we collect money for travel?',
+        a: 'Yes. Payments let you split costs and collect balances without a separate spreadsheet.',
+      },
+      {
+        q: 'Does it work on every phone?',
+        a: 'Yes — the web plus installable iOS and Android apps, so every player and parent is covered.',
+      },
+    ],
+    cta: {
+      heading: 'Keep the whole team on the same page',
+      subtext:
+        'Coordinate schedules, hotels, locations, forms, tasks, and updates for your next team trip.',
+      primaryLabel: 'Plan a team trip',
+      primaryTo: '/auth',
+      secondaryLabel: 'Chravel for teams',
+      secondaryTo: '/teams',
+    },
   },
   {
     slug: 'music-tour-coordination',
-    status: 'coming-soon',
+    status: 'published',
     cardTitle: 'Touring Artists & Crews',
     cardTagline:
       'Keep artists, crew, security, content teams, and management aligned city by city.',
-    cardCtaLabel: 'Coming soon',
+    cardCtaLabel: 'See Chravel for touring',
+    seo: {
+      title: 'Music Tour Coordination App | Align Artists, Crew & Teams with Chravel',
+      description:
+        'Chravel keeps touring artists, managers, crew, security, and content teams aligned — daily schedules, hotels, venues, call times, tasks, files, and a shared photo album, city by city.',
+    },
+    h1: 'A tour coordination app for artists, crew, security, and management',
+    intro:
+      'Touring gets chaotic when every department runs on a different thread. Chravel gives the whole touring party one shared place for the day-to-day logistics that keep the run moving.',
+    body: [
+      'The tour manager has the day sheet, security has the movement details, the photographer got a call time from someone else, the artist team has a private chat, management is in email, and the promoter sent a PDF. The result is predictable: repeated questions, missed details, and people solving logistics that should already be clear.',
+      'Chravel gives touring teams one place for each city — the schedule, hotel, venue, call times, meal times, content windows, after-show plans, and key locations. Put the day on the Calendar, pin the hotel and venue as Base Camps, drop parking and nearby spots in Explorer, and keep advance sheets and contracts as Attachments. Smart Import can pull schedules and reservations from confirmation emails and PDFs instead of forwarding screenshots.',
+      'It is especially useful for the wider party — managers, assistants, security, photographers, videographers, stylists, label reps, and VIP guests. They do not all need a full pro tour-management stack; they need accurate logistics: where to be, when, and what they are responsible for. Tasks cover that, and a single Broadcast pushes a change to everyone who needs it.',
+      'Chravel also handles content and memories. The photographer, videographer, and team can upload to one shared Media album instead of chasing assets across AirDrop, iCloud links, Android devices, and Dropbox. For developing artists, independent teams, promo runs, and festival weekends, it makes the operation feel buttoned-up without a heavyweight enterprise system.',
+      'Keep the touring party aligned city by city — schedules, hotels, venues, call times, tasks, files, and shared content in one workspace.',
+    ],
+    featureMap: [
+      { pain: 'Departments operate in separate chats', solution: 'One shared tour workspace' },
+      { pain: 'Day sheets get screenshotted and go stale', solution: 'Calendar + Attachments' },
+      { pain: 'Security, content, and management miss updates', solution: 'Broadcasts' },
+      { pain: 'Hotels, venues, and parking get buried', solution: 'Base Camps + Explorer' },
+      { pain: 'Advance sheets arrive as emails and PDFs', solution: 'Smart Import + Attachments' },
+      { pain: 'Responsibilities fall through the cracks', solution: 'Tasks' },
+      { pain: 'Photos and content assets are scattered', solution: 'Shared Media album' },
+    ],
+    workflow: {
+      heading: 'Set up a city on tour',
+      steps: [
+        'Create the trip and add the artist, crew, security, content team, and management.',
+        'Put each city’s schedule and call times on the Calendar — or pull them in with Smart Import.',
+        'Pin the hotel and venue as Base Camps, and add parking and nearby spots in Explorer.',
+        'Keep advance sheets and contracts as Attachments and assign Tasks by role.',
+        'Broadcast changes to the right people, and collect content in one shared Media album.',
+      ],
+    },
+    faq: [
+      {
+        q: 'Does Chravel replace pro tour-management software?',
+        a: 'It is a lightweight coordination layer, not a replacement for a full production stack. It shines at keeping the wider party — crew, security, content, guests — aligned on daily logistics.',
+      },
+      {
+        q: 'Can different roles see different things?',
+        a: 'Yes. Role-based access keeps the core crew, content team, and guests in the right lanes.',
+      },
+      {
+        q: 'How do call-time changes reach everyone?',
+        a: 'One Broadcast reaches the whole trip, instead of forwarding updates across separate threads.',
+      },
+      {
+        q: 'Where do photos and video go?',
+        a: 'Into one shared Media album, so the team is not chasing assets across AirDrop, iCloud, and Dropbox.',
+      },
+      {
+        q: 'Can we import the advance or day sheet?',
+        a: 'Yes. Smart Import pulls schedules and reservations from confirmation emails, PDFs, and links.',
+      },
+    ],
+    cta: {
+      heading: 'Keep the touring party aligned, city by city',
+      subtext:
+        'Organize schedules, hotels, venues, call times, tasks, files, and shared content for your next run.',
+      primaryLabel: 'Build a tour workspace',
+      primaryTo: '/auth',
+      secondaryLabel: 'Chravel for teams',
+      secondaryTo: '/teams',
+    },
   },
 ];
 

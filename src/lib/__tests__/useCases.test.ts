@@ -5,6 +5,7 @@ import {
   getUseCaseDetail,
   getUseCaseHref,
   hasDetail,
+  type UseCaseSummary,
 } from '@/lib/useCases';
 
 describe('useCases registry', () => {
@@ -22,10 +23,19 @@ describe('useCases registry', () => {
     expect(getUseCaseDetail(undefined)).toBeUndefined();
   });
 
-  it('does not resolve a page for coming-soon entries', () => {
-    const wedding = USE_CASES.find(uc => uc.slug === 'wedding-guest-coordination-app');
-    expect(wedding?.status).toBe('coming-soon');
-    expect(getUseCaseDetail('wedding-guest-coordination-app')).toBeUndefined();
+  it('resolves the weddings, sports, and touring pages', () => {
+    for (const slug of [
+      'wedding-guest-coordination-app',
+      'sports-team-travel-coordination',
+      'music-tour-coordination',
+    ]) {
+      const uc = getUseCaseDetail(slug);
+      expect(uc, `${slug} should resolve`).toBeDefined();
+      expect(uc?.body.length).toBeGreaterThan(0);
+      expect(uc?.featureMap.length).toBeGreaterThan(0);
+      expect(uc?.faq.length).toBeGreaterThan(0);
+      expect(uc?.cta.primaryTo).toBeTruthy();
+    }
   });
 
   it('links published internal pages to /use-cases/{slug}', () => {
@@ -39,9 +49,15 @@ describe('useCases registry', () => {
     expect(getUseCaseHref(groupTrips!)).toBe('/group-travel-planning-app');
   });
 
-  it('gives coming-soon cards no link', () => {
-    const wedding = USE_CASES.find(uc => uc.slug === 'wedding-guest-coordination-app');
-    expect(getUseCaseHref(wedding!)).toBeUndefined();
+  it('gives a coming-soon card no link (mechanism)', () => {
+    const comingSoon: UseCaseSummary = {
+      slug: 'future-use-case',
+      status: 'coming-soon',
+      cardTitle: 'Future',
+      cardTagline: 'Not live yet',
+      cardCtaLabel: 'Coming soon',
+    };
+    expect(getUseCaseHref(comingSoon)).toBeUndefined();
   });
 
   // Invariant: a published page served at /use-cases/{slug} (no href override) MUST carry
