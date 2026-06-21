@@ -74,6 +74,13 @@ export const fetchGmailAccounts = async (): Promise<GmailAccount[]> => {
 
 export const connectGmailAccount = async (): Promise<string> => {
   const redirectUri = resolveGmailOAuthRedirectUri();
+  if (import.meta.env.DEV && redirectUri) {
+    // Heads-up: the backend allowlists redirect URIs via GOOGLE_REDIRECT_URI +
+    // GOOGLE_ADDITIONAL_REDIRECT_URIS. If this origin isn't registered there
+    // (and in Google Cloud), the backend silently falls back to the default,
+    // and OAuth completes on the wrong origin.
+    console.info('[gmail-auth] requesting redirect_uri =', redirectUri);
+  }
   try {
     const { data, error } = await supabase.functions.invoke('gmail-auth/connect', {
       method: 'POST',
@@ -89,6 +96,8 @@ export const connectGmailAccount = async (): Promise<string> => {
     if (import.meta.env.DEV) {
       console.error('Error initiating Gmail connect:', error);
     }
+    // Surface the edge function's specific message verbatim (e.g.
+    // "GOOGLE_CLIENT_ID secret is not set.") so the Settings UI can show it.
     const message = await extractFunctionErrorMessage(
       error,
       'Failed to initiate Gmail connection. Check OAuth setup and secrets.',

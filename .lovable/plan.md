@@ -1,56 +1,66 @@
-# Concierge TTS: Lovable Voices + Fix Speaker Button + Settings Picker
+## Diagnosis (what's actually wrong)
 
-## Why nothing happened when you tapped the speaker
+Your per-user OAuth flow is **architecturally correct**. The code in `supabase/functions/gmail-auth/index.ts`, `gmail-import-worker/index.ts`, `src/features/smart-import/api/gmailAuth.ts`, and `src/pages/GmailCallbackPage.tsx` is solid: PKCE + HMAC-signed state, encrypted token storage, RLS-safe view, audit log, reconnect signaling, 5-account cap.
 
-The current speaker button calls `supabase/functions/gemini-tts` (Google Gemini's 8-voice TTS — `Charon`, `Puck`, etc.), not the OpenAI/Lovable voice set. Edge-function logs for both `gemini-tts` and `concierge-tts` show **no recent invocations**, meaning the request is either failing before it leaves the client or 500-ing silently because `GEMINI_TTS_API_KEY` isn't set in this environment. Either way: the "Google voices" path is not the right thing to ship — Lovable AI Gateway already provides 10 OpenAI voices (`alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`, `cedar`) with `LOVABLE_API_KEY` (already provisioned, same key used by `concierge-stt`). One pipeline, no extra secrets, paid voices for everyone on a paid plan.
+**Root cause of "Smart Import doesn't work":** 4 required secrets are missing from Supabase Edge Functions. `validateGoogleConfig()` returns 503 immediately before any OAuth happens.
 
-## Recommended default voice
+Missing secrets (confirmed via fetch_secrets):
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GMAIL_TOKEN_ENCRYPTION_KEY` (32-byte base64 for AES-GCM)
+- `OAUTH_STATE_SIGNING_SECRET` (random 32+ char string for HMAC)
 
-**coral** — warm, conversational, female-presenting; best fit for the "premium travel concierge" tone. Good runner-ups: `sage` (calm/neutral), `alloy` (balanced/androgynous). Going with **coral as the default**.
+Secondary issues (minor, found in audit):
+1. `GmailCallbackPage` redirects to `/settings` on `?error=`, but Google sometimes returns `error=access_denied` with no `state` — current code doesn't differentiate user-cancelled vs real error in the toast.
+2. `resolveGmailOAuthRedirectUri()` uses `window.location.origin` — preview origins (`*.lovable.app`) and prod (`chravel.app`) all need to be registered in Google Cloud **and** in `GOOGLE_ADDITIONAL_REDIRECT_URIS` so the backend allowlist accepts them. Currently only `chravel.app` is the default.
+3. No background refresh-token rotation — when access_token expires, the worker already handles refresh inline (verified in `gmail-import-worker/index.ts`), so this is fine. No action needed.
 
-## Scope
+## Plan
 
-1. **New edge function** `supabase/functions/concierge-voice-tts/index.ts`
-   - Auth-gated (`requireAuth`), CORS via `_shared/cors.ts`.
-   - Body: `{ text: string, voice?: string, format?: 'mp3' }` (default `voice = 'coral'`, `format = 'mp3'`).
-   - Validates `voice` against the 10-voice allowlist; falls back to `coral` on unknown.
-   - Caps `text` at 4000 chars; rejects empty.
-   - Calls `POST https://ai.gateway.lovable.dev/v1/audio/speech` with `model: 'openai/gpt-4o-mini-tts'`, `response_format: 'mp3'`, **non-streaming** (single buffered MP3 — matches existing `<Audio>`/`blob` playback in `useConciergeReadAloud`).
-   - Surfaces 402/429/403 from Gateway as JSON errors (`{ error, code }`); returns MP3 bytes with `Content-Type: audio/mpeg` on success.
-   - Adds `x-voice` response header with the resolved voice for debugging.
+### Step 1 — Google Cloud Console setup (you, ~5 min)
 
-2. **Edit `src/hooks/useConciergeReadAloud.ts`**
-   - Repoint `TTS_URL` to the new `concierge-voice-tts` function. Drop `VITE_CONCIERGE_TTS_ENABLED` branching and the legacy `concierge-tts`/`gemini-tts` payload shapes.
-   - Read the user's chosen voice from a new `useConciergeVoicePreference` hook (below); fall back to `'coral'`.
-   - Keep the sentence-chunking + parallel pre-fetch logic exactly as-is (preserves fast time-to-voice).
-   - Keep `usedFallbackVoice` plumbing but drive it off the `x-voice` header diff (selected vs returned).
+In https://console.cloud.google.com → APIs & Services:
 
-3. **New hook `src/features/concierge/hooks/useConciergeVoicePreference.ts`**
-   - Reads/writes `concierge_voice` from `localStorage` (per-device, no DB migration needed for MVP).
-   - Exposes `{ voice, setVoice, isPaid }` — `isPaid` from existing subscription/entitlement selector (reuse whichever hook the rest of settings uses; will confirm during build).
-   - Free users: forced to `coral`; `setVoice` is a no-op and the picker is disabled.
+1. **Enable Gmail API** (Library → search "Gmail API" → Enable).
+2. **OAuth consent screen**: External, app name "Chravel", add Authorized Domains: `chravel.app`, `lovable.app`. Add scopes: `gmail.readonly`, `userinfo.email`, `openid`. Add yourself as Test User while in Testing mode.
+3. **Credentials → Create OAuth client ID** (Web application). Register **all** these Authorized redirect URIs:
+   - `https://chravel.app/api/gmail/oauth/callback`
+   - `https://www.chravel.app/api/gmail/oauth/callback`
+   - `https://chravelapp.com/api/gmail/oauth/callback`
+   - `https://chravel.lovable.app/api/gmail/oauth/callback`
+   - `https://id-preview--20feaa04-0946-4c68-a68d-0eb88cc1b9c4.lovable.app/api/gmail/oauth/callback`
+   - `http://localhost:8080/api/gmail/oauth/callback`
+4. Copy the **Client ID** and **Client Secret**.
 
-4. **New component `src/features/concierge/components/ConciergeVoicePicker.tsx`**
-   - 10-option radio list with short descriptors (e.g. "Coral — warm, conversational"), preview button per voice that POSTs a short sample ("Hi, I'm your Chravel concierge.") through `concierge-voice-tts` and plays it.
-   - Disabled state for free users with an upsell line ("Upgrade to choose a voice.").
-   - Saves on selection; toasts "Voice updated."
+### Step 2 — Add 4 Supabase secrets (I'll prompt you)
 
-5. **Wire picker into existing Concierge settings**
-   - Add a "Voice" section to whichever concierge settings surface already exists (will locate during build — likely under `src/features/concierge/` or `src/pages/Settings*`); no new route.
+I'll call `add_secret` for each once you approve:
+- `GOOGLE_CLIENT_ID` = from step 1
+- `GOOGLE_CLIENT_SECRET` = from step 1
+- `GMAIL_TOKEN_ENCRYPTION_KEY` = generated 32-byte base64 (I'll generate)
+- `OAUTH_STATE_SIGNING_SECRET` = generated 48-char random (I'll generate)
+- `GOOGLE_ADDITIONAL_REDIRECT_URIS` = comma-separated list of every non-default URI from step 1.3 (so backend allowlist accepts preview + alt domains)
 
-## Out of scope (deferred, captured here)
+### Step 3 — Code patches (3 small edits)
 
-- Server-side persistence of voice pref (DB column on `profiles`) — `localStorage` is fine for MVP; will add a migration once we need cross-device sync.
-- Streaming/SSE TTS (lower TTFB) — current chunked-sentence + parallel fetch already delivers good TTFB; SSE PCM is a future perf pass.
-- Removing/retiring `gemini-tts` and `concierge-tts` edge functions — leave them deployed but unused for one release in case of rollback; delete next cycle.
+1. **`src/pages/GmailCallbackPage.tsx`** — distinguish `error=access_denied` (user cancelled, friendly toast, no scary "Connection Failed" headline) from other errors.
+2. **`src/features/smart-import/api/gmailAuth.ts`** — when `resolveGmailOAuthRedirectUri()` runs on a preview origin not in the allowlist, the backend silently falls back to `chravel.app` and OAuth round-trips to prod. Add a dev-mode warning in console so you notice the mismatch.
+3. **`supabase/functions/gmail-auth/index.ts`** — when `validateGoogleConfig` fails, current error message is generic. Include which secret is missing in the response body so the Settings UI can surface it (already returns it via `errorResponse`, but the frontend toast swallows it — make `connectGmailAccount` surface the 503 message verbatim).
 
-## Validation
+### Step 4 — Verify end-to-end
 
-- `npm run lint:check && npm run typecheck && npm run build`
-- Manual: tap speaker on a concierge message → audio plays in coral voice. Open Concierge settings on a paid account → switch to `sage` → tap speaker again → voice changes. Free account → picker disabled, locked to coral.
-- Edge function logs show `concierge-voice-tts` invocations with 200s.
-- No `LOVABLE_API_KEY` in client bundle (grep build output).
+1. From Settings → Integrations → Connect Gmail: should open Google consent screen.
+2. After consent: redirect lands on `/api/gmail/oauth/callback`, token exchange succeeds, account appears in `gmail_accounts_safe` view.
+3. From a trip → Smart Import → Scan Inbox: `gmail-import-worker` runs and returns candidates (or "no new items").
+4. Disconnect: token revoked at Google, row deleted.
 
-## Rollback
+I'll use `supabase--curl_edge_functions` to test `gmail-auth/connect` returns a valid Google OAuth URL after secrets are in.
 
-Revert the `TTS_URL` change in `useConciergeReadAloud.ts` (one line) and the new function/component are dormant. No DB changes.
+## Out of scope (deferred — call out per discipline)
+
+- Background refresh-token cron (current inline refresh is sufficient until usage grows).
+- Production verification with Google (CASA Tier 2) — `gmail.readonly` is a **restricted scope**; you can ship in Testing mode with up to 100 test users now, but public launch requires a security assessment. Per memory `features/calendar/gmail-smart-import-infrastructure-and-compliance`, this is already documented as a known constraint.
+
+## Risk
+
+LOW. No schema changes, no auth surface changes, no RLS changes. All edits are config + 3 localized code patches. Rollback = delete the 4 secrets.
