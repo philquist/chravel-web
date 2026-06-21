@@ -290,13 +290,13 @@ export const NativeSettings = ({
           </NativeListSection>
 
           {/* Account — opens the actionable in-app deletion flow
-              (request_account_deletion RPC + optional password re-auth for email users, 30-day grace)
+              (delete-account edge function + optional password re-auth for email users)
               that lives in ConsumerGeneralSettings. Required for App Store
               Guideline 5.1.1 (in-app account deletion). */}
           {user && (
             <NativeListSection
               header="Account"
-              footer="Deleting your account schedules permanent removal of your data after a 30-day grace period."
+              footer="Deleting your account permanently removes your data immediately. This cannot be undone."
             >
               <NativeListItem
                 icon={<Trash2 size={18} />}

@@ -1,12 +1,13 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { useDemoMode } from '@/hooks/useDemoMode';
 import { logAuthEvent } from '@/utils/authTelemetry';
 import { userHasEmailPasswordIdentity } from '@/utils/authProviders';
 import { useTheme } from '@/hooks/useTheme';
+import { deleteAccountImmediately } from '@/lib/accountDeletion';
 import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog,
@@ -49,76 +50,16 @@ function saveAppPreferences(prefs: AppPreferences): void {
 
 export const ConsumerGeneralSettings = () => {
   const { user, session } = useAuth();
-  const { showDemoContent } = useDemoMode();
+  const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const [reAuthPassword, setReAuthPassword] = useState('');
   const [reAuthError, setReAuthError] = useState('');
-  const [deletionScheduledFor, setDeletionScheduledFor] = useState<string | null>(null);
-  const [isCancelling, setIsCancelling] = useState(false);
   const [appPrefs, setAppPrefs] = useState<AppPreferences>(loadAppPreferences);
   const [cacheClearSuccess, setCacheClearSuccess] = useState(false);
   const requiresPasswordReauth = useMemo(() => userHasEmailPasswordIdentity(session), [session]);
-
-  // Check if account deletion is already scheduled
-  useEffect(() => {
-    if (!user || showDemoContent) return;
-    let cancelled = false;
-
-    supabase
-      .rpc('get_account_deletion_status' as never)
-      .then(({ data, error }: { data: unknown; error: unknown }) => {
-        if (cancelled || error) return;
-        const result = data as {
-          pending_deletion?: boolean;
-          scheduled_for?: string;
-          // Legacy shape fallback
-          status?: string;
-          deletion_scheduled_for?: string;
-        } | null;
-        if (result?.pending_deletion && result?.scheduled_for) {
-          setDeletionScheduledFor(result.scheduled_for);
-        } else if (result?.status === 'scheduled' && result?.deletion_scheduled_for) {
-          // Legacy shape fallback
-          setDeletionScheduledFor(result.deletion_scheduled_for);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user, showDemoContent]);
-
-  const handleCancelDeletion = useCallback(async () => {
-    setIsCancelling(true);
-    try {
-      const { error } = await supabase.rpc('cancel_account_deletion' as never);
-      if (error) {
-        toast({
-          title: 'Error',
-          description: 'Failed to cancel deletion. Please contact support.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      logAuthEvent('account_deletion_cancelled');
-      setDeletionScheduledFor(null);
-      toast({
-        title: 'Deletion Cancelled',
-        description: 'Your account deletion has been cancelled. Your account will remain active.',
-      });
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: 'Failed to cancel deletion. Please contact support at privacy@chravelapp.com',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsCancelling(false);
-    }
-  }, []);
 
   const handleDeleteAccount = useCallback(async () => {
     if (confirmText !== 'DELETE') return;
@@ -140,35 +81,39 @@ export const ConsumerGeneralSettings = () => {
           return;
         }
       }
-      const { data, error } = await supabase.rpc('request_account_deletion' as never);
-      if (error) {
+
+      const result = await deleteAccountImmediately();
+      if (result.success === false) {
         toast({
           title: 'Error',
-          description: 'Failed to schedule deletion. Please contact privacy@chravelapp.com',
+          description: result.error,
           variant: 'destructive',
         });
         return;
       }
-      const scheduledFor = (data as { scheduled_for?: string } | null)?.scheduled_for;
-      if (scheduledFor) setDeletionScheduledFor(scheduledFor);
-      logAuthEvent('account_deletion_scheduled' as never);
-      toast({
-        title: 'Deletion scheduled',
-        description: 'Your account will be deleted in 30 days. You can cancel anytime.',
-      });
+
+      logAuthEvent('account_deletion_requested');
       setShowDeleteDialog(false);
       setConfirmText('');
       setReAuthPassword('');
-    } catch (err) {
+
+      toast({
+        title: 'Account deleted',
+        description: result.message,
+      });
+
+      await supabase.auth.signOut();
+      navigate('/', { replace: true });
+    } catch {
       toast({
         title: 'Error',
-        description: 'Failed to schedule deletion. Please contact privacy@chravelapp.com',
+        description: 'Failed to delete your account. Please contact privacy@chravelapp.com',
         variant: 'destructive',
       });
     } finally {
       setIsDeleting(false);
     }
-  }, [confirmText, reAuthPassword, requiresPasswordReauth, user?.email]);
+  }, [confirmText, navigate, reAuthPassword, requiresPasswordReauth, user?.email]);
 
   return (
     <div className="space-y-3">
@@ -319,33 +264,14 @@ export const ConsumerGeneralSettings = () => {
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
         <h4 className="text-base font-semibold text-white mb-3">Account Management</h4>
         <div className="space-y-3">
-          {deletionScheduledFor && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-              <div className="text-red-300 font-medium text-sm mb-1">
-                Account Deletion Scheduled
-              </div>
-              <div className="text-gray-400 text-xs mb-2">
-                Your account will be permanently deleted on{' '}
-                {new Date(deletionScheduledFor).toLocaleDateString()}. All data will be removed.
-              </div>
-              <button
-                onClick={handleCancelDeletion}
-                disabled={isCancelling}
-                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition-colors disabled:opacity-50"
-              >
-                {isCancelling ? 'Cancelling...' : 'Cancel Deletion'}
-              </button>
-            </div>
-          )}
           <button
             onClick={() => setShowDeleteDialog(true)}
-            disabled={!!deletionScheduledFor}
-            className="w-full flex items-center justify-between p-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-between p-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition-colors"
           >
             <div className="text-left">
               <div className="text-red-400 font-medium">Delete Account</div>
               <div className="text-sm text-gray-400">
-                Permanently delete your account and all data
+                Permanently delete your account and all data immediately
               </div>
             </div>
             <div className="text-red-400">Delete</div>
@@ -392,8 +318,8 @@ export const ConsumerGeneralSettings = () => {
             <AlertDialogTitle className="text-red-400">Delete Your Account?</AlertDialogTitle>
             <AlertDialogDescription className="text-gray-300 space-y-3">
               <p>
-                Your account will be scheduled for deletion in <strong>30 days</strong>. After that,
-                the following will be permanently removed:
+                This action is <strong>immediate and cannot be undone</strong>. The following will
+                be permanently removed:
               </p>
               <ul className="list-disc list-inside text-sm space-y-1">
                 <li>Your profile and personal information</li>
@@ -402,7 +328,7 @@ export const ConsumerGeneralSettings = () => {
                 <li>Your subscription and payment history</li>
               </ul>
               <p className="text-sm text-gray-400">
-                You can cancel this within 30 days from Settings.
+                You will be signed out as soon as deletion completes.
               </p>
               <p className="pt-2">
                 To confirm, type <strong>DELETE</strong> below:
@@ -434,7 +360,7 @@ export const ConsumerGeneralSettings = () => {
               ) : (
                 <p className="pt-2 text-sm text-gray-400">
                   You signed in with Google or Apple, so no password is required. Confirming below
-                  will schedule deletion using your active session.
+                  will delete your account using your active session.
                 </p>
               )}
             </AlertDialogDescription>
@@ -455,7 +381,7 @@ export const ConsumerGeneralSettings = () => {
               }
               className="bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
             >
-              {isDeleting ? 'Submitting...' : 'Schedule Account Deletion'}
+              {isDeleting ? 'Deleting...' : 'Delete Account Permanently'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

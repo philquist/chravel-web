@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -6,11 +5,17 @@ import type { Session } from '@supabase/supabase-js';
 
 import { ConsumerGeneralSettings } from '../ConsumerGeneralSettings';
 
-const mockRpc = vi.fn();
 const mockSignInWithPassword = vi.fn();
+const mockSignOut = vi.fn();
+const mockNavigate = vi.fn();
 const mockToast = vi.fn();
+const mockDeleteAccountImmediately = vi.fn();
 
 let mockSession: Session | null = null;
+
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+}));
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
@@ -63,11 +68,15 @@ vi.mock('../BlockedUsersList', () => ({
   BlockedUsersList: () => <div>Blocked Users</div>,
 }));
 
+vi.mock('@/lib/accountDeletion', () => ({
+  deleteAccountImmediately: (...args: unknown[]) => mockDeleteAccountImmediately(...args),
+}));
+
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    rpc: (...args: unknown[]) => mockRpc(...args),
     auth: {
       signInWithPassword: (...args: unknown[]) => mockSignInWithPassword(...args),
+      signOut: (...args: unknown[]) => mockSignOut(...args),
     },
   },
 }));
@@ -95,14 +104,15 @@ describe('ConsumerGeneralSettings account deletion', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSession = makeSession('google');
-    mockRpc.mockResolvedValue({
-      data: { scheduled_for: '2026-07-21T00:00:00.000Z' },
-      error: null,
+    mockDeleteAccountImmediately.mockResolvedValue({
+      success: true,
+      message: 'Your account and data have been permanently deleted.',
     });
     mockSignInWithPassword.mockResolvedValue({ error: null });
+    mockSignOut.mockResolvedValue({ error: null });
   });
 
-  it('does not ask OAuth users for a password before scheduling deletion', async () => {
+  it('does not ask OAuth users for a password before deleting immediately', async () => {
     const user = userEvent.setup();
     render(<ConsumerGeneralSettings />);
 
@@ -111,10 +121,12 @@ describe('ConsumerGeneralSettings account deletion', () => {
     expect(screen.getByText(/no password is required/i)).toBeInTheDocument();
 
     await user.type(screen.getByPlaceholderText(/type delete to confirm/i), 'DELETE');
-    await user.click(screen.getByRole('button', { name: /schedule account deletion/i }));
+    await user.click(screen.getByRole('button', { name: /delete account permanently/i }));
 
     expect(mockSignInWithPassword).not.toHaveBeenCalled();
-    expect(mockRpc).toHaveBeenCalledWith('request_account_deletion');
+    expect(mockDeleteAccountImmediately).toHaveBeenCalledTimes(1);
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
   });
 
   it('requires password re-auth for email/password users', async () => {
@@ -126,7 +138,7 @@ describe('ConsumerGeneralSettings account deletion', () => {
     expect(screen.getByPlaceholderText(/enter your password/i)).toBeInTheDocument();
 
     await user.type(screen.getByPlaceholderText(/type delete to confirm/i), 'DELETE');
-    const submitButton = screen.getByRole('button', { name: /schedule account deletion/i });
+    const submitButton = screen.getByRole('button', { name: /delete account permanently/i });
     expect(submitButton).toBeDisabled();
 
     await user.type(screen.getByPlaceholderText(/enter your password/i), 'secret-password');
@@ -136,6 +148,6 @@ describe('ConsumerGeneralSettings account deletion', () => {
       email: 'traveler@example.com',
       password: 'secret-password',
     });
-    expect(mockRpc).toHaveBeenCalledWith('request_account_deletion');
+    expect(mockDeleteAccountImmediately).toHaveBeenCalledTimes(1);
   });
 });

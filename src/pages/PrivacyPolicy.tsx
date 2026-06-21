@@ -275,9 +275,9 @@ export default function PrivacyPolicy() {
             <h2 className="text-2xl font-semibold mb-4">7. Data Retention</h2>
             <p className="text-foreground/90">
               We retain your information for as long as necessary to provide our services and comply
-              with legal obligations. When you delete your account, we will delete or anonymize your
-              personal information within 30 days, except where we are required to retain it for
-              legal purposes.
+              with legal obligations. When you delete your account, we delete or anonymize your
+              personal information immediately, except where we are required to retain specific
+              records for legal purposes.
             </p>
           </section>
 
