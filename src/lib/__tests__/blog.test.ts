@@ -23,6 +23,25 @@ describe('blog registry', () => {
     expect(links).toContain('/use-cases/travel-concierge-client-portal');
   });
 
+  it('every concierge post resolves and links to the use-case page', () => {
+    for (const slug of [
+      'travel-concierge-better-client-experience-after-booking',
+      'how-to-share-itineraries-files-receipts-with-travel-clients',
+      'why-whatsapp-google-drive-not-enough-luxury-travel-planning',
+    ]) {
+      const post = getBlogPost(slug);
+      expect(post, `${slug} should resolve`).toBeDefined();
+      const links = [
+        ...post!.related.map(r => r.to),
+        ...post!.sections.flatMap(s => (s.link ? [s.link.to] : [])),
+        post!.cta.secondaryTo ?? '',
+      ];
+      expect(links, `${slug} should link to the concierge page`).toContain(
+        '/use-cases/travel-concierge-client-portal',
+      );
+    }
+  });
+
   it('returns undefined for unknown slugs', () => {
     expect(getBlogPost('does-not-exist')).toBeUndefined();
     expect(getBlogPost(undefined)).toBeUndefined();

@@ -145,8 +145,14 @@ export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
         {/* Logo */}
         <div className="text-xl font-bold text-gradient-gold">ChravelApp</div>
 
-        {/* For Teams Link (Desktop) */}
-        <div className="hidden lg:flex items-center">
+        {/* Page Links (Desktop) */}
+        <div className="hidden lg:flex items-center gap-1">
+          <Link
+            to="/blog"
+            className="text-sm font-medium text-foreground hover:text-primary transition-colors px-4 py-2 rounded-md hover:bg-accent/10"
+          >
+            Blog
+          </Link>
           <Link
             to="/teams"
             className="text-sm font-medium text-foreground hover:text-primary transition-colors px-4 py-2 rounded-md hover:bg-accent/10"
