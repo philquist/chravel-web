@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/sheet';
 
 const NAV_LINKS: { label: string; to: string }[] = [
+  { label: 'Home', to: '/' },
   { label: 'Use Cases', to: '/use-cases' },
   { label: 'Blog', to: '/blog' },
   { label: 'For Teams', to: '/teams' },
