@@ -557,8 +557,8 @@
       "DB migrations": 419
     },
     "generated": "2026-06-22",
-    "commit": "77a5791",
-    "commitUrl": "https://github.com/chravel-inc/chravel-web/commit/77a5791",
+    "commit": "e347a3c",
+    "commitUrl": "https://github.com/chravel-inc/chravel-web/commit/e347a3c",
     "metrics": {
       "knip": {
         "files": 210,
@@ -2367,7 +2367,214 @@
       "plain": "Reorganizing code without changing what it does.",
       "why": "How god files get tamed — must be proven behavior-preserving with tests."
     }
-  ]
+  ],
+  "costEstimate": {
+    "lens": "What it would cost to rebuild Chravel from scratch — the same feature surface and quality bar, on the same third-party platforms (Supabase, Stream, Stripe/RevenueCat, Google, Gemini/Vertex) — with no AI coding assistance. For internal reference, not a sales quote.",
+    "methodology": "Bottom-up: each major system is sized in developer-hours for a competent team rebuilding a known spec (no product discovery, no pivots), then crossed with three vendor rate tiers. Three effort scenarios — Conservative (lean, senior, aggressive reuse, minimal polish), Moderate (average competent devs at a normal pace), High (enterprise rigor, full tests, edge cases).",
+    "disclaimer": "Human-only rebuild of a known spec on the same managed platforms — integration work, not platform engineering. Excludes ongoing SaaS/infra, app-store fees, and post-launch maintenance.",
+    "totals": {
+      "conservative": 3820,
+      "moderate": 5800,
+      "high": 8840
+    },
+    "features": [
+      {
+        "area": "Foundation \u0026 design system",
+        "note": "Scaffold, routing, Tailwind + shadcn/Radix, app shell, CI/CD",
+        "conservative": 150,
+        "moderate": 220,
+        "high": 320
+      },
+      {
+        "area": "Auth \u0026 session",
+        "note": "Supabase Auth, Google OAuth, role/tier resolution, hydration guards",
+        "conservative": 120,
+        "moderate": 180,
+        "high": 280
+      },
+      {
+        "area": "Data layer \u0026 Supabase integration",
+        "note": "Client gateway, ~140 service modules, query-key cache contract, generated types",
+        "conservative": 190,
+        "moderate": 280,
+        "high": 420
+      },
+      {
+        "area": "Database schema \u0026 RLS",
+        "note": "Final schema, ~750 row-level-security policies as patterns, migrations",
+        "conservative": 230,
+        "moderate": 360,
+        "high": 560
+      },
+      {
+        "area": "Trips \u0026 membership",
+        "note": "CRUD, invites, 3 trip tiers (consumer/pro/event), archival",
+        "conservative": 190,
+        "moderate": 280,
+        "high": 420
+      },
+      {
+        "area": "Permissions \u0026 roles",
+        "note": "Per-trip-type permission matrix, RLS-backed",
+        "conservative": 110,
+        "moderate": 160,
+        "high": 250
+      },
+      {
+        "area": "Unified messaging / chat",
+        "note": "Stream Chat, channels, broadcasts, threads, reactions, read receipts, reconnect/backfill",
+        "conservative": 280,
+        "moderate": 420,
+        "high": 620
+      },
+      {
+        "area": "AI Concierge — text",
+        "note": "Gemini, ~38 tools, query classification, pending-actions write buffer",
+        "conservative": 250,
+        "moderate": 380,
+        "high": 560
+      },
+      {
+        "area": "AI Concierge — voice",
+        "note": "Vertex AI Live, audio session lifecycle",
+        "conservative": 140,
+        "moderate": 220,
+        "high": 340
+      },
+      {
+        "area": "Calendar \u0026 Google sync",
+        "note": "Bi-directional, idempotent, recurring events, RSVP",
+        "conservative": 170,
+        "moderate": 260,
+        "high": 400
+      },
+      {
+        "area": "Payments \u0026 subscriptions",
+        "note": "Stripe (web) + RevenueCat (iOS), webhooks, entitlements, expense splitting",
+        "conservative": 220,
+        "moderate": 340,
+        "high": 520
+      },
+      {
+        "area": "Smart Import",
+        "note": "Gmail OAuth, PDF/image parsing, Gemini extraction, checkpoint state machine",
+        "conservative": 200,
+        "moderate": 300,
+        "high": 460
+      },
+      {
+        "area": "Media gallery \u0026 storage",
+        "note": "Upload, compression, AI tagging, lightbox, quota",
+        "conservative": 130,
+        "moderate": 200,
+        "high": 300
+      },
+      {
+        "area": "Maps \u0026 places",
+        "note": "Google Maps, places search, autocomplete, caching",
+        "conservative": 100,
+        "moderate": 150,
+        "high": 230
+      },
+      {
+        "area": "Notifications \u0026 realtime",
+        "note": "Push/email/SMS (APNS/Resend/Twilio), dedup, badge counts",
+        "conservative": 160,
+        "moderate": 240,
+        "high": 360
+      },
+      {
+        "area": "Organizations \u0026 B2B",
+        "note": "Seat-based billing, team management, org admin dashboard",
+        "conservative": 140,
+        "moderate": 220,
+        "high": 340
+      },
+      {
+        "area": "Mobile / PWA / native",
+        "note": "Capacitor 8 iOS wrapper, offline, service worker, web/native parity",
+        "conservative": 210,
+        "moderate": 320,
+        "high": 480
+      },
+      {
+        "area": "Admin, security \u0026 audit",
+        "note": "Append-only + hash-chained audit logs, super-admin, secret validation",
+        "conservative": 140,
+        "moderate": 220,
+        "high": 340
+      },
+      {
+        "area": "Observability \u0026 feature flags",
+        "note": "Sentry, PostHog, runtime kill switches",
+        "conservative": 60,
+        "moderate": 90,
+        "high": 140
+      },
+      {
+        "area": "Testing",
+        "note": "Unit + integration across critical paths (~350 specs)",
+        "conservative": 280,
+        "moderate": 420,
+        "high": 640
+      },
+      {
+        "area": "Marketing site, blog \u0026 SEO",
+        "note": "Landing, blog content system, SEO",
+        "conservative": 100,
+        "moderate": 160,
+        "high": 260
+      },
+      {
+        "area": "Integration glue, QA \u0026 PM overhead",
+        "note": "Cross-feature wiring, bug-fixing, coordination",
+        "conservative": 250,
+        "moderate": 380,
+        "high": 600
+      }
+    ],
+    "vendors": [
+      {
+        "tier": "Freelancer(s) off the street",
+        "rateLow": 40,
+        "rateHigh": 80,
+        "ratePoint": 60,
+        "blurb": "Cheaper and less vetted; more management overhead and wider quality variance."
+      },
+      {
+        "tier": "Established agency (1–2 dedicated devs)",
+        "rateLow": 100,
+        "rateHigh": 175,
+        "ratePoint": 135,
+        "headline": true,
+        "blurb": "Vetted senior + mid pairing with a PM — the most representative real-world option."
+      },
+      {
+        "tier": "High-end agency / specialist firm",
+        "rateLow": 200,
+        "rateHigh": 350,
+        "ratePoint": 260,
+        "blurb": "Senior-heavy top-tier firm with strong process, guarantees, and speed."
+      }
+    ],
+    "assumptions": [
+      "US-market blended contractor rates (2026); offshore teams would be materially cheaper.",
+      "~1,800 productive developer-hours per year when converting hours to person-years.",
+      "Rebuilding a known spec — no product discovery, design iteration, or pivots (those consumed much of the original calendar time).",
+      "Same managed platforms reused (Supabase, Stream, Stripe/RevenueCat, Google, Gemini) — you integrate them, you do not rebuild auth servers, realtime, chat, or payment rails.",
+      "Competent developers at a normal pace — not padded worst-case-everything estimates.",
+      "Human-only: no AI coding assistance is assumed (the AI-assisted figure is intentionally kept off this page)."
+    ],
+    "whyNotMore": [
+      "Recreating a known spec skips discovery, dead-ends, and pivots — typically 40–60% of the original calendar time never reappears.",
+      "Off-the-shelf platforms do the heavy lifting: no custom auth server, realtime engine, chat backend, or payment processor to build.",
+      "UI is assembled from shadcn/Radix + Tailwind primitives rather than hand-built components.",
+      "The 419 migrations and ~750 RLS policies are iterative history; the final schema is authored once and is far smaller than replaying every migration.",
+      "File count is not effort: many of the 1,180 source files are small, repetitive hooks and components.",
+      "Estimates assume focused senior/mid developers, not a worst-case junior team."
+    ],
+    "note": "Rates are US-market blended (2026); offshore would be materially lower. The cost matrix recomputes as hours × blended rate, so adjusting either hours or rates updates every cell."
+  }
 }</script>
     <script>
       (function () {
@@ -2446,6 +2653,7 @@
           { id: 'quality', title: 'Quality Review', render: renderQuality },
           { id: 'missing', title: 'Missing Pieces', render: renderMissing },
           { id: 'roadmap', title: 'Refactor Roadmap', render: renderRoadmap },
+          { id: 'cost', title: 'Cost to Build', render: renderCost },
           { id: 'glossary', title: 'Founder Glossary', render: renderGlossary },
         ];
 
@@ -3224,6 +3432,178 @@
               ),
             );
           });
+        }
+
+        // ---- cost to build from scratch (human-only; AI-assisted figure deliberately omitted) ----
+        function renderCost(sec) {
+          var ce = D.costEstimate;
+          if (!ce) return;
+          function money(n) {
+            if (n >= 1e6) return '$' + Math.round(n / 1e4) / 100 + 'M';
+            if (n >= 1e3) return '$' + Math.round(n / 1e3) + 'K';
+            return '$' + n;
+          }
+          function hrs(n) {
+            return Number(n).toLocaleString() + ' hrs';
+          }
+          var t = ce.totals;
+          sec.appendChild(el(lead(ce.lens)));
+
+          // headline trio
+          var head = (ce.vendors || []).filter(function (v) {
+            return v.headline;
+          })[0] ||
+            (ce.vendors || [])[1] || { tier: '', ratePoint: 0 };
+          var cols = el('<div class="cols" style="margin-bottom:14px"></div>');
+          cols.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid var(--gold)"><h4>Rebuild effort — moderate, human-only</h4>' +
+                '<div class="val" style="font-size:30px;font-weight:800;color:var(--gold)">' +
+                hrs(t.moderate) +
+                '</div><div class="v muted" style="font-size:12.5px">≈ ' +
+                (t.moderate / 1800).toFixed(1) +
+                ' developer-years · range ' +
+                hrs(t.conservative) +
+                ' – ' +
+                hrs(t.high) +
+                '</div></div>',
+            ),
+          );
+          cols.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid ' +
+                COLOR.green +
+                '"><h4>Representative cost</h4>' +
+                '<div class="val" style="font-size:30px;font-weight:800;color:' +
+                COLOR.green +
+                '">' +
+                money(t.moderate * head.ratePoint) +
+                '</div><div class="v muted" style="font-size:12.5px">moderate effort · ' +
+                esc(head.tier) +
+                '</div></div>',
+            ),
+          );
+          cols.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid ' +
+                COLOR.blue +
+                '"><h4>What this is</h4><div class="v muted" style="font-size:12.5px">' +
+                esc(ce.disclaimer) +
+                '</div></div>',
+            ),
+          );
+          sec.appendChild(cols);
+
+          // cost matrix: vendor tier × effort scenario
+          var vrows = (ce.vendors || [])
+            .map(function (v) {
+              return (
+                '<tr><td><b>' +
+                esc(v.tier) +
+                '</b><div class="sub" style="color:var(--muted2)">' +
+                esc(v.blurb) +
+                '</div></td><td class="muted">$' +
+                v.rateLow +
+                '–' +
+                v.rateHigh +
+                '/hr</td><td>' +
+                money(t.conservative * v.ratePoint) +
+                '</td><td><b style="color:var(--gold)">' +
+                money(t.moderate * v.ratePoint) +
+                '</b></td><td>' +
+                money(t.high * v.ratePoint) +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel"><h4>Cost matrix — vendor tier × effort scenario</h4>' +
+                '<table class="tbl"><thead><tr><th>Who builds it</th><th>Blended rate</th><th>Conservative</th><th>Moderate</th><th>High</th></tr></thead><tbody>' +
+                vrows +
+                '<tr style="border-top:2px solid var(--gold-dim)"><td class="muted">Effort (developer-hours)</td><td></td><td class="muted">' +
+                hrs(t.conservative) +
+                '</td><td class="muted">' +
+                hrs(t.moderate) +
+                '</td><td class="muted">' +
+                hrs(t.high) +
+                '</td></tr></tbody></table></div>',
+            ),
+          );
+
+          // where the hours go
+          var frows = ce.features
+            .map(function (f) {
+              return (
+                '<tr><td><b>' +
+                esc(f.area) +
+                '</b>' +
+                (f.note
+                  ? '<div class="sub" style="color:var(--muted2)">' + esc(f.note) + '</div>'
+                  : '') +
+                '</td><td class="muted">' +
+                f.conservative +
+                '</td><td><b>' +
+                f.moderate +
+                '</b></td><td class="muted">' +
+                f.high +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel" style="margin-top:14px"><h4>Where the hours go — developer-hours by system</h4>' +
+                '<table class="tbl"><thead><tr><th>System</th><th>Conservative</th><th>Moderate</th><th>High</th></tr></thead><tbody>' +
+                frows +
+                '<tr style="border-top:2px solid var(--gold-dim)"><td><b>Total</b></td><td><b>' +
+                hrs(t.conservative) +
+                '</b></td><td><b style="color:var(--gold)">' +
+                hrs(t.moderate) +
+                '</b></td><td><b>' +
+                hrs(t.high) +
+                '</b></td></tr></tbody></table></div>',
+            ),
+          );
+
+          // assumptions + why-not-more
+          var cols2 = el('<div class="cols" style="margin-top:14px"></div>');
+          cols2.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid ' +
+                COLOR.blue +
+                '"><h4>Assumptions</h4>' +
+                list(ce.assumptions) +
+                '</div>',
+            ),
+          );
+          cols2.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid ' +
+                COLOR.green +
+                '"><h4>Why it is not 15,000+ hours</h4>' +
+                list(ce.whyNotMore) +
+                '</div>',
+            ),
+          );
+          sec.appendChild(cols2);
+
+          if (ce.methodology)
+            sec.appendChild(
+              el(
+                '<p class="lead" style="margin-top:12px;font-size:12.5px;color:var(--muted)"><b>Method:</b> ' +
+                  esc(ce.methodology) +
+                  '</p>',
+              ),
+            );
+          if (ce.note)
+            sec.appendChild(
+              el(
+                '<p class="lead" style="font-size:12.5px;color:var(--muted2)">' +
+                  esc(ce.note) +
+                  '</p>',
+              ),
+            );
         }
 
         function renderGlossary(sec) {
