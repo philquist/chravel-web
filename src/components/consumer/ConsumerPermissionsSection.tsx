@@ -9,7 +9,6 @@ import {
   MapPin,
   Mic,
   RefreshCcw,
-  Settings as SettingsIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -315,10 +314,6 @@ export const ConsumerPermissionsSection = () => {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-            <SettingsIcon size={22} className="text-primary" />
-            Permissions Center
-          </h3>
           <p className="text-sm text-gray-400 mt-1">
             We only ask for permissions when you use a feature. You can review and update access
             here anytime.

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Wand2, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { TripPreferences } from '../TripPreferences';
 import { TripPreferences as TripPreferencesType } from '../../types/consumer';
 import { useConsumerSubscription } from '../../hooks/useConsumerSubscription';
@@ -90,10 +90,6 @@ export const ConsumerAIConciergeSection = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Wand2 size={24} className="text-gold-primary" />
-            <h2 className="text-2xl font-bold text-white">Concierge Settings</h2>
-          </div>
           <p className="text-gray-400">
             Configure your preferences once - AI uses them across all trips for personalized
             recommendations

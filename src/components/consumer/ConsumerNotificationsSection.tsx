@@ -288,11 +288,6 @@ export const ConsumerNotificationsSection = () => {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-        <Bell size={24} className="text-primary" />
-        Notification Preferences
-      </h3>
-
       {/* App Notification Categories */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
         <h4 className="text-base font-semibold text-white mb-3">App Notifications</h4>
