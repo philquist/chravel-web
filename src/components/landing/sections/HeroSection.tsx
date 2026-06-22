@@ -148,7 +148,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             textShadow: '0 2px 6px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)',
           }}
         >
-          Built for group planning. All your trip's important info. In one place.
+          Built for group planning. All your trip's important info In one place. Synced across web & mobile
         </p>
       </div>
 
@@ -247,7 +247,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
           }}
         >
-          Plans, Photos, Places, & Payments — one Private Place for each specific trip.
+          Plans, Photos, Places, Polls, PDFs, & Payments —{"\u00a0"}Made Private
         </p>
       </div>
     </div>
