@@ -767,146 +767,155 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(shouldUseDemoUser ? demoUser : null);
   }, [demoUser, session, shouldUseDemoUser]);
 
-  const signIn = async (email: string, password: string): Promise<{ error?: string }> => {
-    try {
-      setIsLoading(true);
+  const signIn = useCallback(
+    async (email: string, password: string): Promise<{ error?: string }> => {
+      try {
+        setIsLoading(true);
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-      if (error) {
-        if (import.meta.env.DEV) {
-          console.error('[Auth] Sign in error:', error);
+        if (error) {
+          if (import.meta.env.DEV) {
+            console.error('[Auth] Sign in error:', error);
+          }
+          logAuthEvent('login_failure', { method: 'email', errorReason: error.message });
+          setIsLoading(false);
+
+          // Provide more specific error messages
+          if (error.message.includes('Invalid login credentials')) {
+            return {
+              error: 'Invalid email or password. Please check your credentials and try again.',
+            };
+          }
+          if (error.message.includes('Email not confirmed')) {
+            return {
+              error:
+                'Please confirm your email address before signing in. Check your inbox for the confirmation link.',
+            };
+          }
+
+          return { error: error.message };
         }
-        logAuthEvent('login_failure', { method: 'email', errorReason: error.message });
+
+        // Success path: clear loading state (auth state listener will update user)
+        logAuthEvent('login_success', { method: 'email' });
         setIsLoading(false);
-
-        // Provide more specific error messages
-        if (error.message.includes('Invalid login credentials')) {
-          return {
-            error: 'Invalid email or password. Please check your credentials and try again.',
-          };
-        }
-        if (error.message.includes('Email not confirmed')) {
-          return {
-            error:
-              'Please confirm your email address before signing in. Check your inbox for the confirmation link.',
-          };
-        }
-
-        return { error: error.message };
-      }
-
-      // Success path: clear loading state (auth state listener will update user)
-      logAuthEvent('login_success', { method: 'email' });
-      setIsLoading(false);
-      void data;
-      return {};
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('[Auth] Unexpected sign in error:', error);
-      }
-      setIsLoading(false);
-      return { error: 'An unexpected error occurred. Please try again.' };
-    }
-  };
-
-  const signInWithGoogle = async (returnToOverride?: string): Promise<{ error?: string }> => {
-    try {
-      const installed = isInstalledApp();
-      // Installed shells (Capacitor / PWA) return to a Universal Link that the
-      // native wrapper intercepts and re-opens inside the WebView so Supabase
-      // detectSessionInUrl can complete the exchange. Web stays on same-origin.
-      const returnTo = getOAuthReturnTo(returnToOverride);
-      const returnToQuery = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';
-      const redirectUrl = installed
-        ? `https://chravel.app/auth-callback${returnToQuery}`
-        : `${window.location.origin}/auth${returnToQuery}`;
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          // In Capacitor / PWA / webview, default redirect opens the system browser and strands the shell.
-          skipBrowserRedirect: installed,
-          // Force account picker so users don't accidentally sign in with the wrong Google account,
-          // which could create a duplicate profile if the email differs from their email/password account.
-          // NOTE: Enable "Automatic Linking" in Supabase Dashboard (Auth > Providers) to prevent
-          // duplicate auth.users entries when the same email is used across providers.
-          queryParams: { prompt: 'select_account' },
-        },
-      });
-
-      if (error) {
+        void data;
+        return {};
+      } catch (error) {
         if (import.meta.env.DEV) {
-          console.error('[Auth] Google OAuth error:', error);
+          console.error('[Auth] Unexpected sign in error:', error);
         }
-        if (error.message.includes('provider is not enabled')) {
-          return { error: 'Google sign-in is not configured. Please contact support.' };
+        setIsLoading(false);
+        return { error: 'An unexpected error occurred. Please try again.' };
+      }
+    },
+    [],
+  );
+
+  const signInWithGoogle = useCallback(
+    async (returnToOverride?: string): Promise<{ error?: string }> => {
+      try {
+        const installed = isInstalledApp();
+        // Installed shells (Capacitor / PWA) return to a Universal Link that the
+        // native wrapper intercepts and re-opens inside the WebView so Supabase
+        // detectSessionInUrl can complete the exchange. Web stays on same-origin.
+        const returnTo = getOAuthReturnTo(returnToOverride);
+        const returnToQuery = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';
+        const redirectUrl = installed
+          ? `https://chravel.app/auth-callback${returnToQuery}`
+          : `${window.location.origin}/auth${returnToQuery}`;
+
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUrl,
+            // In Capacitor / PWA / webview, default redirect opens the system browser and strands the shell.
+            skipBrowserRedirect: installed,
+            // Force account picker so users don't accidentally sign in with the wrong Google account,
+            // which could create a duplicate profile if the email differs from their email/password account.
+            // NOTE: Enable "Automatic Linking" in Supabase Dashboard (Auth > Providers) to prevent
+            // duplicate auth.users entries when the same email is used across providers.
+            queryParams: { prompt: 'select_account' },
+          },
+        });
+
+        if (error) {
+          if (import.meta.env.DEV) {
+            console.error('[Auth] Google OAuth error:', error);
+          }
+          if (error.message.includes('provider is not enabled')) {
+            return { error: 'Google sign-in is not configured. Please contact support.' };
+          }
+          return { error: error.message };
         }
-        return { error: error.message };
-      }
 
-      if (installed && data?.url) {
-        // Prefers @capacitor/browser (SFSafariViewController / Chrome Custom Tabs)
-        // when the native shell registers it; falls back to same-tab navigation.
-        // Google rejects embedded WebView OAuth with disallowed_useragent — the
-        // native shell must open this URL outside the embedded WebView.
-        await openInstalledAuthBrowser(data.url);
-      }
+        if (installed && data?.url) {
+          // Prefers @capacitor/browser (SFSafariViewController / Chrome Custom Tabs)
+          // when the native shell registers it; falls back to same-tab navigation.
+          // Google rejects embedded WebView OAuth with disallowed_useragent — the
+          // native shell must open this URL outside the embedded WebView.
+          await openInstalledAuthBrowser(data.url);
+        }
 
-      return {};
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('[Auth] Unexpected Google OAuth error:', error);
-      }
-      return { error: 'An unexpected error occurred. Please try again.' };
-    }
-  };
-
-  const signInWithApple = async (returnToOverride?: string): Promise<{ error?: string }> => {
-    try {
-      const installed = isInstalledApp();
-      const returnTo = getOAuthReturnTo(returnToOverride);
-      const returnToQuery = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';
-      const redirectUrl = installed
-        ? `https://chravel.app/auth-callback${returnToQuery}`
-        : `${window.location.origin}/auth${returnToQuery}`;
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'apple',
-        options: {
-          redirectTo: redirectUrl,
-          skipBrowserRedirect: installed,
-        },
-      });
-
-      if (error) {
+        return {};
+      } catch (error) {
         if (import.meta.env.DEV) {
-          console.error('[Auth] Apple OAuth error:', error);
+          console.error('[Auth] Unexpected Google OAuth error:', error);
         }
-        if (error.message.includes('provider is not enabled')) {
-          return { error: 'Apple sign-in is not configured. Please contact support.' };
+        return { error: 'An unexpected error occurred. Please try again.' };
+      }
+    },
+    [],
+  );
+
+  const signInWithApple = useCallback(
+    async (returnToOverride?: string): Promise<{ error?: string }> => {
+      try {
+        const installed = isInstalledApp();
+        const returnTo = getOAuthReturnTo(returnToOverride);
+        const returnToQuery = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';
+        const redirectUrl = installed
+          ? `https://chravel.app/auth-callback${returnToQuery}`
+          : `${window.location.origin}/auth${returnToQuery}`;
+
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'apple',
+          options: {
+            redirectTo: redirectUrl,
+            skipBrowserRedirect: installed,
+          },
+        });
+
+        if (error) {
+          if (import.meta.env.DEV) {
+            console.error('[Auth] Apple OAuth error:', error);
+          }
+          if (error.message.includes('provider is not enabled')) {
+            return { error: 'Apple sign-in is not configured. Please contact support.' };
+          }
+          return { error: error.message };
         }
-        return { error: error.message };
-      }
 
-      if (installed && data?.url) {
-        await openInstalledAuthBrowser(data.url);
-      }
+        if (installed && data?.url) {
+          await openInstalledAuthBrowser(data.url);
+        }
 
-      return {};
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('[Auth] Unexpected Apple OAuth error:', error);
+        return {};
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.error('[Auth] Unexpected Apple OAuth error:', error);
+        }
+        return { error: 'An unexpected error occurred. Please try again.' };
       }
-      return { error: 'An unexpected error occurred. Please try again.' };
-    }
-  };
+    },
+    [],
+  );
 
-  const signInWithPhone = async (phone: string): Promise<{ error?: string }> => {
+  const signInWithPhone = useCallback(async (phone: string): Promise<{ error?: string }> => {
     try {
       setIsLoading(true);
 
@@ -944,82 +953,85 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(false);
       return { error: 'An unexpected error occurred. Please try again.' };
     }
-  };
+  }, []);
 
-  const signUp = async (
-    email: string,
-    password: string,
-    firstName: string,
-    lastName: string,
-  ): Promise<{ error?: string; success?: string }> => {
-    try {
-      setIsLoading(true);
+  const signUp = useCallback(
+    async (
+      email: string,
+      password: string,
+      firstName: string,
+      lastName: string,
+    ): Promise<{ error?: string; success?: string }> => {
+      try {
+        setIsLoading(true);
 
-      // Preserve returnTo so email confirmation lands back in the right place
-      const signUpReturnTo = new URLSearchParams(window.location.search).get('returnTo');
-      const emailRedirectUrl = signUpReturnTo
-        ? `${window.location.origin}/auth?returnTo=${encodeURIComponent(signUpReturnTo)}`
-        : `${window.location.origin}/`;
+        // Preserve returnTo so email confirmation lands back in the right place
+        const signUpReturnTo = new URLSearchParams(window.location.search).get('returnTo');
+        const emailRedirectUrl = signUpReturnTo
+          ? `${window.location.origin}/auth?returnTo=${encodeURIComponent(signUpReturnTo)}`
+          : `${window.location.origin}/`;
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: emailRedirectUrl,
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            full_name: `${firstName} ${lastName}`.trim(),
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: emailRedirectUrl,
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+              full_name: `${firstName} ${lastName}`.trim(),
+            },
           },
-        },
-      });
+        });
 
-      if (error) {
+        if (error) {
+          if (import.meta.env.DEV) {
+            console.error('[Auth] Sign up error:', error);
+          }
+          logAuthEvent('signup_failure', { method: 'email', errorReason: error.message });
+          setIsLoading(false);
+
+          // Provide more specific error messages
+          if (error.message.includes('already registered')) {
+            return {
+              error:
+                'Unable to create account with this email. If you already have an account, try signing in or resetting your password.',
+            };
+          }
+          if (error.message.includes('password')) {
+            return { error: 'Password must be at least 6 characters long.' };
+          }
+
+          return { error: error.message };
+        }
+
+        logAuthEvent('signup_success', { method: 'email' });
+
+        // Check if email confirmation is required
+        if (data.user && !data.session) {
+          setIsLoading(false);
+          return { success: 'Account created! Please check your email to confirm your account.' };
+        }
+
+        setIsLoading(false);
+        return {};
+      } catch (error) {
         if (import.meta.env.DEV) {
-          console.error('[Auth] Sign up error:', error);
+          console.error('[Auth] Unexpected sign up error:', error);
         }
-        logAuthEvent('signup_failure', { method: 'email', errorReason: error.message });
         setIsLoading(false);
-
-        // Provide more specific error messages
-        if (error.message.includes('already registered')) {
-          return {
-            error:
-              'Unable to create account with this email. If you already have an account, try signing in or resetting your password.',
-          };
-        }
-        if (error.message.includes('password')) {
-          return { error: 'Password must be at least 6 characters long.' };
-        }
-
-        return { error: error.message };
+        return { error: 'An unexpected error occurred. Please try again.' };
       }
-
-      logAuthEvent('signup_success', { method: 'email' });
-
-      // Check if email confirmation is required
-      if (data.user && !data.session) {
-        setIsLoading(false);
-        return { success: 'Account created! Please check your email to confirm your account.' };
-      }
-
-      setIsLoading(false);
-      return {};
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('[Auth] Unexpected sign up error:', error);
-      }
-      setIsLoading(false);
-      return { error: 'An unexpected error occurred. Please try again.' };
-    }
-  };
+    },
+    [],
+  );
 
   const clearNotificationRealtimeStore = useCallback(async () => {
     const { useNotificationRealtimeStore } = await import('@/store/notificationRealtimeStore');
     useNotificationRealtimeStore.getState().clearAll();
   }, []);
 
-  const signOut = async (): Promise<void> => {
+  const signOut = useCallback(async (): Promise<void> => {
     // Clear demo mode if active
     const demoModeStore = useDemoModeStore.getState();
     if (demoModeStore.isDemoMode || demoModeStore.demoView === 'app-preview') {
@@ -1062,9 +1074,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Redirect to home/landing page
     window.location.href = '/';
-  };
+  }, [clearNotificationRealtimeStore]);
 
-  const resetPassword = async (email: string): Promise<{ error?: string }> => {
+  const resetPassword = useCallback(async (email: string): Promise<{ error?: string }> => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
@@ -1085,213 +1097,240 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       return { error: 'An unexpected error occurred. Please try again.' };
     }
-  };
+  }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase error type is loosely typed
-  const updateProfile = async (updates: Partial<UserProfile>): Promise<{ error?: any }> => {
-    if (!user) return { error: 'No user logged in' };
+  const updateProfile = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase error type is loosely typed
+    async (updates: Partial<UserProfile>): Promise<{ error?: any }> => {
+      if (!user) return { error: 'No user logged in' };
 
-    try {
-      // Phone is stored directly in the profiles table.
-      const profileUpdates = { ...updates };
+      try {
+        // Phone is stored directly in the profiles table.
+        const profileUpdates = { ...updates };
 
-      // Use UPSERT so profile updates persist even if the profiles row was never created.
-      // This is critical for avatar uploads + identity propagation.
-      const { data, error } = await supabase
-        .from('profiles')
-        .upsert(
-          {
-            ...profileUpdates,
-            user_id: user.id,
-          },
-          { onConflict: 'user_id' },
-        )
-        .select('*')
-        .single();
+        // Use UPSERT so profile updates persist even if the profiles row was never created.
+        // This is critical for avatar uploads + identity propagation.
+        const { data, error } = await supabase
+          .from('profiles')
+          .upsert(
+            {
+              ...profileUpdates,
+              user_id: user.id,
+            },
+            { onConflict: 'user_id' },
+          )
+          .select('*')
+          .single();
 
-      if (error) {
+        if (error) {
+          if (import.meta.env.DEV) {
+            console.error('Error updating profile:', error);
+          }
+          return { error };
+        }
+
+        // Keep auth metadata aligned so fallback identity hydration cannot regress user-visible names.
+        if (updates.display_name !== undefined || updates.real_name !== undefined) {
+          const metadataUpdates: Record<string, string | null> = {};
+
+          if (updates.display_name !== undefined) {
+            metadataUpdates.display_name = updates.display_name ?? null;
+          }
+
+          if (updates.real_name !== undefined) {
+            metadataUpdates.full_name = updates.real_name ?? null;
+          }
+
+          const hasMetadataUpdates = Object.keys(metadataUpdates).length > 0;
+          if (hasMetadataUpdates) {
+            const { error: authUpdateError } = await supabase.auth.updateUser({
+              data: metadataUpdates,
+            });
+            if (authUpdateError && import.meta.env.DEV) {
+              console.warn(
+                '[Auth] Failed to sync auth metadata after profile update:',
+                authUpdateError,
+              );
+            }
+          }
+        }
+
+        // Phone is now saved directly in the profiles upsert above.
+
+        // Update local user state
+        const updatedUser = { ...user };
+        // Prefer returned row to avoid local/remote drift.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase row type doesn't include all profile columns
+        const row = data as any;
+        if (row) {
+          updatedUser.displayName = row.display_name ?? updatedUser.displayName;
+          updatedUser.realName = row.real_name ?? updatedUser.realName;
+          const namePref = row.name_preference;
+          updatedUser.namePreference =
+            namePref === 'real'
+              ? 'real'
+              : namePref === 'display'
+                ? 'display'
+                : updatedUser.namePreference;
+          updatedUser.firstName = row.first_name ?? updatedUser.firstName;
+          updatedUser.lastName = row.last_name ?? updatedUser.lastName;
+          updatedUser.avatar = row.avatar_url ?? updatedUser.avatar;
+          updatedUser.bio = row.bio ?? updatedUser.bio;
+          updatedUser.phone = row.phone ?? updatedUser.phone;
+          updatedUser.showEmail = row.show_email ?? updatedUser.showEmail;
+          updatedUser.showPhone = row.show_phone ?? updatedUser.showPhone;
+          const rowJobTitle = row.job_title;
+          updatedUser.jobTitle =
+            rowJobTitle !== undefined ? (rowJobTitle ?? undefined) : updatedUser.jobTitle;
+          const rowShowJobTitle = row.show_job_title;
+          updatedUser.showJobTitle =
+            rowShowJobTitle !== undefined ? (rowShowJobTitle ?? false) : updatedUser.showJobTitle;
+        } else {
+          if (updates.display_name) updatedUser.displayName = updates.display_name;
+          if (updates.real_name !== undefined)
+            updatedUser.realName = updates.real_name ?? undefined;
+          if (updates.name_preference !== undefined)
+            updatedUser.namePreference = updates.name_preference === 'real' ? 'real' : 'display';
+          if (updates.first_name) updatedUser.firstName = updates.first_name;
+          if (updates.last_name) updatedUser.lastName = updates.last_name;
+          if (updates.avatar_url) updatedUser.avatar = updates.avatar_url;
+          if (updates.bio !== undefined) updatedUser.bio = updates.bio ?? undefined;
+          if (updates.phone !== undefined) updatedUser.phone = updates.phone ?? undefined;
+          if (updates.show_email !== undefined) updatedUser.showEmail = updates.show_email;
+          if (updates.show_phone !== undefined) updatedUser.showPhone = updates.show_phone;
+          const u = updates as Partial<UserProfile>;
+          if (u.job_title !== undefined) updatedUser.jobTitle = u.job_title ?? undefined;
+          if (u.show_job_title !== undefined) updatedUser.showJobTitle = u.show_job_title;
+        }
+
+        setUser(updatedUser);
+        return {};
+      } catch (error) {
         if (import.meta.env.DEV) {
           console.error('Error updating profile:', error);
         }
         return { error };
       }
+    },
+    [user],
+  );
 
-      // Keep auth metadata aligned so fallback identity hydration cannot regress user-visible names.
-      if (updates.display_name !== undefined || updates.real_name !== undefined) {
-        const metadataUpdates: Record<string, string | null> = {};
+  const updateNotificationSettings = useCallback(
+    async (updates: Partial<User['notificationSettings']>): Promise<void> => {
+      if (!user) return;
 
-        if (updates.display_name !== undefined) {
-          metadataUpdates.display_name = updates.display_name ?? null;
+      try {
+        // Map User notificationSettings to NotificationPreferences format
+        const prefsUpdate = {
+          chat_messages: updates.messages,
+          broadcasts: updates.broadcasts,
+          calendar_reminders: updates.tripUpdates,
+          email_enabled: updates.email,
+          push_enabled: updates.push,
+        };
+
+        // Save to database using userPreferencesService
+        const { userPreferencesService } = await import('@/services/userPreferencesService');
+        await userPreferencesService.updateNotificationPreferences(user.id, prefsUpdate);
+
+        // Update local user state
+        const updatedUser = {
+          ...user,
+          notificationSettings: {
+            ...user.notificationSettings,
+            ...updates,
+          },
+        };
+
+        setUser(updatedUser);
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.error('Error updating notification settings:', error);
         }
-
-        if (updates.real_name !== undefined) {
-          metadataUpdates.full_name = updates.real_name ?? null;
-        }
-
-        const hasMetadataUpdates = Object.keys(metadataUpdates).length > 0;
-        if (hasMetadataUpdates) {
-          const { error: authUpdateError } = await supabase.auth.updateUser({
-            data: metadataUpdates,
-          });
-          if (authUpdateError && import.meta.env.DEV) {
-            console.warn(
-              '[Auth] Failed to sync auth metadata after profile update:',
-              authUpdateError,
-            );
-          }
-        }
       }
-
-      // Phone is now saved directly in the profiles upsert above.
-
-      // Update local user state
-      const updatedUser = { ...user };
-      // Prefer returned row to avoid local/remote drift.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase row type doesn't include all profile columns
-      const row = data as any;
-      if (row) {
-        updatedUser.displayName = row.display_name ?? updatedUser.displayName;
-        updatedUser.realName = row.real_name ?? updatedUser.realName;
-        const namePref = row.name_preference;
-        updatedUser.namePreference =
-          namePref === 'real'
-            ? 'real'
-            : namePref === 'display'
-              ? 'display'
-              : updatedUser.namePreference;
-        updatedUser.firstName = row.first_name ?? updatedUser.firstName;
-        updatedUser.lastName = row.last_name ?? updatedUser.lastName;
-        updatedUser.avatar = row.avatar_url ?? updatedUser.avatar;
-        updatedUser.bio = row.bio ?? updatedUser.bio;
-        updatedUser.phone = row.phone ?? updatedUser.phone;
-        updatedUser.showEmail = row.show_email ?? updatedUser.showEmail;
-        updatedUser.showPhone = row.show_phone ?? updatedUser.showPhone;
-        const rowJobTitle = row.job_title;
-        updatedUser.jobTitle =
-          rowJobTitle !== undefined ? (rowJobTitle ?? undefined) : updatedUser.jobTitle;
-        const rowShowJobTitle = row.show_job_title;
-        updatedUser.showJobTitle =
-          rowShowJobTitle !== undefined ? (rowShowJobTitle ?? false) : updatedUser.showJobTitle;
-      } else {
-        if (updates.display_name) updatedUser.displayName = updates.display_name;
-        if (updates.real_name !== undefined) updatedUser.realName = updates.real_name ?? undefined;
-        if (updates.name_preference !== undefined)
-          updatedUser.namePreference = updates.name_preference === 'real' ? 'real' : 'display';
-        if (updates.first_name) updatedUser.firstName = updates.first_name;
-        if (updates.last_name) updatedUser.lastName = updates.last_name;
-        if (updates.avatar_url) updatedUser.avatar = updates.avatar_url;
-        if (updates.bio !== undefined) updatedUser.bio = updates.bio ?? undefined;
-        if (updates.phone !== undefined) updatedUser.phone = updates.phone ?? undefined;
-        if (updates.show_email !== undefined) updatedUser.showEmail = updates.show_email;
-        if (updates.show_phone !== undefined) updatedUser.showPhone = updates.show_phone;
-        const u = updates as Partial<UserProfile>;
-        if (u.job_title !== undefined) updatedUser.jobTitle = u.job_title ?? undefined;
-        if (u.show_job_title !== undefined) updatedUser.showJobTitle = u.show_job_title;
-      }
-
-      setUser(updatedUser);
-      return {};
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('Error updating profile:', error);
-      }
-      return { error };
-    }
-  };
-
-  const updateNotificationSettings = async (
-    updates: Partial<User['notificationSettings']>,
-  ): Promise<void> => {
-    if (!user) return;
-
-    try {
-      // Map User notificationSettings to NotificationPreferences format
-      const prefsUpdate = {
-        chat_messages: updates.messages,
-        broadcasts: updates.broadcasts,
-        calendar_reminders: updates.tripUpdates,
-        email_enabled: updates.email,
-        push_enabled: updates.push,
-      };
-
-      // Save to database using userPreferencesService
-      const { userPreferencesService } = await import('@/services/userPreferencesService');
-      await userPreferencesService.updateNotificationPreferences(user.id, prefsUpdate);
-
-      // Update local user state
-      const updatedUser = {
-        ...user,
-        notificationSettings: {
-          ...user.notificationSettings,
-          ...updates,
-        },
-      };
-
-      setUser(updatedUser);
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('Error updating notification settings:', error);
-      }
-    }
-  };
+    },
+    [user],
+  );
 
   // switchRole is restricted to development builds only to prevent client-side privilege escalation.
   // In production, roles are derived from the server-side user_roles / organization_members tables.
-  const switchRole = (role: string) => {
-    if (!import.meta.env.DEV) {
-      console.warn('[Auth] switchRole is disabled in production builds.');
-      return;
-    }
-    if (user) {
-      const rolePermissions: Record<string, string[]> = {
-        admin: ['read', 'write', 'admin', 'finance', 'compliance'],
-        staff: ['read', 'write'],
-        talent: ['read'],
-        player: ['read'],
-        crew: ['read', 'write'],
-        security: ['read', 'write'],
-        medical: ['read', 'write', 'medical'],
-        producer: ['read', 'write', 'admin'],
-        speakers: ['read'],
-        guests: ['read'],
-        coordinators: ['read', 'write'],
-        logistics: ['read', 'write'],
-        press: ['read', 'write'],
-      };
+  const switchRole = useCallback(
+    (role: string) => {
+      if (!import.meta.env.DEV) {
+        console.warn('[Auth] switchRole is disabled in production builds.');
+        return;
+      }
+      if (user) {
+        const rolePermissions: Record<string, string[]> = {
+          admin: ['read', 'write', 'admin', 'finance', 'compliance'],
+          staff: ['read', 'write'],
+          talent: ['read'],
+          player: ['read'],
+          crew: ['read', 'write'],
+          security: ['read', 'write'],
+          medical: ['read', 'write', 'medical'],
+          producer: ['read', 'write', 'admin'],
+          speakers: ['read'],
+          guests: ['read'],
+          coordinators: ['read', 'write'],
+          logistics: ['read', 'write'],
+          press: ['read', 'write'],
+        };
 
-      setUser({
-        ...user,
-        proRole: role as User['proRole'],
-        permissions: rolePermissions[role] || ['read'],
-      });
-    }
-  };
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        isLoading,
-        isHydrated,
-        signIn,
-        signInWithGoogle,
-        signInWithApple,
-        signInWithPhone,
-        signUp,
-        signOut,
-        resetPassword,
-        updateProfile,
-        updateNotificationSettings,
-        switchRole,
-        authState,
-        authErrorReason,
-        isAuthenticated: authState === 'authenticated',
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+        setUser({
+          ...user,
+          proRole: role as User['proRole'],
+          permissions: rolePermissions[role] || ['read'],
+        });
+      }
+    },
+    [user],
   );
+
+  // Memoize the context value so consumers re-render only on real auth-state
+  // changes, not on every AuthProvider render. The action functions above are
+  // useCallback-stable, so the only invalidators here are the exposed state fields.
+  const contextValue = useMemo<AuthContextType>(
+    () => ({
+      user,
+      session,
+      isLoading,
+      isHydrated,
+      signIn,
+      signInWithGoogle,
+      signInWithApple,
+      signInWithPhone,
+      signUp,
+      signOut,
+      resetPassword,
+      updateProfile,
+      updateNotificationSettings,
+      switchRole,
+      authState,
+      authErrorReason,
+      isAuthenticated: authState === 'authenticated',
+    }),
+    [
+      user,
+      session,
+      isLoading,
+      isHydrated,
+      signIn,
+      signInWithGoogle,
+      signInWithApple,
+      signInWithPhone,
+      signUp,
+      signOut,
+      resetPassword,
+      updateProfile,
+      updateNotificationSettings,
+      switchRole,
+      authState,
+      authErrorReason,
+    ],
+  );
+
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

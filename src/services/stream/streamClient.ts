@@ -14,7 +14,7 @@
  *   - Disconnects cleanly on logout via Supabase auth listener
  */
 
-import { StreamChat } from 'stream-chat';
+import type { StreamChat } from 'stream-chat';
 import { supabase } from '@/integrations/supabase/client';
 import { getStreamToken, clearStreamTokenCache } from './streamTokenService';
 
@@ -110,6 +110,10 @@ export async function connectStreamClient(): Promise<StreamChat | null> {
       }
 
       if (!clientInstance) {
+        // Lazy-load the stream-chat SDK (~310 KB) here instead of at module top so it
+        // stays out of the authenticated app-shell's static chunk graph. It only loads
+        // the first time we actually connect, off the synchronous boot/parse path.
+        const { StreamChat } = await import('stream-chat');
         clientInstance = StreamChat.getInstance(STREAM_API_KEY);
         if (!connectionChangedListenerAttached) {
           clientInstance.on('connection.changed', event => {
