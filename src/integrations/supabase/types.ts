@@ -3859,6 +3859,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          notifications_muted: boolean
           role: string
           trip_id: string
           updated_at: string
@@ -3867,6 +3868,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          notifications_muted?: boolean
           role?: string
           trip_id: string
           updated_at?: string
@@ -3875,6 +3877,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          notifications_muted?: boolean
           role?: string
           trip_id?: string
           updated_at?: string
@@ -5239,6 +5242,23 @@ export type Database = {
         }
         Returns: string
       }
+      create_notification_for_trip_members: {
+        Args: {
+          p_actor_user_id: string
+          p_deep_link?: string
+          p_entity_id: string
+          p_entity_type: string
+          p_event_key?: string
+          p_message?: string
+          p_metadata?: Json
+          p_notification_type: string
+          p_preference_key: string
+          p_priority?: string
+          p_title?: string
+          p_trip_id: string
+        }
+        Returns: number
+      }
       create_payment_with_splits: {
         Args: {
           p_amount: number
@@ -5522,6 +5542,10 @@ export type Database = {
           p_user_ids: string[]
         }
         Returns: undefined
+      }
+      set_trip_notifications_muted: {
+        Args: { p_muted: boolean; p_trip_id: string }
+        Returns: Json
       }
       should_send_notification: {
         Args: {
