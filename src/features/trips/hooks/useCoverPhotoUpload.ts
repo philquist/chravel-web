@@ -1,7 +1,11 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { TRIP_COVER_BUCKET, uploadTripCoverBlob } from '@/utils/tripCoverStorage';
+import {
+  TRIP_COVER_BUCKET,
+  normalizeTripCoverUrl,
+  uploadTripCoverBlob,
+} from '@/utils/tripCoverStorage';
 import { invalidateTripCoverQueries, updateTripCoverCache } from '@/lib/tripCoverInvalidation';
 
 export type CoverUploadResult = { ok: true; publicUrl: string } | { ok: false; error: string };
@@ -57,14 +61,15 @@ export const useCoverPhotoUpload = () => {
         }
 
         // Direct mode: write DB + invalidate query surfaces ourselves.
+        const normalizedPublicUrl = normalizeTripCoverUrl(result.publicUrl) ?? result.publicUrl;
         const { data, error } = await supabase
           .from('trips')
-          .update({ cover_image_url: result.publicUrl })
+          .update({ cover_image_url: normalizedPublicUrl })
           .eq('id', tripId)
           .select('id, cover_image_url')
           .maybeSingle();
 
-        if (error || !data || data.cover_image_url !== result.publicUrl) {
+        if (error || !data || data.cover_image_url !== normalizedPublicUrl) {
           await supabase.storage
             .from(TRIP_COVER_BUCKET)
             .remove([filePath])
@@ -75,10 +80,10 @@ export const useCoverPhotoUpload = () => {
           };
         }
 
-        updateTripCoverCache(queryClient, tripId, result.publicUrl);
+        updateTripCoverCache(queryClient, tripId, normalizedPublicUrl);
         await invalidateTripCoverQueries(queryClient, tripId);
 
-        return { ok: true, publicUrl: result.publicUrl };
+        return { ok: true, publicUrl: normalizedPublicUrl };
       } catch (err) {
         if (filePath) {
           await supabase.storage

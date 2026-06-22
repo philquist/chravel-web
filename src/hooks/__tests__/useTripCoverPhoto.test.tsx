@@ -83,6 +83,38 @@ describe('useTripCoverPhoto', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: tripKeys.all });
   });
 
+  it('keeps a freshly persisted cover when parent prop is briefly stale', async () => {
+    maybeSingleMock.mockResolvedValueOnce({
+      data: {
+        id: 'trip-abc',
+        cover_image_url:
+          'https://abc.supabase.co/storage/v1/object/public/trip-covers/trip-abc/cover.jpg',
+      },
+      error: null,
+    });
+
+    const wrapper = createWrapper();
+    const { result, rerender } = renderHook(
+      ({ url }: { url?: string }) => useTripCoverPhoto('trip-abc', url),
+      { wrapper, initialProps: { url: undefined as string | undefined } },
+    );
+
+    await act(async () => {
+      const ok = await result.current.updateCoverPhoto(
+        'https://abc.supabase.co/storage/v1/object/public/trip-covers/trip-abc/cover.jpg',
+      );
+      expect(ok).toBe(true);
+    });
+
+    expect(result.current.coverPhoto).toContain('trip-abc/cover.jpg');
+
+    rerender({ url: undefined });
+
+    await waitFor(() => {
+      expect(result.current.coverPhoto).toContain('trip-abc/cover.jpg');
+    });
+  });
+
   it('syncs local coverPhoto when initialPhotoUrl prop updates (e.g. after refetch)', async () => {
     const wrapper = createWrapper();
     const { result, rerender } = renderHook(

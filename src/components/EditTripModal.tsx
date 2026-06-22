@@ -57,7 +57,7 @@ export const EditTripModal = ({ isOpen, onClose, trip, onUpdate }: EditTripModal
     updateCoverPhoto,
     updateCoverDisplayMode,
     removeCoverPhoto,
-  } = useTripCoverPhoto(trip.id.toString(), trip.coverPhoto, trip.coverDisplayMode ?? 'cover');
+  } = useTripCoverPhoto(trip.id.toString(), trip.coverPhoto, trip.coverDisplayMode ?? 'contain');
   const [formData, setFormData] = useState({
     name: '',
     destination: '',

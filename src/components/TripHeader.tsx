@@ -154,7 +154,7 @@ export const TripHeader = ({
   const { coverPhoto, coverDisplayMode, updateCoverPhoto, isUpdating } = useTripCoverPhoto(
     trip.id.toString(),
     trip.coverPhoto,
-    trip.coverDisplayMode ?? 'cover',
+    trip.coverDisplayMode ?? 'contain',
   );
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();

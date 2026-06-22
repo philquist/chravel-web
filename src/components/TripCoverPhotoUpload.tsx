@@ -29,7 +29,7 @@ export const TripCoverPhotoUpload = ({
   tripName,
   className = '',
   aspectRatio = 3, // Default to 3:1 desktop banner
-  displayMode = 'cover',
+  displayMode = 'contain',
 }: TripCoverPhotoUploadProps) => {
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
@@ -194,10 +194,20 @@ export const TripCoverPhotoUpload = ({
     <>
       {currentPhoto && !hasImageError ? (
         <div className={`relative group overflow-hidden rounded-2xl ${className}`}>
+          {displayMode === 'contain' && (
+            <img
+              src={currentPhoto}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-45"
+            />
+          )}
           <img
             src={currentPhoto}
             alt={`Cover photo for trip ${tripId}`}
-            className="w-full h-full object-cover cursor-pointer"
+            className={`w-full h-full cursor-pointer ${
+              displayMode === 'contain' ? 'object-contain relative z-[1]' : 'object-cover'
+            }`}
             onError={() => setHasImageError(true)}
             onClick={handleViewFullscreen}
           />

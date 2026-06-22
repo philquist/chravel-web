@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { isBlobOrDataUrl } from '@/utils/mediaUtils';
@@ -15,7 +15,7 @@ export type CoverDisplayMode = 'cover' | 'contain';
 export const useTripCoverPhoto = (
   tripId: string,
   initialPhotoUrl?: string,
-  initialDisplayMode: CoverDisplayMode = 'cover',
+  initialDisplayMode: CoverDisplayMode = 'contain',
 ) => {
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
@@ -23,6 +23,9 @@ export const useTripCoverPhoto = (
   const [coverPhoto, setCoverPhoto] = useState<string | undefined>(initialPhotoUrl);
   const [coverDisplayMode, setCoverDisplayMode] = useState<CoverDisplayMode>(initialDisplayMode);
   const [isUpdating, setIsUpdating] = useState(false);
+  // Tracks the durable URL we just persisted so a briefly-stale parent prop cannot
+  // wipe the hero between storage upload and query-cache refetch.
+  const pendingPersistedCoverRef = useRef<string | null>(null);
 
   // Keep local state aligned with TanStack Query / parent props (detail key is ['trip', id, userId], not ['trips'])
   useEffect(() => {
@@ -32,8 +35,36 @@ export const useTripCoverPhoto = (
       setCoverDisplayMode(initialDisplayMode);
       return;
     }
-    setCoverPhoto(initialPhotoUrl);
+
     setCoverDisplayMode(initialDisplayMode);
+
+    setCoverPhoto(prev => {
+      if (!initialPhotoUrl) {
+        if (pendingPersistedCoverRef.current && prev) {
+          return prev;
+        }
+        pendingPersistedCoverRef.current = null;
+        return undefined;
+      }
+
+      const normalizedInitial =
+        normalizeTripCoverUrl(initialPhotoUrl) ?? initialPhotoUrl;
+      const normalizedPrev = prev ? (normalizeTripCoverUrl(prev) ?? prev) : undefined;
+
+      if (pendingPersistedCoverRef.current === normalizedInitial) {
+        pendingPersistedCoverRef.current = null;
+      }
+
+      if (normalizedPrev === normalizedInitial && prev) {
+        return prev;
+      }
+
+      if (pendingPersistedCoverRef.current && !normalizedPrev) {
+        return prev ?? initialPhotoUrl;
+      }
+
+      return initialPhotoUrl;
+    });
   }, [isDemoMode, tripId, initialPhotoUrl, initialDisplayMode]);
 
   const updateCoverPhoto = async (photoUrl: string): Promise<boolean> => {
@@ -54,7 +85,8 @@ export const useTripCoverPhoto = (
             hostname === 'unsplash.com' ||
             hostname.endsWith('.unsplash.com') ||
             hostname === 'supabase.co' ||
-            hostname.endsWith('.supabase.co')
+            hostname.endsWith('.supabase.co') ||
+            hostname.endsWith('.supabase.in')
           );
         } catch {
           return false;
@@ -115,6 +147,7 @@ export const useTripCoverPhoto = (
 
       // Update local state immediately with a cache-busted URL so any cached
       // <img> bytes are bypassed across web/PWA/iOS/Android.
+      pendingPersistedCoverRef.current = normalizedPhotoUrl;
       const bustedPhotoUrl =
         appendCoverCacheBust(normalizedPhotoUrl, Date.now()) ?? normalizedPhotoUrl;
       setCoverPhoto(bustedPhotoUrl);
@@ -190,6 +223,8 @@ export const useTripCoverPhoto = (
           }
         }
       }
+
+      pendingPersistedCoverRef.current = null;
 
       // Update local state, then patch caches and invalidate every surface.
       setCoverPhoto(undefined);

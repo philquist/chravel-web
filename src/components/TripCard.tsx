@@ -65,6 +65,7 @@ interface Trip {
   dateRange: string;
   participants: Participant[];
   coverPhoto?: string;
+  coverDisplayMode?: 'cover' | 'contain';
   placesCount?: number;
   peopleCount?: number;
   created_by?: string;
@@ -440,6 +441,7 @@ export const TripCard = ({
   const daysUntil = isConsumer ? gamificationService.getDaysUntilTrip(trip.id.toString()) : 0;
   const momentum = isConsumer ? gamificationService.getTripMomentum(trip.id.toString()) : 'cold';
   const demoCoverFallback = isDemoMode ? getDemoTripCoverFallback(trip.id) : undefined;
+  const coverFit = trip.coverDisplayMode === 'contain' ? 'contain' : 'cover';
 
   return (
     <div
@@ -458,7 +460,8 @@ export const TripCard = ({
             fallbackSrc={demoCoverFallback}
             lazy={!priority}
             priority={priority}
-            fit="cover"
+            fit={coverFit}
+            showBlurBackdrop={coverFit === 'contain'}
             className="absolute inset-0 opacity-80"
           />
         )}
