@@ -557,8 +557,8 @@
       "DB migrations": 419
     },
     "generated": "2026-06-22",
-    "commit": "e347a3c",
-    "commitUrl": "https://github.com/chravel-inc/chravel-web/commit/e347a3c",
+    "commit": "6681529",
+    "commitUrl": "https://github.com/chravel-inc/chravel-web/commit/6681529",
     "metrics": {
       "knip": {
         "files": 210,
@@ -2370,12 +2370,36 @@
   ],
   "costEstimate": {
     "lens": "What it would cost to rebuild Chravel from scratch — the same feature surface and quality bar, on the same third-party platforms (Supabase, Stream, Stripe/RevenueCat, Google, Gemini/Vertex) — with no AI coding assistance. For internal reference, not a sales quote.",
-    "methodology": "Bottom-up: each major system is sized in developer-hours for a competent team rebuilding a known spec (no product discovery, no pivots), then crossed with three vendor rate tiers. Three effort scenarios — Conservative (lean, senior, aggressive reuse, minimal polish), Moderate (average competent devs at a normal pace), High (enterprise rigor, full tests, edge cases).",
+    "methodology": "Bottom-up and transparent. (1) Each major system is sized in engineering-hours for a competent team rebuilding a known spec — no product discovery, no pivots. (2) Three effort bands: Conservative (lean, senior, aggressive reuse, minimal polish), Moderate (average competent devs at a normal pace), High (enterprise rigor, full tests, edge cases). (3) Hours convert to a schedule using a realistic working pattern — about 6 productive (heads-down) hours inside an 8-hour workday, 5 days/week (30 hrs/week, ~1,500 productive hrs/year per developer). (4) Calendar time divides that effort across each vendor's team size (freelancer = 1 dev solo, agency = 2 devs, high-end firm = 3 simultaneous devs), applying a sub-linear efficiency factor (2 devs ≈ 1.8×, 3 devs ≈ 2.5×) for coordination overhead. (5) Cost = effort-hours × the vendor's blended rate.",
     "disclaimer": "Human-only rebuild of a known spec on the same managed platforms — integration work, not platform engineering. Excludes ongoing SaaS/infra, app-store fees, and post-launch maintenance.",
     "totals": {
       "conservative": 3820,
       "moderate": 5800,
       "high": 8840
+    },
+    "model": {
+      "workdayHours": 8,
+      "productiveHoursPerDay": 6,
+      "daysPerWeek": 5,
+      "hoursPerWeekPerDev": 30,
+      "workingWeeksPerYear": 50,
+      "hoursPerYearPerDev": 1500,
+      "weeksPerMonth": 4.33,
+      "teamEfficiency": [
+        {
+          "devs": 1,
+          "factor": 1
+        },
+        {
+          "devs": 2,
+          "factor": 1.8
+        },
+        {
+          "devs": 3,
+          "factor": 2.5
+        }
+      ],
+      "patternNote": "Effort is engineering-hours. Calendar time assumes ~6 productive (heads-down) hours inside an 8-hour workday — the remainder goes to standups, code review, planning, and context-switching — 5 days/week (30 hrs/week, ~1,500 productive hrs/year/dev). Adding developers is sub-linear: 2 devs ≈ 1.8× and 3 devs ≈ 2.5× one developer's throughput after coordination overhead, so calendar time falls less than headcount rises."
     },
     "features": [
       {
@@ -2535,31 +2559,42 @@
     ],
     "vendors": [
       {
-        "tier": "Freelancer(s) off the street",
+        "tier": "Freelancer off the street",
+        "team": 1,
+        "teamLabel": "solo, 1 dev",
+        "typicalBand": "conservative",
         "rateLow": 40,
         "rateHigh": 80,
         "ratePoint": 60,
-        "blurb": "Cheaper and less vetted; more management overhead and wider quality variance."
+        "blurb": "One developer working alone. Cheaper and less vetted; more management overhead, wider quality variance, and the longest calendar time."
       },
       {
-        "tier": "Established agency (1–2 dedicated devs)",
+        "tier": "Established agency",
+        "team": 2,
+        "teamLabel": "2 dedicated devs",
+        "typicalBand": "moderate",
         "rateLow": 100,
         "rateHigh": 175,
         "ratePoint": 135,
         "headline": true,
-        "blurb": "Vetted senior + mid pairing with a PM — the most representative real-world option."
+        "blurb": "Two dedicated devs (vetted senior + mid) with a PM — the most representative real-world option."
       },
       {
         "tier": "High-end agency / specialist firm",
+        "team": 3,
+        "teamLabel": "3 simultaneous devs",
+        "typicalBand": "high",
         "rateLow": 200,
         "rateHigh": 350,
         "ratePoint": 260,
-        "blurb": "Senior-heavy top-tier firm with strong process, guarantees, and speed."
+        "blurb": "Three simultaneous senior devs at a top-tier firm with strong process, guarantees, and the fastest delivery."
       }
     ],
     "assumptions": [
+      "Effort is measured in engineering-hours; the schedule assumes ~6 productive (heads-down) hours inside an 8-hour workday, 5 days/week — 30 hrs/week and ~1,500 productive hrs/year per developer.",
+      "Team size by vendor: a freelancer works solo (1 dev), an established agency runs 2 dedicated devs, and a high-end firm runs 3 simultaneous devs.",
+      "Adding developers is sub-linear: 2 devs ≈ 1.8× and 3 devs ≈ 2.5× a solo developer's pace after coordination overhead, so calendar time drops less than headcount rises.",
       "US-market blended contractor rates (2026); offshore teams would be materially cheaper.",
-      "~1,800 productive developer-hours per year when converting hours to person-years.",
       "Rebuilding a known spec — no product discovery, design iteration, or pivots (those consumed much of the original calendar time).",
       "Same managed platforms reused (Supabase, Stream, Stripe/RevenueCat, Google, Gemini) — you integrate them, you do not rebuild auth servers, realtime, chat, or payment rails.",
       "Competent developers at a normal pace — not padded worst-case-everything estimates.",
@@ -2573,7 +2608,7 @@
       "File count is not effort: many of the 1,180 source files are small, repetitive hooks and components.",
       "Estimates assume focused senior/mid developers, not a worst-case junior team."
     ],
-    "note": "Rates are US-market blended (2026); offshore would be materially lower. The cost matrix recomputes as hours × blended rate, so adjusting either hours or rates updates every cell."
+    "note": "Every input is adjustable in curated.json → costEstimate: per-system hours, blended rates, productive hours/day, days/week, team size, and the multi-dev efficiency factors. All tables (effort, schedule, and quotes) recompute from them. Rates are US-market blended (2026); offshore would be materially lower."
   }
 }</script>
     <script>
@@ -3438,48 +3473,101 @@
         function renderCost(sec) {
           var ce = D.costEstimate;
           if (!ce) return;
+          var t = ce.totals;
+          var md = ce.model || {
+            productiveHoursPerDay: 6,
+            daysPerWeek: 5,
+            hoursPerWeekPerDev: 30,
+            hoursPerYearPerDev: 1500,
+            weeksPerMonth: 4.33,
+            teamEfficiency: [
+              { devs: 1, factor: 1 },
+              { devs: 2, factor: 1.8 },
+              { devs: 3, factor: 2.5 },
+            ],
+          };
           function money(n) {
             if (n >= 1e6) return '$' + Math.round(n / 1e4) / 100 + 'M';
             if (n >= 1e3) return '$' + Math.round(n / 1e3) + 'K';
             return '$' + n;
           }
-          function hrs(n) {
-            return Number(n).toLocaleString() + ' hrs';
+          function fmt(n) {
+            return Number(n).toLocaleString();
           }
-          var t = ce.totals;
-          sec.appendChild(el(lead(ce.lens)));
-
-          // headline trio
+          function pDays(h) {
+            return Math.round(h / md.productiveHoursPerDay);
+          }
+          function pWeeks(h) {
+            return Math.round(h / md.hoursPerWeekPerDev);
+          }
+          function dYears(h) {
+            return (h / md.hoursPerYearPerDev).toFixed(1);
+          }
+          function effFor(devs) {
+            var e = (md.teamEfficiency || []).filter(function (x) {
+              return x.devs === devs;
+            })[0];
+            return e ? e.factor : devs;
+          }
+          function calWeeks(h, devs) {
+            return Math.round(h / md.hoursPerWeekPerDev / effFor(devs));
+          }
+          function durTxt(h, devs) {
+            var w = calWeeks(h, devs);
+            return fmt(w) + ' wks (~' + (w / (md.weeksPerMonth || 4.33)).toFixed(1) + ' mo)';
+          }
+          var bands = [
+            { key: 'conservative', label: 'Conservative' },
+            { key: 'moderate', label: 'Moderate' },
+            { key: 'high', label: 'High' },
+          ];
+          function bandLabel(k) {
+            return (
+              bands.filter(function (b) {
+                return b.key === k;
+              })[0] || { label: k }
+            ).label;
+          }
           var head = (ce.vendors || []).filter(function (v) {
             return v.headline;
           })[0] ||
-            (ce.vendors || [])[1] || { tier: '', ratePoint: 0 };
+            (ce.vendors || [])[1] || { tier: '', ratePoint: 0, team: 2 };
+
+          sec.appendChild(el(lead(ce.lens)));
+
+          // ---- headline trio ----
           var cols = el('<div class="cols" style="margin-bottom:14px"></div>');
           cols.appendChild(
             el(
               '<div class="panel" style="border-left:4px solid var(--gold)"><h4>Rebuild effort — moderate, human-only</h4>' +
                 '<div class="val" style="font-size:30px;font-weight:800;color:var(--gold)">' +
-                hrs(t.moderate) +
-                '</div><div class="v muted" style="font-size:12.5px">≈ ' +
-                (t.moderate / 1800).toFixed(1) +
-                ' developer-years · range ' +
-                hrs(t.conservative) +
-                ' – ' +
-                hrs(t.high) +
-                '</div></div>',
+                fmt(t.moderate) +
+                ' hrs</div><div class="v muted" style="font-size:12.5px">≈ ' +
+                fmt(pWeeks(t.moderate)) +
+                ' person-weeks · ' +
+                dYears(t.moderate) +
+                ' dev-years · range ' +
+                fmt(t.conservative) +
+                '–' +
+                fmt(t.high) +
+                ' hrs</div></div>',
             ),
           );
           cols.appendChild(
             el(
               '<div class="panel" style="border-left:4px solid ' +
                 COLOR.green +
-                '"><h4>Representative cost</h4>' +
+                '"><h4>Representative quote</h4>' +
                 '<div class="val" style="font-size:30px;font-weight:800;color:' +
                 COLOR.green +
                 '">' +
                 money(t.moderate * head.ratePoint) +
-                '</div><div class="v muted" style="font-size:12.5px">moderate effort · ' +
+                '</div><div class="v muted" style="font-size:12.5px">moderate · ' +
                 esc(head.tier) +
+                ' (' +
+                esc(head.teamLabel || head.team + ' devs') +
+                ') · ' +
+                durTxt(t.moderate, head.team) +
                 '</div></div>',
             ),
           );
@@ -3494,14 +3582,130 @@
           );
           sec.appendChild(cols);
 
-          // cost matrix: vendor tier × effort scenario
+          // ---- representative quote per vendor ----
+          var repRows = (ce.vendors || [])
+            .map(function (v) {
+              var band = v.typicalBand || 'moderate';
+              return (
+                '<tr><td><b>' +
+                esc(v.tier) +
+                '</b><div class="sub" style="color:var(--muted2)">' +
+                esc(v.teamLabel || v.team + ' devs') +
+                ' · $' +
+                v.rateLow +
+                '–' +
+                v.rateHigh +
+                '/hr</div></td><td>' +
+                esc(bandLabel(band)) +
+                '</td><td><b style="color:' +
+                COLOR.green +
+                '">' +
+                money(t[band] * v.ratePoint) +
+                '</b></td><td class="muted">' +
+                durTxt(t[band], v.team) +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel" style="margin-top:14px;border-left:4px solid ' +
+                COLOR.green +
+                '"><h4>Representative quote per vendor</h4>' +
+                '<div class="v muted" style="font-size:12px;margin-bottom:6px">The band each vendor type typically delivers, with its realistic cost and calendar duration.</div>' +
+                '<table class="tbl"><thead><tr><th>Who builds it</th><th>Typical band</th><th>Quote</th><th>Realistic timeline</th></tr></thead><tbody>' +
+                repRows +
+                '</tbody></table></div>',
+            ),
+          );
+
+          // ---- effort bands (one-developer-equivalent) ----
+          var ebRows = bands
+            .map(function (b) {
+              var h = t[b.key];
+              return (
+                '<tr><td><b>' +
+                b.label +
+                '</b></td><td' +
+                (b.key === 'moderate'
+                  ? ' style="color:var(--gold);font-weight:700"'
+                  : ' class="muted"') +
+                '>' +
+                fmt(h) +
+                '</td><td class="muted">' +
+                fmt(pDays(h)) +
+                '</td><td class="muted">' +
+                fmt(pWeeks(h)) +
+                '</td><td class="muted">' +
+                dYears(h) +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel" style="margin-top:14px"><h4>Effort bands — one-developer-equivalent</h4>' +
+                '<div class="v muted" style="font-size:12px;margin-bottom:6px">' +
+                esc(md.patternNote || '') +
+                '</div><table class="tbl"><thead><tr><th>Band</th><th>Engineering hours</th><th>Person-days</th><th>Person-weeks</th><th>Dev-years</th></tr></thead><tbody>' +
+                ebRows +
+                '</tbody></table><div class="v muted" style="font-size:11.5px;margin-top:6px">“Person-X” = effort for a single developer; divide by team size (next table) for calendar time. Basis: ' +
+                md.productiveHoursPerDay +
+                ' productive hrs/day × ' +
+                md.daysPerWeek +
+                ' days = ' +
+                md.hoursPerWeekPerDev +
+                ' hrs/week, ~' +
+                fmt(md.hoursPerYearPerDev) +
+                ' hrs/year.</div></div>',
+            ),
+          );
+
+          // ---- realistic timeline matrix (team size × band) ----
+          var tlRows = (ce.vendors || [])
+            .map(function (v) {
+              return (
+                '<tr><td><b>' +
+                esc(v.tier) +
+                '</b><div class="sub" style="color:var(--muted2)">' +
+                esc(v.teamLabel || v.team + ' devs') +
+                ' · ' +
+                effFor(v.team) +
+                '× throughput</div></td>' +
+                bands
+                  .map(function (b) {
+                    return (
+                      '<td' +
+                      (b.key === 'moderate' ? ' style="color:var(--gold)"' : ' class="muted"') +
+                      '>' +
+                      durTxt(t[b.key], v.team) +
+                      '</td>'
+                    );
+                  })
+                  .join('') +
+                '</tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel" style="margin-top:14px"><h4>Realistic timeline — calendar duration by team size × band</h4>' +
+                '<table class="tbl"><thead><tr><th>Who builds it</th><th>Conservative</th><th>Moderate</th><th>High</th></tr></thead><tbody>' +
+                tlRows +
+                '</tbody></table><div class="v muted" style="font-size:11.5px;margin-top:6px">Calendar weeks = person-weeks ÷ team efficiency (1 dev = 1.0×, 2 devs = 1.8×, 3 devs = 2.5×). Months at ' +
+                md.weeksPerMonth +
+                ' weeks/month.</div></div>',
+            ),
+          );
+
+          // ---- quotes (cost) matrix ----
           var vrows = (ce.vendors || [])
             .map(function (v) {
               return (
                 '<tr><td><b>' +
                 esc(v.tier) +
                 '</b><div class="sub" style="color:var(--muted2)">' +
-                esc(v.blurb) +
+                esc(v.teamLabel || v.team + ' devs') +
                 '</div></td><td class="muted">$' +
                 v.rateLow +
                 '–' +
@@ -3518,20 +3722,20 @@
             .join('');
           sec.appendChild(
             el(
-              '<div class="panel"><h4>Cost matrix — vendor tier × effort scenario</h4>' +
+              '<div class="panel" style="margin-top:14px"><h4>Quotes — vendor rate × effort band (cost = hours × rate)</h4>' +
                 '<table class="tbl"><thead><tr><th>Who builds it</th><th>Blended rate</th><th>Conservative</th><th>Moderate</th><th>High</th></tr></thead><tbody>' +
                 vrows +
-                '<tr style="border-top:2px solid var(--gold-dim)"><td class="muted">Effort (developer-hours)</td><td></td><td class="muted">' +
-                hrs(t.conservative) +
+                '<tr style="border-top:2px solid var(--gold-dim)"><td class="muted">Effort (engineering-hours)</td><td></td><td class="muted">' +
+                fmt(t.conservative) +
                 '</td><td class="muted">' +
-                hrs(t.moderate) +
+                fmt(t.moderate) +
                 '</td><td class="muted">' +
-                hrs(t.high) +
+                fmt(t.high) +
                 '</td></tr></tbody></table></div>',
             ),
           );
 
-          // where the hours go
+          // ---- where the hours go ----
           var frows = ce.features
             .map(function (f) {
               return (
@@ -3553,20 +3757,20 @@
             .join('');
           sec.appendChild(
             el(
-              '<div class="panel" style="margin-top:14px"><h4>Where the hours go — developer-hours by system</h4>' +
+              '<div class="panel" style="margin-top:14px"><h4>Where the hours go — engineering-hours by system</h4>' +
                 '<table class="tbl"><thead><tr><th>System</th><th>Conservative</th><th>Moderate</th><th>High</th></tr></thead><tbody>' +
                 frows +
                 '<tr style="border-top:2px solid var(--gold-dim)"><td><b>Total</b></td><td><b>' +
-                hrs(t.conservative) +
-                '</b></td><td><b style="color:var(--gold)">' +
-                hrs(t.moderate) +
-                '</b></td><td><b>' +
-                hrs(t.high) +
-                '</b></td></tr></tbody></table></div>',
+                fmt(t.conservative) +
+                ' hrs</b></td><td><b style="color:var(--gold)">' +
+                fmt(t.moderate) +
+                ' hrs</b></td><td><b>' +
+                fmt(t.high) +
+                ' hrs</b></td></tr></tbody></table></div>',
             ),
           );
 
-          // assumptions + why-not-more
+          // ---- assumptions + why-not-more ----
           var cols2 = el('<div class="cols" style="margin-top:14px"></div>');
           cols2.appendChild(
             el(
@@ -3591,7 +3795,7 @@
           if (ce.methodology)
             sec.appendChild(
               el(
-                '<p class="lead" style="margin-top:12px;font-size:12.5px;color:var(--muted)"><b>Method:</b> ' +
+                '<p class="lead" style="margin-top:12px;font-size:12.5px;color:var(--muted)"><b>How these are generated:</b> ' +
                   esc(ce.methodology) +
                   '</p>',
               ),

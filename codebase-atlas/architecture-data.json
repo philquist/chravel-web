@@ -38,8 +38,8 @@
       "DB migrations": 419
     },
     "generated": "2026-06-22",
-    "commit": "e347a3c",
-    "commitUrl": "https://github.com/chravel-inc/chravel-web/commit/e347a3c",
+    "commit": "6681529",
+    "commitUrl": "https://github.com/chravel-inc/chravel-web/commit/6681529",
     "metrics": {
       "knip": {
         "files": 210,
@@ -1569,12 +1569,36 @@
   ],
   "costEstimate": {
     "lens": "What it would cost to rebuild Chravel from scratch — the same feature surface and quality bar, on the same third-party platforms (Supabase, Stream, Stripe/RevenueCat, Google, Gemini/Vertex) — with no AI coding assistance. For internal reference, not a sales quote.",
-    "methodology": "Bottom-up: each major system is sized in developer-hours for a competent team rebuilding a known spec (no product discovery, no pivots), then crossed with three vendor rate tiers. Three effort scenarios — Conservative (lean, senior, aggressive reuse, minimal polish), Moderate (average competent devs at a normal pace), High (enterprise rigor, full tests, edge cases).",
+    "methodology": "Bottom-up and transparent. (1) Each major system is sized in engineering-hours for a competent team rebuilding a known spec — no product discovery, no pivots. (2) Three effort bands: Conservative (lean, senior, aggressive reuse, minimal polish), Moderate (average competent devs at a normal pace), High (enterprise rigor, full tests, edge cases). (3) Hours convert to a schedule using a realistic working pattern — about 6 productive (heads-down) hours inside an 8-hour workday, 5 days/week (30 hrs/week, ~1,500 productive hrs/year per developer). (4) Calendar time divides that effort across each vendor's team size (freelancer = 1 dev solo, agency = 2 devs, high-end firm = 3 simultaneous devs), applying a sub-linear efficiency factor (2 devs ≈ 1.8×, 3 devs ≈ 2.5×) for coordination overhead. (5) Cost = effort-hours × the vendor's blended rate.",
     "disclaimer": "Human-only rebuild of a known spec on the same managed platforms — integration work, not platform engineering. Excludes ongoing SaaS/infra, app-store fees, and post-launch maintenance.",
     "totals": {
       "conservative": 3820,
       "moderate": 5800,
       "high": 8840
+    },
+    "model": {
+      "workdayHours": 8,
+      "productiveHoursPerDay": 6,
+      "daysPerWeek": 5,
+      "hoursPerWeekPerDev": 30,
+      "workingWeeksPerYear": 50,
+      "hoursPerYearPerDev": 1500,
+      "weeksPerMonth": 4.33,
+      "teamEfficiency": [
+        {
+          "devs": 1,
+          "factor": 1
+        },
+        {
+          "devs": 2,
+          "factor": 1.8
+        },
+        {
+          "devs": 3,
+          "factor": 2.5
+        }
+      ],
+      "patternNote": "Effort is engineering-hours. Calendar time assumes ~6 productive (heads-down) hours inside an 8-hour workday — the remainder goes to standups, code review, planning, and context-switching — 5 days/week (30 hrs/week, ~1,500 productive hrs/year/dev). Adding developers is sub-linear: 2 devs ≈ 1.8× and 3 devs ≈ 2.5× one developer's throughput after coordination overhead, so calendar time falls less than headcount rises."
     },
     "features": [
       {
@@ -1734,31 +1758,42 @@
     ],
     "vendors": [
       {
-        "tier": "Freelancer(s) off the street",
+        "tier": "Freelancer off the street",
+        "team": 1,
+        "teamLabel": "solo, 1 dev",
+        "typicalBand": "conservative",
         "rateLow": 40,
         "rateHigh": 80,
         "ratePoint": 60,
-        "blurb": "Cheaper and less vetted; more management overhead and wider quality variance."
+        "blurb": "One developer working alone. Cheaper and less vetted; more management overhead, wider quality variance, and the longest calendar time."
       },
       {
-        "tier": "Established agency (1–2 dedicated devs)",
+        "tier": "Established agency",
+        "team": 2,
+        "teamLabel": "2 dedicated devs",
+        "typicalBand": "moderate",
         "rateLow": 100,
         "rateHigh": 175,
         "ratePoint": 135,
         "headline": true,
-        "blurb": "Vetted senior + mid pairing with a PM — the most representative real-world option."
+        "blurb": "Two dedicated devs (vetted senior + mid) with a PM — the most representative real-world option."
       },
       {
         "tier": "High-end agency / specialist firm",
+        "team": 3,
+        "teamLabel": "3 simultaneous devs",
+        "typicalBand": "high",
         "rateLow": 200,
         "rateHigh": 350,
         "ratePoint": 260,
-        "blurb": "Senior-heavy top-tier firm with strong process, guarantees, and speed."
+        "blurb": "Three simultaneous senior devs at a top-tier firm with strong process, guarantees, and the fastest delivery."
       }
     ],
     "assumptions": [
+      "Effort is measured in engineering-hours; the schedule assumes ~6 productive (heads-down) hours inside an 8-hour workday, 5 days/week — 30 hrs/week and ~1,500 productive hrs/year per developer.",
+      "Team size by vendor: a freelancer works solo (1 dev), an established agency runs 2 dedicated devs, and a high-end firm runs 3 simultaneous devs.",
+      "Adding developers is sub-linear: 2 devs ≈ 1.8× and 3 devs ≈ 2.5× a solo developer's pace after coordination overhead, so calendar time drops less than headcount rises.",
       "US-market blended contractor rates (2026); offshore teams would be materially cheaper.",
-      "~1,800 productive developer-hours per year when converting hours to person-years.",
       "Rebuilding a known spec — no product discovery, design iteration, or pivots (those consumed much of the original calendar time).",
       "Same managed platforms reused (Supabase, Stream, Stripe/RevenueCat, Google, Gemini) — you integrate them, you do not rebuild auth servers, realtime, chat, or payment rails.",
       "Competent developers at a normal pace — not padded worst-case-everything estimates.",
@@ -1772,6 +1807,6 @@
       "File count is not effort: many of the 1,180 source files are small, repetitive hooks and components.",
       "Estimates assume focused senior/mid developers, not a worst-case junior team."
     ],
-    "note": "Rates are US-market blended (2026); offshore would be materially lower. The cost matrix recomputes as hours × blended rate, so adjusting either hours or rates updates every cell."
+    "note": "Every input is adjustable in curated.json → costEstimate: per-system hours, blended rates, productive hours/day, days/week, team size, and the multi-dev efficiency factors. All tables (effort, schedule, and quotes) recompute from them. Rates are US-market blended (2026); offshore would be materially lower."
   }
 }
