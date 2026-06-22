@@ -32,6 +32,48 @@ describe('streamMessageSearch', () => {
     expect(result).toEqual([]);
   });
 
+  it('passes the normalized text query to Stream trip search so terms are full-text indexed', async () => {
+    const channelSearch = vi.fn().mockResolvedValue({
+      results: [
+        {
+          message: {
+            id: 'm-join',
+            text: 'join this trip',
+            user: { id: 'u-1', name: 'Alex' },
+            created_at: '2026-06-21T12:00:00.000Z',
+          },
+        },
+      ],
+    });
+    const channel = vi.fn().mockReturnValue({ search: channelSearch });
+
+    getStreamClientMock.mockReturnValue({
+      userID: 'stream-user',
+      channel,
+    });
+
+    const results = await searchTripChannelMessages({
+      tripId: 'trip-1',
+      query: ' join ',
+      limit: 10,
+    });
+
+    expect(channelSearch).toHaveBeenCalledWith('join', { limit: 10, offset: 0 });
+    expect(results).toEqual([
+      {
+        messageId: 'm-join',
+        tripId: 'trip-1',
+        channelType: 'chravel-trip',
+        channelId: 'trip-trip-1',
+        authorId: 'u-1',
+        authorName: 'Alex',
+        text: 'join this trip',
+        createdAt: '2026-06-21T12:00:00.000Z',
+        threadParentId: undefined,
+      },
+    ]);
+  });
+
   it('enforces aggregated multi-channel result limits', async () => {
     const channelOneSearch = vi.fn().mockResolvedValue({
       results: [
@@ -97,7 +139,7 @@ describe('streamMessageSearch', () => {
     expect(results[0].tripName).toBe('Alpha Trip');
     expect(results[1].messageId).toBe('m-2');
     expect(results[1].tripName).toBe('Alpha Trip');
-    expect(channelOneSearch).toHaveBeenCalledWith({ text: 'trip' }, { limit: 2, offset: 0 });
-    expect(channelTwoSearch).toHaveBeenCalledWith({ text: 'trip' }, { limit: 2, offset: 0 });
+    expect(channelOneSearch).toHaveBeenCalledWith('trip', { limit: 2, offset: 0 });
+    expect(channelTwoSearch).toHaveBeenCalledWith('trip', { limit: 2, offset: 0 });
   });
 });

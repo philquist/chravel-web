@@ -80,13 +80,10 @@ export async function searchTripChannelMessages({
     const channelType = CHANNEL_TYPE_TRIP;
     const channelId = tripChannelId(tripId);
     const channel = client.channel(channelType, channelId);
-    const result = await channel.search(
-      { text: normalizedQuery },
-      {
-        limit,
-        offset,
-      },
-    );
+    const result = await channel.search(normalizedQuery, {
+      limit,
+      offset,
+    });
 
     return (result.results || []).map(item =>
       mapChannelSearchHit(item.message, {
@@ -135,13 +132,10 @@ export async function searchMessagesAcrossTripChannels({
         const tripId = String((channelData.trip_id as string | undefined) || '').trim();
         if (!tripId) return [] as StreamMessageSearchHit[];
 
-        const result = await channel.search(
-          { text: normalizedQuery },
-          {
-            limit: perChannelLimit,
-            offset,
-          },
-        );
+        const result = await channel.search(normalizedQuery, {
+          limit: perChannelLimit,
+          offset,
+        });
 
         const channelType = String(channel.type || CHANNEL_TYPE_TRIP);
         const channelId = String(channel.id || '').trim();

@@ -74,3 +74,8 @@
 - Diagnosed the continued iOS chat composer drift as a second root cause after the visual-viewport sizing fix: the mobile trip shell still lived in normal document flow, so iOS could rubber-band/scroll the entire webview and move the composer instead of limiting scroll to the message list.
 - Pinned `.mobile-trip-shell` to the viewport with visual-viewport height and no shell overscroll, preserving the existing internal chat/concierge scroll ownership and keeping the composer as a bottom flex sibling.
 - Added visualViewport `scroll` listener coverage so CSS viewport vars stay synchronized during iOS keyboard settle animations; targeted keyboard/MobileTripTabs tests, typecheck, lint:check, and build pass. Merge preflight remains blocked by origin/main fetch in this environment.
+
+2026-06-21 — Messages search Stream full-text regression fix
+- Diagnosed Messages search miss for chat text like "join this trip": Stream helper passed `{ text: query }` as message-filter conditions, not the SDK full-text query string, so regular message body terms could be missed.
+- Switched single-trip and universal Stream message search to `channel.search(query, options)` and added regression coverage that searching `join` returns `join this trip`.
+- Targeted Stream message search test passes; lint:check passes with existing warning baseline; typecheck remains blocked by pre-existing duplicate object literal keys in `src/components/landing/sections/UseCasesSection.tsx`.

@@ -439,3 +439,6 @@ When Google Play reports Android framework/library callsites, first verify the c
 
 ### App Review compliance paths must be directly discoverable, not merely present
 For account deletion, having a backend/RPC and a nested settings flow is insufficient if reviewers cannot find it quickly; expose the action from the obvious signed-in account/profile row and keep it routed to the same canonical deletion flow. *Evidence: June 17, 2026 App Review 5.1.1(v) remediation added Profile → Account → Delete Account as a direct entry point while preserving ConsumerGeneralSettings as the single deletion flow.*
+
+### Stream message search text must use the SDK query string path
+`channel.search('term', options)` triggers Stream full-text search; `channel.search({ text: 'term' }, options)` is a message-filter path and can miss normal chat body text like “join this trip”.
