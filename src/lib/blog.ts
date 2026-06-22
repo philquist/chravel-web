@@ -1177,6 +1177,259 @@ export const BLOG_POSTS: BlogPost[] = [
       secondaryTo: '/use-cases/sports-team-travel-coordination',
     },
   },
+  {
+    slug: 'run-multi-day-conference-without-paper-agenda',
+    title: 'How to Run a Multi-Day Conference Without a Paper Agenda',
+    description:
+      'A printed agenda is obsolete the moment a session moves. Here’s how to run a multi-day conference on a live agenda — with speaker changes, attendee broadcasts, and staff logistics in one place.',
+    h1: 'How to run a multi-day conference without a paper agenda',
+    excerpt:
+      'A printed agenda is out of date the moment the first session moves rooms. Here’s how to run a multi-day, multi-track conference on a live agenda that attendees and staff actually trust.',
+    datePublished: '2025-11-12',
+    author: BLOG_AUTHOR,
+    tags: ['Events', 'Conferences'],
+    sections: [
+      {
+        paragraphs: [
+          'Every conference organizer knows the moment: the programs come back from the printer, and within a day a keynote shifts an hour, a breakout swaps rooms, and a speaker drops out. Now the most authoritative-looking document at the event — the one in every attendee’s bag — is wrong, and there is no way to recall it. The paper agenda is a liability dressed up as a convenience.',
+        ],
+      },
+      {
+        heading: 'Why the printed agenda fails on day one',
+        paragraphs: [
+          'A printed schedule is a snapshot of intentions, frozen weeks before the event when nothing has gone wrong yet. Real conferences are fluid: sessions run long, AV breaks, a flight gets delayed and two speakers trade slots. Every one of those normal changes turns the printed agenda into misinformation, and your staff spends the event redirecting confused attendees instead of running the show.',
+        ],
+      },
+      {
+        heading: 'Build a live agenda everyone shares',
+        paragraphs: [
+          'The fix is to make the agenda live. In ChravelApp, you build the schedule as an Agenda with the speaker Lineup on a shared Calendar, across as many days and tracks as you need. When a session moves or a speaker swaps, you change it once and every attendee sees the current version instantly — no reprint, no “disregard the printed time,” no stack of obsolete handouts.',
+        ],
+        link: {
+          label: 'See how ChravelApp works for conferences and events',
+          to: '/use-cases/conference-event-management-app',
+        },
+      },
+      {
+        heading: 'Reach the right people in one message',
+        paragraphs: [
+          'When something changes, a single Broadcast reaches everyone — or just the staff, or just the speakers — so “Hall B keynote is delayed 15 minutes” actually lands instead of getting whispered down the line. Polls handle live session feedback, breakout selection, and lunch counts without bolting on a separate survey tool.',
+        ],
+      },
+      {
+        heading: 'Keep the production team and documents in one place',
+        paragraphs: [
+          'The run-of-show, floor plans, and vendor contracts live as Attachments; load-in, AV checks, registration, and teardown live as Tasks; and the venue, hotel block, and green room are pinned as Base Camps. Role-based access keeps the production and speaker coordination separate from what attendees see, so staff can move fast without exposing the back-of-house.',
+        ],
+      },
+      {
+        heading: 'After the last session',
+        paragraphs: [
+          'When the event wraps, a shared Media album collects photos from across the conference in one place, and the agenda and files stay available for follow-up, recaps, and next year’s planning. Nothing has to be reconstructed from a box of paper and a dozen phones.',
+        ],
+      },
+      {
+        paragraphs: [
+          'Going paperless is not about saving trees — it is about telling the truth. A live agenda is always current, reaches everyone the instant it changes, and keeps your staff running the conference instead of correcting it.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Can attendees use it without installing anything?',
+        a: 'Yes. ChravelApp runs on the web and as an installable app on iOS and Android, so attendees can open the live agenda from a link or QR code on any device.',
+      },
+      {
+        q: 'Does it handle multiple tracks and days?',
+        a: 'Yes. The Agenda and Calendar handle multi-day schedules and parallel tracks, all kept current in one place.',
+      },
+      {
+        q: 'How do attendees find out about a room or time change?',
+        a: 'You update the session once and send a single Broadcast; everyone sees the new time or room immediately instead of relying on a printed handout.',
+      },
+      {
+        q: 'Can staff coordination stay separate from the attendee view?',
+        a: 'Yes. Role-based access keeps the run-of-show, tasks, and speaker logistics private to staff while attendees get the agenda, maps, and updates.',
+      },
+    ],
+    related: [
+      {
+        label: 'ChravelApp for conferences and events',
+        to: '/use-cases/conference-event-management-app',
+      },
+      { label: 'ChravelApp for teams', to: '/teams' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
+    ],
+    cta: {
+      heading: 'Run your next conference on a live agenda',
+      subtext:
+        'Put the agenda, speakers, staff tasks, attendee broadcasts, and venue logistics in one workspace — and retire the paper program.',
+      primaryLabel: 'Create an event',
+      primaryTo: '/auth',
+      secondaryLabel: 'See ChravelApp for events',
+      secondaryTo: '/use-cases/conference-event-management-app',
+    },
+  },
+  {
+    slug: 'college-athletics-department-chravelapp-pro',
+    title: 'How a College Athletics Department Coordinates Travel with ChravelApp Pro',
+    description:
+      'Dozens of programs, hundreds of athletes, and constant travel. Here’s how a college athletics department uses ChravelApp Pro — role-based access, seats, and broadcasts — to run department-wide travel.',
+    h1: 'How a college athletics department coordinates travel with ChravelApp Pro',
+    excerpt:
+      'Dozens of programs, hundreds of athletes, compliance rules, and nonstop road trips. Here’s how a college athletics department uses ChravelApp Pro to coordinate travel across the entire department.',
+    datePublished: '2025-10-14',
+    author: BLOG_AUTHOR,
+    tags: ['Sports', 'ChravelApp Pro'],
+    sections: [
+      {
+        paragraphs: [
+          'A college athletics department is not one team — it is twenty. Football charters and basketball road swings, but also tennis, soccer, track, swimming, and the rest, each with its own coaches, athletes, schedule, and travel party. The athletic department’s operations staff has to coordinate all of it at once, under compliance rules and a budget, every week of the year. Consumer group chats do not survive that scale.',
+        ],
+      },
+      {
+        heading: 'One department, many programs, constant travel',
+        paragraphs: [
+          'The hard part is not any single trip — it is the volume and the overlap. Different programs travel on the same weekends, staff turns over between seasons, and athletes need their own schedules while the department needs visibility across all of them. The coordination cannot live in one person’s head or a folder of spreadsheets.',
+        ],
+      },
+      {
+        heading: 'Role-based access from the AD’s office to each team',
+        paragraphs: [
+          'ChravelApp Pro adds role-based access, so the picture matches the org chart. Operations and administrators see across the department; each program’s coaches manage their own team’s travel; athletes get their schedule, itinerary, and updates without the back-office detail. Every program is its own organized space, and the department still has the bird’s-eye view.',
+        ],
+        link: {
+          label: 'See how ChravelApp works for sports teams',
+          to: '/use-cases/sports-team-travel-coordination',
+        },
+      },
+      {
+        heading: 'Seats and member management at department scale',
+        paragraphs: [
+          'Pro brings admin-controlled seats, invite approvals, and bulk role assignment, so onboarding a new strength coach or a full incoming roster is a managed process — not a pile of invite links. When a season ends or staff changes, access changes with it, which matters when you are responsible for hundreds of athletes.',
+        ],
+      },
+      {
+        heading: 'Travel ops: itineraries, hotels, and compliance docs',
+        paragraphs: [
+          'Each trip carries its itinerary on the Calendar, the team hotel and venues pinned as Base Camps, and travel rosters, per-diem sheets, and compliance documents kept as Attachments where the right staff can reach them. When a bus time or flight shifts, one Broadcast updates the traveling party instead of a chain of calls.',
+        ],
+      },
+      {
+        paragraphs: [
+          'Running a department means running an organization, not a group chat. ChravelApp Pro gives athletics operations the roles, seats, and visibility to coordinate every program’s travel from one place — consistently, and within the rules.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'What does ChravelApp Pro add over the free version?',
+        a: 'Role-based access, admin-managed seats, invite approvals, and bulk role assignment — the controls a multi-program organization needs on top of shared calendars, tasks, broadcasts, and files. See ChravelApp for teams for details.',
+      },
+      {
+        q: 'Can each program stay separate while the department sees everything?',
+        a: 'Yes. Each team is its own space via role-based access, while administrators retain visibility across all programs.',
+      },
+      {
+        q: 'Does it scale to a full department of athletes and staff?',
+        a: 'Yes. Seat and member management are built for organizations with many teams, hundreds of athletes, and regular staff turnover.',
+      },
+    ],
+    related: [
+      { label: 'ChravelApp for sports teams', to: '/use-cases/sports-team-travel-coordination' },
+      { label: 'ChravelApp for teams', to: '/teams' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
+    ],
+    cta: {
+      heading: 'Coordinate every program from one place',
+      subtext:
+        'Give athletics operations role-based access, managed seats, and department-wide broadcasts across every team’s travel.',
+      primaryLabel: 'See ChravelApp Pro',
+      primaryTo: '/teams',
+      secondaryLabel: 'See ChravelApp for sports teams',
+      secondaryTo: '/use-cases/sports-team-travel-coordination',
+    },
+  },
+  {
+    slug: 'aau-tournament-operator-chravelapp-pro',
+    title: 'How an AAU Tournament Operator Runs Events on ChravelApp Pro',
+    description:
+      'Dozens of teams, hundreds of families, and a weekend of games across multiple gyms. Here’s how an AAU tournament operator uses ChravelApp Pro to keep an entire event organized.',
+    h1: 'How an AAU tournament operator runs events on ChravelApp Pro',
+    excerpt:
+      'Dozens of teams, hundreds of families, multiple gyms, and a bracket that shifts all weekend. Here’s how an AAU tournament operator uses ChravelApp Pro to keep an entire event organized.',
+    datePublished: '2025-09-16',
+    author: BLOG_AUTHOR,
+    tags: ['Sports', 'ChravelApp Pro'],
+    sections: [
+      {
+        paragraphs: [
+          'An AAU tournament is a logistics event that happens to involve basketball. An operator might run dozens of teams across several gyms over a single weekend, with hundreds of families trying to figure out which court their kid is on, a bracket that changes with every result, and referees, scorekeepers, and venue staff to coordinate. The games are the easy part; keeping everyone informed is the job.',
+        ],
+      },
+      {
+        heading: 'A tournament is a logistics event, not just games',
+        paragraphs: [
+          'When pool play reshuffles the bracket Saturday night, the schedule for Sunday changes for everyone at once — and a few hundred families need the new times and courts immediately. Taped-up printouts and a flood of texts cannot keep up, and the operator becomes a human help desk for the whole weekend.',
+        ],
+      },
+      {
+        heading: 'Role-based access for operators, coaches, and families',
+        paragraphs: [
+          'ChravelApp Pro gives the event the structure it needs: operators run the whole tournament, each team’s coaches manage their group, and families get schedules, court assignments, and updates without the operator’s back-end. Everyone sees what is relevant to them, and the operator is not fielding the same question two hundred times.',
+        ],
+        link: {
+          label: 'See how ChravelApp works for sports teams',
+          to: '/use-cases/sports-team-travel-coordination',
+        },
+      },
+      {
+        heading: 'Broadcast bracket and schedule changes instantly',
+        paragraphs: [
+          'When the bracket moves, one Broadcast pushes the update to every team — or to a specific division — and the Calendar reflects the new game times and gyms in one place. Instead of chasing rumors, families and coaches check a single source of truth that is always current.',
+        ],
+      },
+      {
+        heading: 'Seats, documents, and venues at scale',
+        paragraphs: [
+          'Admin-controlled seats and bulk role assignment make it manageable to bring dozens of teams into the event, while Attachments hold waivers, tournament rules, and gym maps, and Base Camps pin every venue. Everything an operator usually tapes to a wall or buries in email lives in one workspace the whole event can reach.',
+        ],
+      },
+      {
+        paragraphs: [
+          'Running a tournament well is mostly about keeping hundreds of people informed in real time. ChravelApp Pro gives the operator the roles, broadcasts, and shared schedule to do exactly that — so the weekend runs on information, not chaos.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'How do families find their team’s games and gyms?',
+        a: 'Each team’s schedule and court assignments live on the shared Calendar, and operators Broadcast changes so families always see the current times and venues.',
+      },
+      {
+        q: 'Can operators message everyone or just one division?',
+        a: 'Both. A Broadcast can reach the entire event or a specific team or division, so updates go exactly where they are needed.',
+      },
+      {
+        q: 'What makes this a ChravelApp Pro use case?',
+        a: 'Pro’s role-based access, admin-managed seats, and bulk onboarding are what make it possible to run dozens of teams and hundreds of families as one organized event. See ChravelApp for teams.',
+      },
+    ],
+    related: [
+      { label: 'ChravelApp for sports teams', to: '/use-cases/sports-team-travel-coordination' },
+      { label: 'ChravelApp for teams', to: '/teams' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
+    ],
+    cta: {
+      heading: 'Run your next tournament on one source of truth',
+      subtext:
+        'Give operators, coaches, and families role-based access, a live schedule, and instant broadcasts across every gym.',
+      primaryLabel: 'See ChravelApp Pro',
+      primaryTo: '/teams',
+      secondaryLabel: 'See ChravelApp for sports teams',
+      secondaryTo: '/use-cases/sports-team-travel-coordination',
+    },
+  },
 ];
 
 const MONTHS = [
