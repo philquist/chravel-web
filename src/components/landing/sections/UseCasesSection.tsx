@@ -80,6 +80,17 @@ const scenarios: Scenario[] = [
     badge: 'Fewer errors · faster decisions',
     href: '/use-cases/sports-team-travel-coordination',
   },
+  {
+    title: 'Conferences & Events',
+    subtitle: 'Organizers · speakers · production staff · attendees',
+    before:
+      'A printed agenda goes stale by the first session, speakers change slots last-minute, and attendees screenshot the schedule and miss the room swap.',
+    expandCTA: 'ChravelApp helps events run on one source of truth',
+    after:
+      'A live agenda and speaker lineup, attendee broadcasts, session polls, staff tasks, venue maps, and a shared album — organizers, staff, and attendees all in one place.',
+    badge: 'No stale handouts · nobody misses a room change',
+    href: '/use-cases/conference-event-management-app',
+  },
 ];
 
 export const UseCasesSection = () => {

@@ -699,6 +699,484 @@ export const BLOG_POSTS: BlogPost[] = [
       secondaryTo: '/use-cases/family-organization-app',
     },
   },
+  {
+    slug: 'fraternity-spring-break-trip-chravelapp',
+    title: 'How a Fraternity Pulled Off a Seamless Spring Break Trip with ChravelApp',
+    description:
+      'Forty brothers, one beach house, and a hundred ways for spring break to go sideways. Here’s how one fraternity used ChravelApp’s shared calendar, photos, and tasks to keep the whole week seamless.',
+    h1: 'How a fraternity pulled off a seamless spring break trip with ChravelApp',
+    excerpt:
+      'Forty brothers, one beach house, and a hundred ways for a spring break trip to fall apart. Here’s how one chapter used ChravelApp’s shared calendar, photos, and tasks to make the whole week run itself.',
+    datePublished: '2026-03-12',
+    author: BLOG_AUTHOR,
+    tags: ['Group Travel', 'Students'],
+    sections: [
+      {
+        paragraphs: [
+          'Spring break with a fraternity is the ultimate stress test for group planning. Forty guys, one beach house, a patchwork of flights and drives, a boat day someone swears they booked, and a group chat that hit three hundred unread messages before anyone had paid a deposit. One chapter decided to run the whole trip in ChravelApp instead — and it changed how the week went.',
+        ],
+      },
+      {
+        heading: 'Planning a trip for forty people breaks a group chat',
+        paragraphs: [
+          'A group text is fine for five friends. At forty, it collapses: the house address scrolls away, nobody knows who has paid, half the chat is memes, and the one message that mattered — the boat leaves at 9, not 10 — is buried under two hundred replies. The brothers organizing the trip were spending more time answering the same questions than actually planning.',
+        ],
+      },
+      {
+        heading: 'One shared calendar everyone actually checked',
+        paragraphs: [
+          'The first fix was a single shared Calendar: arrival waves, the boat day, the group dinner reservation, the foam party, and checkout. Instead of re-answering “what time is the thing?” forty times, the organizers pointed everyone to one place. When the boat company moved the time, they changed it once and the whole house saw it.',
+        ],
+        link: {
+          label: 'See how ChravelApp works for group trips',
+          to: '/group-travel-planning-app',
+        },
+      },
+      {
+        heading: 'Photos that didn’t vanish into forty camera rolls',
+        paragraphs: [
+          'By the end of the week, the best photos and videos usually live on forty different phones and never get shared. With one shared Media album, everyone dumped their photos into the same place — iPhone or Android — so the whole chapter walked away with the full set instead of begging people to AirDrop later.',
+        ],
+      },
+      {
+        heading: 'Tasks and payments kept the deposit and the runs on track',
+        paragraphs: [
+          'A shared Tasks list tracked who was booking the house, who had the boat, who was on the grocery and ice runs, and who still owed for their share. Payments handled the “who owes who” math so the two guys fronting the deposit were not chasing thirty-eight Venmos by memory. The logistics that usually fall on one stressed-out social chair were finally visible to everyone.',
+        ],
+      },
+      {
+        paragraphs: [
+          'The trip still had all the chaos you want from spring break — just none of the chaos you do not. One shared place for the schedule, the money, the tasks, and the photos turned a forty-person trip from a logistical nightmare into a week that mostly ran itself.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Do you have to be in a fraternity for this to work?',
+        a: 'No. Any large group trip — friends, a birthday, a bachelor party, a club — runs into the same forty-people-one-group-chat problem, and the same shared calendar, tasks, photos, and payments fix it.',
+      },
+      {
+        q: 'How do you handle who owes who?',
+        a: 'Payments lets the group track and settle shares for the house, the boat, and group meals without one person chasing everyone’s Venmo.',
+      },
+      {
+        q: 'Does everyone need an iPhone?',
+        a: 'No — ChravelApp runs on the web and as an installable app on iOS and Android, so the whole group is covered, including the shared photo album.',
+      },
+    ],
+    related: [
+      { label: 'ChravelApp for group trips', to: '/group-travel-planning-app' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
+    ],
+    cta: {
+      heading: 'Plan your group’s next trip in one place',
+      subtext:
+        'Put the schedule, tasks, payments, and a shared photo album in one trip — and invite the whole crew.',
+      primaryLabel: 'Start a group trip',
+      primaryTo: '/auth',
+      secondaryLabel: 'See ChravelApp for group trips',
+      secondaryTo: '/group-travel-planning-app',
+    },
+  },
+  {
+    slug: 'parents-coordinating-youth-football-team-chravelapp',
+    title: 'How a Group of Parents Ran Their Kids’ Football Season with ChravelApp',
+    description:
+      'Carpools, snack duty, game times, and forty texts a day. Here’s how the parents of one youth football team swapped the group-chat chaos for one shared ChravelApp hub.',
+    h1: 'How a group of parents ran their kids’ football season with ChravelApp',
+    excerpt:
+      'Carpools, snack duty, last-minute field changes, and a group text nobody can keep up with. Here’s how the parents of one youth football team ran the whole season from one shared ChravelApp hub.',
+    datePublished: '2026-02-18',
+    author: BLOG_AUTHOR,
+    tags: ['Families', 'Sports'],
+    sections: [
+      {
+        paragraphs: [
+          'Every youth sports team has one parent who quietly becomes the coordinator — the one tracking who is driving, who is bringing snacks, and where the field moved to this week. For one youth football team, that role had turned into a second job lived entirely inside an exhausting group text. So the parents moved the whole season into ChravelApp instead.',
+        ],
+      },
+      {
+        heading: 'A group text can’t hold a season',
+        paragraphs: [
+          'Practices, games, tournaments, snack rotations, carpools, and the occasional rained-out reschedule do not fit in a single scrolling thread. The important message — practice moved to 5pm, meet at the north field — always gets buried under reply-all chatter, and somebody always shows up at the wrong place at the wrong time.',
+        ],
+      },
+      {
+        heading: 'One shared calendar for every practice and game',
+        paragraphs: [
+          'The parents built a shared Calendar with every practice, game, and tournament, plus who was responsible for each carpool and pickup. Instead of reconstructing the week from memory and screenshots, every family opened the same plan and saw exactly where to be and who had it covered.',
+        ],
+        link: {
+          label: 'See how ChravelApp works as a family hub',
+          to: '/use-cases/family-organization-app',
+        },
+      },
+      {
+        heading: 'Tasks turned snack duty and carpools into something you could see',
+        paragraphs: [
+          'A shared Tasks list made the invisible work visible: who was bringing snacks and water this week, who had the canopy and the first-aid kit, and which parent was driving which kids. No more “I thought you had it” — the assignments were right there, and anyone could check what still needed a volunteer.',
+        ],
+      },
+      {
+        heading: 'One broadcast instead of forty texts',
+        paragraphs: [
+          'When the field changed or a game got rained out, one Broadcast reached every family at once instead of a frantic reply-all. And the team’s photos — game-day action shots, the end-of-season party — landed in one shared album every parent could pull from, instead of being trapped on one phone.',
+        ],
+      },
+      {
+        paragraphs: [
+          'The season still had early mornings and long Saturdays, but the coordination stopped being a burden carried by one parent. One shared hub for the schedule, the carpools, the snacks, and the photos let all the families share the load — and actually enjoy watching their kids play.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Who sets this up — the coach or the parents?',
+        a: 'Either. A team parent or coach creates one trip for the season and invites the other families; from there the calendar, tasks, and broadcasts are shared.',
+      },
+      {
+        q: 'How do carpools and snack duty get tracked?',
+        a: 'Use the shared Tasks list so everyone can see who is driving, who is bringing what, and what still needs a volunteer — no more relying on one parent’s memory.',
+      },
+      {
+        q: 'Does it work for any youth sport?',
+        a: 'Yes — football, soccer, basketball, baseball, or any team where a group of parents has to coordinate practices, games, and rides across a season.',
+      },
+    ],
+    related: [
+      { label: 'ChravelApp for families and parents', to: '/use-cases/family-organization-app' },
+      { label: 'ChravelApp for sports teams', to: '/use-cases/sports-team-travel-coordination' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
+    ],
+    cta: {
+      heading: 'Run your team’s season from one shared hub',
+      subtext:
+        'Put the schedule, carpools, snack duty, and team photos in one place — and invite every family.',
+      primaryLabel: 'Create a family hub',
+      primaryTo: '/auth',
+      secondaryLabel: 'See ChravelApp for families',
+      secondaryTo: '/use-cases/family-organization-app',
+    },
+  },
+  {
+    slug: 'tour-manager-50-city-tour-chravelapp',
+    title: 'Running a 50-City Tour: How a Tour Manager Stays Sane with ChravelApp',
+    description:
+      'Fifty cities, a dozen departments, and a new day sheet every morning. Here’s how a tour manager uses ChravelApp to keep artists, crew, security, and content aligned on the road.',
+    h1: 'Running a 50-city tour: how a tour manager stays sane with ChravelApp',
+    excerpt:
+      'Fifty cities, a dozen departments, and a fresh day sheet every morning. Here’s how a tour manager uses ChravelApp to keep the artist, crew, security, and content team aligned night after night.',
+    datePublished: '2026-01-21',
+    author: BLOG_AUTHOR,
+    tags: ['Music Touring', 'Tour Management'],
+    sections: [
+      {
+        paragraphs: [
+          'A 50-city tour is fifty versions of the same hard problem: a new venue, a new hotel, new load-in and door times, and the same crew that needs to know all of it before the day starts. The tour manager is the single point of failure for every one of those details — and for years the job has run on a day sheet PDF, a wall of texts, and a prayer.',
+        ],
+      },
+      {
+        heading: 'Every department on a different thread',
+        paragraphs: [
+          'The breakdown is always the same. The TM has the day sheet, security has movement and venue notes, the photographer got a call time from someone else, management is in email, and the promoter sent a PDF. By the third city, nobody is sure which version is current, and the TM is answering the same five questions in five different chats.',
+        ],
+      },
+      {
+        heading: 'One workspace per city',
+        paragraphs: [
+          'In ChravelApp, each city is one place: the schedule and call times on the Calendar, the hotel and venue pinned as Base Camps, parking and nearby spots in Explorer, and the advance, contracts, and run-of-show kept as Attachments. Smart Import can pull schedules and reservations from confirmation emails and PDFs, so the TM is building from the advance instead of retyping it.',
+        ],
+        link: {
+          label: 'See how ChravelApp works for tour coordination',
+          to: '/use-cases/music-tour-coordination',
+        },
+      },
+      {
+        heading: 'Broadcast to the right people, not everyone',
+        paragraphs: [
+          'When a lobby call moves or a venue changes the load-in door, the TM sends one Broadcast to the group that needs it — band, crew, or security — instead of blasting everyone and hoping. Tasks are assigned by role, so each department knows what it owns for the day without the TM chasing them.',
+        ],
+      },
+      {
+        heading: 'Content and memories in one place',
+        paragraphs: [
+          'The photographer and content team upload to one shared Media album instead of scattering assets across AirDrop, iCloud links, and Dropbox. When management or the label needs a shot from last night, it is already where everyone can find it.',
+        ],
+      },
+      {
+        paragraphs: [
+          'Fifty cities never gets easy, but it gets manageable when the whole touring party works from one source of truth. The TM spends less of the day re-explaining logistics and more of it actually running the show.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Does this replace professional tour-management software?',
+        a: 'It is a lightweight coordination layer, not a replacement for a full production stack. It shines at keeping the whole touring party — crew, security, content, guests — aligned on the day-to-day.',
+      },
+      {
+        q: 'How do different departments stay in their lane?',
+        a: 'Role-based access and targeted Broadcasts mean each group gets what it needs without wading through everyone else’s logistics.',
+      },
+      {
+        q: 'Can the advance and day sheets be imported?',
+        a: 'Yes. Smart Import pulls schedules and reservations from confirmation emails, PDFs, and links so you are not retyping the advance for every city.',
+      },
+    ],
+    related: [
+      { label: 'ChravelApp for tour coordination', to: '/use-cases/music-tour-coordination' },
+      { label: 'ChravelApp for teams', to: '/teams' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
+    ],
+    cta: {
+      heading: 'Keep the whole tour on one source of truth',
+      subtext:
+        'Organize each city’s schedule, hotels, venues, call times, tasks, and content in one workspace — and broadcast changes to the right people.',
+      primaryLabel: 'Build a tour workspace',
+      primaryTo: '/auth',
+      secondaryLabel: 'See ChravelApp for touring',
+      secondaryTo: '/use-cases/music-tour-coordination',
+    },
+  },
+  {
+    slug: 'comedian-club-theater-tour-chravelapp',
+    title: 'On the Road with a Comedian: Running a Club and Theater Tour in ChravelApp',
+    description:
+      'A comedy tour is lean and relentless — a comic, an opener, a tour manager, and merch hitting a new room every night. Here’s how a small touring party keeps it organized in ChravelApp.',
+    h1: 'On the road with a comedian: running a club and theater tour in ChravelApp',
+    excerpt:
+      'A comedy tour is lean and relentless — a comic, an opener, a tour manager, and a merch person hitting a new club or theater every night. Here’s how a small touring party keeps it all straight in ChravelApp.',
+    datePublished: '2025-12-09',
+    author: BLOG_AUTHOR,
+    tags: ['Music Touring', 'Comedy'],
+    sections: [
+      {
+        paragraphs: [
+          'A comedy tour looks simple from the outside — one person and a microphone — but the logistics are relentless. A comic, an opener, a tour manager, and maybe a merch person hit a new club or theater every night, with radio promo in the morning, a long drive in the afternoon, and a late load-in before the first set. With a crew that small, one missed detail derails the whole day.',
+        ],
+      },
+      {
+        heading: 'Small crew, no margin for missed details',
+        paragraphs: [
+          'When four people are running everything, there is no department to catch a mistake. A wrong set time, a missed radio hit, or a hotel booked in the wrong city is not an inconvenience — it is the whole night. The tour cannot afford to have details scattered across texts and email.',
+        ],
+      },
+      {
+        heading: 'The whole run in one place',
+        paragraphs: [
+          'In ChravelApp, the run lives in one workspace: set times, press, and travel on the Calendar; the club and hotel pinned as Base Camps; and the settlement sheets, contracts, and tech riders kept as Attachments. Whoever is driving and whoever is checking in are looking at the same plan instead of texting “what city are we in tomorrow?”',
+        ],
+        link: {
+          label: 'See how ChravelApp works for tour coordination',
+          to: '/use-cases/music-tour-coordination',
+        },
+      },
+      {
+        heading: 'Promo, merch, and the night-of details',
+        paragraphs: [
+          'A shared Tasks list keeps the day’s moving parts straight — the morning radio hit, the meet-and-greet, the merch count and restock — and a quick Broadcast handles the inevitable “doors pushed to 8.” The comic can focus on the set instead of the schedule.',
+        ],
+      },
+      {
+        heading: 'Clips and photos for socials',
+        paragraphs: [
+          'Comedy lives on clips, and clips get lost fast. A shared Media album collects the night’s photos and video in one place, so the team can pull content for socials without digging through four phones the next morning.',
+        ],
+      },
+      {
+        paragraphs: [
+          'A small tour does not need a heavyweight production system — it needs one place that holds the night. With the schedule, the docs, the tasks, and the content together, a lean comedy run stays organized from the first radio hit to the last drink at the bar.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is ChravelApp overkill for a four-person tour?',
+        a: 'No — it is built to be the lightweight layer a small crew actually needs: one place for the schedule, documents, tasks, and content, without a heavy production stack.',
+      },
+      {
+        q: 'Can the opener and merch person see everything?',
+        a: 'You control who is on the trip and what they can see, so the whole touring party stays aligned on logistics while sensitive items stay limited.',
+      },
+      {
+        q: 'Where do clips and photos go?',
+        a: 'Into one shared Media album, so the team can grab content for socials instead of chasing assets across everyone’s phones.',
+      },
+    ],
+    related: [
+      { label: 'ChravelApp for tour coordination', to: '/use-cases/music-tour-coordination' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
+    ],
+    cta: {
+      heading: 'Keep the whole run in one place',
+      subtext:
+        'Put set times, travel, documents, tasks, and content in one workspace — and broadcast the changes that always come.',
+      primaryLabel: 'Build a tour workspace',
+      primaryTo: '/auth',
+      secondaryLabel: 'See ChravelApp for touring',
+      secondaryTo: '/use-cases/music-tour-coordination',
+    },
+  },
+  {
+    slug: 'arena-tour-large-crew-chravelapp',
+    title: 'How a Major Artist’s Arena Tour Keeps a Huge Crew Aligned with ChravelApp',
+    description:
+      'An arena run moves a small city every day — band, dancers, security, wardrobe, content, and local crew. Here’s how ChravelApp keeps a large touring operation aligned city to city.',
+    h1: 'How a major artist’s arena tour keeps a huge crew aligned with ChravelApp',
+    excerpt:
+      'An arena tour moves a small city every day — band, dancers, security, wardrobe, content, VIPs, and local crew. Here’s how a large touring operation stays aligned, city to city, in ChravelApp.',
+    datePublished: '2025-07-22',
+    author: BLOG_AUTHOR,
+    tags: ['Music Touring', 'Production'],
+    sections: [
+      {
+        paragraphs: [
+          'A major arena tour is a traveling small city. Beyond the artist, there is a band, dancers, wardrobe, hair and makeup, security, a content team, tour and production management, VIP guests, and a fresh local crew in every market. Coordinating that many moving parts night after night is a logistics operation in its own right — and the bigger the party, the more ways there are to lose the plot.',
+        ],
+      },
+      {
+        heading: 'More people, more ways to lose the plot',
+        paragraphs: [
+          'At this scale, a single group chat is useless and a stack of separate ones is worse. Security needs movement and room details, the content team needs shoot windows, wardrobe needs call times, and VIP guests need just enough — but not the whole operation. When that lives in a dozen disconnected threads, something always slips.',
+        ],
+      },
+      {
+        heading: 'A shared day sheet the whole touring party can trust',
+        paragraphs: [
+          'In ChravelApp, every city has one current schedule on the Calendar, with the hotel, venue, and key rooms pinned as Base Camps and the advance, schedules, and credentials kept as Attachments. Instead of forwarding a screenshot of a day sheet that is already out of date, the whole party works from one version that updates in place.',
+        ],
+        link: {
+          label: 'See how ChravelApp works for tour coordination',
+          to: '/use-cases/music-tour-coordination',
+        },
+      },
+      {
+        heading: 'The right message to the right group',
+        paragraphs: [
+          'Role-based access and targeted Broadcasts mean security, content, band, and guests each get what they need and nothing they do not. A lobby-call change reaches the people it affects without blasting the entire operation, and sensitive movement details stay with the team that handles them.',
+        ],
+      },
+      {
+        heading: 'VIPs, guests, and content without the side chats',
+        paragraphs: [
+          'Guest lists, after-show plans, and content windows live in Tasks and the shared schedule instead of a tangle of side texts, and the content team uploads to one shared Media album so management and the label can find last night’s shots immediately.',
+        ],
+      },
+      {
+        paragraphs: [
+          'A run this big will always be complex, but it does not have to be chaotic. One workspace per city — with the right people seeing the right things — keeps a huge crew moving together, market after market.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Can different departments have different access?',
+        a: 'Yes. Role-based access keeps security, content, band, wardrobe, and guests in their own lanes while everyone still shares one source of truth.',
+      },
+      {
+        q: 'How do guests and VIPs fit in without seeing everything?',
+        a: 'You invite them with limited access so they get the logistics they need — times and locations — without the full production detail.',
+      },
+      {
+        q: 'Does this replace the full production stack?',
+        a: 'It complements it as the coordination layer for the wider touring party, keeping the day-to-day aligned across every department and the local crew.',
+      },
+    ],
+    related: [
+      { label: 'ChravelApp for tour coordination', to: '/use-cases/music-tour-coordination' },
+      { label: 'ChravelApp for teams', to: '/teams' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
+    ],
+    cta: {
+      heading: 'Keep a big touring operation aligned',
+      subtext:
+        'Give every department one current schedule and the right access — and broadcast changes to exactly the people who need them.',
+      primaryLabel: 'Build a tour workspace',
+      primaryTo: '/auth',
+      secondaryLabel: 'See ChravelApp for touring',
+      secondaryTo: '/use-cases/music-tour-coordination',
+    },
+  },
+  {
+    slug: 'sports-club-program-chravelapp-pro',
+    title: 'How a Club Sports Program Runs on ChravelApp Pro',
+    description:
+      'Multiple teams, dozens of staff, and hundreds of families. Here’s how a club sports program uses ChravelApp Pro — role-based access, seat management, and broadcasts — to run the whole organization.',
+    h1: 'How a club sports program runs on ChravelApp Pro',
+    excerpt:
+      'Multiple teams, dozens of coaches, and hundreds of families across a season. Here’s how a club sports program uses ChravelApp Pro — role-based access, seat management, and broadcasts — to run the whole organization.',
+    datePublished: '2025-07-08',
+    author: BLOG_AUTHOR,
+    tags: ['Sports', 'ChravelApp Pro'],
+    sections: [
+      {
+        paragraphs: [
+          'One travel team is a coordination challenge. A whole club program — multiple age groups, dozens of coaches, and hundreds of families across a season — is an organization. At that scale, the free, one-team approach stops being enough, and a director needs the controls that come with ChravelApp Pro.',
+        ],
+      },
+      {
+        heading: 'Consumer tools don’t scale to a whole program',
+        paragraphs: [
+          'When a single director is overseeing ten teams, the cracks show fast: who can post to which team, how new coaches get access, how to reach every family at once, and how to keep last season’s parents out of this season’s team. A pile of separate group chats cannot answer any of that.',
+        ],
+      },
+      {
+        heading: 'Role-based access keeps everyone in their lane',
+        paragraphs: [
+          'ChravelApp Pro adds role-based access, so directors, coaches, parents, and players each see what is relevant to them. A coach manages their own team; a director sees across the program; parents get schedules and updates without the staff back-channel. Each team stays its own space while the organization stays connected.',
+        ],
+        link: {
+          label: 'See how ChravelApp works for sports teams',
+          to: '/use-cases/sports-team-travel-coordination',
+        },
+      },
+      {
+        heading: 'Seats and member management for a real organization',
+        paragraphs: [
+          'Pro brings admin-controlled seats, invite approvals, and bulk role assignment, so onboarding a new coach or a whole roster of families is a managed process — not a free-for-all of invite links. When the season turns over, access turns over with it.',
+        ],
+      },
+      {
+        heading: 'Broadcasts, schedules, and files across every team',
+        paragraphs: [
+          'A director can Broadcast to the whole program or a single team, keep every squad’s Calendar of practices and games in one system, and store waivers, rosters, and tournament rules as Attachments where the right staff can reach them. The program runs on one platform instead of ten disconnected chats.',
+        ],
+      },
+      {
+        paragraphs: [
+          'For a club trying to look and operate like a real organization, ChravelApp Pro is the difference between herding group chats and running a program. The schedules, the staff, the families, and the access controls finally live in one place.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'What’s the difference between ChravelApp and ChravelApp Pro?',
+        a: 'Pro adds the controls an organization needs — role-based access, admin-managed seats, invite approvals, and bulk role assignment — on top of the shared calendar, tasks, broadcasts, and files. See ChravelApp for teams for details.',
+      },
+      {
+        q: 'Can each team stay separate while the program stays connected?',
+        a: 'Yes. Role-based access keeps each team its own space while a director can see across the whole program and broadcast to everyone at once.',
+      },
+      {
+        q: 'Does it work from youth clubs up to elite programs?',
+        a: 'Yes — the same role-based model scales from a youth club to a large travel or elite program with many teams and staff.',
+      },
+    ],
+    related: [
+      { label: 'ChravelApp for sports teams', to: '/use-cases/sports-team-travel-coordination' },
+      { label: 'ChravelApp for teams', to: '/teams' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
+    ],
+    cta: {
+      heading: 'Run your whole program on ChravelApp Pro',
+      subtext:
+        'Role-based access, managed seats, and program-wide broadcasts — so every team, coach, and family is in one organized place.',
+      primaryLabel: 'See ChravelApp Pro',
+      primaryTo: '/teams',
+      secondaryLabel: 'See ChravelApp for sports teams',
+      secondaryTo: '/use-cases/sports-team-travel-coordination',
+    },
+  },
 ];
 
 const MONTHS = [

@@ -4,9 +4,9 @@ import { JsonLd, SeoHead } from '@/components/seo/SeoHead';
 import { SITE_NAME, SITE_URL, breadcrumbJsonLd, siteIdentityJsonLd } from '@/lib/seo';
 import { BLOG_PATH, estimateReadingMinutes, formatBlogDate, getSortedBlogPosts } from '@/lib/blog';
 
-const INDEX_TITLE = 'Chravel Blog | Guides for Group Travel, Events, and Travel Pros';
+const INDEX_TITLE = 'ChravelApp Blog | Guides for Group Travel, Events, and Travel Pros';
 const INDEX_DESCRIPTION =
-  'Practical guides on coordinating group travel, weddings, sports, touring, and travel-concierge client experiences with Chravel.';
+  'Practical guides on coordinating group travel, weddings, sports, touring, and travel-concierge client experiences with ChravelApp.';
 const INDEX_H1 = 'The ChravelApp blog';
 
 const buildJsonLd = (posts: ReturnType<typeof getSortedBlogPosts>) => [

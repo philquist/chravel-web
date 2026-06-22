@@ -5,7 +5,15 @@ import {
   formatBlogDate,
   getBlogPost,
   getSortedBlogPosts,
+  type BlogPost,
 } from '@/lib/blog';
+import { USE_CASES, getUseCaseHref } from '@/lib/useCases';
+
+const postLinks = (post: BlogPost): string[] => [
+  ...post.related.map(r => r.to),
+  ...post.sections.flatMap(s => (s.link ? [s.link.to] : [])),
+  post.cta.secondaryTo ?? '',
+];
 
 describe('blog registry', () => {
   it('publishes the travel-concierge post and links to its use-case page', () => {
@@ -78,6 +86,19 @@ describe('blog registry', () => {
       expect(post.description, `${post.slug} description`).toBeTruthy();
       expect(post.cta.primaryTo, `${post.slug} CTA target`).toBeTruthy();
       expect(post.datePublished).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+  });
+
+  it('every post internally links to a real use-case destination', () => {
+    const useCaseDestinations = new Set(
+      USE_CASES.map(getUseCaseHref).filter((href): href is string => Boolean(href)),
+    );
+    for (const post of BLOG_POSTS) {
+      const links = postLinks(post);
+      expect(
+        links.some(link => useCaseDestinations.has(link)),
+        `${post.slug} should link to a use-case page`,
+      ).toBe(true);
     }
   });
 

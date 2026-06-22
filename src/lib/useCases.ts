@@ -487,6 +487,82 @@ export const USE_CASES: Array<UseCaseSummary | UseCaseDetail> = [
       secondaryTo: '/teams',
     },
   },
+  {
+    slug: 'conference-event-management-app',
+    status: 'published',
+    cardTitle: 'Conferences & Events',
+    cardTagline:
+      'Run conferences, summits, and large events — agenda, speakers, attendees, broadcasts, and logistics in one place.',
+    cardCtaLabel: 'See ChravelApp for events',
+    seo: {
+      title: 'Conference & Event Management App | Agenda, Attendees & Logistics | ChravelApp',
+      description:
+        'ChravelApp runs conferences and events from one workspace — a live agenda and speaker lineup, attendee broadcasts, session polls, staff tasks, venue maps, and shared media.',
+    },
+    h1: 'A conference and event management app for organizers, staff, and attendees',
+    intro:
+      'Conferences live or die on logistics — a shifting agenda, a dozen speakers, staff in every room, and hundreds of attendees who need to know where to be. ChravelApp events give organizers one place to run it all, and one place attendees actually check.',
+    body: [
+      'A printed agenda goes stale by the first session. Speakers email last-minute slide and time changes, staff coordinate over radio and text, and attendees screenshot the schedule and then miss the room swap. For multi-day, multi-track events, every one of those gaps multiplies.',
+      'ChravelApp turns the event into one shared workspace. Build the schedule as a live Agenda with the speaker Lineup on a shared Calendar. When a session moves rooms or a speaker swaps slots, you update it once and every attendee sees the current version — no reprinted handout and no “ignore the old PDF.”',
+      'Reaching people becomes one action instead of five. A single Broadcast goes to every attendee — or just staff, or just speakers — so “keynote starts in ten minutes in Hall B” actually lands. Polls handle session feedback, breakout choices, and lunch counts without a separate survey tool.',
+      'The production team gets its own space. Tasks track load-in, AV checks, registration, and teardown; Attachments hold the run-of-show, floor plans, and vendor contracts; and Base Camps pin the venue, hotel block, and green room. Role-based access keeps staff and speaker coordination separate from the attendee-facing view.',
+      'Attendees get the agenda, maps, and updates in their pocket — and after the last session, a shared Media album collects photos from across the event in one place. The result is a conference that runs on a single source of truth instead of a binder, a printout, and three group chats.',
+    ],
+    featureMap: [
+      { pain: 'Printed agendas go stale by day one', solution: 'Live Agenda + Calendar' },
+      { pain: 'Speakers and sessions change last-minute', solution: 'Lineup + Broadcasts' },
+      {
+        pain: 'Attendees miss room and time changes',
+        solution: 'Broadcasts + centralized schedule',
+      },
+      { pain: 'Staff coordinate over text and radio', solution: 'Tasks + role-based access' },
+      { pain: 'Run-of-show, floor plans, and contracts scattered', solution: 'Attachments' },
+      { pain: 'Session feedback and breakout choices', solution: 'Polls' },
+      { pain: 'Event photos scattered across phones', solution: 'Shared Media album' },
+    ],
+    workflow: {
+      heading: 'Set up your event',
+      steps: [
+        'Create an event and build the Agenda and speaker Lineup on the Calendar.',
+        'Upload the run-of-show, floor plans, and vendor docs as Attachments.',
+        'Add the venue and hotel as Base Camps, and assign staff Tasks for load-in and teardown.',
+        'Invite attendees and staff with the right roles, then Broadcast updates as the day moves.',
+        'Use Polls for feedback and breakouts, and collect event photos in a shared Media album.',
+      ],
+    },
+    faq: [
+      {
+        q: 'Is this for attendees, organizers, or both?',
+        a: 'Both. Organizers and staff get a private space for the run-of-show and tasks; attendees get the live agenda, maps, and updates.',
+      },
+      {
+        q: 'Can we control who sees what?',
+        a: 'Yes. Role-based access keeps staff and speaker coordination separate from the attendee-facing agenda.',
+      },
+      {
+        q: 'How do attendees hear about changes?',
+        a: 'A single Broadcast reaches everyone — or a specific group — instantly, so a room change does not get missed.',
+      },
+      {
+        q: 'Does it handle multi-day, multi-track agendas?',
+        a: 'Yes. The Agenda and Calendar handle multi-day schedules and parallel tracks, kept current in one place.',
+      },
+      {
+        q: 'What happens after the event?',
+        a: 'A shared Media album collects photos from across the event, and the agenda and files stay available for follow-up.',
+      },
+    ],
+    cta: {
+      heading: 'Run your next event from one workspace',
+      subtext:
+        'Put the agenda, speakers, staff tasks, attendee broadcasts, and venue logistics in one place — and invite everyone with the right access.',
+      primaryLabel: 'Create an event',
+      primaryTo: '/auth',
+      secondaryLabel: 'ChravelApp for teams',
+      secondaryTo: '/teams',
+    },
+  },
 ];
 
 /** Cross-cutting features highlighted on the hub. Names match the real product surfaces. */
