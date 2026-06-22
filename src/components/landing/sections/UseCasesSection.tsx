@@ -91,6 +91,28 @@ const scenarios: Scenario[] = [
     badge: 'No stale handouts · nobody misses a room change',
     href: '/use-cases/conference-event-management-app',
   },
+  {
+    title: 'Local Clubs & Meetups',
+    subtitle: 'Run clubs · trivia nights · rec leagues · golf groups · community meetups',
+    before:
+      'A different group text every week, RSVPs lost in the replies, and half the crew showing up to the wrong bar, course, or start line.',
+    expandCTA: 'ChravelApp helps local crews stay in the loop',
+    after:
+      'One home base for the regulars — recurring schedule, RSVPs, the spot pinned on a map, a shared album, and one broadcast when plans change. No flight required.',
+    badge: 'No plane ticket required · the regulars always know where to be',
+    href: '/use-cases/local-clubs-meetups',
+  },
+  {
+    title: 'Faith & Church Groups',
+    subtitle: 'Mission trips · retreats · youth group · choir & worship tours',
+    before:
+      'Sign-up sheets, paper permission slips, a phone tree, and a dozen parent group texts for every trip.',
+    expandCTA: 'ChravelApp helps ministries stay organized',
+    after:
+      'Rosters and roles, permission forms, the itinerary, trip-fee collection, broadcasts to every family, and a shared album — all in one place.',
+    badge: 'Lead the trip, not the group chat',
+    href: '/use-cases/church-group-trip-coordination',
+  },
 ];
 
 export const UseCasesSection = () => {
