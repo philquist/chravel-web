@@ -3,7 +3,12 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 
-export const EVENT_TAB_PANEL_CLASS = 'relative p-4 md:p-5 space-y-5';
+// Own the vertical scroll (like the Tasks/Polls tabs) so long event-tab content is
+// reachable inside MobileTripTabs' flex-column wrapper. `flex-1 min-h-0` is inert on
+// the desktop/block render paths (EventDetailContent), so the outer container keeps
+// the single scrollbar there; `mobile-safe-scroll` clears the bottom nav / safe area.
+export const EVENT_TAB_PANEL_CLASS =
+  'relative flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 md:p-5 space-y-5 mobile-safe-scroll';
 
 interface EventTabHeaderProps {
   icon: React.ReactNode;

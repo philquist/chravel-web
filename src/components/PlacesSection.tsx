@@ -185,7 +185,10 @@ export const PlacesSection = ({
   };
 
   return (
-    <div className="relative mb-12 mobile-safe-scroll">
+    // Own the vertical scroll (like the Tasks/Polls tabs) so long content is reachable
+    // inside MobileTripTabs' flex-column wrapper. flex-1/min-h-0 are inert on the
+    // desktop block render paths, leaving a single outer scrollbar there.
+    <div className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain mb-12 mobile-safe-scroll">
       {(isRefreshing || pullDistance > 0) && (
         <PullToRefreshIndicator
           isRefreshing={isRefreshing}
