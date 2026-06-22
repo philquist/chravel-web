@@ -54,6 +54,17 @@ describe('blog registry', () => {
     expect(links).toContain('/use-cases/wedding-guest-coordination-app');
   });
 
+  it('the family-hub post resolves and links to the families use-case page', () => {
+    const post = getBlogPost('family-hub-app-for-parents');
+    expect(post).toBeDefined();
+    const links = [
+      ...post!.related.map(r => r.to),
+      ...post!.sections.flatMap(s => (s.link ? [s.link.to] : [])),
+      post!.cta.secondaryTo ?? '',
+    ];
+    expect(links).toContain('/use-cases/family-organization-app');
+  });
+
   it('returns undefined for unknown slugs', () => {
     expect(getBlogPost('does-not-exist')).toBeUndefined();
     expect(getBlogPost(undefined)).toBeUndefined();

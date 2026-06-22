@@ -30,13 +30,15 @@ const scenarios: Scenario[] = [
     href: '/use-cases/travel-concierge-client-portal',
   },
   {
-    title: 'Use as a Household Hub: Schedules & Responsibilities',
-    subtitle: 'Practices · pickups · errands · roommates · season planning',
-    before: 'Missed email updates. Missed pickups. Confusion spread across multiple threads.',
+    title: 'Families & Parents',
+    subtitle: 'Family calendar · practices · pickups · photos · chores · team carpools',
+    before:
+      'Practices, pickups, forms, and “what’s for dinner?” scattered across two calendars, a fridge flyer, and a dozen group texts.',
     expandCTA: 'ChravelApp helps families stay organized',
     after:
-      'One shared space for family logistics. Calendars, tasks, and chat in sync — everyone knows where to be.',
-    badge: 'Fewer drop-offs missed · more time together',
+      'One shared family hub — calendar, photos, tickets, chores, dinner polls, and team carpools, all in sync so everyone knows where to be.',
+    badge: 'Fewer missed pickups · more time together',
+    href: '/use-cases/family-organization-app',
   },
   {
     title: 'Touring Artists & Crews',

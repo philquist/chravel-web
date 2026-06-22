@@ -23,11 +23,12 @@ describe('useCases registry', () => {
     expect(getUseCaseDetail(undefined)).toBeUndefined();
   });
 
-  it('resolves the weddings, sports, and touring pages', () => {
+  it('resolves the weddings, sports, touring, and families pages', () => {
     for (const slug of [
       'wedding-guest-coordination-app',
       'sports-team-travel-coordination',
       'music-tour-coordination',
+      'family-organization-app',
     ]) {
       const uc = getUseCaseDetail(slug);
       expect(uc, `${slug} should resolve`).toBeDefined();

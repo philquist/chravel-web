@@ -49,7 +49,7 @@ export interface BlogPost {
 }
 
 export const BLOG_PATH = '/blog';
-export const BLOG_AUTHOR = 'The Chravel Team';
+export const BLOG_AUTHOR = 'The ChravelApp Team';
 
 export const BLOG_POSTS: BlogPost[] = [
   {
@@ -102,7 +102,7 @@ export const BLOG_POSTS: BlogPost[] = [
           'When the client joins, they do not see a blank app or an empty inbox — they step into a trip that already feels planned. As plans change, one update reaches everyone instead of being retyped across threads. And because the structure is the same for every trip, the experience stops depending on which planner is on the account.',
         ],
         link: {
-          label: 'See how Chravel works as a travel concierge client portal',
+          label: 'See how ChravelApp works as a travel concierge client portal',
           to: '/use-cases/travel-concierge-client-portal',
         },
       },
@@ -154,11 +154,11 @@ export const BLOG_POSTS: BlogPost[] = [
     ],
     related: [
       {
-        label: 'Chravel for travel concierge companies',
+        label: 'ChravelApp for travel concierge companies',
         to: '/use-cases/travel-concierge-client-portal',
       },
-      { label: 'All Chravel use cases', to: '/use-cases' },
-      { label: 'Chravel for teams', to: '/teams' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
+      { label: 'ChravelApp for teams', to: '/teams' },
     ],
     cta: {
       heading: 'Deliver a more premium trip after every booking',
@@ -166,7 +166,7 @@ export const BLOG_POSTS: BlogPost[] = [
         'Create a client-ready trip, preload the details, and invite your client into one organized workspace.',
       primaryLabel: 'Create a client trip',
       primaryTo: '/auth',
-      secondaryLabel: 'See Chravel for travel concierge',
+      secondaryLabel: 'See ChravelApp for travel concierge',
       secondaryTo: '/use-cases/travel-concierge-client-portal',
     },
   },
@@ -215,7 +215,7 @@ export const BLOG_POSTS: BlogPost[] = [
           'Instead of sharing files, share a workspace. Build the itinerary on a shared calendar so it is live, not a static export. Attach each confirmation, voucher, and receipt to the day or reservation it belongs to, so it is one tap away at a check-in desk. Pin the hotel and meeting points as base camps, save vetted recommendations as places, and keep payment status visible. The client stops hunting because everything sits where they would expect to look for it.',
         ],
         link: {
-          label: 'See how Chravel works as a travel concierge client portal',
+          label: 'See how ChravelApp works as a travel concierge client portal',
           to: '/use-cases/travel-concierge-client-portal',
         },
       },
@@ -267,10 +267,10 @@ export const BLOG_POSTS: BlogPost[] = [
         to: '/blog/why-whatsapp-google-drive-not-enough-luxury-travel-planning',
       },
       {
-        label: 'Chravel for travel concierge companies',
+        label: 'ChravelApp for travel concierge companies',
         to: '/use-cases/travel-concierge-client-portal',
       },
-      { label: 'All Chravel use cases', to: '/use-cases' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
     ],
     cta: {
       heading: 'Share a trip, not a folder',
@@ -278,7 +278,7 @@ export const BLOG_POSTS: BlogPost[] = [
         'Give every client one organized, always-current place for the itinerary, documents, receipts, and reservations.',
       primaryLabel: 'Create a client trip',
       primaryTo: '/auth',
-      secondaryLabel: 'See Chravel for travel concierge',
+      secondaryLabel: 'See ChravelApp for travel concierge',
       secondaryTo: '/use-cases/travel-concierge-client-portal',
     },
   },
@@ -338,7 +338,7 @@ export const BLOG_POSTS: BlogPost[] = [
           'The fix is not another app for its own sake — it is consolidating the trip into one place built around it. The itinerary lives on a calendar, documents and receipts are attached to the day or reservation they belong to, hotels and meeting points are pinned, recommendations are saved, and changes go out as a single broadcast. The client opens one organized trip instead of assembling it from a chat thread and a folder.',
         ],
         link: {
-          label: 'See how Chravel works as a travel concierge client portal',
+          label: 'See how ChravelApp works as a travel concierge client portal',
           to: '/use-cases/travel-concierge-client-portal',
         },
       },
@@ -373,10 +373,10 @@ export const BLOG_POSTS: BlogPost[] = [
         to: '/blog/how-to-share-itineraries-files-receipts-with-travel-clients',
       },
       {
-        label: 'Chravel for travel concierge companies',
+        label: 'ChravelApp for travel concierge companies',
         to: '/use-cases/travel-concierge-client-portal',
       },
-      { label: 'All Chravel use cases', to: '/use-cases' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
     ],
     cta: {
       heading: 'Give clients something better than a chat thread',
@@ -384,7 +384,7 @@ export const BLOG_POSTS: BlogPost[] = [
         'Move the itinerary, documents, and updates into one client-ready trip that always shows the current plan.',
       primaryLabel: 'Create a client trip',
       primaryTo: '/auth',
-      secondaryLabel: 'See Chravel for travel concierge',
+      secondaryLabel: 'See ChravelApp for travel concierge',
       secondaryTo: '/use-cases/travel-concierge-client-portal',
     },
   },
@@ -431,7 +431,7 @@ export const BLOG_POSTS: BlogPost[] = [
           'Instead of building software, assemble the portal out of a trip. Create one trip per client, put the itinerary on the calendar, attach confirmations and receipts, pin the hotel and meeting points as base camps, save recommendations as places, and add any pre-trip tasks. Then invite the client. They open one organized space that already feels planned — which is exactly what a portal is supposed to feel like — and you did it in minutes, not months.',
         ],
         link: {
-          label: 'See how Chravel works as a travel concierge client portal',
+          label: 'See how ChravelApp works as a travel concierge client portal',
           to: '/use-cases/travel-concierge-client-portal',
         },
       },
@@ -472,14 +472,14 @@ export const BLOG_POSTS: BlogPost[] = [
     ],
     related: [
       {
-        label: 'Chravel for travel concierge companies',
+        label: 'ChravelApp for travel concierge companies',
         to: '/use-cases/travel-concierge-client-portal',
       },
       {
         label: 'How to share itineraries, files, and receipts with clients',
         to: '/blog/how-to-share-itineraries-files-receipts-with-travel-clients',
       },
-      { label: 'All Chravel use cases', to: '/use-cases' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
     ],
     cta: {
       heading: 'Give your next client a portal, not a folder',
@@ -487,7 +487,7 @@ export const BLOG_POSTS: BlogPost[] = [
         'Create a client-ready trip in minutes — no custom app, no white-label build — and invite the client into one organized space.',
       primaryLabel: 'Create a client trip',
       primaryTo: '/auth',
-      secondaryLabel: 'See Chravel for travel concierge',
+      secondaryLabel: 'See ChravelApp for travel concierge',
       secondaryTo: '/use-cases/travel-concierge-client-portal',
     },
   },
@@ -526,7 +526,7 @@ export const BLOG_POSTS: BlogPost[] = [
           'Because it is one place, the couple sees candid moments roll in during the weekend — not weeks later — and nobody has to text their best shots one at a time.',
         ],
         link: {
-          label: 'See how Chravel works as a wedding guest coordination app',
+          label: 'See how ChravelApp works as a wedding guest coordination app',
           to: '/use-cases/wedding-guest-coordination-app',
         },
       },
@@ -567,10 +567,10 @@ export const BLOG_POSTS: BlogPost[] = [
     ],
     related: [
       {
-        label: 'Chravel for wedding guest coordination',
+        label: 'ChravelApp for wedding guest coordination',
         to: '/use-cases/wedding-guest-coordination-app',
       },
-      { label: 'All Chravel use cases', to: '/use-cases' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
     ],
     cta: {
       heading: 'Collect every guest’s photos in one place',
@@ -578,8 +578,125 @@ export const BLOG_POSTS: BlogPost[] = [
         'Set up a shared wedding album that works on iPhone and Android — and keep the schedule, locations, and dress code in the same trip.',
       primaryLabel: 'Create a wedding trip',
       primaryTo: '/auth',
-      secondaryLabel: 'See Chravel for weddings',
+      secondaryLabel: 'See ChravelApp for weddings',
       secondaryTo: '/use-cases/wedding-guest-coordination-app',
+    },
+  },
+  {
+    slug: 'family-hub-app-for-parents',
+    title: 'ChravelApp as a Family Hub: Keep Kids, Schedules, Photos, and Chores in One Place',
+    description:
+      'Practices, pickups, forms, chores, dinner, and team carpools — ChravelApp turns the chaos of family logistics into one shared hub for parents and kids. Here’s how to set it up.',
+    h1: 'ChravelApp as a family hub: keep kids, schedules, photos, and chores in one place',
+    excerpt:
+      'A family runs on logistics — practices, pickups, forms, chores, and “what’s for dinner?” Here’s how to turn the group-text chaos into one shared family hub, and how a whole team’s parents can run carpools from the same place.',
+    datePublished: '2026-06-22',
+    author: BLOG_AUTHOR,
+    tags: ['Families', 'Family Organization'],
+    sections: [
+      {
+        paragraphs: [
+          'A modern family runs on logistics. There is a practice on Tuesday, a game two towns over on Saturday, a permission slip due Friday, a birthday gift to coordinate, and a nightly debate about dinner. The information lives everywhere — one parent’s text thread, a paper flyer on the fridge, two different calendars, a coach’s group chat, and a dozen screenshots — and the moment it is that scattered, somebody misses a pickup or forgets the form.',
+          'It does not have to be that way. The same shared workspace that keeps a trip organized works just as well for the everyday — and for a whole team of families. Here is how to use ChravelApp as a family hub.',
+        ],
+      },
+      {
+        heading: 'Why family logistics fall apart',
+        paragraphs: ['The breakdowns are familiar to every parent:'],
+        list: [
+          'The schedule lives in three places — your calendar, your partner’s, and the team chat — and they never quite agree.',
+          'Permission slips, tickets, and rosters get lost between backpack, fridge, and inbox.',
+          'Game photos stay stuck on one kid’s phone and never reach grandma.',
+          'Nobody remembers who paid for what — tickets, gas, gear, the team gift.',
+          'Carpool and snack duty turn into a forty-message group text no one can follow.',
+        ],
+      },
+      {
+        heading: 'Put the whole family on one shared calendar',
+        paragraphs: [
+          'Start with a single shared Calendar the whole household can see: practices, games, recitals, appointments, and who is responsible for each pickup. Instead of reconciling two phones and a flyer, everyone — including the kids and a grandparent helping with rides — opens the same plan and sees what is happening today and who has it covered.',
+        ],
+        link: {
+          label: 'See how ChravelApp works as a family hub',
+          to: '/use-cases/family-organization-app',
+        },
+      },
+      {
+        heading: 'Let kids share game photos to the family — instantly',
+        paragraphs: [
+          'Some of the best moments happen when a parent cannot be there. With a shared Media album, a kid can post photos straight from the soccer game into the family chat, so the parent stuck at work and the grandparents across the country see them in real time — not weeks later, buried in someone’s camera roll. Because it works on iPhone and Android, no one is left out for having the “wrong” phone.',
+        ],
+      },
+      {
+        heading: 'Keep tickets, forms, and money in one place',
+        paragraphs: [
+          'Drop tickets, permission slips, rosters, and school forms into Attachments so they are one tap away when you are standing at the gate or the front office — no frantic inbox search. And when the small debts pile up — who covered the tickets, the gas, the new cleats — Payments lets the family settle who owes who without a side spreadsheet or an awkward Venmo memo thread.',
+        ],
+      },
+      {
+        heading: 'Chores and dinner without the nagging',
+        paragraphs: [
+          'A shared Tasks list turns chores from a nightly argument into something everyone can see and check off — trash, dishes, homework, packing the bag for tomorrow. And for the eternal “what’s for dinner?”, a quick Poll settles it: a parent drops “pizza, sushi, or Chinese?” and the family votes instead of spiraling through twenty texts.',
+        ],
+      },
+      {
+        heading: 'You don’t need a trip',
+        paragraphs: [
+          'Here is the part people miss: nothing about this requires going anywhere. A “trip” in ChravelApp can simply be your family, or this season. It works exactly the same for a Saturday of local games as it does for a week away — the hub is about keeping the people you care about on the same page, whether or not a flight is involved.',
+        ],
+      },
+      {
+        heading: 'For team parents: the carpool that runs itself',
+        paragraphs: [
+          'The family hub scales past one household, and this is where it gets powerful. Put all the parents of a kids’ football, soccer, or basketball team in one ChravelApp trip and the season’s logistics finally have a home. The shared Calendar holds every practice and game; Tasks track who is bringing snacks, water, and the canopy each week; and a single Broadcast handles “practice moved to 5pm” or “meet at the north lot” without the forty-message thread nobody can follow.',
+          'Carpools stop being a daily scramble. Parents can see who is driving, who needs a ride, and who is covering pickup, and they can coordinate with each other directly — “I’ve got the east side, can someone grab the twins?” — all in one place that does not vanish up the scrollback. For a group of busy families trying to get a dozen kids to the same field on time, that is the difference between a calm Saturday and a chaotic one.',
+        ],
+      },
+      {
+        heading: 'Getting started',
+        paragraphs: [
+          'Create a trip for your family — or for this season’s team — add the recurring schedule to the Calendar, drop in the forms and tickets, start a Tasks list, and turn on the shared album. Invite whoever should be in the loop, from your partner and kids to a grandparent or the other team parents. The logistics that used to live in five places now live in one, and everyone spends less time chasing details and more time actually together.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Do we need to be taking a trip to use ChravelApp as a family hub?',
+        a: 'No. A “trip” can simply be your family or your team’s season. It works the same for a local Saturday of games as it does for travel.',
+      },
+      {
+        q: 'Can kids and grandparents be included?',
+        a: 'Yes. You invite whoever should be in the loop and control their access, so kids can post game photos and grandparents can follow along on any device.',
+      },
+      {
+        q: 'How do all the team parents coordinate carpools?',
+        a: 'Put every parent in one trip and use the shared Calendar, Tasks, and a single Broadcast for pickups, snacks, and gear — instead of a group text that buries the important details.',
+      },
+      {
+        q: 'Can we settle money between family members or parents?',
+        a: 'Yes. Payments lets you track who owes who for tickets, gas, gear, and team costs without a separate spreadsheet.',
+      },
+      {
+        q: 'Does it work on both iPhone and Android?',
+        a: 'Yes — ChravelApp runs on the web and as an installable app on iOS and Android, so every parent and kid is covered regardless of device.',
+      },
+    ],
+    related: [
+      { label: 'ChravelApp for families and parents', to: '/use-cases/family-organization-app' },
+      {
+        label: 'ChravelApp for sports teams',
+        to: '/use-cases/sports-team-travel-coordination',
+      },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
+    ],
+    cta: {
+      heading: 'Turn family chaos into one shared hub',
+      subtext:
+        'Put the calendar, photos, forms, chores, dinner polls, and team carpools in one place — and invite everyone who needs to be in the loop.',
+      primaryLabel: 'Create a family hub',
+      primaryTo: '/auth',
+      secondaryLabel: 'See ChravelApp for families',
+      secondaryTo: '/use-cases/family-organization-app',
     },
   },
 ];
