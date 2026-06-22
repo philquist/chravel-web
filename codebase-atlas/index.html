@@ -522,7 +522,7 @@
     "app": "Chravel",
     "tagline": "The AI-native operating system for group travel, touring, and events.",
     "repo": "chravel-inc/chravel-web",
-    "branch": "claude/eager-bell-CGZ4q",
+    "branch": "claude/awesome-cori-jcmz3m",
     "stack": [
       "React 18 + Vite 5 (SWC) + TypeScript (strict OFF)",
       "TanStack Query 5 (server state) + Zustand 5 (client state)",
@@ -541,30 +541,31 @@
       "knip_output.txt (dead-code scan)",
       "CLAUDE.md, AUDIT_INDEX.md, DEBUG_PATTERNS.md, LESSONS.md, TEST_GAPS.md",
       "eslint.config.js (encoded deprecation rules)",
-      "Static analysis: file counts, LOC ranking, import graph (this session)",
-      "AHS remediation commits through 2026-05-30 (export/import hardening, lazy chart/export boundaries, edge secret defaults)"
+      "Static analysis: file counts, LOC ranking, import graph, live knip scan (2026-06-22 refresh)",
+      "AHS remediation commits through 2026-05-30 (export/import hardening, lazy chart/export boundaries, edge secret defaults)",
+      "App Store readiness pass through 2026-06-04 (UGC block UI, iOS billing steering, signup terms, dead-scaffold + dead AASA endpoint removal)"
     ],
     "stats": {
-      "Source files (.ts/.tsx)": 1170,
-      "React components": 357,
-      "Custom hooks": 150,
-      "Service modules": 151,
-      "Route pages": 36,
-      "Feature modules": 6,
-      "Test files": 302,
-      "Supabase edge functions": 96,
-      "DB migrations": 390
+      "Source files (.ts/.tsx)": 1180,
+      "React components": 354,
+      "Custom hooks": 152,
+      "Service modules": 140,
+      "Route pages": 39,
+      "Feature modules": 7,
+      "Test files": 352,
+      "Supabase edge functions": 97,
+      "DB migrations": 419
     },
-    "generated": "2026-05-30",
-    "commit": "f1d5c4e",
-    "commitUrl": "https://github.com/chravel-inc/chravel-web/commit/f1d5c4e",
+    "generated": "2026-06-22",
+    "commit": "fd16b41",
+    "commitUrl": "https://github.com/chravel-inc/chravel-web/commit/fd16b41",
     "metrics": {
       "knip": {
-        "files": 267,
-        "deps": 1,
+        "files": 210,
+        "deps": 0,
         "devDeps": 0,
-        "exports": 402,
-        "types": 428
+        "exports": 386,
+        "types": 433
       },
       "bundle": [
         {
@@ -574,8 +575,8 @@
         },
         {
           "name": "pdf",
-          "kb": 611,
-          "gzipKb": 183
+          "kb": 610,
+          "gzipKb": 182
         },
         {
           "name": "native",
@@ -588,36 +589,36 @@
           "gzipKb": 103
         },
         {
-          "name": "stream-chat",
-          "kb": 295,
-          "gzipKb": 87
+          "name": "stream-chat-B",
+          "kb": 303,
+          "gzipKb": 90
+        },
+        {
+          "name": "module",
+          "kb": 193,
+          "gzipKb": 64
+        },
+        {
+          "name": "SettingsMenu-CQu29H-K",
+          "kb": 183,
+          "gzipKb": 45
         },
         {
           "name": "TripChat",
-          "kb": 233,
-          "gzipKb": 75
-        },
-        {
-          "name": "index",
-          "kb": 232,
-          "gzipKb": 75
-        },
-        {
-          "name": "SettingsMenu",
-          "kb": 184,
-          "gzipKb": 44
+          "kb": 175,
+          "gzipKb": 52
         }
       ],
-      "anyCount": 393,
-      "todoCount": 3
+      "anyCount": 453,
+      "todoCount": 1
     }
   },
   "scores": [
     {
       "key": "overall",
       "label": "Overall Codebase Health",
-      "score": 74,
-      "rationale": "Mature, feature-complete product with strong repo memory, remediation tracking, and several recent hardening slices landed. Export privacy paths now emit table-level manifests and hard-fail required omissions; trip PDF export membership policy is tested; file AI parsing short-circuits cached file/type replays before usage increments; Gmail imports now distinguish completed/completed_partial/failed; chart and org-chart export dependencies moved behind lazy/user-intent boundaries. Still pulled down by concentrated god files (Index, demoModeService, useTripTasks, useAuth, TripChat, useStreamTripChat), hundreds of production `any` usages, a large mock/demo data surface, and dead-code findings that require careful triage."
+      "score": 75,
+      "rationale": "Mature, feature-complete product with strong repo memory, remediation tracking, and several recent hardening slices landed. Enterprise security/identity layer is now solid: immutable + hash-chained admin audit log, append-only security_audit_log, a DB-backed audited super_admins table, and a buyer-facing evidence packet (SECURITY_MODEL.md, ENTERPRISE_SECURITY_READINESS/AUDIT docs). Export privacy paths emit table-level manifests and hard-fail required omissions; trip PDF export membership policy is tested; file AI parsing short-circuits cached replays; Gmail imports distinguish completed/completed_partial/failed; chart and org-chart export dependencies are behind lazy/user-intent boundaries. Still pulled down by concentrated god files (Index, demoModeService, useTripTasks, useAuth, TripChat, useStreamTripChat), hundreds of production `any` usages, a large mock/demo data surface, and dead-code findings that require careful triage."
     },
     {
       "key": "clarity",
@@ -629,7 +630,7 @@
       "key": "maintainability",
       "label": "Maintainability",
       "score": 63,
-      "rationale": "Maintainability improved from focused policy extraction and tests: export-user-data manifest logic, export-trip authorization/default sections, file-ai-parser idempotency, and Gmail terminal status now live in small tested helpers. The main drag remains unchanged: Index.tsx (~1.4k), demoModeService.ts (~1.3k), useTripTasks.ts (~1.3k), useAuth.tsx (~1.3k), TripChat.tsx, useStreamTripChat.ts, generated Supabase types, and large mock datasets. Production `any` usage and the baseline ESLint warning count still add daily DX drag."
+      "rationale": "Maintainability improved from focused policy extraction and tests: export-user-data manifest logic, export-trip authorization/default sections, file-ai-parser idempotency, and Gmail terminal status now live in small tested helpers. The main drag remains unchanged and has grown slightly: Index.tsx (~1.5k), demoModeService.ts (~1.3k), useTripTasks.ts (~1.3k), useAuth.tsx (~1.3k), TripChat.tsx (~1.3k), useStreamTripChat.ts, plus two newer 1k+ LOC entrants — src/lib/blog.ts (~1.5k, static blog-content registry) and src/utils/exportPdfClient.ts (~1.2k, jsPDF client export) — alongside generated Supabase types (5.8k) and large mock datasets. Production `any` usage has crept from ~390 to ~450 and the baseline ESLint warning count still adds daily DX drag."
     },
     {
       "key": "scalability",
@@ -640,8 +641,8 @@
     {
       "key": "security",
       "label": "Security / Posture",
-      "score": 84,
-      "rationale": "Security posture improved materially: export-user-data now records table-level manifests and fails closed on required data omissions; export-trip auth/member policy is centralized and tested; file-ai-parser checks cached extractions before usage increments; Gmail imports persist completed_partial/failed terminal states; TTS free-for-all is explicit opt-in; privileged app-settings/push paths no longer silently downgrade service-role work to anon. Remaining risks are service-role seed functions, live Supabase integration coverage for export/import replay and role matrices, DB-level uniqueness for concurrent file extraction retries, and continued role/RLS drift vigilance."
+      "score": 87,
+      "rationale": "Security posture improved materially. Tenant/identity layer is now hardened end-to-end: admin_audit_logs is append-only (UPDATE/DELETE/TRUNCATE blocked for all roles incl. service_role) AND tamper-evident via a sha256 hash chain (prev_hash/event_hash ordered by a monotonic seq, with verify_admin_audit_chain()); security_audit_log is append-only and now actually written to (the _shared/security.ts logSecurityEvent helper previously inserted nonexistent columns and silently no-opped — fixed); super-admin access moved from a hardcoded email allowlist to a DB-backed super_admins table with grant/revoke functions and an audit trail; capability-token issuance (Stream/LiveKit) is audit-logged via a shared logSecurityEvent helper; trip-membership checks in edge functions are centralized in _shared/verifyTripMembership.ts (canonical is_trip_member RPC). Earlier slices still hold: export manifests fail closed, trip-export auth is tested, file-ai-parser is idempotent, Gmail terminal states persist. Buyer-facing evidence now exists (SECURITY_MODEL.md, docs/ENTERPRISE_SECURITY_READINESS.md, docs/ENTERPRISE_SECURITY_AUDIT_2026-06.md). Remaining risks: external WORM audit-log sink not yet built (in-DB tamper-evidence only), service-role seed functions, live Supabase integration coverage for role matrices, and continued RLS-drift vigilance."
     },
     {
       "key": "tests",
@@ -653,7 +654,7 @@
       "key": "deadcode",
       "label": "Dead Code Risk (higher = worse)",
       "score": 56,
-      "rationale": "Dead-code risk improved slightly because remediation work documents what is intentional and no new scratch cleanup scripts were introduced, but no meaningful knip triage batch has landed. knip still reports large unused-file/export/type surfaces, with many likely false positives from Vercel API routes, Remotion compositions, and scripts. claude-progress.txt is now an intentional agent breadcrumb file, not a scratch artifact. Risk stays elevated until findings are classified and deleted/kept in batches."
+      "rationale": "Dead-code risk improved modestly: the App Store readiness pass removed dead scaffold and a dead AASA endpoint, the live knip scan now reports 0 unused dependencies (down from 8) and unused files fell from 285 to 210, and no new scratch cleanup scripts were introduced. But no large knip triage batch of unused exports/types has landed — knip still reports ~210 unused files, 386 unused exports, and 433 unused exported types, with many likely false positives from Vercel API routes, Remotion compositions, and scripts. claude-progress.txt is an intentional agent breadcrumb file, not a scratch artifact. Risk stays elevated until export/type findings are classified and deleted/kept in batches."
     }
   ],
   "executive": {
@@ -688,8 +689,10 @@
     "highestLeverage": [
       "src/integrations/supabase/client.ts — the single data gateway every read/write flows through",
       "src/hooks/useAuth.tsx — gates the entire critical path; a bug here cascades everywhere",
-      "src/services/* (151 modules) — the de-facto API layer between UI and Supabase",
+      "src/services/* (140 modules) — the de-facto API layer between UI and Supabase",
       "supabase RLS policies (756) — the real security boundary, not the client",
+      "is_super_admin() + super_admins table — server-side privilege source of truth (gates audit-log reads and internal-admin routes)",
+      "admin_audit_logs (append-only + hash-chained) — tamper-evident record of every privileged action",
       "src/lib/queryKeys.ts — cache-invalidation contract for all server state"
     ],
     "topRisks": [
@@ -700,15 +703,15 @@
       "Bundle weight (exceljs/pdf/charts/native chunks) degrades mobile first paint"
     ],
     "topCleanups": [
-      "Triage the 268 knip-flagged unused files — delete confirmed-dead, label framework entry points (api/, remotion/, scripts/) as Future/Unclear",
-      "Prune the 1 remaining unused dependency reported by knip (down from 8)",
-      "Delete confirmed-dead exports/types after manual verification (knip: 400 exports, 408 types)",
-      "Reduce ~390 `any` usages at Supabase boundaries by adopting generated Database types",
-      "Lazy-load heavy chunks (exceljs, pdf, recharts/charts, native) per tech_debt_report"
+      "Triage the 210 knip-flagged unused files — delete confirmed-dead, label framework entry points (api/, remotion/, scripts/) as Future/Unclear",
+      "Delete confirmed-dead exports/types after manual verification (knip: 386 exports, 433 types)",
+      "Reduce ~450 `any` usages at Supabase boundaries by adopting generated Database types",
+      "Lazy-load heavy chunks (exceljs, pdf/jsPDF via exportPdfClient.ts, recharts/charts, native) per tech_debt_report",
+      "Split static content god files (src/lib/blog.ts ~1.5k, mock datasets) out of the logic bundle"
     ],
     "topMissing": [
       "Tests for chat reconnect/backfill, read receipts, and integration idempotency (TEST_GAPS.md)",
-      "Strong typing at boundaries — ~390 `any` usages remain",
+      "Strong typing at boundaries — ~450 `any` usages remain",
       "State machine for Smart Import (partial-import rollback / UX surfacing)",
       "Bundle/code-split discipline enforced in CI",
       "A single canonical mock/demo-data boundary separate from live service code"
@@ -732,7 +735,7 @@
       "upstream": "—",
       "downstream": "All subsystems",
       "actions": [
-        "Split useAuth.tsx (1,291 LOC) into session/identity/role hooks",
+        "Split useAuth.tsx (1,307 LOC) into session/identity/role hooks",
         "Add explicit hydrated-before-fetch guard tests"
       ],
       "failureModes": "Hydration race → Trip Not Found flash; token refresh failure; demo/auth crossover"
@@ -781,7 +784,7 @@
       "downstream": "Notifications",
       "actions": [
         "Add reconnect backfill + tests",
-        "Decompose TripChat.tsx (1,259 LOC)",
+        "Decompose TripChat.tsx (1,262 LOC)",
         "Honor eslint ban on legacy chatService in Stream surfaces"
       ],
       "failureModes": "Message loss on reconnect; read-receipt write amplification; reaction refetch storm"
@@ -1011,10 +1014,10 @@
       "color": "blue",
       "risk": "Medium",
       "quality": 70,
-      "purpose": "Single Supabase gateway; 138 service modules act as the API layer between UI and DB.",
+      "purpose": "Single Supabase gateway; 140 service modules act as the API layer between UI and DB.",
       "keyFiles": [
         "src/integrations/supabase/client.ts",
-        "src/integrations/supabase/types.ts (5,183 LOC, generated)",
+        "src/integrations/supabase/types.ts (5,817 LOC, generated)",
         "src/services/"
       ],
       "deps": [
@@ -1085,11 +1088,11 @@
       "color": "blue",
       "risk": "Medium",
       "quality": 72,
-      "purpose": "~96 Deno edge functions (AI, webhooks, imports, notifications, auth-gated mutations) + 378 SQL migrations.",
+      "purpose": "97 Deno edge functions (AI, webhooks, imports, notifications, auth-gated mutations) + 419 SQL migrations.",
       "keyFiles": [
-        "supabase/functions/ (96 dirs)",
+        "supabase/functions/ (97 dirs)",
         "supabase/functions/_shared/requireAuth.ts",
-        "supabase/migrations/ (378)"
+        "supabase/migrations/ (419)"
       ],
       "deps": [
         "Supabase",
@@ -1132,7 +1135,7 @@
       ],
       "color": "orange",
       "plain": "Controls who is logged in and what they can do. The most safety-critical file in the app.",
-      "tech": "1,291 LOC auth/session/role hook. Gates the entire critical path; hydration timing here causes the Trip-Not-Found flash.",
+      "tech": "1,307 LOC auth/session/role hook. Gates the entire critical path; hydration timing here causes the Trip-Not-Found flash.",
       "exports": "useAuth, AuthProvider",
       "importedBy": "App shell + every gated route",
       "risk": "Highest — auth desync cascades",
@@ -1164,7 +1167,7 @@
       ],
       "color": "orange",
       "plain": "The trip chat screen. Big and re-renders more than it should.",
-      "tech": "1,259 LOC; tech_debt_report flags over-fetching/memoization. Stream-enabled surface (eslint bans legacy chatService import).",
+      "tech": "1,262 LOC; tech_debt_report flags over-fetching/memoization. Stream-enabled surface (eslint bans legacy chatService import).",
       "exports": "TripChat",
       "importedBy": "Trip detail surfaces",
       "risk": "Medium-High",
@@ -1225,7 +1228,7 @@
       ],
       "color": "gray",
       "plain": "Auto-generated description of the database shape.",
-      "tech": "5,183 LOC generated types. tech_debt_report warns it may contain manual edits/bloat.",
+      "tech": "5,817 LOC generated types. tech_debt_report warns it may contain manual edits/bloat.",
       "exports": "Database types",
       "importedBy": "Typed queries everywhere",
       "risk": "Low (if generated-only)",
@@ -1286,12 +1289,42 @@
       ],
       "color": "yellow",
       "plain": "The landing/home page — heavy for a first screen.",
-      "tech": "1,430 LOC; tech_debt_report flags it as too heavy for first paint (~260K chunk).",
+      "tech": "1,529 LOC; tech_debt_report flags it as too heavy for first paint (~260K chunk).",
       "exports": "Index page",
       "importedBy": "Router",
       "risk": "Medium (perf)",
       "confidence": "High",
       "action": "code-split / lazy sections"
+    },
+    {
+      "path": "src/lib/blog.ts",
+      "badges": [
+        "Utility",
+        "Config"
+      ],
+      "color": "gray",
+      "plain": "The marketing blog's content, stored as data — not real program logic.",
+      "tech": "1,475 LOC static BlogPost registry (source of truth for /blog and /blog/:slug). Data-heavy, low logic; large but inert. New entrant to the god-file list since the last refresh.",
+      "exports": "blog posts + types",
+      "importedBy": "Blog index/post pages",
+      "risk": "Low (static content)",
+      "confidence": "High",
+      "action": "consider per-post files or MDX so the logic bundle stays lean"
+    },
+    {
+      "path": "src/utils/exportPdfClient.ts",
+      "badges": [
+        "Utility",
+        "Risky"
+      ],
+      "color": "yellow",
+      "plain": "Generates trip PDFs in the browser when the server export isn't available.",
+      "tech": "1,152 LOC client-side jsPDF fallback (file-level eslint-disable for no-explicit-any). New 1k+ entrant; pulls jsPDF/autotable into the bundle — a lazy-load + decomposition candidate.",
+      "exports": "client PDF export helpers",
+      "importedBy": "Trip export surfaces",
+      "risk": "Medium (bundle weight + any usage)",
+      "confidence": "High",
+      "action": "lazy-load on export intent; split helpers; type the any surfaces"
     },
     {
       "path": "patch_tripchat*.py / resolver3.js / output.md / claude-progress.txt",
@@ -1309,7 +1342,7 @@
     }
   ],
   "dependencies": {
-    "notes": "Coupling concentrates in three places: the Supabase client (imported almost everywhere — intentional gateway), the service layer (151 modules acting as the API), and a handful of god files. No formal cycle scan was run this session; treat cycle claims as Low confidence pending a madge/dpdm run.",
+    "notes": "Coupling concentrates in three places: the Supabase client (imported almost everywhere — intentional gateway), the service layer (140 modules acting as the API), and a handful of god files. No formal cycle scan was run this session; treat cycle claims as Low confidence pending a madge/dpdm run.",
     "hubs": [
       {
         "path": "src/integrations/supabase/client.ts",
@@ -1327,6 +1360,8 @@
     "orphansNote": "knip lists current knip 'unused files', but many are framework entry points it cannot resolve: Vercel api/*.ts, Remotion compositions under remotion/, and scripts/*. These are Future/Unclear, not confirmed dead. Verify per-file before any deletion.",
     "godFileNotes": {
       "src/mockData/polls.ts": "Large static mock dataset — dev/demo only, gate out of prod bundles",
+      "src/lib/blog.ts": "Static blog-content registry (1.5k LOC of data, not logic) — split per-post/MDX to keep the logic bundle lean",
+      "src/utils/exportPdfClient.ts": "Client-side jsPDF export fallback — lazy-load on export intent; decomposition + any-typing candidate",
       "src/services/tripSpecificMockDataService.ts": "Giant mock dataset in service layer",
       "src/pages/Index.tsx": "Heavy landing/route page — decomposition candidate",
       "src/hooks/useAuth.tsx": "Auth + session + roles in one hook",
@@ -1338,8 +1373,8 @@
     "godFiles": [
       {
         "path": "src/integrations/supabase/types.ts",
-        "loc": 5199,
-        "why": "Generated types (5199 LOC) — keep generated-only, do not hand-edit"
+        "loc": 5818,
+        "why": "Generated types (5818 LOC) — keep generated-only, do not hand-edit"
       },
       {
         "path": "src/mockData/polls.ts",
@@ -1353,8 +1388,13 @@
       },
       {
         "path": "src/pages/Index.tsx",
-        "loc": 1431,
+        "loc": 1530,
         "why": "Heavy landing/route page — decomposition candidate"
+      },
+      {
+        "path": "src/lib/blog.ts",
+        "loc": 1476,
+        "why": "Static blog-content registry (1.5k LOC of data, not logic) — split per-post/MDX to keep the logic bundle lean"
       },
       {
         "path": "src/services/demoModeService.ts",
@@ -1363,7 +1403,7 @@
       },
       {
         "path": "src/hooks/useAuth.tsx",
-        "loc": 1292,
+        "loc": 1308,
         "why": "Auth + session + roles in one hook"
       },
       {
@@ -1373,18 +1413,13 @@
       },
       {
         "path": "src/features/chat/components/TripChat.tsx",
-        "loc": 1259,
+        "loc": 1263,
         "why": "Chat screen doing too much"
       },
       {
         "path": "src/hooks/stream/useStreamTripChat.ts",
         "loc": 1203,
         "why": "Stream transport + state"
-      },
-      {
-        "path": "src/data/eventsMockData.ts",
-        "loc": 1115,
-        "why": "Mock/data file (1115 LOC) — large but low logic; gate behind dev/demo"
       }
     ]
   },
@@ -2012,22 +2047,22 @@
       "action": "done — removed"
     },
     {
-      "path": "1 unused dependency (down from 8)",
-      "evidence": "knip 'Unused dependencies (1)'; the prior 8 deps + 1 devDep have largely been pruned.",
-      "confidence": "Medium",
-      "deletionRisk": "Low (confirm not used in scripts/edge)",
-      "action": "remove the last one from package.json after verification"
+      "path": "0 unused dependencies (knip clean, down from 8)",
+      "evidence": "Live knip scan (2026-06-22) reports no Unused dependencies / devDependencies section; the prior 8 deps + 1 devDep have been pruned.",
+      "confidence": "High",
+      "deletionRisk": "—",
+      "action": "done — dependency surface is clean; keep knip in CI to prevent regrowth"
     },
     {
-      "path": "400 unused exports / 408 unused exported types",
-      "evidence": "knip_output.txt. Many are intentional public surfaces or framework-resolved.",
+      "path": "386 unused exports / 433 unused exported types",
+      "evidence": "Live knip scan (2026-06-22). Many are intentional public surfaces or framework-resolved.",
       "confidence": "Medium",
       "deletionRisk": "Medium",
       "action": "triage in batches; investigate manually"
     },
     {
-      "path": "268 'unused files' (knip)",
-      "evidence": "Includes Vercel api/*.ts, Remotion compositions, scripts/* that knip can't resolve as entry points.",
+      "path": "210 'unused files' (knip)",
+      "evidence": "Live knip scan (2026-06-22), down from 285. Includes Vercel api/*.ts, Remotion compositions, scripts/* that knip can't resolve as entry points.",
       "confidence": "Low (as a blanket claim)",
       "deletionRisk": "High if deleted blindly",
       "action": "Future/Unclear — verify each before acting"
@@ -2047,7 +2082,7 @@
       "score": 64,
       "status": "Fragile",
       "why": "Reconnect can lose messages; large components; write amplification.",
-      "evidence": "TripChat.tsx 1,259 LOC; TEST_GAPS chat reconnect; SYSTEM_MAP #3.",
+      "evidence": "TripChat.tsx 1,262 LOC; TEST_GAPS chat reconnect; SYSTEM_MAP #3.",
       "fix": "Backfill on reconnect + tests; decompose TripChat."
     },
     {
@@ -2055,7 +2090,7 @@
       "score": 72,
       "status": "Good",
       "why": "Heavily guarded but oversized and timing-sensitive.",
-      "evidence": "useAuth.tsx 1,291 LOC; Trip-Not-Found flash pattern.",
+      "evidence": "useAuth.tsx 1,307 LOC; Trip-Not-Found flash pattern.",
       "fix": "Split hook; add hydration-before-fetch tests."
     },
     {
@@ -2107,10 +2142,10 @@
       "note": "TEST_GAPS.md — message loss is silent and unacceptable."
     },
     {
-      "area": "Boundary typing (remove 300+ `any`)",
+      "area": "Boundary typing (remove ~450 `any`)",
       "impact": "Maintainability + runtime safety",
       "priority": "Important",
-      "note": "tech_debt_report #2."
+      "note": "tech_debt_report #2; count has crept from ~390 to ~450 since last refresh."
     },
     {
       "area": "Smart Import state machine",
@@ -2156,11 +2191,11 @@
           "validation": "build gate green"
         },
         {
-          "desc": "Remove the last unused dep (knip now reports 1, down from 8+1)",
+          "desc": "[DONE] Unused dependencies pruned — live knip now reports 0 (down from 8 + 1 devDep)",
           "files": "package.json",
           "risk": "Low",
           "complexity": "S",
-          "benefit": "Smaller install/audit surface",
+          "benefit": "Smaller install/audit surface; keep knip in CI to prevent regrowth",
           "validation": "build + smoke"
         },
         {
@@ -2280,7 +2315,7 @@
     {
       "term": "Edge function",
       "plain": "Small backend program that runs on demand (AI, webhooks, imports).",
-      "why": "96 of them are where trust-sensitive work happens; each must check auth + secrets."
+      "why": "97 of them are where trust-sensitive work happens; each must check auth + secrets."
     },
     {
       "term": "RLS (Row-Level Security)",
@@ -2300,7 +2335,7 @@
     {
       "term": "Migration",
       "plain": "A versioned change to the database shape.",
-      "why": "378 of them; destructive ones need a two-phase plan to avoid data loss."
+      "why": "419 of them; destructive ones need a two-phase plan to avoid data loss."
     },
     {
       "term": "Bucket",
@@ -2315,7 +2350,7 @@
     {
       "term": "Dependency",
       "plain": "An outside code package the app relies on.",
-      "why": "Unused ones bloat the bundle and the security-audit surface (knip found 8)."
+      "why": "Unused ones bloat the bundle and the security-audit surface; knip flagged 8 earlier but now reports 0 unused deps."
     },
     {
       "term": "Circular dependency",
@@ -2332,7 +2367,249 @@
       "plain": "Reorganizing code without changing what it does.",
       "why": "How god files get tamed — must be proven behavior-preserving with tests."
     }
-  ]
+  ],
+  "costEstimate": {
+    "lens": "What it would realistically cost to rebuild Chravel from scratch today — the same feature surface and quality bar, on the same managed platforms (Supabase, Stream, Stripe/RevenueCat, Google, Gemini/Vertex), by a competent team using current AI coding tools. Calibrated against how Chravel was actually built (a small team shipped it in roughly a year), not a worst-case hand-coded estimate. For internal reference, not a sales quote.",
+    "methodology": "Bottom-up, then reality-checked. (1) Each major system is sized in engineering-hours for a competent team rebuilding a known spec — no product discovery, no pivots — using today’s AI coding tools. (2) Three effort bands: Conservative (lean, senior, heavy reuse, MVP-parity), Moderate (solid quality, tests on critical paths), High (enterprise rigor, broad tests, edge cases). (3) The whole table is calibrated to the actual build history — Chravel was shipped by a small team in roughly a year — so a known-spec rebuild lands in the same order of magnitude rather than the inflated multi-year figures naive estimators produce. (4) Hours convert to a schedule at ~6 productive hours/day, 5 days/week (30 hrs/week, ~1,500 hrs/year/dev). (5) Calendar time divides that effort across each vendor’s team size (freelancer = 1 dev solo, agency = 2 devs, high-end firm = 3 devs) with sub-linear efficiency (2 devs ≈ 1.8×, 3 devs ≈ 2.5×). (6) Cost = effort-hours × the vendor’s blended rate.",
+    "disclaimer": "Realistic modern rebuild of a known spec on the same managed platforms, using current AI tooling — integration work, not platform engineering. Calibrated to the product’s actual ~1-year build. Excludes ongoing SaaS/infra, app-store fees, and post-launch maintenance.",
+    "totals": {
+      "conservative": 1235,
+      "moderate": 1895,
+      "high": 2855
+    },
+    "model": {
+      "workdayHours": 8,
+      "productiveHoursPerDay": 6,
+      "daysPerWeek": 5,
+      "hoursPerWeekPerDev": 30,
+      "workingWeeksPerYear": 50,
+      "hoursPerYearPerDev": 1500,
+      "weeksPerMonth": 4.33,
+      "teamEfficiency": [
+        {
+          "devs": 1,
+          "factor": 1
+        },
+        {
+          "devs": 2,
+          "factor": 1.8
+        },
+        {
+          "devs": 3,
+          "factor": 2.5
+        }
+      ],
+      "patternNote": "Effort is engineering-hours. Calendar time assumes ~6 productive (heads-down) hours inside an 8-hour workday — the remainder goes to standups, code review, planning, and context-switching — 5 days/week (30 hrs/week, ~1,500 productive hrs/year/dev). Adding developers is sub-linear: 2 devs ≈ 1.8× and 3 devs ≈ 2.5× one developer's throughput after coordination overhead, so calendar time falls less than headcount rises."
+    },
+    "features": [
+      {
+        "area": "Foundation \u0026 design system",
+        "note": "Scaffold, routing, Tailwind + shadcn/Radix, app shell, CI/CD",
+        "conservative": 45,
+        "moderate": 70,
+        "high": 105
+      },
+      {
+        "area": "Auth \u0026 session",
+        "note": "Supabase Auth, Google OAuth, role/tier resolution, hydration guards",
+        "conservative": 40,
+        "moderate": 60,
+        "high": 90
+      },
+      {
+        "area": "Data layer \u0026 Supabase integration",
+        "note": "Client gateway, ~140 service modules, query-key cache contract, generated types",
+        "conservative": 60,
+        "moderate": 90,
+        "high": 135
+      },
+      {
+        "area": "Database schema \u0026 RLS",
+        "note": "Final schema, ~750 row-level-security policies as patterns, migrations",
+        "conservative": 80,
+        "moderate": 120,
+        "high": 180
+      },
+      {
+        "area": "Trips \u0026 membership",
+        "note": "CRUD, invites, 3 trip tiers (consumer/pro/event), archival",
+        "conservative": 60,
+        "moderate": 90,
+        "high": 135
+      },
+      {
+        "area": "Permissions \u0026 roles",
+        "note": "Per-trip-type permission matrix, RLS-backed",
+        "conservative": 35,
+        "moderate": 50,
+        "high": 75
+      },
+      {
+        "area": "Unified messaging / chat",
+        "note": "Stream Chat, channels, broadcasts, threads, reactions, read receipts, reconnect/backfill",
+        "conservative": 90,
+        "moderate": 140,
+        "high": 210
+      },
+      {
+        "area": "AI Concierge — text",
+        "note": "Gemini, ~38 tools, query classification, pending-actions write buffer",
+        "conservative": 80,
+        "moderate": 125,
+        "high": 190
+      },
+      {
+        "area": "AI Concierge — voice",
+        "note": "Vertex AI Live, audio session lifecycle",
+        "conservative": 45,
+        "moderate": 70,
+        "high": 105
+      },
+      {
+        "area": "Calendar \u0026 Google sync",
+        "note": "Bi-directional, idempotent, recurring events, RSVP",
+        "conservative": 55,
+        "moderate": 85,
+        "high": 130
+      },
+      {
+        "area": "Payments \u0026 subscriptions",
+        "note": "Stripe (web) + RevenueCat (iOS), webhooks, entitlements, expense splitting",
+        "conservative": 70,
+        "moderate": 110,
+        "high": 165
+      },
+      {
+        "area": "Smart Import",
+        "note": "Gmail OAuth, PDF/image parsing, Gemini extraction, checkpoint state machine",
+        "conservative": 65,
+        "moderate": 100,
+        "high": 150
+      },
+      {
+        "area": "Media gallery \u0026 storage",
+        "note": "Upload, compression, AI tagging, lightbox, quota",
+        "conservative": 40,
+        "moderate": 65,
+        "high": 100
+      },
+      {
+        "area": "Maps \u0026 places",
+        "note": "Google Maps, places search, autocomplete, caching",
+        "conservative": 35,
+        "moderate": 50,
+        "high": 75
+      },
+      {
+        "area": "Notifications \u0026 realtime",
+        "note": "Push/email/SMS (APNS/Resend/Twilio), dedup, badge counts",
+        "conservative": 50,
+        "moderate": 80,
+        "high": 120
+      },
+      {
+        "area": "Organizations \u0026 B2B",
+        "note": "Seat-based billing, team management, org admin dashboard",
+        "conservative": 45,
+        "moderate": 70,
+        "high": 105
+      },
+      {
+        "area": "Mobile / PWA / native",
+        "note": "Capacitor 8 iOS wrapper, offline, service worker, web/native parity",
+        "conservative": 70,
+        "moderate": 105,
+        "high": 160
+      },
+      {
+        "area": "Admin, security \u0026 audit",
+        "note": "Append-only + hash-chained audit logs, super-admin, secret validation",
+        "conservative": 45,
+        "moderate": 70,
+        "high": 105
+      },
+      {
+        "area": "Observability \u0026 feature flags",
+        "note": "Sentry, PostHog, runtime kill switches",
+        "conservative": 20,
+        "moderate": 30,
+        "high": 45
+      },
+      {
+        "area": "Testing",
+        "note": "Unit + integration across critical paths (~350 specs)",
+        "conservative": 90,
+        "moderate": 140,
+        "high": 210
+      },
+      {
+        "area": "Marketing site, blog \u0026 SEO",
+        "note": "Landing, blog content system, SEO",
+        "conservative": 35,
+        "moderate": 50,
+        "high": 75
+      },
+      {
+        "area": "Integration glue, QA \u0026 PM overhead",
+        "note": "Cross-feature wiring, bug-fixing, coordination",
+        "conservative": 80,
+        "moderate": 125,
+        "high": 190
+      }
+    ],
+    "vendors": [
+      {
+        "tier": "Freelancer off the street",
+        "team": 1,
+        "teamLabel": "solo, 1 dev",
+        "typicalBand": "conservative",
+        "rateLow": 40,
+        "rateHigh": 80,
+        "ratePoint": 60,
+        "blurb": "One developer working alone. Cheaper and less vetted; more management overhead, wider quality variance, and the longest calendar time."
+      },
+      {
+        "tier": "Established agency",
+        "team": 2,
+        "teamLabel": "2 dedicated devs",
+        "typicalBand": "moderate",
+        "rateLow": 100,
+        "rateHigh": 175,
+        "ratePoint": 135,
+        "headline": true,
+        "blurb": "Two dedicated devs (vetted senior + mid) with a PM — the most representative real-world option."
+      },
+      {
+        "tier": "High-end agency / specialist firm",
+        "team": 3,
+        "teamLabel": "3 simultaneous devs",
+        "typicalBand": "high",
+        "rateLow": 200,
+        "rateHigh": 350,
+        "ratePoint": 260,
+        "blurb": "Three simultaneous senior devs at a top-tier firm with strong process, guarantees, and the fastest delivery."
+      }
+    ],
+    "assumptions": [
+      "Assumes a competent team using today’s standard AI coding tools — the realistic 2026 default, not a hand-coded build.",
+      "Calibrated to reality: Chravel was actually built by a small team in roughly a year, so a known-spec rebuild is anchored to that order of magnitude.",
+      "Effort is engineering-hours; the schedule assumes ~6 productive (heads-down) hours inside an 8-hour workday, 5 days/week — 30 hrs/week, ~1,500 productive hrs/year per developer.",
+      "Team size by vendor: a freelancer works solo (1 dev), an established agency runs 2 dedicated devs, and a high-end firm runs 3 simultaneous devs.",
+      "Adding developers is sub-linear: 2 devs ≈ 1.8× and 3 devs ≈ 2.5× a solo developer’s pace after coordination overhead, so calendar time drops less than headcount rises.",
+      "US-market blended contractor rates (2026); offshore teams would be materially cheaper.",
+      "Rebuilding a known spec — no product discovery, design iteration, or pivots (those consumed much of the original calendar time and don’t recur).",
+      "Same managed platforms reused (Supabase, Stream, Stripe/RevenueCat, Google, Gemini) — you integrate them, you don’t rebuild auth servers, realtime, chat, or payment rails."
+    ],
+    "whyNotMore": [
+      "Calibrated to the actual build: this product was shipped by a small team in about a year, so the rebuild is anchored to reality, not a theoretical worst case.",
+      "Modern AI coding tools do a large share of the boilerplate, wiring, and test scaffolding — the 2026 baseline, not optional.",
+      "Recreating a known spec skips discovery, dead-ends, and pivots — much of the original calendar time never recurs.",
+      "Off-the-shelf platforms do the heavy lifting: no custom auth server, realtime engine, chat backend, or payment processor to build.",
+      "UI is assembled from shadcn/Radix + Tailwind primitives rather than hand-built components.",
+      "File count is not effort: many of the 1,180 source files are small, repetitive, AI-generatable hooks and components."
+    ],
+    "note": "A hand-coded build with no AI assistance would run roughly 1.7–2× these hours — a useful upper bound, but not today’s reality. Every input is adjustable in curated.json → costEstimate (per-system hours, rates, productive hours/day, team size, efficiency factors); all tables recompute. Rates are US-market blended (2026); offshore would be materially lower."
+  }
 }</script>
     <script>
       (function () {
@@ -2411,6 +2688,7 @@
           { id: 'quality', title: 'Quality Review', render: renderQuality },
           { id: 'missing', title: 'Missing Pieces', render: renderMissing },
           { id: 'roadmap', title: 'Refactor Roadmap', render: renderRoadmap },
+          { id: 'cost', title: 'Cost to Build', render: renderCost },
           { id: 'glossary', title: 'Founder Glossary', render: renderGlossary },
         ];
 
@@ -3189,6 +3467,347 @@
               ),
             );
           });
+        }
+
+        // ---- cost to build from scratch (human-only; AI-assisted figure deliberately omitted) ----
+        function renderCost(sec) {
+          var ce = D.costEstimate;
+          if (!ce) return;
+          var t = ce.totals;
+          var md = ce.model || {
+            productiveHoursPerDay: 6,
+            daysPerWeek: 5,
+            hoursPerWeekPerDev: 30,
+            hoursPerYearPerDev: 1500,
+            weeksPerMonth: 4.33,
+            teamEfficiency: [
+              { devs: 1, factor: 1 },
+              { devs: 2, factor: 1.8 },
+              { devs: 3, factor: 2.5 },
+            ],
+          };
+          function money(n) {
+            if (n >= 1e6) return '$' + Math.round(n / 1e4) / 100 + 'M';
+            if (n >= 1e3) return '$' + Math.round(n / 1e3) + 'K';
+            return '$' + n;
+          }
+          function fmt(n) {
+            return Number(n).toLocaleString();
+          }
+          function pDays(h) {
+            return Math.round(h / md.productiveHoursPerDay);
+          }
+          function pWeeks(h) {
+            return Math.round(h / md.hoursPerWeekPerDev);
+          }
+          function dYears(h) {
+            return (h / md.hoursPerYearPerDev).toFixed(1);
+          }
+          function effFor(devs) {
+            var e = (md.teamEfficiency || []).filter(function (x) {
+              return x.devs === devs;
+            })[0];
+            return e ? e.factor : devs;
+          }
+          function calWeeks(h, devs) {
+            return Math.round(h / md.hoursPerWeekPerDev / effFor(devs));
+          }
+          function durTxt(h, devs) {
+            var w = calWeeks(h, devs);
+            return fmt(w) + ' wks (~' + (w / (md.weeksPerMonth || 4.33)).toFixed(1) + ' mo)';
+          }
+          var bands = [
+            { key: 'conservative', label: 'Conservative' },
+            { key: 'moderate', label: 'Moderate' },
+            { key: 'high', label: 'High' },
+          ];
+          function bandLabel(k) {
+            return (
+              bands.filter(function (b) {
+                return b.key === k;
+              })[0] || { label: k }
+            ).label;
+          }
+          var head = (ce.vendors || []).filter(function (v) {
+            return v.headline;
+          })[0] ||
+            (ce.vendors || [])[1] || { tier: '', ratePoint: 0, team: 2 };
+
+          sec.appendChild(el(lead(ce.lens)));
+
+          // ---- headline trio ----
+          var cols = el('<div class="cols" style="margin-bottom:14px"></div>');
+          cols.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid var(--gold)"><h4>Rebuild effort — moderate band</h4>' +
+                '<div class="val" style="font-size:30px;font-weight:800;color:var(--gold)">' +
+                fmt(t.moderate) +
+                ' hrs</div><div class="v muted" style="font-size:12.5px">≈ ' +
+                fmt(pWeeks(t.moderate)) +
+                ' person-weeks · ' +
+                dYears(t.moderate) +
+                ' dev-years · range ' +
+                fmt(t.conservative) +
+                '–' +
+                fmt(t.high) +
+                ' hrs</div></div>',
+            ),
+          );
+          cols.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid ' +
+                COLOR.green +
+                '"><h4>Representative quote</h4>' +
+                '<div class="val" style="font-size:30px;font-weight:800;color:' +
+                COLOR.green +
+                '">' +
+                money(t.moderate * head.ratePoint) +
+                '</div><div class="v muted" style="font-size:12.5px">moderate · ' +
+                esc(head.tier) +
+                ' (' +
+                esc(head.teamLabel || head.team + ' devs') +
+                ') · ' +
+                durTxt(t.moderate, head.team) +
+                '</div></div>',
+            ),
+          );
+          cols.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid ' +
+                COLOR.blue +
+                '"><h4>What this is</h4><div class="v muted" style="font-size:12.5px">' +
+                esc(ce.disclaimer) +
+                '</div></div>',
+            ),
+          );
+          sec.appendChild(cols);
+
+          // ---- representative quote per vendor ----
+          var repRows = (ce.vendors || [])
+            .map(function (v) {
+              var band = v.typicalBand || 'moderate';
+              return (
+                '<tr><td><b>' +
+                esc(v.tier) +
+                '</b><div class="sub" style="color:var(--muted2)">' +
+                esc(v.teamLabel || v.team + ' devs') +
+                ' · $' +
+                v.rateLow +
+                '–' +
+                v.rateHigh +
+                '/hr</div></td><td>' +
+                esc(bandLabel(band)) +
+                '</td><td><b style="color:' +
+                COLOR.green +
+                '">' +
+                money(t[band] * v.ratePoint) +
+                '</b></td><td class="muted">' +
+                durTxt(t[band], v.team) +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel" style="margin-top:14px;border-left:4px solid ' +
+                COLOR.green +
+                '"><h4>Representative quote per vendor</h4>' +
+                '<div class="v muted" style="font-size:12px;margin-bottom:6px">The band each vendor type typically delivers, with its realistic cost and calendar duration.</div>' +
+                '<table class="tbl"><thead><tr><th>Who builds it</th><th>Typical band</th><th>Quote</th><th>Realistic timeline</th></tr></thead><tbody>' +
+                repRows +
+                '</tbody></table></div>',
+            ),
+          );
+
+          // ---- effort bands (one-developer-equivalent) ----
+          var ebRows = bands
+            .map(function (b) {
+              var h = t[b.key];
+              return (
+                '<tr><td><b>' +
+                b.label +
+                '</b></td><td' +
+                (b.key === 'moderate'
+                  ? ' style="color:var(--gold);font-weight:700"'
+                  : ' class="muted"') +
+                '>' +
+                fmt(h) +
+                '</td><td class="muted">' +
+                fmt(pDays(h)) +
+                '</td><td class="muted">' +
+                fmt(pWeeks(h)) +
+                '</td><td class="muted">' +
+                dYears(h) +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel" style="margin-top:14px"><h4>Effort bands — one-developer-equivalent</h4>' +
+                '<div class="v muted" style="font-size:12px;margin-bottom:6px">' +
+                esc(md.patternNote || '') +
+                '</div><table class="tbl"><thead><tr><th>Band</th><th>Engineering hours</th><th>Person-days</th><th>Person-weeks</th><th>Dev-years</th></tr></thead><tbody>' +
+                ebRows +
+                '</tbody></table><div class="v muted" style="font-size:11.5px;margin-top:6px">“Person-X” = effort for a single developer; divide by team size (next table) for calendar time. Basis: ' +
+                md.productiveHoursPerDay +
+                ' productive hrs/day × ' +
+                md.daysPerWeek +
+                ' days = ' +
+                md.hoursPerWeekPerDev +
+                ' hrs/week, ~' +
+                fmt(md.hoursPerYearPerDev) +
+                ' hrs/year.</div></div>',
+            ),
+          );
+
+          // ---- realistic timeline matrix (team size × band) ----
+          var tlRows = (ce.vendors || [])
+            .map(function (v) {
+              return (
+                '<tr><td><b>' +
+                esc(v.tier) +
+                '</b><div class="sub" style="color:var(--muted2)">' +
+                esc(v.teamLabel || v.team + ' devs') +
+                ' · ' +
+                effFor(v.team) +
+                '× throughput</div></td>' +
+                bands
+                  .map(function (b) {
+                    return (
+                      '<td' +
+                      (b.key === 'moderate' ? ' style="color:var(--gold)"' : ' class="muted"') +
+                      '>' +
+                      durTxt(t[b.key], v.team) +
+                      '</td>'
+                    );
+                  })
+                  .join('') +
+                '</tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel" style="margin-top:14px"><h4>Realistic timeline — calendar duration by team size × band</h4>' +
+                '<table class="tbl"><thead><tr><th>Who builds it</th><th>Conservative</th><th>Moderate</th><th>High</th></tr></thead><tbody>' +
+                tlRows +
+                '</tbody></table><div class="v muted" style="font-size:11.5px;margin-top:6px">Calendar weeks = person-weeks ÷ team efficiency (1 dev = 1.0×, 2 devs = 1.8×, 3 devs = 2.5×). Months at ' +
+                md.weeksPerMonth +
+                ' weeks/month.</div></div>',
+            ),
+          );
+
+          // ---- quotes (cost) matrix ----
+          var vrows = (ce.vendors || [])
+            .map(function (v) {
+              return (
+                '<tr><td><b>' +
+                esc(v.tier) +
+                '</b><div class="sub" style="color:var(--muted2)">' +
+                esc(v.teamLabel || v.team + ' devs') +
+                '</div></td><td class="muted">$' +
+                v.rateLow +
+                '–' +
+                v.rateHigh +
+                '/hr</td><td>' +
+                money(t.conservative * v.ratePoint) +
+                '</td><td><b style="color:var(--gold)">' +
+                money(t.moderate * v.ratePoint) +
+                '</b></td><td>' +
+                money(t.high * v.ratePoint) +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel" style="margin-top:14px"><h4>Quotes — vendor rate × effort band (cost = hours × rate)</h4>' +
+                '<table class="tbl"><thead><tr><th>Who builds it</th><th>Blended rate</th><th>Conservative</th><th>Moderate</th><th>High</th></tr></thead><tbody>' +
+                vrows +
+                '<tr style="border-top:2px solid var(--gold-dim)"><td class="muted">Effort (engineering-hours)</td><td></td><td class="muted">' +
+                fmt(t.conservative) +
+                '</td><td class="muted">' +
+                fmt(t.moderate) +
+                '</td><td class="muted">' +
+                fmt(t.high) +
+                '</td></tr></tbody></table></div>',
+            ),
+          );
+
+          // ---- where the hours go ----
+          var frows = ce.features
+            .map(function (f) {
+              return (
+                '<tr><td><b>' +
+                esc(f.area) +
+                '</b>' +
+                (f.note
+                  ? '<div class="sub" style="color:var(--muted2)">' + esc(f.note) + '</div>'
+                  : '') +
+                '</td><td class="muted">' +
+                f.conservative +
+                '</td><td><b>' +
+                f.moderate +
+                '</b></td><td class="muted">' +
+                f.high +
+                '</td></tr>'
+              );
+            })
+            .join('');
+          sec.appendChild(
+            el(
+              '<div class="panel" style="margin-top:14px"><h4>Where the hours go — engineering-hours by system</h4>' +
+                '<table class="tbl"><thead><tr><th>System</th><th>Conservative</th><th>Moderate</th><th>High</th></tr></thead><tbody>' +
+                frows +
+                '<tr style="border-top:2px solid var(--gold-dim)"><td><b>Total</b></td><td><b>' +
+                fmt(t.conservative) +
+                ' hrs</b></td><td><b style="color:var(--gold)">' +
+                fmt(t.moderate) +
+                ' hrs</b></td><td><b>' +
+                fmt(t.high) +
+                ' hrs</b></td></tr></tbody></table></div>',
+            ),
+          );
+
+          // ---- assumptions + why-not-more ----
+          var cols2 = el('<div class="cols" style="margin-top:14px"></div>');
+          cols2.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid ' +
+                COLOR.blue +
+                '"><h4>Assumptions</h4>' +
+                list(ce.assumptions) +
+                '</div>',
+            ),
+          );
+          cols2.appendChild(
+            el(
+              '<div class="panel" style="border-left:4px solid ' +
+                COLOR.green +
+                '"><h4>Why these are realistic, not inflated</h4>' +
+                list(ce.whyNotMore) +
+                '</div>',
+            ),
+          );
+          sec.appendChild(cols2);
+
+          if (ce.methodology)
+            sec.appendChild(
+              el(
+                '<p class="lead" style="margin-top:12px;font-size:12.5px;color:var(--muted)"><b>How these are generated:</b> ' +
+                  esc(ce.methodology) +
+                  '</p>',
+              ),
+            );
+          if (ce.note)
+            sec.appendChild(
+              el(
+                '<p class="lead" style="font-size:12.5px;color:var(--muted2)">' +
+                  esc(ce.note) +
+                  '</p>',
+              ),
+            );
         }
 
         function renderGlossary(sec) {
