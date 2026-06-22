@@ -11,32 +11,30 @@
  */
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getCorsHeaders } from '../_shared/cors.ts';
+import { verifyCronAuth } from '../_shared/cronGuard.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-// Optional: a shared secret the cron invoker sets so random callers can't trigger cleanup
-const CLEANUP_SECRET = Deno.env.get('CLEANUP_SECRET');
-
 serve(async req => {
-  // Only POST allowed
+  const corsHeaders = getCorsHeaders(req);
+
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
-  // Secret check (optional but recommended)
-  if (CLEANUP_SECRET) {
-    const incoming = req.headers.get('x-cleanup-secret');
-    if (incoming !== CLEANUP_SECRET) {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-  }
+  // Fail-closed auth: requires CRON_SECRET (x-cron-secret header) or service-role bearer.
+  const guard = verifyCronAuth(req, corsHeaders);
+  if (!guard.authorized) return guard.response!;
+
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const now = new Date().toISOString();

@@ -55,10 +55,15 @@ serve(async req => {
 
     // Parse request body
     const body = await req.json();
-    const { verification_method = 'password', session_duration_minutes = 15 } = body;
+    const {
+      verification_method = 'password',
+      session_duration_minutes = 15,
+      password,
+    } = body;
 
-    // Validate verification_method
-    const validMethods = ['password', 'mfa', 'biometric'];
+    // Only server-verifiable methods are allowed. 'biometric' is client-attested
+    // and cannot be proven server-side, so it is rejected as a privileged method.
+    const validMethods = ['password', 'mfa'];
     if (!validMethods.includes(verification_method)) {
       return new Response(
         JSON.stringify({
@@ -75,6 +80,45 @@ serve(async req => {
         { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
       );
     }
+
+    // Server-side proof of the claimed method.
+    if (verification_method === 'password') {
+      if (!user.email || typeof password !== 'string' || password.length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'Password is required to verify identity' }),
+          { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
+        );
+      }
+      // Re-authenticate against Supabase Auth using an isolated client so the
+      // caller's session is not mutated. A successful sign-in proves the password.
+      const verifyClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      );
+      const { error: pwError } = await verifyClient.auth.signInWithPassword({
+        email: user.email,
+        password,
+      });
+      if (pwError) {
+        return new Response(JSON.stringify({ error: 'Password verification failed' }), {
+          status: 401,
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+        });
+      }
+    } else if (verification_method === 'mfa') {
+      // Require the caller's current JWT to be AAL2 (i.e. they completed an MFA
+      // challenge via supabase.auth.mfa.verify() on the client).
+      const aal =
+        (user as { aal?: string }).aal ??
+        (user.app_metadata as { aal?: string } | undefined)?.aal;
+      if (aal !== 'aal2') {
+        return new Response(
+          JSON.stringify({ error: 'MFA verification required (AAL2 session needed)' }),
+          { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
+        );
+      }
+    }
+
 
     // Extract IP address and user agent from request
     const ipAddress =
