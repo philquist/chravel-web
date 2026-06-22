@@ -7,7 +7,7 @@ import { BLOG_PATH, estimateReadingMinutes, formatBlogDate, getSortedBlogPosts }
 const INDEX_TITLE = 'Chravel Blog | Guides for Group Travel, Events, and Travel Pros';
 const INDEX_DESCRIPTION =
   'Practical guides on coordinating group travel, weddings, sports, touring, and travel-concierge client experiences with Chravel.';
-const INDEX_H1 = 'The Chravel blog';
+const INDEX_H1 = 'The ChravelApp blog';
 
 const buildJsonLd = (posts: ReturnType<typeof getSortedBlogPosts>) => [
   ...siteIdentityJsonLd(),
