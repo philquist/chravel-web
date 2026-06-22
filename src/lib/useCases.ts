@@ -563,6 +563,164 @@ export const USE_CASES: Array<UseCaseSummary | UseCaseDetail> = [
       secondaryTo: '/teams',
     },
   },
+  {
+    slug: 'local-clubs-meetups',
+    status: 'published',
+    cardTitle: 'Local Clubs & Meetups',
+    cardTagline:
+      'Keep run clubs, trivia nights, rec leagues, and golf groups organized — a recurring schedule, RSVPs, pinned locations, and a shared album in one place. No flight required.',
+    cardCtaLabel: 'See ChravelApp for local groups',
+    seo: {
+      title: 'Local Club & Meetup Organizer App | Run Recurring Groups with ChravelApp',
+      description:
+        'ChravelApp keeps local clubs and recurring meetups organized — run clubs, trivia nights, rec leagues, and golf groups get a shared schedule, RSVPs, pinned locations, broadcasts, and a photo album in one place. No travel required.',
+    },
+    h1: 'The app for local clubs and recurring meetups',
+    intro:
+      'You don’t have to get on a plane to use ChravelApp. Run clubs, trivia nights, rec leagues, and golf groups get one home base for the schedule, RSVPs, locations, and photos — so the regulars always know where to be.',
+    body: [
+      'Not every group that needs organizing is going somewhere. Run clubs, trivia nights, flag-football and other rec leagues, golf groups, book clubs, and neighborhood meetups all run on a weekly rhythm — and most of them live in a single overstuffed group text. Plans get buried under replies, the location changes and half the crew misses it, and the one person who keeps it all straight ends up answering the same questions every week.',
+      'ChravelApp gives a local group the same home base a big trip gets. Put the weekly run, the next trivia night, or this weekend’s tee time on the Calendar so the schedule is somewhere other than a chat thread. Pin the bar, the course, or the start line as Base Camps so nobody shows up to the wrong spot, and save nearby coffee shops or after-spots in Explorer. When something changes, one Broadcast reaches everyone at once instead of a flurry of texts.',
+      'Headcounts get easier too. Use Polls to see who’s in for this week, and the Calendar to keep the standing schedule visible so people can plan around it. When the group splits a tab, chips in for a field rental, or collects league dues, Payments handles it without a side spreadsheet or a chain of payment-app requests.',
+      'The shared Media album is the part that keeps a local group fun. Race-day photos, trivia-win celebrations, and golf-trip pictures usually get trapped across everyone’s phones. ChravelApp gives the group one album everyone uploads to, on any device — so the memories pile up in one place instead of scattering into private camera rolls.',
+      'As regulars come and go, new members just join the group and immediately see the schedule, the spots, and the routine — no “catch me up on how this works” text required. The pitch is simple: you don’t need a trip or a plane ticket to get value out of ChravelApp. Any local crew that meets on a schedule can run on it.',
+    ],
+    featureMap: [
+      { pain: 'A new group text for every week’s plan', solution: 'One shared club home base' },
+      { pain: 'RSVPs lost in a wall of replies', solution: 'Polls + Calendar' },
+      {
+        pain: 'People show up to the wrong bar, course, or start line',
+        solution: 'Base Camps + pinned locations',
+      },
+      { pain: 'Last-minute changes get missed', solution: 'Broadcasts' },
+      { pain: 'Photos trapped across everyone’s phones', solution: 'Shared Media album' },
+      { pain: 'New members don’t know the routine', solution: 'Members + shared details' },
+      { pain: 'Splitting the tab or collecting league dues', solution: 'Payments' },
+    ],
+    workflow: {
+      heading: 'Get your local crew organized',
+      steps: [
+        'Create the group and invite the regulars.',
+        'Add your recurring meetups — the weekly run, trivia night, tee times — to the Calendar.',
+        'Pin the bar, course, or start line as Base Camps and drop nearby spots in Explorer.',
+        'Use Polls for weekly headcounts and Broadcasts when the plan changes.',
+        'Turn on the shared Media album so everyone’s photos land in one place.',
+      ],
+    },
+    faq: [
+      {
+        q: 'Do we have to be traveling to use ChravelApp?',
+        a: 'No. ChravelApp works just as well for local, recurring groups — a run club, trivia night, rec league, or golf group — as it does for trips. No flight required.',
+      },
+      {
+        q: 'Can we set up a recurring weekly schedule?',
+        a: 'Yes. Add recurring events to the Calendar so the standing schedule stays visible, with Google Calendar sync so it shows up next to everyone’s other plans.',
+      },
+      {
+        q: 'How do members RSVP each week?',
+        a: 'Use Polls for a quick weekly headcount, and the Calendar so everyone can see what’s coming up and plan around it.',
+      },
+      {
+        q: 'Can we collect league dues or split a tab?',
+        a: 'Yes. Payments lets the group collect dues, chip in for a rental, or split a tab without a spreadsheet or a chain of payment-app requests.',
+      },
+      {
+        q: 'Does it work on iPhone and Android?',
+        a: 'Yes — ChravelApp runs on the web and as an installable app on iOS and Android, so every member is covered regardless of device.',
+      },
+    ],
+    cta: {
+      heading: 'Keep your local crew in one place',
+      subtext:
+        'Put the schedule, RSVPs, locations, and a shared photo album in one home base — then invite the regulars. No trip required.',
+      primaryLabel: 'Create a group',
+      primaryTo: '/auth',
+      secondaryLabel: 'Browse all use cases',
+      secondaryTo: '/use-cases',
+    },
+  },
+  {
+    slug: 'church-group-trip-coordination',
+    status: 'published',
+    cardTitle: 'Faith & Church Groups',
+    cardTagline:
+      'Coordinate mission trips, retreats, youth group, and choir tours — rosters, permission forms, schedules, payments, broadcasts, and a shared album in one place.',
+    cardCtaLabel: 'See ChravelApp for faith groups',
+    seo: {
+      title: 'Church Group & Mission Trip Coordination App | ChravelApp',
+      description:
+        'ChravelApp keeps church groups, mission trips, retreats, and youth ministry organized — rosters and roles, permission forms, schedules, payments, broadcasts, and a shared photo album in one place.',
+    },
+    h1: 'The coordination app for church groups and mission trips',
+    intro:
+      'From the weekly youth group to the summer mission trip, ChravelApp gives ministry leaders one organized place for rosters, forms, schedules, payments, and updates — so leaders lead instead of chasing texts.',
+    body: [
+      'Ministry runs on logistics. Mission trips, retreats, youth group, choir and worship tours, and volunteer days all mean managing a roster, collecting forms, building a schedule, gathering trip fees, and keeping parents in the loop. Most groups still do it with sign-up sheets, paper permission slips, a phone tree, and a stack of parent group texts — which means details get lost and the leader spends more time chasing people than leading them.',
+      'ChravelApp pulls all of it into one trip workspace. Add leaders, chaperones, and participants as Members with the right roles, and collect permission, medical, and waiver forms as Attachments so they live in one place instead of a folder on someone’s desk. Assign packing lists and prep responsibilities as Tasks, build the itinerary on the Calendar, and pin the lodging and host site as Base Camps so everyone knows where to be.',
+      'Money and communication get simpler. Use Payments to collect trip fees and deposits without passing around cash or a sign-up sheet, and send one Broadcast to reach every participant — or every parent — at once. Instead of answering the same questions across a dozen threads, the leader points everyone to the trip, where the schedule, location, and details already live.',
+      'It also helps parents feel secure. Broadcasts keep families informed about timing and changes, roles control who sees what, and the shared itinerary and Base Camps make it clear where the group is and where they’re staying. After the trip, the shared Media album gives everyone one place to upload photos, so the memories from a retreat or mission trip don’t scatter across phones.',
+      'The same setup works at every scale — from a one-off weekend retreat to a recurring youth program. With ChravelApp Pro, admin-controlled seats and role-based access let multiple leaders run trips across the congregation with the right permissions. The pitch is simple: lead the trip, not the group chat.',
+    ],
+    featureMap: [
+      { pain: 'Sign-up sheets and paper permission slips', solution: 'Attachments + Tasks' },
+      {
+        pain: 'Trip details scattered across the bulletin and group texts',
+        solution: 'One shared trip workspace',
+      },
+      { pain: 'Collecting trip fees and deposits', solution: 'Payments' },
+      {
+        pain: 'Parents and chaperones out of the loop',
+        solution: 'Broadcasts + Members/roles',
+      },
+      { pain: 'Itinerary and lodging unclear', solution: 'Calendar + Base Camps' },
+      { pain: 'Trip photos trapped across phones', solution: 'Shared Media album' },
+      {
+        pain: 'The same questions from every family',
+        solution: 'Centralized details + Broadcasts',
+      },
+    ],
+    workflow: {
+      heading: 'Set up a mission trip or retreat',
+      steps: [
+        'Create the trip and add leaders, chaperones, and participants with the right roles.',
+        'Upload permission, medical, and waiver forms as Attachments and assign packing and prep Tasks.',
+        'Build the itinerary on the Calendar and pin lodging and host sites as Base Camps.',
+        'Collect trip fees and deposits with Payments.',
+        'Broadcast updates to everyone, and turn on the shared Media album for the trip.',
+      ],
+    },
+    faq: [
+      {
+        q: 'Does it work for weekly youth group and one-off retreats, not just big trips?',
+        a: 'Yes. ChravelApp works for the weekly youth group, a weekend retreat, or a multi-day mission trip — the same workspace scales up or down.',
+      },
+      {
+        q: 'Can we collect permission forms and trip fees?',
+        a: 'Yes. Gather permission, medical, and waiver forms as Attachments, and use Payments to collect trip fees and deposits without cash or a sign-up sheet.',
+      },
+      {
+        q: 'Can parents stay informed without being on every chat?',
+        a: 'Yes. Broadcasts push updates to every family at once, and roles control who sees what, so parents stay informed without living in the group chat.',
+      },
+      {
+        q: 'Can multiple leaders manage trips with the right access?',
+        a: 'Yes. ChravelApp Pro adds admin-controlled seats and role-based access, so multiple leaders can run trips across the congregation with the right permissions.',
+      },
+      {
+        q: 'Does it work on iPhone and Android?',
+        a: 'Yes — ChravelApp runs on the web and as an installable app on iOS and Android, so every leader, chaperone, and family is covered regardless of device.',
+      },
+    ],
+    cta: {
+      heading: 'Lead the trip, not the group chat',
+      subtext:
+        'Put rosters, forms, the schedule, trip-fee collection, and a shared album in one workspace — then invite leaders, chaperones, and families.',
+      primaryLabel: 'Create a trip',
+      primaryTo: '/auth',
+      secondaryLabel: 'ChravelApp for teams',
+      secondaryTo: '/teams',
+    },
+  },
 ];
 
 /** Cross-cutting features highlighted on the hub. Names match the real product surfaces. */
