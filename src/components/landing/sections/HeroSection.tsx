@@ -247,7 +247,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)',
           }}
         >
-          Plans, Photos, Places, Polls, PDFs, & Payments —{"\u00a0"}Made Private
+          Plans, Photos, Places, Polls, PDFs, & Payments —{"\u00a0"}Privately Processed
         </p>
       </div>
     </div>
