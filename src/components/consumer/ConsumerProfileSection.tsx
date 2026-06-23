@@ -6,6 +6,7 @@ import { supabase } from '../../integrations/supabase/client';
 import { useToast } from '../../hooks/use-toast';
 import { getConsistentAvatar } from '../../utils/avatarUtils';
 import { useNavigate } from 'react-router-dom';
+import { DeleteAccountDialog } from './DeleteAccountDialog';
 
 export const ConsumerProfileSection = () => {
   const { user, updateProfile, signOut } = useAuth();
@@ -20,6 +21,8 @@ export const ConsumerProfileSection = () => {
   const [phone, setPhone] = useState(user?.phone || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
 
   // Initialize state when user loads
   useEffect(() => {
@@ -341,7 +344,7 @@ export const ConsumerProfileSection = () => {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => navigate('/settings', { state: { section: 'settings' } })}
+              onClick={() => setShowDeleteDialog(true)}
               className="flex-1 min-w-0 bg-destructive hover:bg-destructive/80 text-destructive-foreground font-medium px-4 py-2 min-h-[44px] rounded-lg transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
             >
               <Trash2 size={16} />
@@ -358,6 +361,7 @@ export const ConsumerProfileSection = () => {
           </div>
         </div>
       )}
+      <DeleteAccountDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog} />
     </div>
   );
 };
