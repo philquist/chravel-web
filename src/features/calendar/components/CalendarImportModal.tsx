@@ -103,12 +103,16 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
-  const canUseGmailSmartImport = useDeferredPaidAccess({
-    tier,
-    status: subscription?.status,
-    isSuperAdmin,
-    active: isOpen,
-  });
+  const gmailFlagEnabled = useFeatureFlag('gmail_smart_import', false);
+  const canUseGmailSmartImport =
+    gmailFlagEnabled &&
+    useDeferredPaidAccess({
+      tier,
+      status: subscription?.status,
+      isSuperAdmin,
+      active: isOpen,
+    });
+  const formatBadges = buildFormatBadges(gmailFlagEnabled);
   const { onDragOverCapture, onDropCapture } = useModalFileDropGuard({ enabled: isOpen });
 
   const processParseResult = useCallback(
