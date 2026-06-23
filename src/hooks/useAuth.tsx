@@ -927,8 +927,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         if (installed && data?.url) {
-          await openInstalledAuthBrowser(data.url);
+          const result = await openInstalledAuthBrowser(data.url);
+          if (result.strategy === 'native-shell-missing-bridge') {
+            return {
+              error:
+                'Your Chravel app needs an update to sign in with Apple. Please update from the App Store and try again.',
+            };
+          }
         }
+
 
         return {};
       } catch (error) {
