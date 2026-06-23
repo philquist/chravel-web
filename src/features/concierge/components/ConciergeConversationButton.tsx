@@ -1,8 +1,9 @@
 /**
- * ConciergeConversationButton — circular orb that toggles hands-free voice mode.
+ * ConciergeConversationButton — circular orb that toggles hands-free voice mode,
+ * paired with a Stop pill for immediate cancellation while a turn is in flight.
  * Luxury Dark gold accents; states mirror useConciergeConversationMode.
  */
-import { Mic, MicOff, Loader2, Volume2 } from 'lucide-react';
+import { Mic, MicOff, Loader2, Volume2, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ConversationState } from '../hooks/useConciergeConversationMode';
 
@@ -10,8 +11,10 @@ interface Props {
   active: boolean;
   state: ConversationState;
   onToggle: () => void;
+  onCancel: () => void;
   disabled?: boolean;
   liveTranscript?: string;
+  lastFinalTranscript?: string;
 }
 
 const STATE_LABEL: Record<ConversationState, string> = {
@@ -27,12 +30,19 @@ export function ConciergeConversationButton({
   active,
   state,
   onToggle,
+  onCancel,
   disabled,
   liveTranscript,
+  lastFinalTranscript,
 }: Props) {
   const isBusy = state === 'transcribing' || state === 'sending';
   const isListening = state === 'listening';
   const isSpeaking = state === 'speaking';
+
+  // Bottom-line text: live (this turn) > last final transcript > tagline.
+  const bottomLine =
+    (active && liveTranscript) || lastFinalTranscript || '';
+  const showQuoted = !!bottomLine;
 
   return (
     <div className="flex items-center justify-between gap-3 px-1 pb-2">
@@ -45,14 +55,37 @@ export function ConciergeConversationButton({
         >
           {active ? STATE_LABEL[state] : 'Conversation mode'}
         </div>
-        {active && liveTranscript ? (
-          <div className="text-gray-500 truncate italic">&ldquo;{liveTranscript}&rdquo;</div>
+        {showQuoted ? (
+          <div
+            className="text-gray-400 italic line-clamp-2"
+            title={bottomLine}
+          >
+            &ldquo;{bottomLine}&rdquo;
+          </div>
         ) : (
           <div className="text-gray-600 truncate">
             Hands-free — talk to your concierge like a phone call.
           </div>
         )}
       </div>
+
+      {/* Stop pill — only while a turn is in flight. */}
+      {active && (
+        <button
+          type="button"
+          onClick={onCancel}
+          aria-label="Stop conversation"
+          className={cn(
+            'h-9 min-w-[64px] px-3 rounded-full inline-flex items-center gap-1.5 shrink-0',
+            'border border-red-500/40 bg-red-500/10 text-red-300',
+            'text-xs font-medium select-none touch-manipulation',
+            'active:scale-95 transition-transform hover:bg-red-500/20',
+          )}
+        >
+          <Square className="size-3.5 fill-current" />
+          Stop
+        </button>
+      )}
 
       <button
         type="button"
