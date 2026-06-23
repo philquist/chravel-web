@@ -181,7 +181,7 @@ export const SmartImportSettings = () => {
                 ) : (
                   <GoogleLogo className="h-4 w-4" />
                 )}
-                Connect Gmail
+                Connect Gmail (Beta)
               </Button>
             </div>
           </div>
