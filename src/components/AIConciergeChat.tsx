@@ -32,6 +32,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useConciergeVoice } from '@/features/concierge/hooks/useConciergeVoice';
 import { useConciergeStreaming } from '@/features/concierge/hooks/useConciergeStreaming';
 import { useSmartImportTaste } from '@/features/smart-import/hooks/useSmartImportTaste';
+import { useConciergeConversationMode } from '@/features/concierge/hooks/useConciergeConversationMode';
+import { ConciergeConversationButton } from '@/features/concierge/components/ConciergeConversationButton';
+import { useFeatureFlag } from '@/lib/featureFlags';
+import type { ChatMessage } from '@/features/concierge/types';
 
 // Lazy: only loads when an upgrade moment actually fires (limit hit / chip tap).
 const PlusUpsellModal = lazy(() =>
