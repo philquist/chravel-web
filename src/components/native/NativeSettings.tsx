@@ -21,12 +21,15 @@ import {
   Info,
   Calendar,
   Trash2,
+  Ticket,
 } from 'lucide-react';
 import { hapticService } from '@/services/hapticService';
 import { NativeList, NativeListSection, NativeListItem, NativeToggleItem } from './NativeList';
 import { NativeLargeTitle } from './NativeLargeTitle';
-import { getPlatform } from '@/integrations/revenuecat/revenuecatClient';
+import { getPlatform, purchaseTripPass } from '@/integrations/revenuecat/revenuecatClient';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
+import { TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
+import { toast } from 'sonner';
 
 interface NativeSettingsProps {
   user?: {
@@ -105,7 +108,35 @@ export const NativeSettings = ({
     [onNavigate],
   );
 
+  const [tripPassLoading, setTripPassLoading] = useState<
+    'explorer' | 'frequent-chraveler' | null
+  >(null);
+
+  const handlePurchaseTripPass = useCallback(
+    async (tier: 'explorer' | 'frequent-chraveler') => {
+      await hapticService.light();
+      setTripPassLoading(tier);
+      try {
+        const result = await purchaseTripPass(tier);
+        if (result.success) {
+          await hapticService.success();
+          toast.success('Trip Pass activated! Premium features are unlocking…');
+        } else if (result.errorCode === 'CANCELLED') {
+          // user dismissed — silent
+        } else if (!result.supported) {
+          toast.error('Trip Pass purchase is not available on this device.');
+        } else {
+          toast.error(result.error || 'Failed to purchase Trip Pass. Please try again.');
+        }
+      } finally {
+        setTripPassLoading(null);
+      }
+    },
+    [],
+  );
+
   const isPro = subscriptionTier !== 'free';
+  const showTripPasses = !isPro && platform !== 'web';
 
   return (
     <>
@@ -133,7 +164,14 @@ export const NativeSettings = ({
           </NativeListSection>
 
           {/* Subscription Section */}
-          <NativeListSection header="Subscription">
+          <NativeListSection
+            header="Subscription"
+            footer={
+              showTripPasses
+                ? 'Trip Pass gives you full premium for one trip — no recurring charge. Restore Purchases re-applies passes you already bought.'
+                : undefined
+            }
+          >
             <NativeListItem
               icon={<Crown size={18} />}
               label={isPro ? 'ChravelApp Pro' : 'Free Plan'}
@@ -144,6 +182,40 @@ export const NativeSettings = ({
               showChevron
               onPress={isPro ? () => handleNavigate('subscription') : handleUpgrade}
             />
+            {showTripPasses && (
+              <>
+                <NativeListItem
+                  icon={<Ticket size={18} />}
+                  label="Explorer Trip Pass"
+                  sublabel={`${TRIP_PASS_DISPLAY.explorer.price} · ${TRIP_PASS_DISPLAY.explorer.durationDays} days`}
+                  value={
+                    tripPassLoading === 'explorer' ? (
+                      <span className="text-gray-400">…</span>
+                    ) : undefined
+                  }
+                  onPress={
+                    tripPassLoading
+                      ? undefined
+                      : () => void handlePurchaseTripPass('explorer')
+                  }
+                />
+                <NativeListItem
+                  icon={<Ticket size={18} />}
+                  label="Frequent Chraveler Trip Pass"
+                  sublabel={`${TRIP_PASS_DISPLAY['frequent-chraveler'].price} · ${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays} days`}
+                  value={
+                    tripPassLoading === 'frequent-chraveler' ? (
+                      <span className="text-gray-400">…</span>
+                    ) : undefined
+                  }
+                  onPress={
+                    tripPassLoading
+                      ? undefined
+                      : () => void handlePurchaseTripPass('frequent-chraveler')
+                  }
+                />
+              </>
+            )}
           </NativeListSection>
 
           {/* Notifications Section */}

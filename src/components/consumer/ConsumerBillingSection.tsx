@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Crown, Globe, Building, TrendingUp, Shield } from 'lucide-react';
+import { Crown, Globe, Building, TrendingUp, Shield, Ticket } from 'lucide-react';
 import { useConsumerSubscription } from '../../hooks/useConsumerSubscription';
 import { CONSUMER_PRICING } from '../../types/consumer';
-import { CONSUMER_PRICE_DISPLAY } from '@/billing/pricingDisplay';
+import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
 import { BILLING_PRODUCTS } from '@/billing/config';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
+import { TripPassModal } from '../conversion/TripPassModal';
 
 // App Store 3.1.1: inside the iOS app, consumers must not be steered to an external
 // web checkout or the Stripe-hosted billing portal for digital subscriptions. Manage/
@@ -28,6 +29,7 @@ export const ConsumerBillingSection = () => {
   const [expandedPlan, setExpandedPlan] = useState<string | null>(tier);
   const [expandedProPlan, setExpandedProPlan] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [tripPassOpen, setTripPassOpen] = useState(false);
 
   useEffect(() => {
     void checkSubscription();
@@ -323,6 +325,37 @@ export const ConsumerBillingSection = () => {
           )}
         </div>
       </div>
+
+      {/* One-time Trip Pass — alternative to recurring subscriptions */}
+      {!isSubscribed && !isSuperAdmin && (
+        <div className="bg-gradient-to-br from-gold-primary/10 to-gold-primary/5 border border-gold-primary/30 rounded-xl p-4">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-start gap-3 flex-1 min-w-[220px]">
+              <div className="w-10 h-10 rounded-full bg-gold-primary/20 text-gold-primary flex items-center justify-center flex-shrink-0">
+                <Ticket size={20} />
+              </div>
+              <div>
+                <h4 className="text-base font-semibold text-white mb-1">One-time Trip Pass</h4>
+                <p className="text-sm text-gray-300">
+                  Full premium for one trip — no recurring charge. Explorer{' '}
+                  {TRIP_PASS_DISPLAY.explorer.price} ({TRIP_PASS_DISPLAY.explorer.durationDays}{' '}
+                  days) · Frequent Chraveler {TRIP_PASS_DISPLAY['frequent-chraveler'].price} (
+                  {TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays} days).
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setTripPassOpen(true)}
+              disabled={blockConsumerCheckoutOnIOS}
+              className="min-h-[42px] bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-black px-5 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {blockConsumerCheckoutOnIOS ? 'Unavailable on iOS' : 'Get a Trip Pass'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <TripPassModal open={tripPassOpen} onOpenChange={setTripPassOpen} />
 
       {/* Available Plans */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">

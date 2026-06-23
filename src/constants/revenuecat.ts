@@ -44,6 +44,13 @@ export const REVENUECAT_ENTITLEMENTS = {
  *
  * PLACEHOLDER: Update after creating products in App Store Connect
  * See: src/billing/config.ts for Apple product ID format (com.chravel.*.monthly/annual)
+ *
+ * Trip Pass products MUST be created as **non-renewing subscriptions** (iOS) /
+ * **one-time products** (Android) in the store consoles, then attached in the
+ * RevenueCat dashboard to the matching consumer entitlement
+ * (`chravel_explorer` / `chravel_frequent_chraveler`) with a 45-day / 90-day
+ * grant window. Without those store + dashboard entries,
+ * `purchaseTripPass()` will fail with "Trip Pass product … not found".
  */
 export const REVENUECAT_PRODUCTS = {
   // Explorer tier - $9.99/month, $99/year (subscription)
