@@ -63,24 +63,32 @@ function isSupported(): boolean {
   );
 }
 
+interface SendOptions {
+  conversationSessionId?: string;
+}
+
 interface Options {
   enabled: boolean;
   messages: ChatMessage[];
   isTyping: boolean;
-  handleSendMessage: (override?: string) => Promise<void> | void;
+  handleSendMessage: (override?: string, opts?: SendOptions) => Promise<void> | void;
   ttsPlay: (messageId: string, speechText: string) => Promise<void>;
   ttsStop: () => void;
   ttsPlaybackState: TTSPlaybackState;
   buildSpeechText: (msg: ChatMessage) => string;
   onError?: (message: string) => void;
+  /** Abort an in-flight assistant stream (from useConciergeMessages). */
+  onCancelStream?: () => void;
 }
 
 interface Result {
   active: boolean;
   state: ConversationState;
   toggle: () => void;
+  cancel: () => void;
   isSupported: boolean;
   liveTranscript: string;
+  lastFinalTranscript: string;
 }
 
 export function useConciergeConversationMode({
