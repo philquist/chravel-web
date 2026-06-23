@@ -61,19 +61,32 @@ serve(async (req: Request) => {
     });
   }
 
-  const text = typeof body.text === 'string' ? body.text.trim() : '';
-  if (!text) {
+  const rawText = typeof body.text === 'string' ? body.text.trim() : '';
+  if (!rawText) {
     return new Response(JSON.stringify({ error: 'Missing "text"' }), {
       status: 400,
       headers: { ...cors, 'Content-Type': 'application/json' },
     });
   }
-  if (text.length > MAX_TEXT_CHARS) {
+  if (rawText.length > MAX_TEXT_CHARS) {
     return new Response(
       JSON.stringify({ error: `Text exceeds ${MAX_TEXT_CHARS} character limit` }),
       { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } },
     );
   }
+
+  // Pronunciation normalization: TTS engines read "Chravel" with a hard "Ch".
+  // Brand stays spelled "Chravel" everywhere visually; only the audio stream
+  // hears "Travel". Applies to every voice automatically.
+  const text = rawText
+    .replace(/\bFrequent Chraveler\b/g, 'Frequent Traveler')
+    .replace(/\bfrequent chraveler\b/g, 'frequent traveler')
+    .replace(/\bChravelers\b/g, 'Travelers')
+    .replace(/\bchravelers\b/g, 'travelers')
+    .replace(/\bChraveler\b/g, 'Traveler')
+    .replace(/\bchraveler\b/g, 'traveler')
+    .replace(/\bChravel\b/g, 'Travel')
+    .replace(/\bchravel\b/g, 'travel');
 
   const requestedVoice = typeof body.voice === 'string' ? body.voice.toLowerCase().trim() : '';
   const resolvedVoice = VOICE_SET.has(requestedVoice) ? requestedVoice : DEFAULT_VOICE;
