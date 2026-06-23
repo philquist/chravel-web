@@ -1,68 +1,108 @@
-# Concierge voice fixes + conversation mode
+# Concierge Conversation Mode — Polish + Billing Fix
 
-## Part 1 — Fix "Chravel" pronunciation (sounds like "Kravel")
+Four scoped changes to `useConciergeConversationMode`, `ConciergeConversationButton`, `AIConciergeChat`, the `lovable-concierge` edge function, and one tiny DB table for session-level usage de-dup.
 
-Root cause: OpenAI TTS (and every other TTS engine) reads "Chravel" with a hard "Ch" because it isn't a real word. The fix that works on **every voice** is to normalize the text before it ever reaches TTS — the brand stays spelled "Chravel" everywhere visually, but the audio stream hears "Travel".
+---
 
-**Changes:**
+## 1. Cancel / Stop button (immediate kill)
 
-1. `supabase/functions/concierge-voice-tts/index.ts` — before calling the Lovable AI Gateway, run a single replace on the incoming `text`:
-   - `Chravel` → `Travel`, `chravel` → `travel`, `Chraveler` → `Traveler`, `Frequent Chraveler` → `Frequent Traveler`.
-   - Word-boundary regex so it doesn't touch unrelated substrings.
-   - This automatically fixes the preview line, every spoken assistant reply, and the new conversation mode below — no per-voice tuning needed.
+Today the orb toggles, but during `transcribing` / `sending` / `speaking` it just flips `active=false` without aborting in-flight work.
 
-2. `src/features/concierge/components/ConciergeVoicePicker.tsx` — leave the on-screen `PREVIEW_TEXT` as "Hi, I'm your Chravel concierge…" (visual brand stays correct); the server-side normalizer handles the audio.
+**`useConciergeConversationMode.ts`**
+- Add an `AbortController` per turn (`turnAbortRef`). Pass `signal` into the `supabase.functions.invoke('concierge-stt', …)` call.
+- Add a `cancel()` function (exposed alongside `toggle`) that:
+  1. Sets `active=false`, `state='idle'`, clears `liveTranscript`.
+  2. Calls `turnAbortRef.current?.abort()` (kills STT mid-flight).
+  3. Calls `streamAbortRef.current?.abort()` from `useConciergeMessages` — wire it in via a new `onCancelStream` option so we can stop the LLM stream too.
+  4. `releaseMic()` + `ttsStop()` immediately (mic closes within one frame).
+- `toggle()` keeps current start behavior; ending now routes through `cancel()`.
 
-No model/system-prompt changes. No client edits beyond optional reuse of the same helper if we later add browser-side `SpeechSynthesis` fallbacks.
+**`ConciergeConversationButton.tsx`**
+- When `active`, render a second small square-stop pill next to the orb labeled "Stop" (or replace the orb icon with `Square` from lucide). Always visible during `listening|transcribing|sending|speaking`. Tapping calls `cancel()` — confirmed kill within ~1 frame.
 
-## Part 2 — Conversation mode in the Concierge tab
+Acceptance: tap Stop mid-stream → no further tokens arrive, mic indicator off, TTS silent, button returns to default within ~200ms.
 
-Today: type or dictate → send → tap ▶ on each reply to hear it. Goal: ChatGPT-style hands-free back-and-forth using the voices already in the picker.
+---
 
-**Recommended approach — "Walkie-talkie loop" built on the Lovable stack we already have.** No new vendors, no realtime websocket infra, works with every Coral/Alloy/Sage/etc. voice, billed as 1 query per user turn (matches what you asked for).
+## 2. Live + final transcript display
 
-Flow per turn:
+Today `liveTranscript` is only set once after STT completes.
+
+**Hook**
+- Add a `partialTranscript` state. While `state === 'listening'`, surface a lightweight "Listening…" indicator + RMS-driven word-count is out of scope (no streaming STT here — `concierge-stt` is batch). We will instead:
+  - Show `"Listening…"` placeholder during capture.
+  - Once STT returns, set `liveTranscript` (final) and surface it for ~1.5s before/while `sending` so the user reads what we heard.
+  - Keep the final transcript pinned above the orb until the next turn starts (replaces "Hands-free — talk to your concierge…" subline once a turn has completed).
+- Expose `lastFinalTranscript: string`.
+
+**Button component**
+- Two lines:
+  - Top: state label (`Listening…`, `Got it…`, etc.).
+  - Bottom: `liveTranscript || lastFinalTranscript || tagline`. Italic, truncated to 2 lines (not 1) on mobile.
+
+Note: true word-by-word streaming requires switching STT to a streaming model — flagged as a follow-up, not done here.
+
+---
+
+## 3. Visible Conversation Mode toggle
+
+Today gating is purely `useFeatureFlag('concierge_conversation_mode')`.
+
+- Add a user preference `concierge_conversation_mode_enabled` persisted in `localStorage` (`ai_concierge_prefs.conversation_mode`), default `true` when the flag allows it.
+- New small toggle row in `AIConciergeChat` header (next to Search/Upload) or in the existing `ConciergeConversationButton` block: a `Switch` labeled "Conversation mode" with helper text. Wired through `useAIConciergePreferences` (extend it with `conversationMode: boolean` + setter).
+- Effective enabled = `featureFlag && userPref && !isDemoMode`. When user disables: `ConciergeConversationButton` is hidden and `useConciergeConversationMode` receives `enabled=false` (which already auto-stops via existing effect).
+
+Acceptance: user can disable in-app without admin flipping the flag; preference persists across reloads.
+
+---
+
+## 4. One query per **conversation**, not per turn
+
+Today every `handleSendMessage` turn calls `incrementConciergeTripUsage` in `lovable-concierge`.
+
+**Client**
+- Generate `conversationSessionId = crypto.randomUUID()` when conversation mode starts; clear on cancel/stop.
+- Pass it through `handleSendMessage` → `useConciergeStreaming` → request body as `conversation_session_id`.
+
+**Edge function `lovable-concierge`**
+- Before `incrementConciergeTripUsage`, if `conversation_session_id` is present and (`user_id`, `trip_id`, `conversation_session_id`) already exists in a new `concierge_conversation_sessions` table → skip increment. Else insert the row and increment once.
+- The trip-limit pre-check (`buildTripLimitReachedResponse`) still runs normally — a user at the cap can't open a new conversation, but mid-conversation turns are free.
+
+**Migration** (`supabase/migrations/<ts>_concierge_conversation_sessions.sql`)
+```sql
+CREATE TABLE public.concierge_conversation_sessions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  trip_id text NOT NULL,
+  session_id uuid NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, trip_id, session_id)
+);
+GRANT SELECT, INSERT ON public.concierge_conversation_sessions TO authenticated;
+GRANT ALL  ON public.concierge_conversation_sessions TO service_role;
+ALTER TABLE public.concierge_conversation_sessions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "own sessions"
+  ON public.concierge_conversation_sessions
+  FOR ALL TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+CREATE INDEX ON public.concierge_conversation_sessions (user_id, trip_id, session_id);
 ```
-mic open → VAD detects end-of-speech → concierge-stt (Whisper via Lovable)
-        → lovable-concierge (same Gemini pipeline as text chat, 1 query)
-        → concierge-voice-tts streaming MP3 → autoplay
-        → on playback end, mic auto-reopens → next turn
-```
 
-**Changes:**
+Acceptance: open conversation, ask 5 questions, end → `usage.remaining` drops by exactly 1. Text-mode usage unchanged.
 
-1. New hook `src/features/concierge/hooks/useConciergeConversationMode.ts`
-   - Wraps existing `useConciergeVoiceInput` (mic + STT) and `useConciergeVoice` (TTS).
-   - Adds a simple state machine: `idle → listening → thinking → speaking → listening`.
-   - Silence detection (~1.2s of no audio above threshold) ends the user turn.
-   - Barge-in: tapping the mic or starting to speak stops current TTS playback.
-   - Exits cleanly on tab change / unmount / network error.
+---
 
-2. New component `src/features/concierge/components/ConciergeConversationButton.tsx`
-   - Big circular mic/orb button in the Concierge composer (next to send).
-   - Pulses gold while listening, slow-pulse while the assistant is speaking, matches the existing Luxury Dark token palette.
-   - Tap to start, tap again to end. Shows live transcript above as it streams in.
+## Out of scope (flagged for later)
+- True word-by-word streaming STT (requires swapping `concierge-stt` for a streaming provider).
+- Barge-in (interrupt assistant mid-speech by talking).
+- Persisting conversation-session telemetry for analytics.
 
-3. `src/components/AIConciergeChat.tsx` — mount the new button in the composer row; render the live transcript bubble during a turn; append the final user + assistant messages to the normal message list so history is identical to text mode.
-
-4. Billing/quotas — each completed turn calls `lovable-concierge` exactly once, so the existing per-query counter and Frequent Chraveler paywall just work. No double-counting for the STT + TTS legs (they're plumbing, not queries).
-
-5. Hide behind a feature flag `concierge_conversation_mode` (default on for super-admins, off for everyone else until we test) so we can ship and kill-switch without a redeploy.
-
-### Alternative considered (not recommended right now)
-
-True full-duplex realtime (OpenAI Realtime / Gemini Live) — Lovable AI Gateway doesn't currently proxy a realtime websocket endpoint, so this would mean adding direct provider credentials and bypassing the gateway, which violates the "Lovable manages the voices" requirement and breaks the unified billing story. We can revisit when Lovable exposes it.
-
-## Verification
-
-- Tap ▶ on Coral in Settings → hear "Hi, I'm your **Travel** concierge…" — repeat for Alloy/Sage/Ash/Ballad/Echo/Shimmer/Verse/Marin/Cedar.
-- Send a normal text message that contains "Chravel" → reply audio pronounces it "Travel".
-- Open Concierge → tap new conversation button → speak "What's on my calendar tomorrow?" → assistant answers aloud, mic auto-reopens, ask a follow-up without tapping anything.
-- Query counter increments by exactly 1 per spoken turn.
-- Mobile (440px) layout: button doesn't push send off-screen, safe-area respected.
-
-## Out of scope (call out, don't silently defer)
-
-- Real full-duplex (interrupting mid-sentence with overlapping audio) — needs realtime API; tracked for when Lovable Gateway supports it.
-- Multi-language voice — staying English-only for v1.
-- Voice in the marketing/demo concierge — separate path, will follow once this lands.
+## Files touched
+- `src/features/concierge/hooks/useConciergeConversationMode.ts`
+- `src/features/concierge/components/ConciergeConversationButton.tsx`
+- `src/components/AIConciergeChat.tsx`
+- `src/features/concierge/hooks/useAIConciergePreferences.ts` (extend)
+- `src/features/concierge/hooks/useConciergeStreaming.ts` (forward `conversation_session_id`)
+- `supabase/functions/lovable-concierge/index.ts` (skip increment on known session)
+- `supabase/migrations/<ts>_concierge_conversation_sessions.sql`

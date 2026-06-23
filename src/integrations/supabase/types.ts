@@ -621,6 +621,30 @@ export type Database = {
           },
         ]
       }
+      concierge_conversation_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          session_id: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          session_id: string
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          session_id?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       concierge_usage: {
         Row: {
           context_id: string
