@@ -12,7 +12,7 @@ vi.mock('@/utils/platformDetection', () => ({
 }));
 
 vi.mock('@/utils/installedAuthBrowser', () => ({
-  openInstalledAuthBrowser: vi.fn().mockResolvedValue(undefined),
+  openInstalledAuthBrowser: vi.fn().mockResolvedValue({ strategy: 'native-bridge' }),
 }));
 
 const mockIsInstalledApp = vi.mocked(isInstalledApp);
