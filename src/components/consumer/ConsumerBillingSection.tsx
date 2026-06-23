@@ -29,6 +29,7 @@ export const ConsumerBillingSection = () => {
   const [expandedPlan, setExpandedPlan] = useState<string | null>(tier);
   const [expandedProPlan, setExpandedProPlan] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [tripPassOpen, setTripPassOpen] = useState(false);
 
   useEffect(() => {
     void checkSubscription();
