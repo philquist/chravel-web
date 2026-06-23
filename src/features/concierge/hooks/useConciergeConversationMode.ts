@@ -234,10 +234,17 @@ export function useConciergeConversationMode({
     }
 
     setState('transcribing');
+    setLiveTranscript('');
+    const sttAbort = new AbortController();
+    sttAbortRef.current = sttAbort;
     let transcript = '';
     try {
-      transcript = await transcribe(blob);
+      transcript = await transcribe(blob, sttAbort.signal);
     } catch (err) {
+      sttAbortRef.current = null;
+      if ((err as { name?: string })?.name === 'AbortError' || !activeRef.current) {
+        return;
+      }
       const msg = err instanceof Error ? err.message : 'Transcription failed';
       onError?.(msg);
       setState('error');
@@ -248,18 +255,27 @@ export function useConciergeConversationMode({
       }
       return;
     }
+    sttAbortRef.current = null;
+
+    if (!activeRef.current) return;
 
     if (!transcript) {
       if (activeRef.current) void startListening();
       return;
     }
 
+    setLastFinalTranscript(transcript);
     setLiveTranscript(transcript);
     setState('sending');
     lastIndexAtStartRef.current = messagesRef.current.length;
     try {
-      await Promise.resolve(handleSendMessage(transcript));
+      await Promise.resolve(
+        handleSendMessage(transcript, {
+          conversationSessionId: sessionIdRef.current ?? undefined,
+        }),
+      );
     } catch (err) {
+      if (!activeRef.current) return;
       const msg = err instanceof Error ? err.message : 'Send failed';
       onError?.(msg);
       setState('error');
