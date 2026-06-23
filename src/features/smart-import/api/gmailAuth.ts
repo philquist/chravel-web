@@ -82,6 +82,25 @@ export const connectGmailAccount = async (): Promise<string> => {
     console.info('[gmail-auth] requesting redirect_uri =', redirectUri);
   }
   try {
+    // Ensure the user has a fresh, non-expired session before invoking the
+    // edge function. Without this, a stale local JWT causes the function's
+    // auth.getUser() call to fail with 401 "Unauthorized" — the most common
+    // cause of "Failed to initiate connection" errors after preview idle.
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData?.session;
+    if (!session) {
+      throw new Error('You need to be signed in to connect a Gmail account.');
+    }
+    const expiresAtMs = session.expires_at ? session.expires_at * 1000 : 0;
+    if (!expiresAtMs || expiresAtMs - Date.now() < 60_000) {
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        throw new Error(
+          'Your session expired. Please sign out and back in, then try connecting Gmail again.',
+        );
+      }
+    }
+
     const { data, error } = await supabase.functions.invoke('gmail-auth/connect', {
       method: 'POST',
       body: redirectUri ? { redirectUri } : undefined,
