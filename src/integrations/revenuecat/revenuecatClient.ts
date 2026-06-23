@@ -11,6 +11,7 @@ import {
   isRevenueCatConfigured,
   ENTITLEMENT_TO_TIER,
   REVENUECAT_ENTITLEMENTS,
+  REVENUECAT_PRODUCTS,
 } from '@/constants/revenuecat';
 import type {
   RevenueCatPlatform,
