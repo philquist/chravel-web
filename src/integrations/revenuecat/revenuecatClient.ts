@@ -280,7 +280,95 @@ export async function purchasePackage(
       errorCode: 'UNKNOWN',
       error: errorObj?.message || 'Unknown error',
     };
+}
+
+/**
+ * Purchase a non-renewing Trip Pass (one-time consumer pass).
+ *
+ * Looks up the RevenueCat package whose product identifier matches the
+ * App Store Connect / Play Console SKU for the requested pass tier, then
+ * routes through the standard purchasePackage flow so the global purchase
+ * listener, entitlement sync, and toast UX all fire identically to a
+ * recurring subscription purchase.
+ *
+ * Duration (45 / 90 days) is enforced server-side by RevenueCat's
+ * non-renewing product configuration in the dashboard.
+ */
+export async function purchaseTripPass(
+  passTier: 'explorer' | 'frequent-chraveler',
+  isDemoMode: boolean = false,
+): Promise<RevenueCatPurchaseResult> {
+  if (isDemoMode) {
+    return { success: false, supported: false, error: 'Demo mode active' };
   }
+
+  if (!isRevenueCatAvailable()) {
+    return { success: false, supported: false, errorCode: 'NOT_SUPPORTED' };
+  }
+
+  const purchases = await loadPurchasesPlugin();
+  if (!purchases) {
+    return { success: false, supported: true, errorCode: 'NOT_SUPPORTED' };
+  }
+
+  const productId =
+    passTier === 'explorer'
+      ? REVENUECAT_PRODUCTS.explorerPass45
+      : REVENUECAT_PRODUCTS.frequentChravelerPass90;
+
+  try {
+    const offerings = await (purchases as any).getOfferings();
+    // Search every offering — passes typically live in a dedicated "trip_pass"
+    // offering rather than the default subscription offering.
+    const allOfferings = [
+      ...Object.values(offerings?.all || {}),
+      offerings?.current,
+    ].filter(Boolean) as Array<{ availablePackages?: Array<{ product?: { identifier?: string } }> }>;
+
+    let pkg: unknown = null;
+    for (const off of allOfferings) {
+      const match = off.availablePackages?.find(p => p.product?.identifier === productId);
+      if (match) {
+        pkg = match;
+        break;
+      }
+    }
+
+    if (!pkg) {
+      return {
+        success: false,
+        supported: true,
+        errorCode: 'UNKNOWN',
+        error: `Trip Pass product ${productId} not found in RevenueCat offerings`,
+      };
+    }
+
+    const { customerInfo } = await (purchases as any).purchasePackage({ aPackage: pkg });
+    console.log('[RevenueCat] Trip Pass purchase successful', { productId });
+    return {
+      success: true,
+      supported: true,
+      data: customerInfo as unknown as RevenueCatCustomerInfo,
+    };
+  } catch (error: unknown) {
+    console.error('[RevenueCat] Trip Pass purchase failed:', error);
+    const errorObj = error as { userCancelled?: boolean; message?: string };
+    if (errorObj?.userCancelled) {
+      return {
+        success: false,
+        supported: true,
+        errorCode: 'CANCELLED',
+        error: 'Purchase cancelled',
+      };
+    }
+    return {
+      success: false,
+      supported: true,
+      errorCode: 'UNKNOWN',
+      error: errorObj?.message || 'Unknown error',
+    };
+  }
+}
 }
 
 /**
