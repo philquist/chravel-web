@@ -1,26 +1,12 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useCallback } from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { logAuthEvent } from '@/utils/authTelemetry';
-import { userHasEmailPasswordIdentity } from '@/utils/authProviders';
 import { useTheme } from '@/hooks/useTheme';
-import { deleteAccountImmediately } from '@/lib/accountDeletion';
 import { Switch } from '@/components/ui/switch';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { SmartImportSettings } from '@/features/smart-import/components/SmartImportSettings';
 import { BlockedUsersList } from './BlockedUsersList';
+import { DeleteAccountDialog } from './DeleteAccountDialog';
 
 const APP_PREFS_KEY = 'chravel_app_preferences';
 
