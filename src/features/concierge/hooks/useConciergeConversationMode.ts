@@ -27,12 +27,7 @@ export type ConversationState =
   | 'speaking'
   | 'error';
 
-const PREFERRED_MIME_TYPES = [
-  'audio/webm;codecs=opus',
-  'audio/webm',
-  'audio/mp4',
-  'audio/mpeg',
-];
+const PREFERRED_MIME_TYPES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/mpeg'];
 
 const SILENCE_RMS_THRESHOLD = 0.012; // empirical; tuned for laptop/phone mics
 const SILENCE_HOLD_MS = 1400; // ms of continuous silence to end the turn
@@ -171,41 +166,36 @@ export function useConciergeConversationMode({
   }, [stopVadLoop]);
 
   // ── STT call ──────────────────────────────────────────────────────────
-  const transcribe = useCallback(
-    async (blob: Blob, signal: AbortSignal): Promise<string> => {
-      const form = new FormData();
-      const ext = mimeRef.current.includes('mp4')
-        ? 'mp4'
-        : mimeRef.current.includes('mpeg')
-          ? 'mp3'
-          : 'webm';
-      form.append('audio', blob, `recording.${ext}`);
-      form.append('mimeType', mimeRef.current);
+  const transcribe = useCallback(async (blob: Blob, signal: AbortSignal): Promise<string> => {
+    const form = new FormData();
+    const ext = mimeRef.current.includes('mp4')
+      ? 'mp4'
+      : mimeRef.current.includes('mpeg')
+        ? 'mp3'
+        : 'webm';
+    form.append('audio', blob, `recording.${ext}`);
+    form.append('mimeType', mimeRef.current);
 
-      // supabase-js doesn't forward AbortSignal cleanly into functions.invoke,
-      // so we surface cancellation via a manual race.
-      const invoke = supabase.functions.invoke<{
-        transcript?: string;
-        error?: string;
-      }>('concierge-stt', { body: form });
+    // supabase-js doesn't forward AbortSignal cleanly into functions.invoke,
+    // so we surface cancellation via a manual race.
+    const invoke = supabase.functions.invoke<{
+      transcript?: string;
+      error?: string;
+    }>('concierge-stt', { body: form });
 
-      const aborted = new Promise<never>((_, reject) => {
-        if (signal.aborted) reject(new DOMException('Aborted', 'AbortError'));
-        signal.addEventListener('abort', () =>
-          reject(new DOMException('Aborted', 'AbortError')),
-        );
-      });
+    const aborted = new Promise<never>((_, reject) => {
+      if (signal.aborted) reject(new DOMException('Aborted', 'AbortError'));
+      signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+    });
 
-      const { data, error } = await Promise.race([invoke, aborted]);
+    const { data, error } = await Promise.race([invoke, aborted]);
 
-      if (error) {
-        throw new Error((error as { message?: string })?.message ?? 'Transcription failed');
-      }
-      if (data?.error) throw new Error(data.error);
-      return (data?.transcript ?? '').trim();
-    },
-    [],
-  );
+    if (error) {
+      throw new Error((error as { message?: string })?.message ?? 'Transcription failed');
+    }
+    if (data?.error) throw new Error(data.error);
+    return (data?.transcript ?? '').trim();
+  }, []);
 
   // ── End-of-turn handler ───────────────────────────────────────────────
   const finalizeTurn = useCallback(async () => {

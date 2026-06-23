@@ -40,26 +40,17 @@ export function ConciergeConversationButton({
   const isSpeaking = state === 'speaking';
 
   // Bottom-line text: live (this turn) > last final transcript > tagline.
-  const bottomLine =
-    (active && liveTranscript) || lastFinalTranscript || '';
+  const bottomLine = (active && liveTranscript) || lastFinalTranscript || '';
   const showQuoted = !!bottomLine;
 
   return (
     <div className="flex items-center justify-between gap-3 px-1 pb-2">
       <div className="min-w-0 flex-1 text-[12px] leading-snug">
-        <div
-          className={cn(
-            'font-medium truncate',
-            active ? 'text-gold-mid' : 'text-gray-400',
-          )}
-        >
+        <div className={cn('font-medium truncate', active ? 'text-gold-mid' : 'text-gray-400')}>
           {active ? STATE_LABEL[state] : 'Conversation mode'}
         </div>
         {showQuoted ? (
-          <div
-            className="text-gray-400 italic line-clamp-2"
-            title={bottomLine}
-          >
+          <div className="text-gray-400 italic line-clamp-2" title={bottomLine}>
             &ldquo;{bottomLine}&rdquo;
           </div>
         ) : (

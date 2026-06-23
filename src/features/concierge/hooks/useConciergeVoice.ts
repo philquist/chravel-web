@@ -28,9 +28,8 @@ export function useConciergeVoice({ inputMessage, setInputMessage }: Params) {
     [setInputMessage],
   );
 
-  const { voiceState, toggleVoice, userTranscript, errorMessage } = useWebSpeechVoice(
-    handleTranscript,
-  );
+  const { voiceState, toggleVoice, userTranscript, errorMessage } =
+    useWebSpeechVoice(handleTranscript);
 
   useEffect(() => {
     if (!errorMessage) return;

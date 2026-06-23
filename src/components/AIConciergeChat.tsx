@@ -278,8 +278,7 @@ export const AIConciergeChat = ({
   const conversationModeFlag = useFeatureFlag('concierge_conversation_mode', true);
   const { enabled: conversationModeUserPref, setEnabled: setConversationModeUserPref } =
     useConversationModePreference();
-  const conversationModeEffective =
-    conversationModeFlag && conversationModeUserPref && !isDemoMode;
+  const conversationModeEffective = conversationModeFlag && conversationModeUserPref && !isDemoMode;
 
   const buildSpeechForMessage = useCallback((msg: ChatMessage) => {
     if (msg.type !== 'assistant' || !msg.content) return '';

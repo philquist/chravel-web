@@ -108,32 +108,29 @@ export const NativeSettings = ({
     [onNavigate],
   );
 
-  const [tripPassLoading, setTripPassLoading] = useState<
-    'explorer' | 'frequent-chraveler' | null
-  >(null);
-
-  const handlePurchaseTripPass = useCallback(
-    async (tier: 'explorer' | 'frequent-chraveler') => {
-      await hapticService.light();
-      setTripPassLoading(tier);
-      try {
-        const result = await purchaseTripPass(tier);
-        if (result.success) {
-          await hapticService.success();
-          toast.success('Trip Pass activated! Premium features are unlocking…');
-        } else if (result.errorCode === 'CANCELLED') {
-          // user dismissed — silent
-        } else if (!result.supported) {
-          toast.error('Trip Pass purchase is not available on this device.');
-        } else {
-          toast.error(result.error || 'Failed to purchase Trip Pass. Please try again.');
-        }
-      } finally {
-        setTripPassLoading(null);
-      }
-    },
-    [],
+  const [tripPassLoading, setTripPassLoading] = useState<'explorer' | 'frequent-chraveler' | null>(
+    null,
   );
+
+  const handlePurchaseTripPass = useCallback(async (tier: 'explorer' | 'frequent-chraveler') => {
+    await hapticService.light();
+    setTripPassLoading(tier);
+    try {
+      const result = await purchaseTripPass(tier);
+      if (result.success) {
+        await hapticService.success();
+        toast.success('Trip Pass activated! Premium features are unlocking…');
+      } else if (result.errorCode === 'CANCELLED') {
+        // user dismissed — silent
+      } else if (!result.supported) {
+        toast.error('Trip Pass purchase is not available on this device.');
+      } else {
+        toast.error(result.error || 'Failed to purchase Trip Pass. Please try again.');
+      }
+    } finally {
+      setTripPassLoading(null);
+    }
+  }, []);
 
   const isPro = subscriptionTier !== 'free';
   const showTripPasses = !isPro && platform !== 'web';
@@ -194,9 +191,7 @@ export const NativeSettings = ({
                     ) : undefined
                   }
                   onPress={
-                    tripPassLoading
-                      ? undefined
-                      : () => void handlePurchaseTripPass('explorer')
+                    tripPassLoading ? undefined : () => void handlePurchaseTripPass('explorer')
                   }
                 />
                 <NativeListItem

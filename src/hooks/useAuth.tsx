@@ -25,11 +25,12 @@ import { logAuthEvent } from '@/utils/authTelemetry';
 import { buildSessionDerivedUser } from '@/lib/sessionDerivedUser';
 import { generateSafeUuid } from '@/utils/uuid';
 import { openInstalledAuthBrowser } from '@/utils/installedAuthBrowser';
+import { attemptNativeAppleSignIn } from '@/utils/nativeAppleSignIn';
 import { errorTracking } from '@/services/errorTracking';
 import { performanceService } from '@/services/performanceService';
 import type { AuthUser as User, UserProfile, AuthContextType } from './auth/types';
 import { createDemoUser, getOAuthReturnTo, withTimeout } from './auth/authHelpers';
-import { captureAppleRefreshToken } from './auth/captureAppleToken';
+import { captureAppleRefreshToken, captureAppleAuthorizationCode } from './auth/captureAppleToken';
 
 const TRIPS_QUERY_KEY = 'trips';
 
@@ -875,6 +876,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signInWithApple = useCallback(
     async (returnToOverride?: string): Promise<{ error?: string }> => {
       try {
+        // Prefer native Sign in with Apple (id-token) when the chravel-mobile shell exposes
+        // it — this authenticates without the SFSafariViewController / Universal-Link
+        // round-trip that App Review flagged as not proceeding on iPad (Guideline 2.1(a)).
+        // Falls through to the web OAuth flow below whenever the bridge is absent or errors,
+        // so web and bridge-less builds keep their exact existing behavior.
+        const native = await attemptNativeAppleSignIn(supabase.auth);
+        if (native.handled) {
+          if (native.error) {
+            if (import.meta.env.DEV) {
+              console.error('[Auth] Native Apple sign-in error:', native.error);
+            }
+            if (native.error.includes('provider is not enabled')) {
+              return { error: 'Apple sign-in is not configured. Please contact support.' };
+            }
+            return { error: native.error };
+          }
+          // signInWithIdToken yields no provider_refresh_token, so the SIGNED_IN listener's
+          // captureAppleRefreshToken no-ops here. Forward the one-time authorization code so
+          // account deletion can still revoke the Apple grant (App Store 5.1.1(v)).
+          if (native.authorizationCode) {
+            captureAppleAuthorizationCode(native.authorizationCode);
+          }
+          return {};
+        }
+
         const installed = isInstalledApp();
         const returnTo = getOAuthReturnTo(returnToOverride);
         const returnToQuery = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';

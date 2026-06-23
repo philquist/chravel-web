@@ -47,8 +47,7 @@ export const useTripCoverPhoto = (
         return undefined;
       }
 
-      const normalizedInitial =
-        normalizeTripCoverUrl(initialPhotoUrl) ?? initialPhotoUrl;
+      const normalizedInitial = normalizeTripCoverUrl(initialPhotoUrl) ?? initialPhotoUrl;
       const normalizedPrev = prev ? (normalizeTripCoverUrl(prev) ?? prev) : undefined;
 
       if (pendingPersistedCoverRef.current === normalizedInitial) {

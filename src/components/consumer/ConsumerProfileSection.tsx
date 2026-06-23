@@ -23,7 +23,6 @@ export const ConsumerProfileSection = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-
   // Initialize state when user loads
   useEffect(() => {
     if (user) {

@@ -13,12 +13,7 @@ import type { VoiceState } from '@/hooks/useWebSpeechVoice';
 
 type InternalState = 'idle' | 'recording' | 'transcribing' | 'error';
 
-const PREFERRED_MIME_TYPES = [
-  'audio/webm;codecs=opus',
-  'audio/webm',
-  'audio/mp4',
-  'audio/mpeg',
-];
+const PREFERRED_MIME_TYPES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/mpeg'];
 
 function pickMimeType(): string | undefined {
   if (typeof MediaRecorder === 'undefined') return undefined;

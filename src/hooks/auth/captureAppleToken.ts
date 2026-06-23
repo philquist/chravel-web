@@ -48,3 +48,34 @@ export const captureAppleRefreshToken = (session: Session | null): void => {
       });
   }, 0);
 };
+
+/**
+ * Native (ASAuthorization) counterpart to {@link captureAppleRefreshToken}.
+ *
+ * Native Sign in with Apple authenticates via `signInWithIdToken`, which carries NO
+ * `provider_refresh_token` on the Supabase session — so `captureAppleRefreshToken` cannot
+ * capture it. Instead the native bridge returns a one-time Apple `authorizationCode`; we
+ * forward it to `store-apple-token` so the server can exchange it for a refresh token and
+ * revoke the Apple grant on account deletion (App Store 5.1.1(v)).
+ *
+ * The server-side authorization-code → refresh-token exchange (which needs the Apple `.p8`
+ * client secret) is tracked as F1 in APP_STORE_READINESS_AUDIT.md §8; until those secrets
+ * land, `store-apple-token` acknowledges the code without storing it.
+ *
+ * Best-effort and non-blocking: never throws, never gates sign-in.
+ */
+export const captureAppleAuthorizationCode = (authorizationCode: string): void => {
+  if (!authorizationCode) return;
+
+  setTimeout(() => {
+    void supabase.functions
+      .invoke('store-apple-token', {
+        body: { authorizationCode },
+      })
+      .catch(error => {
+        if (import.meta.env.DEV) {
+          console.warn('[Auth] Failed to forward Apple authorization code:', error);
+        }
+      });
+  }, 0);
+};

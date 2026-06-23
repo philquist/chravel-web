@@ -40,8 +40,6 @@ export const ConsumerGeneralSettings = () => {
   const [appPrefs, setAppPrefs] = useState<AppPreferences>(loadAppPreferences);
   const [cacheClearSuccess, setCacheClearSuccess] = useState(false);
 
-
-
   return (
     <div className="space-y-3">
       {/* Appearance */}

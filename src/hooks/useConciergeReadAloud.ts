@@ -17,7 +17,6 @@ import {
 } from '@/features/concierge/hooks/useConciergeVoicePreference';
 import { streamPcmSpeech } from '@/features/concierge/lib/streamConciergeTts';
 
-
 export type TTSPlaybackState = 'idle' | 'loading' | 'playing' | 'error';
 
 const RETRYABLE_FETCH_ERROR = 'Failed to fetch';
@@ -302,7 +301,6 @@ export function useConciergeReadAloud(
               ).catch(() => null)
             : null;
 
-
         // Pre-fetch remaining sentences (3+) in parallel
         const remainingPromises: Promise<{ blobUrl: string; usedFallback: boolean } | null>[] = [];
         for (let i = 2; i < sentences.length; i++) {
@@ -356,7 +354,6 @@ export function useConciergeReadAloud(
             audio.play().catch(reject);
           });
         };
-
 
         // Play second sentence (already fetching in parallel)
         if (secondPromise) {

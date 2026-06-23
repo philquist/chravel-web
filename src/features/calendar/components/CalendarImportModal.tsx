@@ -437,53 +437,53 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
               </div>
 
               {gmailFlagEnabled && (
-              <div
-                className="rounded-xl border border-border/60 bg-muted/20 px-3 py-3 mb-1"
-                onClick={e => e.stopPropagation()}
-                onKeyDown={e => e.stopPropagation()}
-              >
-                <p className="text-xs text-muted-foreground mb-2 text-center flex items-center justify-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 shrink-0" aria-hidden />
-                  or scan Gmail for reservations
-                </p>
-                {canUseGmailSmartImport ? (
-                  <SmartImportGmail
-                    tripId={tripId}
-                    onImportStarted={() => {
-                      setParsingSource('gmail');
-                      setState('parsing');
-                    }}
-                    onImportComplete={candidates => {
-                      setGmailCandidates(candidates);
-                      setState('review_gmail');
-                    }}
-                    onImportError={() => setState('idle')}
-                  />
-                ) : (
-                  <div className="text-center text-sm text-muted-foreground px-2 pb-2 space-y-2">
-                    <p>Gmail scanning is available on Explorer and above.</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="min-h-[44px]"
-                      type="button"
-                      onClick={async () => {
-                        const { getFeaturePaywallConfig } =
-                          await import('@/components/subscription/featurePaywall');
-                        const paywall = getFeaturePaywallConfig('smart_import_calendar');
-                        navigate(
-                          `${paywall.destination.pathname}${paywall.destination.search}`,
-                          paywall.destination.state
-                            ? { state: paywall.destination.state }
-                            : undefined,
-                        );
+                <div
+                  className="rounded-xl border border-border/60 bg-muted/20 px-3 py-3 mb-1"
+                  onClick={e => e.stopPropagation()}
+                  onKeyDown={e => e.stopPropagation()}
+                >
+                  <p className="text-xs text-muted-foreground mb-2 text-center flex items-center justify-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 shrink-0" aria-hidden />
+                    or scan Gmail for reservations
+                  </p>
+                  {canUseGmailSmartImport ? (
+                    <SmartImportGmail
+                      tripId={tripId}
+                      onImportStarted={() => {
+                        setParsingSource('gmail');
+                        setState('parsing');
                       }}
-                    >
-                      View plans
-                    </Button>
-                  </div>
-                )}
-              </div>
+                      onImportComplete={candidates => {
+                        setGmailCandidates(candidates);
+                        setState('review_gmail');
+                      }}
+                      onImportError={() => setState('idle')}
+                    />
+                  ) : (
+                    <div className="text-center text-sm text-muted-foreground px-2 pb-2 space-y-2">
+                      <p>Gmail scanning is available on Explorer and above.</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="min-h-[44px]"
+                        type="button"
+                        onClick={async () => {
+                          const { getFeaturePaywallConfig } =
+                            await import('@/components/subscription/featurePaywall');
+                          const paywall = getFeaturePaywallConfig('smart_import_calendar');
+                          navigate(
+                            `${paywall.destination.pathname}${paywall.destination.search}`,
+                            paywall.destination.state
+                              ? { state: paywall.destination.state }
+                              : undefined,
+                          );
+                        }}
+                      >
+                        View plans
+                      </Button>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Paste schedule toggle */}

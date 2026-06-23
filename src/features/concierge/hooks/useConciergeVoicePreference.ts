@@ -30,7 +30,7 @@ export type ConciergeVoiceId = (typeof CONCIERGE_VOICES)[number]['id'];
 
 export const DEFAULT_CONCIERGE_VOICE: ConciergeVoiceId = 'coral';
 const STORAGE_KEY = 'concierge_voice';
-const VALID_IDS = new Set<string>(CONCIERGE_VOICES.map((v) => v.id));
+const VALID_IDS = new Set<string>(CONCIERGE_VOICES.map(v => v.id));
 
 function readStoredVoice(): ConciergeVoiceId {
   if (typeof window === 'undefined') return DEFAULT_CONCIERGE_VOICE;
@@ -87,8 +87,7 @@ export function useConciergeVoicePreference() {
         } = await supabase.auth.getUser();
         if (!user || cancelled) return;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, error } = await (supabase
-          .from('profiles') as any)
+        const { data, error } = await (supabase.from('profiles') as any)
           .select('concierge_voice')
           .eq('id', user.id)
           .maybeSingle();
@@ -118,9 +117,8 @@ export function useConciergeVoicePreference() {
               table: 'profiles',
               filter: `id=eq.${user.id}`,
             },
-            (payload) => {
-              const next = (payload.new as { concierge_voice?: string } | null)
-                ?.concierge_voice;
+            payload => {
+              const next = (payload.new as { concierge_voice?: string } | null)?.concierge_voice;
               applyRemote(next);
             },
           )

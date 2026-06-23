@@ -3,13 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { ArchivedTripCard } from '../ArchivedTripCard';
 
 vi.mock('../../OptimizedImage', () => ({
-  OptimizedImage: ({
-    fit,
-    alt,
-  }: {
-    fit?: 'cover' | 'contain';
-    alt: string;
-  }) => <img alt={alt} className={fit === 'contain' ? 'object-contain' : 'object-cover'} />,
+  OptimizedImage: ({ fit, alt }: { fit?: 'cover' | 'contain'; alt: string }) => (
+    <img alt={alt} className={fit === 'contain' ? 'object-contain' : 'object-cover'} />
+  ),
 }));
 
 const mockNavigate = vi.fn();

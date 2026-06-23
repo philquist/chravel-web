@@ -321,10 +321,9 @@ export async function purchaseTripPass(
     const offerings = await (purchases as any).getOfferings();
     // Search every offering — passes typically live in a dedicated "trip_pass"
     // offering rather than the default subscription offering.
-    const allOfferings = [
-      ...Object.values(offerings?.all || {}),
-      offerings?.current,
-    ].filter(Boolean) as Array<{ availablePackages?: Array<{ product?: { identifier?: string } }> }>;
+    const allOfferings = [...Object.values(offerings?.all || {}), offerings?.current].filter(
+      Boolean,
+    ) as Array<{ availablePackages?: Array<{ product?: { identifier?: string } }> }>;
 
     let pkg: unknown = null;
     for (const off of allOfferings) {

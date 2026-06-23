@@ -77,6 +77,7 @@ serve(async req => {
 
     const body = await req.json().catch(() => ({}));
     const refreshToken: unknown = body?.refreshToken;
+    const authorizationCode: unknown = body?.authorizationCode;
     const appleSub: unknown = body?.appleSub;
 
     const admin = createClient(supabaseUrl, serviceRoleKey, {
@@ -84,6 +85,18 @@ serve(async req => {
     });
 
     if (typeof refreshToken !== 'string' || refreshToken.length === 0) {
+      // Native ASAuthorization sign-in (`signInWithIdToken`) returns a one-time
+      // authorization code instead of a refresh token. Exchanging it for a refresh token
+      // requires the Apple `.p8` client secret — tracked as F1 in
+      // APP_STORE_READINESS_AUDIT.md §8. Until those secrets are configured, acknowledge
+      // the code without storing it so the client no-ops gracefully (never a hard error).
+      if (typeof authorizationCode === 'string' && authorizationCode.length > 0) {
+        return jsonResponse(
+          { success: true, skipped: 'native_code_pending_exchange' },
+          200,
+          corsHeaders,
+        );
+      }
       const { data: existing } = await admin
         .from('apple_auth_tokens')
         .select('id')

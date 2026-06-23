@@ -64,7 +64,10 @@ export function streamPcmSpeech(opts: StreamPcmSpeechOptions): StreamPcmSpeechRe
   const done = (async () => {
     const ctx =
       opts.audioContext ??
-      new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)({
+      new (
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      )({
         sampleRate: SAMPLE_RATE,
       });
     if (ctx.state === 'suspended') {
@@ -180,7 +183,7 @@ export function streamPcmSpeech(opts: StreamPcmSpeechOptions): StreamPcmSpeechRe
 
     // Wait for scheduled playback to finish.
     const remaining = Math.max(0, lastEndsAt - ctx.currentTime);
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       const t = window.setTimeout(resolve, Math.ceil(remaining * 1000) + 50);
       if (stopped) {
         clearTimeout(t);

@@ -80,7 +80,7 @@ export const ConciergeVoicePicker: React.FC = () => {
   const handleSelect = (voiceId: ConciergeVoiceId) => {
     if (!isPaid) return;
     setVoice(voiceId);
-    toast.success(`Voice set to ${CONCIERGE_VOICES.find((v) => v.id === voiceId)?.label}`);
+    toast.success(`Voice set to ${CONCIERGE_VOICES.find(v => v.id === voiceId)?.label}`);
   };
 
   return (
@@ -103,11 +103,12 @@ export const ConciergeVoicePicker: React.FC = () => {
           : `Free plan uses ${CONCIERGE_VOICES[0].label} by default. Upgrade to choose any of 10 voices.`}
       </p>
       <p className="text-gray-500 text-xs mb-4 italic">
-        Tap ▶ to preview a voice — previewing never changes your saved selection. Tap the row to save.
+        Tap ▶ to preview a voice — previewing never changes your saved selection. Tap the row to
+        save.
       </p>
 
       <div className="space-y-2">
-        {CONCIERGE_VOICES.map((v) => {
+        {CONCIERGE_VOICES.map(v => {
           const isSelected = v.id === voice;
           const isPreviewing = previewingVoice === v.id;
           const isDisabled = !isPaid && v.id !== DEFAULT_CONCIERGE_VOICE;

@@ -5,13 +5,9 @@ import { MobileEventCard } from '../MobileEventCard';
 import type { EventData } from '@/types/events';
 
 vi.mock('../OptimizedImage', () => ({
-  OptimizedImage: ({
-    fit,
-    alt,
-  }: {
-    fit?: 'cover' | 'contain';
-    alt: string;
-  }) => <img alt={alt} className={fit === 'contain' ? 'object-contain' : 'object-cover'} />,
+  OptimizedImage: ({ fit, alt }: { fit?: 'cover' | 'contain'; alt: string }) => (
+    <img alt={alt} className={fit === 'contain' ? 'object-contain' : 'object-cover'} />
+  ),
 }));
 
 vi.mock('react-router-dom', () => ({
@@ -42,7 +38,9 @@ vi.mock('../ui/dropdown-menu', () => ({
   DropdownMenu: ({ children }: { children: ReactNode }) => <>{children}</>,
   DropdownMenuTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
   DropdownMenuContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  DropdownMenuItem: ({ children }: { children: ReactNode }) => <button type="button">{children}</button>,
+  DropdownMenuItem: ({ children }: { children: ReactNode }) => (
+    <button type="button">{children}</button>
+  ),
 }));
 
 vi.mock('../ArchiveConfirmDialog', () => ({ ArchiveConfirmDialog: () => null }));

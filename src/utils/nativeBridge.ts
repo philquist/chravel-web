@@ -17,6 +17,14 @@
  *     then navigate the **main** WebView to `https://chravel.app/auth-callback?...` /
  *     hash so Supabase `detectSessionInUrl` completes in-app. Used when Capacitor
  *     `Plugins.Browser` is not present (typical Expo shell).
+ *   - Optional native Apple Sign In: `window.ChravelNative.signInWithApple(): Promise<{
+ *     identityToken, rawNonce, email?, fullName?, authorizationCode? }>` — the shell runs
+ *     the native `ASAuthorization` flow, generating a random `rawNonce` and sending
+ *     `SHA256(rawNonce)` as the request nonce, and returns the RAW nonce + identity token.
+ *     The web app authenticates via `supabase.auth.signInWithIdToken` (see
+ *     `src/utils/nativeAppleSignIn.ts`), skipping the SFSafariViewController /
+ *     Universal-Link round-trip that App Review flagged on iPad (Guideline 2.1(a)). When
+ *     absent, the web OAuth flow remains the fallback.
  */
 
 import { isChravelNativeShell } from './platformDetection';

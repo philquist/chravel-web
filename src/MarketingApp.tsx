@@ -95,9 +95,18 @@ export default function MarketingApp() {
         <Suspense fallback={fallback}>
           <main>
             <Routes>
-              <Route path="/" element={<FullPageLanding onSignUp={() => setAuthMode('signup')} />} />
-              <Route path="/home" element={<FullPageLanding onSignUp={() => setAuthMode('signup')} />} />
-              <Route path="/index" element={<FullPageLanding onSignUp={() => setAuthMode('signup')} />} />
+              <Route
+                path="/"
+                element={<FullPageLanding onSignUp={() => setAuthMode('signup')} />}
+              />
+              <Route
+                path="/home"
+                element={<FullPageLanding onSignUp={() => setAuthMode('signup')} />}
+              />
+              <Route
+                path="/index"
+                element={<FullPageLanding onSignUp={() => setAuthMode('signup')} />}
+              />
               <Route path="/blog" element={<BlogIndex />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/use-cases" element={<UseCasesHub />} />
