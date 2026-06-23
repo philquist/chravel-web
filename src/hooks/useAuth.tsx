@@ -859,8 +859,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // when the native shell registers it; falls back to same-tab navigation.
           // Google rejects embedded WebView OAuth with disallowed_useragent — the
           // native shell must open this URL outside the embedded WebView.
-          await openInstalledAuthBrowser(data.url);
+          const result = await openInstalledAuthBrowser(data.url);
+          if (result.strategy === 'native-shell-missing-bridge') {
+            return {
+              error:
+                'Your Chravel app needs an update to sign in with Google. Please update from the App Store and try again.',
+            };
+          }
         }
+
 
         return {};
       } catch (error) {
