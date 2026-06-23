@@ -534,6 +534,15 @@ export const AIConciergeChat = ({
                 </select>
               </div>
             )}
+          {conversationModeFlag && !isDemoMode && conversation.isSupported && (
+            <ConciergeConversationButton
+              active={conversation.active}
+              state={conversation.state}
+              onToggle={conversation.toggle}
+              liveTranscript={conversation.liveTranscript}
+              disabled={usage?.isLimitReached ?? false}
+            />
+          )}
           <AiChatInput
             inputMessage={inputMessage}
             onInputChange={setInputMessage}
