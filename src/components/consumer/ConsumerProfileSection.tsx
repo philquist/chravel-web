@@ -344,7 +344,7 @@ export const ConsumerProfileSection = () => {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => navigate('/settings', { state: { section: 'settings' } })}
+              onClick={() => setShowDeleteDialog(true)}
               className="flex-1 min-w-0 bg-destructive hover:bg-destructive/80 text-destructive-foreground font-medium px-4 py-2 min-h-[44px] rounded-lg transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
             >
               <Trash2 size={16} />
