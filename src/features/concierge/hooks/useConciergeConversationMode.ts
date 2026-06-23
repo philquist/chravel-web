@@ -381,24 +381,48 @@ export function useConciergeConversationMode({
     }
   }, [onError, releaseMic, supported, tickVad]);
 
-  // ── Public toggle ─────────────────────────────────────────────────────
+  // ── Public cancel / toggle ────────────────────────────────────────────
+  const cancel = useCallback(() => {
+    setActive(false);
+    activeRef.current = false;
+    try {
+      sttAbortRef.current?.abort();
+    } catch {
+      /* ignore */
+    }
+    sttAbortRef.current = null;
+    try {
+      onCancelStream?.();
+    } catch {
+      /* ignore */
+    }
+    releaseMic();
+    ttsStop();
+    setState('idle');
+    setLiveTranscript('');
+    sessionIdRef.current = null;
+  }, [onCancelStream, releaseMic, ttsStop]);
+
   const toggle = useCallback(() => {
     if (!supported) {
       onError?.('Conversation mode is not supported in this browser.');
       return;
     }
     if (active) {
-      setActive(false);
-      releaseMic();
-      ttsStop();
-      setState('idle');
-      setLiveTranscript('');
+      cancel();
       return;
     }
+    // New conversation session — one usage query covers all turns inside it.
+    try {
+      sessionIdRef.current = crypto.randomUUID();
+    } catch {
+      sessionIdRef.current = `cv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    }
+    setLastFinalTranscript('');
     setActive(true);
     activeRef.current = true;
     void startListening();
-  }, [active, onError, releaseMic, startListening, supported, ttsStop]);
+  }, [active, cancel, onError, startListening, supported]);
 
   // ── Watch for assistant reply → speak it → resume mic ────────────────
   const messagesRef = useRef<ChatMessage[]>([]);
