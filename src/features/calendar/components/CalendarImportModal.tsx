@@ -65,15 +65,17 @@ interface CalendarImportModalProps {
 
 type ImportState = 'idle' | 'parsing' | 'preview' | 'importing' | 'complete' | 'review_gmail';
 
-const FORMAT_BADGES = [
-  { label: 'ICS', icon: Calendar },
-  { label: 'CSV', icon: FileSpreadsheet },
-  { label: 'Excel', icon: FileSpreadsheet },
-  { label: 'PDF', icon: FileText },
-  { label: 'Image', icon: Image },
-  { label: 'URL', icon: Globe },
-  { label: 'Gmail', icon: Mail },
-];
+const buildFormatBadges = (includeGmail: boolean) => {
+  const base = [
+    { label: 'ICS', icon: Calendar },
+    { label: 'CSV', icon: FileSpreadsheet },
+    { label: 'Excel', icon: FileSpreadsheet },
+    { label: 'PDF', icon: FileText },
+    { label: 'Image', icon: Image },
+    { label: 'URL', icon: Globe },
+  ];
+  return includeGmail ? [...base, { label: 'Gmail', icon: Mail }] : base;
+};
 
 const IMPORT_CONTROL_CLASS =
   'h-12 min-h-[48px] rounded-xl border-amber-500/60 hover:bg-amber-400 hover:text-black hover:border-amber-400';
