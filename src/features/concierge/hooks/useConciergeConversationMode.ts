@@ -101,15 +101,20 @@ export function useConciergeConversationMode({
   ttsPlaybackState,
   buildSpeechText,
   onError,
+  onCancelStream,
 }: Options): Result {
   const [active, setActive] = useState(false);
   const [state, setState] = useState<ConversationState>('idle');
   const [liveTranscript, setLiveTranscript] = useState('');
+  const [lastFinalTranscript, setLastFinalTranscript] = useState('');
 
   const activeRef = useRef(false);
   activeRef.current = active;
   const stateRef = useRef<ConversationState>('idle');
   stateRef.current = state;
+
+  const sessionIdRef = useRef<string | null>(null);
+  const sttAbortRef = useRef<AbortController | null>(null);
 
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
