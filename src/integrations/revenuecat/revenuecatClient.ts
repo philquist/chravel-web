@@ -280,6 +280,7 @@ export async function purchasePackage(
       errorCode: 'UNKNOWN',
       error: errorObj?.message || 'Unknown error',
     };
+  }
 }
 
 /**
