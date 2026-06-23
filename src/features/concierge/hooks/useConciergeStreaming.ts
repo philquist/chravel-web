@@ -90,7 +90,10 @@ export function useConciergeStreaming(params: Params) {
     queryClient: conciergeQueryClient,
   } = params;
 
-  const handleSendMessage = async (messageOverride?: string) => {
+  const handleSendMessage = async (
+    messageOverride?: string,
+    opts?: { conversationSessionId?: string },
+  ) => {
     const typedMessage =
       typeof messageOverride === 'string' ? messageOverride.trim() : inputMessage.trim();
     const selectedImages = UPLOAD_ENABLED ? [...attachedImages] : [];
