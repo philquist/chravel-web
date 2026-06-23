@@ -46,6 +46,7 @@ import { gmailAcceptedCandidatesToSmartParseResult } from '@/features/calendar/u
 import { normalizeCalendarCategory } from '@/constants/calendarCategories';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
 import { useDeferredPaidAccess } from '@/hooks/useDeferredPaidAccess';
+import { useFeatureFlag } from '@/lib/featureFlags';
 import { useNavigate } from 'react-router-dom';
 
 interface CalendarImportModalProps {
