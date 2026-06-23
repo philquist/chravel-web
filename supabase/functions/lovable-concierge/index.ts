@@ -150,6 +150,9 @@ const LovableConciergeSchema = z.object({
     .optional(),
   isDemoMode: z.boolean().optional(),
   attachmentIntent: z.enum(['smart_import', 'summarize', 'qa']).optional(),
+  // Hands-free conversation mode: when all turns share this id, only the first
+  // turn counts toward the per-trip query limit.
+  conversation_session_id: z.string().uuid().optional(),
   stream: z.boolean().optional(),
   config: z
     .object({
