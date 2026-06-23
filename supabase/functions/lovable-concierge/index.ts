@@ -1454,7 +1454,8 @@ serve(async req => {
               !serverDemoMode &&
               user &&
               tripQueryLimit !== null &&
-              resolvedTripId !== 'unknown'
+              resolvedTripId !== 'unknown' &&
+              (await shouldIncrementForSession(user.id, resolvedTripId))
             ) {
               const incrementResult = await incrementConciergeTripUsage(
                 supabase,
