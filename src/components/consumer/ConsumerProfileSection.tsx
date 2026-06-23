@@ -6,6 +6,7 @@ import { supabase } from '../../integrations/supabase/client';
 import { useToast } from '../../hooks/use-toast';
 import { getConsistentAvatar } from '../../utils/avatarUtils';
 import { useNavigate } from 'react-router-dom';
+import { DeleteAccountDialog } from './DeleteAccountDialog';
 
 export const ConsumerProfileSection = () => {
   const { user, updateProfile, signOut } = useAuth();
