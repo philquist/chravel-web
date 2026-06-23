@@ -9,6 +9,7 @@ import {
   disconnectGmailAccount,
   GmailAccount,
 } from '../api/gmailAuth';
+import { useFeatureFlag } from '@/lib/featureFlags';
 
 const MAX_ACCOUNTS = 5;
 
@@ -53,6 +54,11 @@ function relativeDate(iso: string | null): string | null {
 }
 
 export const SmartImportSettings = () => {
+  // Kill switch — Gmail OAuth is gated behind Google CASA Tier 2 verification.
+  // Default false: render nothing until the flag is explicitly flipped on.
+  // See docs/gmail-smart-import.md for the re-enablement runbook.
+  const gmailEnabled = useFeatureFlag('gmail_smart_import', false);
+
   const [accounts, setAccounts] = useState<GmailAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -60,8 +66,13 @@ export const SmartImportSettings = () => {
   const [reconnectBannerDismissed, setReconnectBannerDismissed] = useState(false);
 
   useEffect(() => {
+    if (!gmailEnabled) return;
     loadAccounts();
-  }, []);
+  }, [gmailEnabled]);
+
+  if (!gmailEnabled) {
+    return null;
+  }
 
   const loadAccounts = async () => {
     try {
