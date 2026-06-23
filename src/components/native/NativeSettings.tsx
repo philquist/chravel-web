@@ -21,12 +21,15 @@ import {
   Info,
   Calendar,
   Trash2,
+  Ticket,
 } from 'lucide-react';
 import { hapticService } from '@/services/hapticService';
 import { NativeList, NativeListSection, NativeListItem, NativeToggleItem } from './NativeList';
 import { NativeLargeTitle } from './NativeLargeTitle';
-import { getPlatform } from '@/integrations/revenuecat/revenuecatClient';
+import { getPlatform, purchaseTripPass } from '@/integrations/revenuecat/revenuecatClient';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
+import { TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
+import { toast } from 'sonner';
 
 interface NativeSettingsProps {
   user?: {
