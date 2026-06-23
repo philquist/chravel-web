@@ -1,60 +1,92 @@
+## Context: your stack changes everything
 
-## Current state (verified)
+This Lovable repo is a **pure web app**. Your iOS submission is built by **Expo + EAS**, and the Expo project (with `app.json`/`app.config.js`, `eas.json`, native config) lives in a **separate repo** — not here. That means:
 
-- **Stripe**: Trip Pass is fully wired. `src/constants/stripe.ts` exports `TRIP_PASS_PLANS` with real `prod_…` and `price_…` IDs ($39.99 / $74.99). The `create-checkout` edge function already handles `purchase_type: 'pass'`, blocks double-billing against active subscriptions, and creates a one-time `mode: 'payment'` session for `pass-explorer-45` / `pass-frequent-90`.
-- **RevenueCat**: Product identifiers are declared (`com.chravel.explorer.pass45`, `com.chravel.frequentchraveler.pass90`) in `src/constants/revenuecat.ts`, but the client (`revenuecatClient.ts`) only exposes a generic `purchasePackage(...)` against the default offering. There is no Trip Pass-specific selector, and `NativeSettings` never lists passes.
-- **Settings UI**: `ConsumerBillingSection` (web/Android) and `NativeSettings` (iOS) only render Explorer / Frequent Chraveler monthly + annual. The `TripPassModal` exists but is only triggered from the marketing `PricingSection` on the landing page — not from in-app Settings.
+- I cannot edit your `Info.plist` from Lovable, because Expo generates it from `app.json` at build time and that file isn't in this project.
+- I cannot configure Supabase's Apple provider from Lovable — none of my Supabase tools touch Auth provider settings; that's dashboard-only.
+- I *can* improve the web-side Apple sign-in code in this repo (e.g. add native `expo-apple-authentication` support behind a runtime check) **if** your Expo app actually loads JS from this repo (WebView wrapper or shared codebase).
 
-## Goal
+So the realistic split:
+- **Expo `app.json` edits** → Claude Code / Codex prompt against your Expo repo (I'll write it).
+- **Supabase Apple provider verification** → agentic browser script (I'll write it).
+- **App Review reply** → agentic browser script for App Store Connect (I already wrote one; can refresh if needed).
 
-Let a signed-in user buy a Trip Pass from Settings → Subscription, on web (Stripe) and iOS/Android (RevenueCat), with the same modal/CTA shown on the marketing page.
+Before I finalize, I need one piece of info — see the question below the plan.
 
-## Changes
+---
 
-### 1. Settings entry point (web + Android, Stripe path)
-- File: `src/components/consumer/ConsumerBillingSection.tsx`
-  - Import `TripPassModal` and add a `tripPassOpen` state.
-  - Add a new section under the billing-cycle toggle titled **"One-time Trip Pass"** with a short description ("Full premium for one trip — no recurring charge") and a single `Get a Trip Pass` button that opens `TripPassModal`.
-  - Hide the section when `isSuperAdmin` or when the user already has an active pass/subscription (reuse `subscription.purchaseType` / `tier !== 'free'` check that the section already has).
-  - Keep the existing monthly/annual upgrade flow untouched.
+## Plan
 
-### 2. Settings entry point (iOS, RevenueCat path)
-- File: `src/components/native/NativeSettings.tsx`
-  - Add a "Trip Pass" row beneath the recurring plan list with two buttons: `Explorer · $39.99 / 45 days` and `Frequent Chraveler · $74.99 / 90 days`.
-  - On tap, call a new `purchaseTripPass(passId)` helper (see §3) instead of opening the Stripe checkout modal — Apple/Google IAP only on native.
-  - Reuse the existing native purchase success toast + entitlement refresh path that `purchasePackage` already feeds into.
+### 1. Fix Guideline 2.5.4 (background audio) — Expo `app.json`
 
-### 3. RevenueCat helper for one-time passes
-- File: `src/integrations/revenuecat/revenuecatClient.ts`
-  - Add `purchaseTripPass(passKey: 'explorer' | 'frequent-chraveler')` that:
-    1. Loads offerings via `getOfferings()`.
-    2. Looks up the package whose `product.identifier` matches `REVENUECAT_PRODUCTS.explorerPass45` or `…frequentChravelerPass90`.
-    3. Calls the existing `purchasePackage(...)` flow so the global purchase listener, entitlement sync, and toast already work.
-    4. Returns the same `{ customerInfo, error }` shape as `purchasePackage`.
-  - No new entitlement plumbing — pass purchases unlock the same `chravel_explorer` / `chravel_frequent_chraveler` entitlements as subscriptions, and `ENTITLEMENT_TO_TIER` already maps them. Duration (45/90 days) is enforced server-side by RevenueCat's non-renewing product config.
+**Why Lovable can't do it:** the Expo native project / `app.json` is in a different repo. EAS Build reads `ios.infoPlist` from that file to generate `Info.plist`. Lovable doesn't touch it.
 
-### 4. Cross-provider guard surface (no logic change)
-- `create-checkout` already blocks pass purchases when an active subscription exists, and vice versa. Re-export the same `purchase_type: 'pass'` payload from the Settings Stripe path so the modal's existing `handlePurchase` keeps working without modification.
+**Deliverable from me:** a paste-ready Claude Code / Codex prompt for your **Expo repo** that:
+1. Opens `app.json` (or `app.config.js` / `app.config.ts`).
+2. Locates `expo.ios.infoPlist.UIBackgroundModes`.
+3. Removes the `"audio"` entry. If the array becomes empty, removes the `UIBackgroundModes` key entirely.
+4. Also checks `expo.plugins` for `expo-av`, `expo-audio`, `expo-music`, `react-native-track-player`, etc. — these plugins auto-inject `audio` into `UIBackgroundModes`. If found, switches them to a config that does **not** request background audio (or removes the plugin if unused).
+5. Runs `npx expo prebuild --clean` (if using bare workflow) or just bumps the iOS build number.
+6. Triggers `eas build --platform ios --profile production --auto-submit` (or your equivalent).
 
-### 5. Documentation / config notes (no code execution)
-- Add a short comment block at the top of `src/constants/revenuecat.ts` reminding the operator that **non-renewing** App Store / Play products with the IDs `com.chravel.explorer.pass45` and `com.chravel.frequentchraveler.pass90` must exist in the RevenueCat dashboard and grant the matching consumer entitlement for 45 / 90 days. (Configuration in the RevenueCat dashboard cannot be done from code — flag this to the user as the only remaining manual step.)
+### 2. Fix Guideline 2.1(a) (Apple Sign In on iPad)
 
-## What is NOT changing
+Your current code (`src/hooks/useAuth.tsx:875`) calls `supabase.auth.signInWithOAuth({ provider: 'apple' })`, which opens a web OAuth flow and relies on a redirect back to `https://chravel.app/auth-callback`. Inside an Expo iOS app on iPadOS 26.5 this is fragile because:
+- Without `ios.associatedDomains: ["applinks:chravel.app"]` in `app.json`, the callback opens Safari and never returns.
+- Apple Sign In on iOS **expects** native Sign in with Apple (`AuthenticationServices`), not a web OAuth round-trip. Reviewers test the native button.
 
-- Stripe product/price IDs (already live).
-- The `TripPassModal` UI itself.
-- The marketing `PricingSection` Trip Pass CTA.
-- Subscription tier mapping or entitlement schema.
-- Webhook handling (`stripe-webhook` already records pass purchases into `user_entitlements` with `purchase_type: 'pass'` and `current_period_end = now + durationDays`).
+**Two fixes, in order of preference:**
 
-## Verification
+**Option A (recommended) — native Sign in with Apple via Expo**
+- In your Expo repo: add `expo-apple-authentication`, declare it in `app.json` plugins, and add the `usesAppleSignIn: true` entitlement.
+- In this Lovable repo: update `signInWithApple` in `src/hooks/useAuth.tsx` to detect the native environment (already has `isInstalledApp()`), call `AppleAuthentication.signInAsync(...)`, then pass the returned `identityToken` to `supabase.auth.signInWithIdToken({ provider: 'apple', token })`. No browser, no universal link, no callback.
+- Keep the existing web OAuth flow as the non-installed fallback.
 
-1. Web (signed-in, free tier): Settings → Billing → new "One-time Trip Pass" section visible → click `Get a Trip Pass` → modal opens → click `Get Trip Pass` on Explorer → redirected to Stripe Checkout in new tab with $39.99 one-time line item.
-2. Web (already subscribed): Trip Pass section hidden (or shown disabled with the existing "manage current plan" copy).
-3. iOS native (RevenueCat sandbox): Settings → new Trip Pass row → tap Explorer → native StoreKit sheet shows the `com.chravel.explorer.pass45` $39.99 product → after sandbox purchase, entitlement listener fires and tier flips to `explorer` for 45 days.
-4. `npm run lint && npm run typecheck && npm run build` pass.
+**Option B (fallback) — fix universal links**
+- Add `ios.associatedDomains: ["applinks:chravel.app"]` to `app.json`.
+- Confirm `public/.well-known/apple-app-site-association` (already in this repo) returns valid JSON with your Team ID + bundle ID and `Content-Type: application/json`.
+- Rebuild via EAS.
 
-## Out of scope (call out, do not silently defer)
+**Deliverable from me:**
+- A Claude Code / Codex prompt for your **Expo repo** that installs `expo-apple-authentication`, edits `app.json`, and rebuilds.
+- A code change in **this Lovable repo** to `src/hooks/useAuth.tsx` that branches `signInWithApple` to use the native flow when running inside the installed app.
 
-- Creating the RevenueCat non-renewing products in the App Store Connect / Play Console dashboards — manual operator step. I will flag this in the final response with the exact product IDs and entitlements to attach.
-- Refund / restore-purchases UX changes (the existing "Restore Purchases" button already covers pass restores via RevenueCat).
+### 3. Verify Supabase Apple provider (your "option C")
+
+I don't have a tool that reads or writes Supabase Auth provider settings — only DB, edge functions, storage, and logs. So I can't automate this from Lovable.
+
+**Deliverable from me:** an agentic browser script for **Claude Code / a browser agent** that:
+1. Opens the Supabase dashboard for project `jmjiyekmxwsxkfnqwyaa`.
+2. Navigates to Authentication → Providers → Apple.
+3. Confirms the provider is enabled and that Services ID, Team ID, Key ID, and the `.p8` private key are populated (without revealing values).
+4. Confirms the **Authorized Redirect URI** matches `https://jmjiyekmxwsxkfnqwyaa.supabase.co/auth/v1/callback`.
+5. Reports pass/fail for each field back to you.
+
+### 4. App Store Connect reply
+
+A refreshed agentic-browser script that submits a reply citing the Expo `app.json` change and the native Sign in with Apple migration (instead of the Xcode-flavored wording from my previous answer).
+
+---
+
+## Files that will change
+
+**In this Lovable repo (only if you confirm the JS is shared with the Expo app):**
+- `src/hooks/useAuth.tsx` — branch `signInWithApple` to native path when `isInstalledApp()` is true.
+
+**In your separate Expo repo (you'll run a Claude Code / Codex prompt that I provide):**
+- `app.json` or `app.config.{js,ts}` — remove `audio` from `UIBackgroundModes`; add `expo-apple-authentication` plugin and `usesAppleSignIn` entitlement; add `ios.associatedDomains`.
+- `package.json` — add `expo-apple-authentication`.
+
+**No edits at all:**
+- `appstore/INFO_PLIST_ADDITIONS.md` and other Xcode-flavored docs (stale anyway because you're on Expo).
+
+---
+
+## One blocking question before I finalize
+
+**Does your Expo iOS app actually run the JavaScript from this Lovable repo** (e.g. via a WebView pointing at `chravel.app`, or by importing this codebase), or is the Expo project a **separate React Native codebase** with its own auth screen?
+
+- If **shared / WebView-of-chravel.app** → I'll update `src/hooks/useAuth.tsx` here for the native Apple flow.
+- If **separate React Native code** → the Apple Sign In code change belongs in your Expo repo, and Lovable's role is limited to writing the Claude Code prompts + the browser scripts.
+
+Reply with which one, and I'll switch to build mode and ship the appropriate deliverables.
