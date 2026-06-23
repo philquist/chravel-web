@@ -646,7 +646,39 @@ serve(async req => {
       config = {},
       isDemoMode: requestedDemoMode = false,
       stream: requestedStream = false,
+      conversation_session_id: conversationSessionId,
     } = validatedData;
+
+    /**
+     * Records a conversation-mode session for this user/trip and returns true
+     * if this is the FIRST turn of that session (i.e. usage should be
+     * incremented). Subsequent turns return false so the whole hands-free
+     * call counts as one query. No session id → always increment.
+     */
+    const shouldIncrementForSession = async (
+      uid: string,
+      tripScope: string,
+    ): Promise<boolean> => {
+      if (!conversationSessionId) return true;
+      try {
+        const { error: insertErr } = await supabase
+          .from('concierge_conversation_sessions')
+          .insert({
+            user_id: uid,
+            trip_id: tripScope,
+            session_id: conversationSessionId,
+          });
+        if (!insertErr) return true; // first turn
+        // Unique-violation = already recorded → skip increment
+        const code = (insertErr as { code?: string })?.code;
+        if (code === '23505') return false;
+        console.error('[ConvoSession] insert failed; defaulting to increment:', insertErr);
+        return true;
+      } catch (e) {
+        console.error('[ConvoSession] unexpected error; defaulting to increment:', e);
+        return true;
+      }
+    };
 
     // 🆕 SAFETY: Content filtering and PII redaction
     const profanityCheck = filterProfanity(message);
