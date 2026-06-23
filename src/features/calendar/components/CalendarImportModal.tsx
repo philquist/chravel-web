@@ -484,6 +484,7 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
                   </div>
                 )}
               </div>
+              )}
 
               {/* Paste schedule toggle */}
               <div className="flex items-center gap-3 px-1">
