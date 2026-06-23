@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Sun, Moon } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+
 import { toast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/useTheme';
 import { Switch } from '@/components/ui/switch';
