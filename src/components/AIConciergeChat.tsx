@@ -276,6 +276,11 @@ export const AIConciergeChat = ({
 
   // ── Hands-free conversation mode ─────────────────────────────────────
   const conversationModeFlag = useFeatureFlag('concierge_conversation_mode', true);
+  const { enabled: conversationModeUserPref, setEnabled: setConversationModeUserPref } =
+    useConversationModePreference();
+  const conversationModeEffective =
+    conversationModeFlag && conversationModeUserPref && !isDemoMode;
+
   const buildSpeechForMessage = useCallback((msg: ChatMessage) => {
     if (msg.type !== 'assistant' || !msg.content) return '';
     const clean = sanitizeConciergeContent(msg.content);
@@ -296,7 +301,7 @@ export const AIConciergeChat = ({
   }, []);
 
   const conversation = useConciergeConversationMode({
-    enabled: conversationModeFlag && !isDemoMode,
+    enabled: conversationModeEffective,
     messages,
     isTyping,
     handleSendMessage,
@@ -305,6 +310,15 @@ export const AIConciergeChat = ({
     ttsPlaybackState,
     buildSpeechText: buildSpeechForMessage,
     onError: msg => toast.error(msg),
+    onCancelStream: () => {
+      try {
+        streamAbortRef.current?.();
+      } catch {
+        /* ignore */
+      }
+      streamAbortRef.current = null;
+      setIsTyping(false);
+    },
   });
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
