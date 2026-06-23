@@ -93,7 +93,7 @@ export const AuthModal = ({
   if (!isOpen || !isPortalReady) return null;
 
   const authHeading =
-    mode === 'forgot' ? 'Reset Password' : mode === 'signup' ? 'Create Account' : 'Welcome Back';
+    mode === 'forgot' ? 'Reset Password' : mode === 'signup' ? 'Create Account' : 'ChravelApp';
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
