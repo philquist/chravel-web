@@ -491,7 +491,9 @@ export function useConciergeConversationMode({
     active,
     state,
     toggle,
+    cancel,
     isSupported: supported,
     liveTranscript,
+    lastFinalTranscript,
   };
 }
