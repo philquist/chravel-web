@@ -32,6 +32,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useConciergeVoice } from '@/features/concierge/hooks/useConciergeVoice';
 import { useConciergeStreaming } from '@/features/concierge/hooks/useConciergeStreaming';
 import { useSmartImportTaste } from '@/features/smart-import/hooks/useSmartImportTaste';
+import { useConciergeConversationMode } from '@/features/concierge/hooks/useConciergeConversationMode';
+import { ConciergeConversationButton } from '@/features/concierge/components/ConciergeConversationButton';
+import { useFeatureFlag } from '@/lib/featureFlags';
+import type { ChatMessage } from '@/features/concierge/types';
 
 // Lazy: only loads when an upgrade moment actually fires (limit hit / chip tap).
 const PlusUpsellModal = lazy(() =>
@@ -268,6 +272,39 @@ export const AIConciergeChat = ({
     handleSendMessageRef.current = handleSendMessage;
   }, [handleSendMessage]);
 
+  // ── Hands-free conversation mode ─────────────────────────────────────
+  const conversationModeFlag = useFeatureFlag('concierge_conversation_mode', true);
+  const buildSpeechForMessage = useCallback((msg: ChatMessage) => {
+    if (msg.type !== 'assistant' || !msg.content) return '';
+    const clean = sanitizeConciergeContent(msg.content);
+    if (!clean) return '';
+    return buildSpeechText({
+      displayText: clean,
+      hotels: msg.functionCallHotels,
+      places: msg.functionCallPlaces,
+      flights: msg.functionCallFlights?.map(f => ({
+        origin: f.origin,
+        destination: f.destination,
+        airline: f.airline,
+        price: f.price,
+        stops: f.stops,
+        durationMinutes: f.durationMinutes,
+      })),
+    });
+  }, []);
+
+  const conversation = useConciergeConversationMode({
+    enabled: conversationModeFlag && !isDemoMode,
+    messages,
+    isTyping,
+    handleSendMessage,
+    ttsPlay: ttsPlayRaw,
+    ttsStop,
+    ttsPlaybackState,
+    buildSpeechText: buildSpeechForMessage,
+    onError: msg => toast.error(msg),
+  });
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -497,6 +534,15 @@ export const AIConciergeChat = ({
                 </select>
               </div>
             )}
+          {conversationModeFlag && !isDemoMode && conversation.isSupported && (
+            <ConciergeConversationButton
+              active={conversation.active}
+              state={conversation.state}
+              onToggle={conversation.toggle}
+              liveTranscript={conversation.liveTranscript}
+              disabled={usage?.isLimitReached ?? false}
+            />
+          )}
           <AiChatInput
             inputMessage={inputMessage}
             onInputChange={setInputMessage}
