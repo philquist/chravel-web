@@ -29,6 +29,31 @@ export interface PromptAssemblyOptions {
   customSystemPrompt?: string;
   imageIntentAddendum?: string;
   useChainOfThought?: boolean;
+  /** Manual reply-language override (ISO 639-1). When set, overrides auto-detect. */
+  replyLanguage?: string;
+}
+
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  es: 'Spanish',
+  fr: 'French',
+  de: 'German',
+  pt: 'Portuguese',
+  it: 'Italian',
+  ja: 'Japanese',
+  zh: 'Chinese (Simplified)',
+  ko: 'Korean',
+  ar: 'Arabic',
+};
+
+function replyLanguageOverrideLayer(code: string): string {
+  const name = LANGUAGE_NAMES[code] || code;
+  return `
+**REPLY LANGUAGE OVERRIDE (HIGHEST PRIORITY — supersedes LANGUAGE MATCHING above):**
+- The user has manually selected ${name} as their Concierge reply language.
+- Respond entirely in ${name}, regardless of the language of the incoming user message.
+- Still quote existing trip content (chat messages, calendar entries, place names, member names, broadcasts) VERBATIM in its original language. Only translate your own surrounding explanation into ${name}.
+- Preserve proper nouns, brand names, addresses, URLs, email addresses, and numeric values (dates, times, prices, currency codes) unchanged.`;
 }
 
 // ── Query class sets for conditional layers ──────────────────────────────────
