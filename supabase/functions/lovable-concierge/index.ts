@@ -154,6 +154,8 @@ const LovableConciergeSchema = z.object({
   // turn counts toward the per-trip query limit.
   conversation_session_id: z.string().uuid().optional(),
   stream: z.boolean().optional(),
+  // Manual reply-language override (ISO 639-1). When set, replies must use this language.
+  replyLanguage: z.enum(['en', 'es', 'fr', 'de', 'pt', 'it', 'ja', 'zh', 'ko', 'ar']).optional(),
   config: z
     .object({
       model: z.string().max(100).optional(),
@@ -1147,6 +1149,7 @@ serve(async req => {
       customSystemPrompt: safeCustomSystemPrompt,
       imageIntentAddendum,
       useChainOfThought,
+      replyLanguage: validatedData.replyLanguage,
     });
 
     // 🆕 EXPLICIT CONTEXT WINDOW MANAGEMENT
