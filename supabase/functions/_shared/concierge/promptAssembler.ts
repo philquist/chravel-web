@@ -333,14 +333,18 @@ export function assemblePrompt(options: PromptAssemblyOptions): string {
     customSystemPrompt,
     imageIntentAddendum,
     useChainOfThought,
+    replyLanguage,
   } = options;
 
-  // Custom system prompt overrides everything
-  if (customSystemPrompt) return customSystemPrompt;
+  const overrideSuffix =
+    replyLanguage && LANGUAGE_NAMES[replyLanguage] ? '\n' + replyLanguageOverrideLayer(replyLanguage) : '';
+
+  // Custom system prompt overrides everything (but still honor manual language pick).
+  if (customSystemPrompt) return customSystemPrompt + overrideSuffix;
 
   // General knowledge without trip context → lean web-only prompt
   if (queryClass === 'general_knowledge' || !tripContext) {
-    return generalWebPrompt(imageIntentAddendum);
+    return generalWebPrompt(imageIntentAddendum) + overrideSuffix;
   }
 
   // ── Build trip-aware prompt from layers ──────────────────────────────────
@@ -397,6 +401,11 @@ export function assemblePrompt(options: PromptAssemblyOptions): string {
   // 11. Voice addendum (voice only)
   if (isVoice) {
     layers.push(VOICE_ADDENDUM);
+  }
+
+  // 12. Manual reply-language override (must be last so it wins over all prior language guidance)
+  if (overrideSuffix) {
+    layers.push(overrideSuffix);
   }
 
   return layers.join('\n');
