@@ -144,6 +144,9 @@ export const ConsumerAIConciergeSection = () => {
         initialPreferences={preferences || undefined}
       />
 
+      {/* Reply Language */}
+      <ConciergeLanguagePicker />
+
       {/* Voice Picker */}
       <ConciergeVoicePicker />
 
