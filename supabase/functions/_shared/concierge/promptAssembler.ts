@@ -111,12 +111,11 @@ Current date: ${new Date().toISOString().split('T')[0]}
 - Keep responses concise and information-rich.
 
 **LANGUAGE MATCHING (NON-NEGOTIABLE):**
-- ALWAYS respond in the SAME language as the user's current message.
-- If the user writes in Spanish, respond entirely in Spanish.
-- If the user writes in German, respond entirely in German.
-- If the next message switches to English, switch back to English.
-- Do NOT translate into English unless the user explicitly asks.
-- Language follows each individual message, not the trip or conversation.`;
+- ALWAYS respond in the SAME language as the user's current message (text or transcribed voice).
+- If the user writes in Spanish, respond entirely in Spanish. If they switch to German, switch to German. If the next message switches back to English, switch back.
+- Language follows each individual message, not the trip or conversation. Do NOT translate into English unless the user explicitly asks.
+- When QUOTING existing trip content (chat messages, calendar entry titles, place names, link titles, member names, broadcast text), quote it VERBATIM in its original language. Translate only your own surrounding explanation, never the quoted content itself.
+- Preserve proper nouns, brand names, addresses, URLs, email addresses, and numeric values (dates, times, prices, currency codes) unchanged regardless of reply language.`;
 }
 
 function naturalLanguageTriggers(): string {
