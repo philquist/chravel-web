@@ -549,28 +549,7 @@ export const AIConciergeChat = ({
                 </select>
               </div>
             )}
-          {conversationModeFlag && !isDemoMode && conversation.isSupported && (
-            <div className="flex items-center justify-between gap-3 px-1 pt-1 pb-1.5">
-              <label
-                htmlFor="concierge-conv-mode-toggle"
-                className="text-[11px] font-medium text-gray-300 select-none cursor-pointer"
-              >
-                Conversation mode
-                <span className="ml-1.5 text-gray-500 font-normal">
-                  (one full chat = one query)
-                </span>
-              </label>
-              <Switch
-                id="concierge-conv-mode-toggle"
-                checked={conversationModeUserPref}
-                onCheckedChange={next => {
-                  if (!next && conversation.active) conversation.cancel();
-                  setConversationModeUserPref(next);
-                }}
-                aria-label="Toggle hands-free conversation mode"
-              />
-            </div>
-          )}
+          {/* Conversation Mode toggle moved to Settings → AI Concierge → Conversation Mode */}
           {conversationModeEffective && conversation.isSupported && (
             <ConciergeConversationButton
               active={conversation.active}
