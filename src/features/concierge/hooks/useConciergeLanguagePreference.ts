@@ -111,7 +111,7 @@ export function useConciergeLanguagePreference() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
-      const dbValue = DB_VALID.has(next) ? next : null;
+      const dbValue: string | null = DB_VALID.has(next) ? next : null;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('profiles') as any)
         .update({ concierge_reply_language: dbValue })
