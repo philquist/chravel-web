@@ -2421,6 +2421,7 @@ export type Database = {
           app_role: string | null
           avatar_url: string | null
           bio: string | null
+          concierge_reply_language: string | null
           concierge_voice: string | null
           created_at: string
           deletion_requested_at: string | null
@@ -2456,6 +2457,7 @@ export type Database = {
           app_role?: string | null
           avatar_url?: string | null
           bio?: string | null
+          concierge_reply_language?: string | null
           concierge_voice?: string | null
           created_at?: string
           deletion_requested_at?: string | null
@@ -2491,6 +2493,7 @@ export type Database = {
           app_role?: string | null
           avatar_url?: string | null
           bio?: string | null
+          concierge_reply_language?: string | null
           concierge_voice?: string | null
           created_at?: string
           deletion_requested_at?: string | null
