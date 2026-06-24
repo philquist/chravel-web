@@ -11,6 +11,7 @@ export interface AIConciergeChatProps {
   basecamp?: { name?: string; address: string };
   preferences?: TripPreferences;
   isDemoMode?: boolean;
+  isActive?: boolean;
   onTabChange?: (tab: string) => void;
 }
 

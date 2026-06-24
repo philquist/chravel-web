@@ -51,6 +51,7 @@ export const AIConciergeChat = ({
   basecamp,
   preferences,
   isDemoMode = false,
+  isActive = true,
   onTabChange,
 }: AIConciergeChatProps) => {
   const { basecamp: globalBasecamp } = useBasecamp();
@@ -318,6 +319,12 @@ export const AIConciergeChat = ({
       setIsTyping(false);
     },
   });
+
+  useEffect(() => {
+    if (isActive) return;
+    if (conversation.active) conversation.cancel();
+    if (searchOpen) setSearchOpen(false);
+  }, [conversation, isActive, searchOpen]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

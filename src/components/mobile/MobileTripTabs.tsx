@@ -337,7 +337,7 @@ export const MobileTripTabs = ({
         });
         return;
       }
-      await hapticService.light();
+      void hapticService.light();
       onTabChange(tabId);
     },
     [onTabChange, variant],
@@ -513,6 +513,7 @@ export const MobileTripTabs = ({
               tripId={tripId}
               basecamp={basecamp}
               isDemoMode={isDemoMode}
+              isActive={activeTab === tabId}
               onTabChange={onTabChange}
             />
           );
