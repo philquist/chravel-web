@@ -32,7 +32,7 @@ export const DEFAULT_CONCIERGE_LANGUAGE: ConciergeLanguageId = 'auto';
 const STORAGE_KEY = 'concierge_reply_language';
 const VALID_IDS = new Set<string>(CONCIERGE_LANGUAGES.map(l => l.id));
 // DB column is nullable + CHECK constrained to non-'auto' ISO codes.
-const DB_VALID = new Set(CONCIERGE_LANGUAGES.filter(l => l.id !== 'auto').map(l => l.id));
+const DB_VALID = new Set<string>(CONCIERGE_LANGUAGES.filter(l => l.id !== 'auto').map(l => l.id));
 
 function readStored(): ConciergeLanguageId {
   if (typeof window === 'undefined') return DEFAULT_CONCIERGE_LANGUAGE;
