@@ -1,39 +1,46 @@
+# Concierge UI cleanup + tab-load glitch
 
-## Goal
-Concierge replies in whatever language the user wrote/spoke in — no UI, no settings, no allowlist. Mid-conversation language switches are followed each turn. Quoted trip content (chat, calendar titles, places) stays verbatim; the surrounding explanation is in the user's language.
+## Part 1 — Clean up the Concierge composer
 
-## Changes
+The composer is busy because of a duplicated "Conversation mode" block (label + Switch in `AIConciergeChat.tsx` lines 552–572) **plus** the `ConciergeConversationButton` row underneath (which already shows its own "Hands-free — talk to your concierge like a phone call" caption + mic). That's why the screenshot shows "Conversation mode" *twice* stacked.
 
-### 1. Text mode — `supabase/functions/lovable-concierge/`
-- In the system prompt builder (shared concierge prompt module), append a small language directive:
-  - "Detect the language of the user's most recent message and reply in that same language. If the user switches languages, switch with them on the next reply."
-  - "When quoting existing trip content (chat messages, calendar entries, place names, links, names of people), quote it verbatim in its original language. Translate only your own explanation, never the quoted content."
-  - "Preserve proper nouns, brand names, addresses, URLs, and numeric values (dates, times, prices, currencies) unchanged."
-- No model change, no extra round-trip. Gemini 3 Flash already handles 100+ languages.
+### Changes
+1. **Remove the inline toggle row** in `src/components/AIConciergeChat.tsx` (lines 552–573) — the `<label>` + `<Switch>` block.
+2. **Move the toggle into Concierge settings** by adding a new `ConciergeConversationModeToggle` component (a labeled Switch reading the same `useConversationModePreference` hook) and rendering it in `src/components/consumer/ConsumerAIConciergeSection.tsx` directly above the existing `ConciergeLanguagePicker` (around line 147).
+3. **Keep `ConciergeConversationButton` in the composer** (the mic + transcript bar) — but only render it when the user has enabled the mode in settings. If the feature flag is on and the user pref is off, render nothing extra in the composer.
+4. Result: composer goes from `[duplicate toggle row] + [Conversation mode caption + mic] + [input]` to just `[mic] + [input]` when enabled, or `[input]` when disabled.
 
-### 2. Voice mode — Vertex Live session config
-Files to touch (verify exact names during build):
-- `src/features/concierge/hooks/useConciergeVoice.ts` (and/or the edge function that mints the Live session token / sets session config)
-- Any shared `liveSessionConfig` / system-instruction module used by the voice path
+No behavior change to the underlying conversation engine, feature flag, or hook — pure UI relocation.
 
-Edits:
-- **Remove hardcoded STT `languageCode`** (e.g. `"en-US"`) from the Live session config so Gemini Live auto-detects spoken language per utterance. If a value is required by the SDK, pass the multi-language form the Live API accepts rather than a single locale.
-- **Add the same language directive** to the voice session's system instruction so the model's spoken reply matches the detected input language each turn.
-- Native-audio voice on `gemini-live-2.5-flash-native-audio` is already multilingual — no voice swap needed.
+## Part 2 — Tabs (Polls, Payments, etc.) not loading
 
-### 3. Verification
-- Text: send messages in EN, ES, FR, JA, AR to a test trip; confirm reply language matches each; confirm a quoted chat message stays in its original language while the explanation switches.
-- Voice: in a single session, speak EN → switch to ES → switch back; confirm transcription and spoken reply follow each turn.
-- Regression: existing English-only flows behave identically (auto-detect resolves to English).
-- Run `npm run lint && npm run typecheck && npm run build`.
+I need a quick diagnostic pass before committing a fix, because nothing in the screenshot tells me *why* they don't load. The likely suspects given recent changes:
 
-## Out of scope (deliberate)
-- No settings UI, no per-user language preference, no language allowlist.
-- No translation of stored trip data.
-- No change to TTS voice selection or to the text model.
+- An open modal/sheet (e.g. the Concierge or settings modal) intercepting clicks per the single-active-modal rule, so tab taps register but the route doesn't switch.
+- A render error inside one of the tabs throwing silently (we'd see it in console).
+- Recent voice/streaming hook holding a state lock that blocks tab content mounting.
+
+### Diagnostic step (build mode)
+- Run the preview, open the trip, tap Polls/Payments while console logs are captured, and inspect:
+  - Console for thrown errors or React warnings on tab mount.
+  - Whether the active tab state in `TripDetailContent` actually updates (add a one-line log, remove after).
+  - Whether a modal `open` flag is stuck true after closing the Concierge.
+
+### Likely fix paths (pick one after diagnosis)
+- **If a stuck modal:** ensure Concierge modal close path resets the shared `activeModal` state on unmount.
+- **If a render error:** wrap the offending tab in its existing ErrorBoundary surface and fix the throw.
+- **If state-lock from voice hook:** ensure `useConciergeConversationMode` cleans up its session when the Concierge view unmounts (cancel + release mic + reset `state`).
+
+I'll report root cause + the surgical fix in the implementation response rather than guessing now.
+
+## Files touched
+- `src/components/AIConciergeChat.tsx` — delete lines 552–573
+- `src/components/consumer/ConsumerAIConciergeSection.tsx` — add toggle above language picker
+- `src/features/concierge/components/ConciergeConversationModeToggle.tsx` — new, ~30 lines
+- Tab fix: TBD after diagnosis (one file expected)
 
 ## Risk
-Low. Worst case is the model occasionally over-corrects on a short ambiguous message (e.g. one-word "ok") — acceptable and self-correcting on the next turn. If a hardcoded STT locale exists and we miss it, voice will keep transcribing as English; mitigated by grepping the voice config files during implementation.
+Low for Part 1 (UI move, no logic change). Part 2 risk depends on diagnosis; will keep the fix to one file.
 
 ## Rollback
-Single revert of the prompt + session-config commit.
+Revert the two-commit series; toggle returns to composer, tab fix reverts cleanly.

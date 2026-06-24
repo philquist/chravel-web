@@ -36,7 +36,7 @@ import { useConciergeConversationMode } from '@/features/concierge/hooks/useConc
 import { ConciergeConversationButton } from '@/features/concierge/components/ConciergeConversationButton';
 import { useConversationModePreference } from '@/features/concierge/hooks/useConversationModePreference';
 import { useFeatureFlag } from '@/lib/featureFlags';
-import { Switch } from '@/components/ui/switch';
+
 import type { ChatMessage } from '@/features/concierge/types';
 
 // Lazy: only loads when an upgrade moment actually fires (limit hit / chip tap).
@@ -276,8 +276,7 @@ export const AIConciergeChat = ({
 
   // ── Hands-free conversation mode ─────────────────────────────────────
   const conversationModeFlag = useFeatureFlag('concierge_conversation_mode', true);
-  const { enabled: conversationModeUserPref, setEnabled: setConversationModeUserPref } =
-    useConversationModePreference();
+  const { enabled: conversationModeUserPref } = useConversationModePreference();
   const conversationModeEffective = conversationModeFlag && conversationModeUserPref && !isDemoMode;
 
   const buildSpeechForMessage = useCallback((msg: ChatMessage) => {
@@ -549,28 +548,7 @@ export const AIConciergeChat = ({
                 </select>
               </div>
             )}
-          {conversationModeFlag && !isDemoMode && conversation.isSupported && (
-            <div className="flex items-center justify-between gap-3 px-1 pt-1 pb-1.5">
-              <label
-                htmlFor="concierge-conv-mode-toggle"
-                className="text-[11px] font-medium text-gray-300 select-none cursor-pointer"
-              >
-                Conversation mode
-                <span className="ml-1.5 text-gray-500 font-normal">
-                  (one full chat = one query)
-                </span>
-              </label>
-              <Switch
-                id="concierge-conv-mode-toggle"
-                checked={conversationModeUserPref}
-                onCheckedChange={next => {
-                  if (!next && conversation.active) conversation.cancel();
-                  setConversationModeUserPref(next);
-                }}
-                aria-label="Toggle hands-free conversation mode"
-              />
-            </div>
-          )}
+          {/* Conversation Mode toggle moved to Settings → AI Concierge → Conversation Mode */}
           {conversationModeEffective && conversation.isSupported && (
             <ConciergeConversationButton
               active={conversation.active}
