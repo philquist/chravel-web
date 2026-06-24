@@ -132,6 +132,9 @@ If you write `if (isMockId)` to enable a feature, you've disabled it for product
 ### Installed-app OAuth requires in-app browser tab + Universal Link callback
 Web flow re-opens the app via Universal Link; the AASA must list every short path used in production.
 
+### Native Sign in with Apple (id-token) beats the browser OAuth round-trip on iOS/iPad
+The SFSafariViewController + Universal-Link OAuth round-trip can strand iPad users after they authenticate (App Review 2.1(a) "did not proceed to next page"). When the native shell exposes `window.ChravelNative.signInWithApple()` (native ASAuthorization → `{ identityToken, rawNonce, authorizationCode }`), authenticate via `supabase.auth.signInWithIdToken({ provider:'apple', token, nonce: rawNonce })` — pass the RAW unhashed nonce (the shell sends `SHA256(nonce)` to Apple). Keep the web OAuth flow as the byte-for-byte fallback: the helper returns `{ handled:false }` when the bridge is absent, throws, or returns an incomplete credential. *Evidence: `src/utils/nativeAppleSignIn.ts`; PR #746.*
+
 ### OAuth callbacks should preserve same-origin session context via signed redirect state
 Don't trust the redirect URI off the query string — sign it into state and verify server-side.
 
@@ -140,6 +143,9 @@ Logged-in ≠ authorized.
 
 ### Keep founder/super-admin bypass identity in one shared module across edge functions
 Drift between edge functions creates inconsistent privilege grants.
+
+### Apple token revocation (5.1.1(v)) differs by sign-in path
+Web OAuth puts a `provider_refresh_token` on the session only on the INITIAL `SIGNED_IN` (capture it then). Native id-token sign-in carries no refresh token — only a one-time `authorizationCode`; `captureAppleRefreshToken` no-ops for native users, so forward the code to `store-apple-token` for a server-side exchange (which needs the Apple `.p8` client secret). Account deletion must revoke the grant regardless of which path the user signed in through. *Evidence: `src/hooks/auth/captureAppleToken.ts`; PR #746.*
 
 ### Enforce payment SDK boundary: RevenueCat for iOS, Stripe for web
 Subscription checks should branch on platform; mixing creates double-charge / mismatched entitlement risk.
@@ -320,7 +326,10 @@ Edge function CI does not cover LiveKit / external agents; ship them through a d
 Build can pass while `validate` (lint:budget + format:check + schema-drift + env coverage) catches the real blockers.
 
 ### Prettier `format:check` runs repo-wide in CI; the auto-format workflow only touches PR-modified files
-Inherited unformatted files in `main` fail Static Checks on every new PR until manually formatted. *Evidence: PR #585.*
+Inherited unformatted files in `main` fail Static Checks on every new PR until manually formatted — even files the PR never touched. Reproduce with `npm run format:check`, fix with `prettier --write` using the repo's pinned version (so output matches CI), and land it as a separate `chore:` commit; expect touching those shared files to widen Cross-PR File Overlap with other open PRs. *Evidence: PR #585; PR #746 inherited 21 unformatted files byte-identical to `main` (proved via `git diff origin/main`).*
+
+### "Unit Tests (Vitest)" is an aggregate gate — a red shard is usually a forks-worker teardown flake, not an assertion
+The aggregate job only rolls up the shard matrix (`result="failure"` → exit 1); open the specific shard log to diagnose. `[vitest-pool]: Timeout terminating forks worker for <file>` printed AFTER the coverage table means the tests passed and the pool failed to tear a worker down in time — a flake a re-run clears, not a real failure. The Codecov "Token required - not valid tokenless upload" line is a separate non-failing `if: always()` step. *Evidence: PR #746 — shard 4 flaked on `AIConciergeChat.test.tsx`, passed on re-run.*
 
 ### Split flaky E2E from required PR gates and reuse build artifacts
 E2E should be advisory or scheduled, not blocking.
@@ -439,6 +448,9 @@ When Google Play reports Android framework/library callsites, first verify the c
 
 ### App Review compliance paths must be directly discoverable, not merely present
 For account deletion, having a backend/RPC and a nested settings flow is insufficient if reviewers cannot find it quickly; expose the action from the obvious signed-in account/profile row and keep it routed to the same canonical deletion flow. *Evidence: June 17, 2026 App Review 5.1.1(v) remediation added Profile → Account → Delete Account as a direct entry point while preserving ConsumerGeneralSettings as the single deletion flow.*
+
+### App Store rejection fixes for the native shell live in chravel-mobile, not chravel-web
+`chravel-web` is only the WebView payload; the iOS binary, `Info.plist` (`UIBackgroundModes` — e.g. background-audio under Guideline 2.5.4), entitlements, and Associated Domains live in the separate `chravel-mobile` Expo/EAS repo. chravel-web owns only the AASA file (`public/.well-known/apple-app-site-association`), the Supabase OAuth flow, and the `window.ChravelNative` bridge contract (`src/utils/nativeBridge.ts`). Before "fixing" an App Store rejection here, confirm which repo owns the artifact — most native-config rejections cannot be resolved from chravel-web and need a chravel-mobile change plus an App Store Connect reply. *Evidence: June 2026 2.5.4 + 2.1(a) rejection; PR #746 shipped the web half (native id-token path), native config deferred to chravel-mobile.*
 
 ### Stream message search text must use the SDK query string path
 `channel.search('term', options)` triggers Stream full-text search; `channel.search({ text: 'term' }, options)` is a message-filter path and can miss normal chat body text like “join this trip”.
