@@ -36,7 +36,7 @@ import { useConciergeConversationMode } from '@/features/concierge/hooks/useConc
 import { ConciergeConversationButton } from '@/features/concierge/components/ConciergeConversationButton';
 import { useConversationModePreference } from '@/features/concierge/hooks/useConversationModePreference';
 import { useFeatureFlag } from '@/lib/featureFlags';
-import { Switch } from '@/components/ui/switch';
+
 import type { ChatMessage } from '@/features/concierge/types';
 
 // Lazy: only loads when an upgrade moment actually fires (limit hit / chip tap).
