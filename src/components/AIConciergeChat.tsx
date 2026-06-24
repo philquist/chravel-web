@@ -324,7 +324,7 @@ export const AIConciergeChat = ({
     if (isActive) return;
     if (conversation.active) conversation.cancel();
     if (searchOpen) setSearchOpen(false);
-  }, [conversation, isActive, searchOpen]);
+  }, [conversation.active, conversation.cancel, isActive, searchOpen]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
