@@ -463,12 +463,13 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
           </div>
         )}
 
-        {/* Category Tabs - Only 2 tabs now: Chravel Plus and Chravel Pro */}
+        {/* Category Tabs */}
         <div className="flex justify-center">
-          <div className="bg-card/50 rounded-lg p-1 flex gap-1">
+          <div className="bg-card/50 rounded-lg p-1 flex gap-1 flex-wrap">
             {[
               { id: 'consumer', label: 'ChravelApp Plus', icon: <Users size={16} /> },
               { id: 'pro', label: 'ChravelApp Pro', icon: <Building size={16} /> },
+              { id: 'pass', label: 'Trip Passes', icon: <Ticket size={16} /> },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -519,17 +520,17 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
           </div>
         )}
 
-        {/* Trip Pass CTA */}
-        {activeTab === 'consumer' && (
-          <div className="text-center">
-            <button
-              onClick={() => setTripPassOpen(true)}
-              className="text-sm text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
-            >
-              🎫 Only need ChravelApp for a trip or two? Get a Trip Pass.
-            </button>
+        {/* Trip Pass helper note */}
+        {activeTab === 'pass' && (
+          <div className="text-center max-w-2xl mx-auto">
+            <p className="text-sm text-muted-foreground inline-flex items-center justify-center gap-1.5">
+              <Clock size={14} className="text-primary" />
+              One-time purchase. Full premium features for a fixed window. Your exports stay
+              forever.
+            </p>
           </div>
         )}
+
       </div>
 
       {/* Pricing Cards */}
