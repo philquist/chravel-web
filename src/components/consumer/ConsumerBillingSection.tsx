@@ -392,11 +392,11 @@ export const ConsumerBillingSection = () => {
             </div>
             <button
               onClick={() => setTripPassOpen(true)}
-              disabled={useAppleManagementOnIOS}
               className="min-h-[42px] bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-black px-5 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {useAppleManagementOnIOS ? 'Unavailable on iOS' : 'Get a Trip Pass'}
+              Get a Trip Pass
             </button>
+
           </div>
         </div>
       )}
