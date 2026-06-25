@@ -599,7 +599,11 @@ export const AIConciergeChat = ({
                   active={conversation.active}
                   state={conversation.state}
                   onToggle={conversation.toggle}
-                  disabled={usage?.isLimitReached ?? false}
+                  // Keep the mic tappable while a conversation is active so it can always
+                  // be stopped — even if the usage limit flips to reached mid-session (the
+                  // old Stop pill was never gated by the limit). Only block *starting* a
+                  // new hands-free session when the user is out of quota.
+                  disabled={!conversation.active && (usage?.isLimitReached ?? false)}
                 />
               ) : undefined
             }
