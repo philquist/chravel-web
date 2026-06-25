@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Check, Globe, Crown, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
+import { detectNativeBillingPlatform, isIOSNativeShell, isNativeWebView } from '@/utils/platformDetection';
 import { toast } from 'sonner';
 import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
 
@@ -56,8 +56,13 @@ const passes = [
 
 export const TripPassModal: React.FC<TripPassModalProps> = ({ open, onOpenChange }) => {
   const [loading, setLoading] = useState<string | null>(null);
+  const blockOnIOS = isIOSNativeShell();
 
   const handlePurchase = async (passId: string) => {
+    if (blockOnIOS) {
+      toast.info('Trip Passes are available on chravel.app on the web.');
+      return;
+    }
     setLoading(passId);
     try {
       const {
@@ -139,15 +144,17 @@ export const TripPassModal: React.FC<TripPassModalProps> = ({ open, onOpenChange
               <CardFooter className="flex flex-col gap-2 px-4 pb-4">
                 <Button
                   onClick={() => handlePurchase(pass.id)}
-                  disabled={loading !== null}
+                  disabled={loading !== null || blockOnIOS}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {loading === pass.id ? (
                     <div className="h-4 w-4 mr-2 animate-spin gold-gradient-spinner" />
                   ) : null}
-                  Get Trip Pass
+                  {blockOnIOS ? 'Manage on chravel.app' : 'Get Trip Pass'}
                 </Button>
-                <p className="text-xs text-muted-foreground text-center">{pass.nudge}</p>
+                <p className="text-xs text-muted-foreground text-center">
+                  {blockOnIOS ? 'Trip Passes are purchased on the web.' : pass.nudge}
+                </p>
               </CardFooter>
             </Card>
           ))}
