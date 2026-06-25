@@ -26,6 +26,9 @@ interface FullPageLandingSectionProps {
     | 'aurora'
     | 'footer'
     | 'none';
+  backgroundImage?: string;
+  backgroundOverlayOpacity?: number; // 0-1, dark scrim over image for legibility
+  backgroundPosition?: string;
 }
 
 export const FullPageLandingSection: React.FC<FullPageLandingSectionProps> = ({
@@ -39,6 +42,9 @@ export const FullPageLandingSection: React.FC<FullPageLandingSectionProps> = ({
   gradientDirection = 'diagonal',
   accentGlow,
   goldOverlay = 'waves',
+  backgroundImage,
+  backgroundOverlayOpacity = 0.72,
+  backgroundPosition = 'center',
 }) => {
   // Build the gradient based on direction and colors
   const getGradientStyle = () => {
@@ -114,13 +120,37 @@ export const FullPageLandingSection: React.FC<FullPageLandingSectionProps> = ({
         background: getGradientStyle(),
       }}
     >
+      {/* Cinematic photo background (black & gold travel scenes) */}
+      {backgroundImage && (
+        <>
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: `url(${backgroundImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition,
+              backgroundRepeat: 'no-repeat',
+            }}
+            aria-hidden="true"
+          />
+          {/* Dark scrim for legibility */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `linear-gradient(180deg, rgba(0,0,0,${Math.min(1, backgroundOverlayOpacity + 0.1)}) 0%, rgba(0,0,0,${backgroundOverlayOpacity}) 45%, rgba(0,0,0,${Math.min(1, backgroundOverlayOpacity + 0.15)}) 100%)`,
+            }}
+            aria-hidden="true"
+          />
+        </>
+      )}
+
       {/* Accent glow overlay */}
       {accentStyle && (
         <div className="absolute inset-0 pointer-events-none" style={{ background: accentStyle }} />
       )}
 
-      {/* Gold decorative overlay */}
-      {goldOverlay !== 'none' && <GoldAccentOverlay variant={goldOverlay} />}
+      {/* Gold decorative overlay (suppressed when a photo background is set to keep it clean) */}
+      {goldOverlay !== 'none' && !backgroundImage && <GoldAccentOverlay variant={goldOverlay} />}
 
       {/* Subtle noise texture overlay */}
       <div
