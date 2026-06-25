@@ -252,7 +252,24 @@ export const NativeSettings = ({
                 />
               </>
             )}
+            {platform !== 'web' && (
+              <NativeListItem
+                icon={
+                  <RefreshCw
+                    size={18}
+                    className={restoreLoading ? 'animate-spin' : undefined}
+                  />
+                }
+                label="Restore Purchases"
+                sublabel="Re-apply subscriptions or Trip Passes from this Apple ID"
+                value={
+                  restoreLoading ? <span className="text-gray-400">…</span> : undefined
+                }
+                onPress={restoreLoading ? undefined : () => void handleRestorePurchases()}
+              />
+            )}
           </NativeListSection>
+
 
           {/* Notifications Section */}
           <NativeListSection
