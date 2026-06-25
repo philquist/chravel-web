@@ -12,7 +12,10 @@ import {
   ENTITLEMENT_TO_TIER,
   REVENUECAT_ENTITLEMENTS,
   REVENUECAT_PRODUCTS,
+  REQUIRED_IOS_PRODUCT_IDS,
+  assertIosProductIdsConfigured,
 } from '@/constants/revenuecat';
+
 import type {
   RevenueCatPlatform,
   RevenueCatResult,
