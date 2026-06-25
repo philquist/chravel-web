@@ -1,76 +1,58 @@
+## Update app icons to new gold Chravel logo
 
-## Goal
+Use the uploaded square gold icon (1st image) as the master source for all platform icons. The PWA/favicon circular crops can be derived from it via masking.
 
-Guarantee the Lovable/web half of the Apple/Google sign-in fix matches the contract chravel-mobile depends on, before App Store resubmit:
+### Source asset
+- Master: `user-uploads://7ADFCE86-41B1-4CB1-A82D-FF67C6EDAEF3.png` (1252×1252, square w/ rounded corners on black)
+- Save master at `src/assets/chravel-icon-master.png` (via lovable-assets pointer) and also write a flat 1024×1024 PNG for native toolchains.
 
-1. Supabase client uses **PKCE** (`flowType: 'pkce'`).
-2. `/auth-callback` runs `exchangeCodeForSession` and **never** silently bounces to `/auth`.
-3. The path is observable (logs) and protected by a unit test.
+### Web (favicon + PWA) — `public/` + `index.html`
+Generate from master:
+- `public/favicon.ico` (multi-size 16/32/48, circular crop)
+- `public/favicon-16.png`, `favicon-32.png`, `favicon-48.png` (circular)
+- `public/apple-touch-icon.png` 180×180 (squircle, no transparency — iOS adds mask)
+- `public/icon-192.png`, `public/icon-512.png` (PWA, square rounded per current `manifest.json`)
+- `public/icon-maskable-192.png`, `public/icon-maskable-512.png` (safe-zone padded, square)
+- Update `index.html` <link rel="icon"> / `apple-touch-icon` references
+- Update `public/manifest.json` icon entries + `theme_color` if needed (keep existing gold/black)
 
-## Audit findings (current state)
+### iOS — Capacitor / Xcode asset catalog
+- Regenerate `ios/App/App/Assets.xcassets/AppIcon.appiconset/` PNGs at all required sizes (20/29/40/60/76/83.5 @1x/2x/3x + 1024 marketing) — full squircle, opaque background (Apple rejects alpha).
+- Update `appstore/` 1024 marketing icon referenced in `appstore/ASSETS_CHECKLIST.md`.
+- Run `npx cap sync ios` note for user (manual on their machine).
 
-Already correct — no behavioral change needed:
+### Android — Capacitor
+- Regenerate `android/app/src/main/res/mipmap-*/ic_launcher.png`, `ic_launcher_round.png`, and `ic_launcher_foreground.png` (adaptive) at mdpi→xxxhdpi.
+- Background layer stays solid black (matches brand), foreground = gold icon with 33% safe-zone padding for adaptive masking.
+- Update `ic_launcher.xml` adaptive config if background color changes.
 
-- `src/integrations/supabase/client.ts` sets `flowType: 'pkce'` with `detectSessionInUrl: true` and `persistSession: true`. ✅
-- `src/App.tsx` registers `<Route path="/auth-callback">` lazily with `AuthCallbackPage`. ✅
-- `src/hooks/useAuth.tsx` Apple + Google flows set `redirectTo: https://chravel.app/auth-callback?returnTo=…` for installed shells (Capacitor / PWA / ChravelNative). The native shell rewrites the universal link to `chravel://auth-callback` per Claude's note. ✅
-- `AuthCallbackPage` already (a) calls `exchangeCodeForSession(window.location.href)` when `?code=` is present, (b) polls `getSession()` for ~3s as a hash-flow safety net, (c) on failure shows an actionable error screen with "Sign in with email" — it does **not** auto-redirect to `/auth`. ✅
+### Generation approach
+Use Python/Pillow script (run once) to:
+1. Load master, trim transparent border.
+2. Produce square-rounded variants (iOS/Android legacy/PWA).
+3. Produce circular-masked variants (favicon, PWA round).
+4. Produce maskable variants (padded inside safe zone, square fill).
+5. Emit ICO via Pillow.
 
-## Gaps to harden
+Script saved to `scripts/generate-app-icons.py` for future re-runs; existing `appstore/scripts/generate-icons.sh` updated to call it or deprecated.
 
-Three small, surgical issues that could still produce the App Review failure ("app back to login page after login with Apple"):
+### Files touched
+- `public/manifest.json`, `index.html`
+- `public/favicon.ico` + new png variants
+- `public/apple-touch-icon.png`, `public/icon-*.png`
+- `ios/App/App/Assets.xcassets/AppIcon.appiconset/*`
+- `android/app/src/main/res/mipmap-*/ic_launcher*.png`, `mipmap-anydpi-v26/ic_launcher*.xml` (only if bg changes)
+- `appstore/` 1024 marketing icon + checklist note
+- `src/assets/chravel-icon-master.png.asset.json`
+- `scripts/generate-app-icons.py` (new)
 
-1. **Provider-side errors are missed.** Supabase OAuth failures arrive as `?error=…&error_description=…` (no `code`, no hash). The current `useEffect` skips the PKCE branch, polls `getSession()` for 3s, then shows the generic "We couldn't complete sign-in" message — burying the real reason (e.g. "Apple identity not linked", "user cancelled"). Handle `?error=` first and surface `error_description` verbatim.
+### Verification
+- `npm run build` passes.
+- Visual check: favicon in browser tab, manifest icons via DevTools → Application → Manifest.
+- iOS/Android: user runs `npx cap sync` locally; provide checklist.
 
-2. **No-credential landings are indistinguishable from slow handoffs.** If the page is opened with neither `?code=`, `?error=`, nor `#access_token`, we still spin for 3s. Detect "nothing to exchange" up front and either (a) immediately succeed if a session already exists, or (b) error fast with a clear message — never spin.
+### Out of scope
+- Splash screens (separate asset). Mention if user wants those updated too.
 
-3. **No telemetry.** App Review and our own device QA can't tell from the screen which branch executed (PKCE exchange vs. hash detect vs. error). Add a single structured log line per outcome — `[AuthCallback] outcome=…` with `flow`, `hasCode`, `hasHash`, `durationMs`, `error` — so Sentry/console traces on the physical iPhone test cleanly show what happened.
-
-These are **additive**: the existing happy-path code stays. The error-handling branch gets stricter and louder.
-
-## Changes
-
-### A. `src/pages/AuthCallbackPage.tsx` (edit)
-
-- Read `?error` / `?error_description` first; if present, set `status='error'` immediately with the provider message. No polling.
-- Check existing session before polling: if `getSession()` already returns a session on entry, navigate immediately (covers native shell pre-injecting the session).
-- If `!hasCode && !hasHash && !hasError`, error fast with: "No sign-in response detected. Please try again."
-- Wrap each outcome in a single `console.info('[AuthCallback]', { flow, hasCode, hasHash, error, durationMs })` (dev + prod — this is intentional, low-volume, and critical for resubmit forensics).
-- Keep the existing "Sign in with email" / "Back to home" buttons. Do **not** auto-redirect on error.
-
-### B. `src/pages/__tests__/AuthCallbackPage.test.tsx` (new)
-
-Vitest + React Testing Library. Mock `@/integrations/supabase/client` and `react-router-dom`'s `useNavigate`. Three cases — these are the resubmit-blocking ones:
-
-1. **PKCE success**: URL has `?code=abc`. `exchangeCodeForSession` resolves, then `getSession()` returns a session → asserts `navigate('/', { replace: true })` is called, no error UI rendered.
-2. **Provider error**: URL has `?error=access_denied&error_description=User%20cancelled`. Asserts error UI renders with "User cancelled" and `navigate` is **not** called with `/auth`.
-3. **Empty landing**: URL has no `code`/`hash`/`error` and no existing session. Asserts error UI renders fast (no 3s wait) and `navigate` is not called with `/auth`.
-
-### C. `TODO.md` resubmit checklist (append, do not rewrite)
-
-Add a short "Web side — pre-resubmit" section so the chravel-mobile TODO and this repo agree on what's already done and what's still external:
-
-- [x] Supabase client: `flowType: 'pkce'`
-- [x] `/auth-callback` page calls `exchangeCodeForSession` and shows actionable errors (no silent bounce to `/auth`)
-- [x] Vitest coverage for PKCE success, provider error, empty landing
-- [ ] **External (manual, Supabase dashboard):** Auth → URL Configuration → add `chravel://auth-callback` to "Redirect URLs" alongside `https://chravel.app/auth-callback`. Without this, the custom-scheme redirect is rejected by Supabase and the native handoff fails before reaching this page.
-- [ ] Physical iPhone (iOS 26+) verification: Continue with Apple → Face ID → home (not `/auth`), Google sign-in same path, no Stripe checkout opens from iOS billing.
-
-If you'd rather keep this off `TODO.md`, I can drop it into `appstore/UPLOAD_GUIDE.md` instead.
-
-## Out of scope (intentional)
-
-- No change to `useAuth.tsx`, the Apple native bridge, or `redirectTo` URLs — those already match the chravel-mobile contract.
-- No change to `flowType` or session storage.
-- No Supabase dashboard automation — that config is captured as a manual checklist item only.
-
-## Verification
-
-- `npm run typecheck && npm run lint`
-- `npx vitest run src/pages/__tests__/AuthCallbackPage.test.tsx`
-- Manual on preview: visit `/auth-callback?error=access_denied&error_description=Test` → error UI with "Test", no redirect.
-- Physical-device step stays in `TODO.md` for the resubmit run.
-
-## Rollback
-
-Single-commit revert. `AuthCallbackPage.tsx` is the only behavior change; the new test file and TODO entry are non-functional.
+### Question before building
+Background for **iOS marketing icon (1024)**: Apple disallows transparency. Should I use **solid black** (matches your brand mockup) or **gold square w/ icon embossed** (matches the squircle itself with no surrounding black)? Recommend **gold squircle on solid black 1024** = the exact image you uploaded, which is what App Store will display.
