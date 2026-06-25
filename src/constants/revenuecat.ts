@@ -64,7 +64,18 @@ export const REVENUECAT_PRODUCTS = {
   // Trip Passes (one-time, primary consumer offering)
   explorerPass45: 'com.chravel.explorer.pass45',
   frequentChravelerPass90: 'com.chravel.frequentchraveler.pass90',
+
+  // Pro tiers — exposed on iOS via RevenueCat so every plan is purchasable
+  // in-app. Pricing must match BILLING_PRODUCTS in src/billing/config.ts.
+  // App Store Connect product IDs follow the same com.chravel.* convention.
+  proStarterMonthly: 'com.chravel.pro.starter.monthly',
+  proStarterAnnual: 'com.chravel.pro.starter.annual',
+  proGrowthMonthly: 'com.chravel.pro.growth.monthly',
+  proGrowthAnnual: 'com.chravel.pro.growth.annual',
+  proEnterpriseMonthly: 'com.chravel.pro.enterprise.monthly',
+  proEnterpriseAnnual: 'com.chravel.pro.enterprise.annual',
 } as const;
+
 
 /**
  * Pricing display (for UI)

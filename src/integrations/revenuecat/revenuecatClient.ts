@@ -284,19 +284,13 @@ export async function purchasePackage(
 }
 
 /**
- * Purchase a non-renewing Trip Pass (one-time consumer pass).
- *
- * Looks up the RevenueCat package whose product identifier matches the
- * App Store Connect / Play Console SKU for the requested pass tier, then
- * routes through the standard purchasePackage flow so the global purchase
- * listener, entitlement sync, and toast UX all fire identically to a
- * recurring subscription purchase.
- *
- * Duration (45 / 90 days) is enforced server-side by RevenueCat's
- * non-renewing product configuration in the dashboard.
+ * Generic: purchase any RevenueCat package by its underlying store
+ * product identifier (App Store Connect / Play Console SKU). Looks the
+ * product up across **all** offerings so non-default offerings (Pro,
+ * Trip Pass, etc.) resolve correctly.
  */
-export async function purchaseTripPass(
-  passTier: 'explorer' | 'frequent-chraveler',
+export async function purchaseByProductId(
+  productId: string,
   isDemoMode: boolean = false,
 ): Promise<RevenueCatPurchaseResult> {
   if (isDemoMode) {
@@ -312,15 +306,8 @@ export async function purchaseTripPass(
     return { success: false, supported: true, errorCode: 'NOT_SUPPORTED' };
   }
 
-  const productId =
-    passTier === 'explorer'
-      ? REVENUECAT_PRODUCTS.explorerPass45
-      : REVENUECAT_PRODUCTS.frequentChravelerPass90;
-
   try {
     const offerings = await (purchases as any).getOfferings();
-    // Search every offering — passes typically live in a dedicated "trip_pass"
-    // offering rather than the default subscription offering.
     const allOfferings = [...Object.values(offerings?.all || {}), offerings?.current].filter(
       Boolean,
     ) as Array<{ availablePackages?: Array<{ product?: { identifier?: string } }> }>;
@@ -339,19 +326,19 @@ export async function purchaseTripPass(
         success: false,
         supported: true,
         errorCode: 'UNKNOWN',
-        error: `Trip Pass product ${productId} not found in RevenueCat offerings`,
+        error: `Product ${productId} not found in RevenueCat offerings`,
       };
     }
 
     const { customerInfo } = await (purchases as any).purchasePackage({ aPackage: pkg });
-    console.log('[RevenueCat] Trip Pass purchase successful', { productId });
+    console.log('[RevenueCat] Purchase successful', { productId });
     return {
       success: true,
       supported: true,
       data: customerInfo as unknown as RevenueCatCustomerInfo,
     };
   } catch (error: unknown) {
-    console.error('[RevenueCat] Trip Pass purchase failed:', error);
+    console.error('[RevenueCat] Purchase failed:', error, { productId });
     const errorObj = error as { userCancelled?: boolean; message?: string };
     if (errorObj?.userCancelled) {
       return {
@@ -369,6 +356,73 @@ export async function purchaseTripPass(
     };
   }
 }
+
+/**
+ * Purchase a non-renewing Trip Pass (one-time consumer pass).
+ *
+ * Duration (45 / 90 days) is enforced server-side by RevenueCat's
+ * non-renewing product configuration in the dashboard.
+ */
+export async function purchaseTripPass(
+  passTier: 'explorer' | 'frequent-chraveler',
+  isDemoMode: boolean = false,
+): Promise<RevenueCatPurchaseResult> {
+  const productId =
+    passTier === 'explorer'
+      ? REVENUECAT_PRODUCTS.explorerPass45
+      : REVENUECAT_PRODUCTS.frequentChravelerPass90;
+  return purchaseByProductId(productId, isDemoMode);
+}
+
+/**
+ * Purchase a recurring consumer subscription (Explorer / Frequent Chraveler)
+ * via Apple IAP / Google Play Billing through RevenueCat.
+ */
+export async function purchaseConsumerSubscription(
+  tier: 'explorer' | 'frequent-chraveler',
+  cycle: 'monthly' | 'annual',
+  isDemoMode: boolean = false,
+): Promise<RevenueCatPurchaseResult> {
+  const map = {
+    explorer: {
+      monthly: REVENUECAT_PRODUCTS.explorerMonthly,
+      annual: REVENUECAT_PRODUCTS.explorerAnnual,
+    },
+    'frequent-chraveler': {
+      monthly: REVENUECAT_PRODUCTS.frequentChravelerMonthly,
+      annual: REVENUECAT_PRODUCTS.frequentChravelerAnnual,
+    },
+  } as const;
+  return purchaseByProductId(map[tier][cycle], isDemoMode);
+}
+
+/**
+ * Purchase a Chravel Pro subscription via RevenueCat. Pro is B2B and also
+ * available through web Stripe checkout, but exposing IAP keeps every plan
+ * purchasable on iOS without forcing users to leave the app.
+ */
+export async function purchaseProSubscription(
+  tier: 'pro-starter' | 'pro-growth' | 'pro-enterprise',
+  cycle: 'monthly' | 'annual' = 'monthly',
+  isDemoMode: boolean = false,
+): Promise<RevenueCatPurchaseResult> {
+  const map = {
+    'pro-starter': {
+      monthly: REVENUECAT_PRODUCTS.proStarterMonthly,
+      annual: REVENUECAT_PRODUCTS.proStarterAnnual,
+    },
+    'pro-growth': {
+      monthly: REVENUECAT_PRODUCTS.proGrowthMonthly,
+      annual: REVENUECAT_PRODUCTS.proGrowthAnnual,
+    },
+    'pro-enterprise': {
+      monthly: REVENUECAT_PRODUCTS.proEnterpriseMonthly,
+      annual: REVENUECAT_PRODUCTS.proEnterpriseAnnual,
+    },
+  } as const;
+  return purchaseByProductId(map[tier][cycle], isDemoMode);
+}
+
 
 /**
  * Restore purchases (required for Apple compliance)

@@ -8,7 +8,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/colla
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
+import {
+  purchaseConsumerSubscription,
+  purchaseProSubscription,
+} from '@/integrations/revenuecat/revenuecatClient';
 import { TripPassModal } from '../conversion/TripPassModal';
+
 
 // App Store 3.1.1: inside the iOS app, consumers must not be steered to an external
 // web checkout or the Stripe-hosted billing portal for digital subscriptions. Manage/
@@ -39,12 +44,14 @@ export const ConsumerBillingSection = () => {
       typeof navigator !== 'undefined' ? navigator.userAgent : '',
       isNativeWebView(),
     ) === 'ios';
-  // Consumer (Explorer / Frequent Chraveler) digital subscriptions are IAP-only on iOS;
-  // Pro/Enterprise (B2B) checkout stays on Stripe per the reader-rule exception.
-  const blockConsumerCheckoutOnIOS = isNativeIOS;
+  // Manage / cancel of an existing subscription still routes to Apple's native
+  // subscription settings on iOS (required), but new purchases now go through
+  // Apple IAP via RevenueCat instead of being blocked.
+  const useAppleManagementOnIOS = isNativeIOS;
+
 
   const handleManageSubscription = async () => {
-    if (blockConsumerCheckoutOnIOS) {
+    if (useAppleManagementOnIOS) {
       // Route to Apple's native subscription management, not the external Stripe portal.
       window.location.assign(IOS_SUBSCRIPTIONS_URL);
       return;
@@ -76,7 +83,7 @@ export const ConsumerBillingSection = () => {
   };
 
   const handleCancelSubscription = async () => {
-    if (blockConsumerCheckoutOnIOS) {
+    if (useAppleManagementOnIOS) {
       // Apple requires cancellation of digital subscriptions via iOS settings, not a web portal.
       window.location.assign(IOS_SUBSCRIPTIONS_URL);
       return;
@@ -112,9 +119,22 @@ export const ConsumerBillingSection = () => {
   };
 
   const handleUpgradeToProPlan = async (planKey: string) => {
-    // App Store 3.1.1: no external purchase entry points from the iOS app.
+    // iOS native shell — Apple IAP via RevenueCat (Guideline 3.1.1)
     if (isNativeIOS) {
-      toast.info('Subscriptions are managed on chravel.app on the web.');
+      const result = await purchaseProSubscription(
+        planKey as 'pro-starter' | 'pro-growth' | 'pro-enterprise',
+        'monthly',
+      );
+      if (result.success) {
+        toast.success('Chravel Pro activated!');
+        await checkSubscription();
+      } else if (result.errorCode === 'CANCELLED') {
+        // silent
+      } else if (!result.supported) {
+        toast.error('In-app purchases are not available on this device.');
+      } else {
+        toast.error(result.error || 'Failed to start purchase.');
+      }
       return;
     }
     try {
@@ -131,11 +151,34 @@ export const ConsumerBillingSection = () => {
       }
     } catch (error) {
       toast.error(
+
         `Failed to start checkout: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
       console.error(error);
     }
   };
+
+  const handleConsumerUpgrade = async (
+    consumerTier: 'explorer' | 'frequent-chraveler',
+    cycle: 'monthly' | 'annual',
+  ) => {
+    if (isNativeIOS) {
+      const result = await purchaseConsumerSubscription(consumerTier, cycle);
+      if (result.success) {
+        toast.success('Subscription activated!');
+        await checkSubscription();
+      } else if (result.errorCode === 'CANCELLED') {
+        // silent
+      } else if (!result.supported) {
+        toast.error('In-app purchases are not available on this device.');
+      } else {
+        toast.error(result.error || 'Failed to start purchase.');
+      }
+      return;
+    }
+    await upgradeToTier(consumerTier, cycle);
+  };
+
 
   const plans = {
     free: {
@@ -193,15 +236,16 @@ export const ConsumerBillingSection = () => {
 
   return (
     <div className="space-y-3">
-      {blockConsumerCheckoutOnIOS && (
+      {useAppleManagementOnIOS && (
         <div className="rounded-xl p-4 bg-blue-500/10 border border-blue-500/30">
-          <h4 className="text-white font-semibold mb-1">iOS Billing Update</h4>
+          <h4 className="text-white font-semibold mb-1">iOS Billing</h4>
           <p className="text-sm text-blue-200">
-            Consumer subscriptions are temporarily unavailable in this iOS build while Apple In-App
-            Purchase is finalized.
+            Purchases are processed by Apple In-App Purchase. Manage or cancel from
+            Settings → [your name] → Subscriptions.
           </p>
         </div>
       )}
+
 
       {/* Current Plan */}
       <div
@@ -251,17 +295,14 @@ export const ConsumerBillingSection = () => {
 
         {!isSubscribed && (
           <button
-            onClick={() => upgradeToTier('explorer', billingCycle)}
-            disabled={isLoading || blockConsumerCheckoutOnIOS}
+            onClick={() => handleConsumerUpgrade('explorer', billingCycle)}
+            disabled={isLoading}
             className="bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-black px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
           >
-            {blockConsumerCheckoutOnIOS
-              ? 'Unavailable on iOS'
-              : isLoading
-                ? 'Processing...'
-                : 'View Upgrade Options'}
+            {isLoading ? 'Processing...' : 'View Upgrade Options'}
           </button>
         )}
+
 
         {isSubscribed && (
           <div className="flex gap-3">
@@ -351,11 +392,11 @@ export const ConsumerBillingSection = () => {
             </div>
             <button
               onClick={() => setTripPassOpen(true)}
-              disabled={blockConsumerCheckoutOnIOS}
               className="min-h-[42px] bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-black px-5 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {blockConsumerCheckoutOnIOS ? 'Unavailable on iOS' : 'Get a Trip Pass'}
+              Get a Trip Pass
             </button>
+
           </div>
         </div>
       )}
@@ -418,21 +459,22 @@ export const ConsumerBillingSection = () => {
                     {key !== 'free' && key !== tier && (
                       <button
                         onClick={() =>
-                          upgradeToTier(key as 'explorer' | 'frequent-chraveler', billingCycle)
+                          handleConsumerUpgrade(
+                            key as 'explorer' | 'frequent-chraveler',
+                            billingCycle,
+                          )
                         }
-                        disabled={
-                          isLoading ||
-                          (isNativeIOS && (key === 'explorer' || key === 'frequent-chraveler'))
-                        }
+                        disabled={isLoading}
                         className="mt-4 bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-black px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
                       >
-                        {isNativeIOS && (key === 'explorer' || key === 'frequent-chraveler')
-                          ? 'Unavailable on iOS'
-                          : isLoading
-                            ? 'Processing...'
+                        {isLoading
+                          ? 'Processing...'
+                          : isNativeIOS
+                            ? `Subscribe with Apple — ${plan.name}`
                             : `Upgrade to ${plan.name}`}
                       </button>
                     )}
+
                   </div>
                 </CollapsibleContent>
               </Collapsible>
@@ -452,9 +494,10 @@ export const ConsumerBillingSection = () => {
         </p>
         {isNativeIOS && (
           <p className="text-xs text-muted-foreground mb-3">
-            Subscriptions are managed on chravel.app on the web.
+            Pro plans are also purchasable in-app via Apple. Enterprise+ requires Sales — visit chravel.app.
           </p>
         )}
+
 
         <div className="space-y-3">
           {Object.entries(proPlans).map(([key, plan]) => {
@@ -514,16 +557,17 @@ export const ConsumerBillingSection = () => {
                     {!isCurrentProPlan && (
                       <button
                         onClick={() => handleUpgradeToProPlan(key)}
-                        disabled={isLoading || isNativeIOS}
+                        disabled={isLoading}
                         className="mt-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
                       >
-                        {isNativeIOS
-                          ? 'Manage on chravel.app'
-                          : isLoading
-                            ? 'Processing...'
+                        {isLoading
+                          ? 'Processing...'
+                          : isNativeIOS
+                            ? `Subscribe with Apple — ${plan.name}`
                             : `Upgrade to ${plan.name}`}
                       </button>
                     )}
+
                   </div>
                 </CollapsibleContent>
               </Collapsible>

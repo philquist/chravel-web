@@ -5,7 +5,9 @@ import { useIsMobile } from '../hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { SUBSCRIPTION_TIER_MAP } from '@/constants/stripe';
 import { detectNativeBillingPlatform, isIOSNativeShell, isNativeWebView } from '@/utils/platformDetection';
+import { purchaseProSubscription } from '@/integrations/revenuecat/revenuecatClient';
 import { toast } from 'sonner';
+
 
 interface ProUpgradeModalProps {
   isOpen: boolean;
@@ -21,21 +23,38 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
 
   if (!isOpen) return null;
 
-  const blockOnIOS = isIOSNativeShell();
+  const iosNative = isIOSNativeShell();
 
   const handleStartFreeTrial = async (tier: string) => {
-    if (blockOnIOS) {
-      toast.info('Subscriptions are managed on chravel.app on the web.');
-      return;
-    }
     setIsLoading(true);
     try {
+      const tierKey = SUBSCRIPTION_TIER_MAP[tier as keyof typeof SUBSCRIPTION_TIER_MAP];
+
+      // iOS native shell — Apple IAP via RevenueCat (Guideline 3.1.1)
+      if (iosNative) {
+        // Enterprise+ requires a sales conversation; route to web only for that custom-quote tier.
+        if (tierKey === 'pro-enterprise' && tier === 'enterprise-plus') {
+          toast.info('Contact sales for Enterprise+ pricing.');
+          return;
+        }
+        const proTier = (tierKey as 'pro-starter' | 'pro-growth' | 'pro-enterprise') || 'pro-starter';
+        const result = await purchaseProSubscription(proTier, 'monthly');
+        if (result.success) {
+          toast.success('Chravel Pro activated!');
+          onClose();
+        } else if (result.errorCode === 'CANCELLED') {
+          // silent
+        } else if (!result.supported) {
+          toast.error('In-app purchases are not available on this device.');
+        } else {
+          toast.error(result.error || 'Failed to start purchase.');
+        }
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
-          tier: SUBSCRIPTION_TIER_MAP[tier as keyof typeof SUBSCRIPTION_TIER_MAP],
-          // Defense-in-depth: forward platform so the edge function can enforce
-          // the Apple IAP boundary if tier classification ever regresses. Pro is
-          // B2B-exempt today, so this does not block the current Stripe path.
+          tier: tierKey,
           platform: detectNativeBillingPlatform(navigator.userAgent || '', isNativeWebView()),
         },
       });
@@ -52,6 +71,7 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
       setIsLoading(false);
     }
   };
+
 
   const tierIcons = {
     starter: <Zap size={isMobile ? 20 : 24} className="text-primary" />,
@@ -201,24 +221,25 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
         {/* CTA Section */}
         <div className="text-center">
           <div className="text-sm text-gold-light mb-4">
-            {blockOnIOS
-              ? 'Subscriptions are managed on chravel.app on the web.'
+            {iosNative
+              ? 'Subscribe with Apple — billed through your App Store account.'
               : '14-day free trial • No credit card required • Cancel anytime'}
           </div>
           <div className={`flex justify-center ${isMobile ? '' : ''}`}>
             <button
               onClick={() => handleStartFreeTrial(selectedTier)}
-              disabled={isLoading || blockOnIOS}
+              disabled={isLoading}
               className="px-8 py-3 bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-primary-foreground font-medium rounded-2xl transition-all duration-200 hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {blockOnIOS
-                ? 'Manage on chravel.app'
-                : isLoading
-                  ? 'Processing...'
+              {isLoading
+                ? 'Processing...'
+                : iosNative
+                  ? `Subscribe with Apple - ${SUBSCRIPTION_TIERS[selectedTier].name}`
                   : `Start Free Trial - ${SUBSCRIPTION_TIERS[selectedTier].name}`}
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );
