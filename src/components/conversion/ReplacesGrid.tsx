@@ -56,9 +56,7 @@ export const ReplacesGrid = () => {
                       {category.benefit}
                     </span>
                   </div>
-                  <div className="w-5" />
-
-                {/* Mobile/Phone: Center-aligned, full-width layout (hidden on tablet+) */}
+                </div>
                 <div className="flex flex-col w-full tablet:hidden text-center">
                   {/* Feature Name - Large, bold, pure white with glow */}
                   <h3
@@ -87,11 +85,6 @@ export const ReplacesGrid = () => {
                   >
                     {category.benefit}
                   </p>
-
-                  {/* Expand indicator - centered chevron */}
-                  <div className="flex justify-center">
-                    <ChevronDown className="h-5 w-5 text-white/70 transition-transform duration-200" />
-                  </div>
                 </div>
               </AccordionTrigger>
 
