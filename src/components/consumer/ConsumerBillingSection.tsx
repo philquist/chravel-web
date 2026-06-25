@@ -8,7 +8,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/colla
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
+import {
+  purchaseConsumerSubscription,
+  purchaseProSubscription,
+} from '@/integrations/revenuecat/revenuecatClient';
 import { TripPassModal } from '../conversion/TripPassModal';
+
 
 // App Store 3.1.1: inside the iOS app, consumers must not be steered to an external
 // web checkout or the Stripe-hosted billing portal for digital subscriptions. Manage/
