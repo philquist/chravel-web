@@ -5,11 +5,14 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Check, Globe, Crown, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { detectNativeBillingPlatform, isIOSNativeShell, isNativeWebView } from '@/utils/platformDetection';
+import {
+  detectNativeBillingPlatform,
+  isIOSNativeShell,
+  isNativeWebView,
+} from '@/utils/platformDetection';
 import { purchaseTripPass } from '@/integrations/revenuecat/revenuecatClient';
 import { toast } from 'sonner';
 import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
-
 
 interface TripPassModalProps {
   open: boolean;
@@ -114,7 +117,6 @@ export const TripPassModal: React.FC<TripPassModalProps> = ({ open, onOpenChange
     }
   };
 
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -170,7 +172,6 @@ export const TripPassModal: React.FC<TripPassModalProps> = ({ open, onOpenChange
                   {iosNative ? 'Buy with Apple' : 'Get Trip Pass'}
                 </Button>
                 <p className="text-xs text-muted-foreground text-center">{pass.nudge}</p>
-
               </CardFooter>
             </Card>
           ))}

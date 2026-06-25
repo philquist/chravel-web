@@ -16,8 +16,6 @@ import { TripPassModal } from '../conversion/TripPassModal';
 import { RestorePurchasesButton } from '../billing/RestorePurchasesButton';
 import { handlePurchaseResult } from '@/integrations/revenuecat/revenuecatClient';
 
-
-
 // App Store 3.1.1: inside the iOS app, consumers must not be steered to an external
 // web checkout or the Stripe-hosted billing portal for digital subscriptions. Manage/
 // cancel must route to Apple's native subscription settings instead.
@@ -51,7 +49,6 @@ export const ConsumerBillingSection = () => {
   // subscription settings on iOS (required), but new purchases now go through
   // Apple IAP via RevenueCat instead of being blocked.
   const useAppleManagementOnIOS = isNativeIOS;
-
 
   const handleManageSubscription = async () => {
     if (useAppleManagementOnIOS) {
@@ -150,7 +147,6 @@ export const ConsumerBillingSection = () => {
       }
     } catch (error) {
       toast.error(
-
         `Failed to start checkout: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
       console.error(error);
@@ -174,8 +170,6 @@ export const ConsumerBillingSection = () => {
     }
     await upgradeToTier(consumerTier, cycle);
   };
-
-
 
   const plans = {
     free: {
@@ -238,15 +232,13 @@ export const ConsumerBillingSection = () => {
           <div>
             <h4 className="text-white font-semibold mb-1">iOS Billing</h4>
             <p className="text-sm text-blue-200">
-              Purchases are processed by Apple In-App Purchase. Manage or cancel from
-              Settings → [your name] → Subscriptions.
+              Purchases are processed by Apple In-App Purchase. Manage or cancel from Settings →
+              [your name] → Subscriptions.
             </p>
           </div>
           <RestorePurchasesButton variant="block" onRestored={checkSubscription} />
         </div>
       )}
-
-
 
       {/* Current Plan */}
       <div
@@ -303,7 +295,6 @@ export const ConsumerBillingSection = () => {
             {isLoading ? 'Processing...' : 'View Upgrade Options'}
           </button>
         )}
-
 
         {isSubscribed && (
           <div className="flex gap-3">
@@ -397,7 +388,6 @@ export const ConsumerBillingSection = () => {
             >
               Get a Trip Pass
             </button>
-
           </div>
         </div>
       )}
@@ -475,7 +465,6 @@ export const ConsumerBillingSection = () => {
                             : `Upgrade to ${plan.name}`}
                       </button>
                     )}
-
                   </div>
                 </CollapsibleContent>
               </Collapsible>
@@ -495,10 +484,10 @@ export const ConsumerBillingSection = () => {
         </p>
         {isNativeIOS && (
           <p className="text-xs text-muted-foreground mb-3">
-            Pro plans are also purchasable in-app via Apple. Enterprise+ requires Sales — visit chravel.app.
+            Pro plans are also purchasable in-app via Apple. Enterprise+ requires Sales — visit
+            chravel.app.
           </p>
         )}
-
 
         <div className="space-y-3">
           {Object.entries(proPlans).map(([key, plan]) => {
@@ -568,7 +557,6 @@ export const ConsumerBillingSection = () => {
                             : `Upgrade to ${plan.name}`}
                       </button>
                     )}
-
                   </div>
                 </CollapsibleContent>
               </Collapsible>

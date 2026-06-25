@@ -72,11 +72,7 @@ export const FAQSection = () => {
       </div>
 
       {/* FAQ Items */}
-      <Accordion
-        type="single"
-        collapsible
-        className="w-full max-w-3xl space-y-4"
-      >
+      <Accordion type="single" collapsible className="w-full max-w-3xl space-y-4">
         {faqItems.map((item, index) => (
           <AccordionItem
             key={index}

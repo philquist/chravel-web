@@ -156,7 +156,6 @@ export async function configureRevenueCat(
     }
 
     return { success: true, supported: true };
-
   } catch (error) {
     console.error('[RevenueCat] Configuration failed:', error);
     return {
@@ -449,7 +448,6 @@ export async function purchaseProSubscription(
   return purchaseByProductId(map[tier][cycle], isDemoMode);
 }
 
-
 /**
  * Restore purchases (required for Apple compliance)
  */
@@ -641,9 +639,9 @@ export async function assertIosOfferingsContainRequiredProducts(
     return { ok: false, missing: [...REQUIRED_IOS_PRODUCT_IDS], available: [] };
   }
   const offerings = offeringsRes.data;
-  const all = [...Object.values(offerings.all || {}), offerings.current].filter(
-    Boolean,
-  ) as Array<{ availablePackages?: Array<{ product?: { identifier?: string } }> }>;
+  const all = [...Object.values(offerings.all || {}), offerings.current].filter(Boolean) as Array<{
+    availablePackages?: Array<{ product?: { identifier?: string } }>;
+  }>;
 
   const available = new Set<string>();
   for (const off of all) {
@@ -671,9 +669,7 @@ export async function assertIosOfferingsContainRequiredProducts(
 export async function restoreAndSyncEntitlements(
   userId: string,
   isDemoMode: boolean = false,
-): Promise<
-  RevenueCatResult<{ customerInfo: RevenueCatCustomerInfo; plan: DerivedPlan }>
-> {
+): Promise<RevenueCatResult<{ customerInfo: RevenueCatCustomerInfo; plan: DerivedPlan }>> {
   if (isDemoMode) {
     return { success: false, supported: false, error: 'Demo mode active' };
   }
@@ -764,7 +760,10 @@ export function handlePurchaseResult(
   const { successMessage = 'Purchase successful', successDescription, onRetry, context } = options;
 
   if (result.success) {
-    toast.success(successMessage, successDescription ? { description: successDescription } : undefined);
+    toast.success(
+      successMessage,
+      successDescription ? { description: successDescription } : undefined,
+    );
     return;
   }
 
@@ -790,4 +789,3 @@ export function handlePurchaseResult(
       });
   }
 }
-

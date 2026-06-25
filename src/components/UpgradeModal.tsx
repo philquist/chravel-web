@@ -14,14 +14,17 @@ import {
 } from 'lucide-react';
 import { useConsumerSubscription } from '../hooks/useConsumerSubscription';
 import { supabase } from '@/integrations/supabase/client';
-import { detectNativeBillingPlatform, isIOSNativeShell, isNativeWebView } from '@/utils/platformDetection';
+import {
+  detectNativeBillingPlatform,
+  isIOSNativeShell,
+  isNativeWebView,
+} from '@/utils/platformDetection';
 import {
   purchaseConsumerSubscription,
   purchaseProSubscription,
 } from '@/integrations/revenuecat/revenuecatClient';
 import { toast } from 'sonner';
 import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
-
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -103,7 +106,6 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
       }
     }
   };
-
 
   return (
     <div className="modal-backdrop z-50 flex items-center justify-center p-4">
@@ -441,7 +443,6 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
             {isLoading ? 'Processing...' : iosNative ? 'Subscribe with Apple' : 'Start Free Trial'}
           </button>
         </div>
-
       </div>
     </div>
   );

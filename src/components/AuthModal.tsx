@@ -378,7 +378,9 @@ export const AuthModal = ({
             <div className="flex flex-col items-center mb-2" data-testid="auth-modal-logo" />
 
             <div className="relative flex items-center justify-center mb-6 min-h-[2.5rem]">
-              <h2 className="text-3xl font-display font-normal tracking-tight text-white text-center px-10">{authHeading}</h2>
+              <h2 className="text-3xl font-display font-normal tracking-tight text-white text-center px-10">
+                {authHeading}
+              </h2>
               <button
                 onClick={onClose}
                 className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg"
@@ -431,9 +433,7 @@ export const AuthModal = ({
                     setError('');
                   }}
                   className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold tracking-wide transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
-                    mode === 'signin'
-                      ? 'bg-gold-metallic'
-                      : 'text-gray-400 hover:text-white'
+                    mode === 'signin' ? 'bg-gold-metallic' : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   Sign in
@@ -447,9 +447,7 @@ export const AuthModal = ({
                     setError('');
                   }}
                   className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold tracking-wide transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
-                    mode === 'signup'
-                      ? 'bg-gold-metallic'
-                      : 'text-gray-400 hover:text-white'
+                    mode === 'signup' ? 'bg-gold-metallic' : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   Sign up
