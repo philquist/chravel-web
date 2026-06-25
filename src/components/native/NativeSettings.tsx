@@ -26,7 +26,15 @@ import {
 import { hapticService } from '@/services/hapticService';
 import { NativeList, NativeListSection, NativeListItem, NativeToggleItem } from './NativeList';
 import { NativeLargeTitle } from './NativeLargeTitle';
-import { getPlatform, purchaseTripPass } from '@/integrations/revenuecat/revenuecatClient';
+import {
+  getPlatform,
+  purchaseTripPass,
+  restoreAndSyncEntitlements,
+  handlePurchaseResult,
+} from '@/integrations/revenuecat/revenuecatClient';
+import { useAuth } from '@/hooks/useAuth';
+import { RefreshCw } from 'lucide-react';
+
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
 import { toast } from 'sonner';
