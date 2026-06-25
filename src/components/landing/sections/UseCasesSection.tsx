@@ -256,7 +256,9 @@ export const UseCasesSection = () => {
                               onClick={e => e.stopPropagation()}
                               className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
                             >
-                              See the ChravelApp blog for more
+                              {scenario.href.startsWith('/blog')
+                                ? 'See the ChravelApp blog for more'
+                                : 'See how ChravelApp helps'}
                               <ArrowRight className="w-4 h-4" />
                             </Link>
                           </div>
