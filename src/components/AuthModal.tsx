@@ -322,7 +322,7 @@ export const AuthModal = ({
       <button
         type="submit"
         disabled={isLoading || awaitingAuth}
-        className="w-full bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground font-medium py-3 rounded-xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 min-h-[44px]"
+        className="w-full bg-gold-metallic font-semibold tracking-wide py-3 rounded-xl hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-50 min-h-[44px]"
       >
         {awaitingAuth
           ? 'Signing you in...'
