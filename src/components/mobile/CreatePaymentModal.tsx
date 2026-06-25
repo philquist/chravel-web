@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { X, DollarSign, Users, Check } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { X, DollarSign, Users, Check, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { demoModeService } from '@/services/demoModeService';
 import { paymentService } from '@/services/paymentService';
 import { usePaymentSplits } from '@/hooks/usePaymentSplits';
@@ -14,6 +15,7 @@ import { CURRENCIES } from '@/constants/currencies';
 import { useFeatureFlag } from '@/lib/featureFlags';
 import { usePaymentAttachmentDraft } from '@/features/payments/hooks/usePaymentAttachmentDraft';
 import { PaymentAttachmentPicker } from '@/features/payments/components/PaymentAttachmentPicker';
+import { LARGE_LIST_THRESHOLDS } from '@/lib/largeListThresholds';
 
 interface CreatePaymentModalProps {
   isOpen: boolean;
@@ -70,6 +72,14 @@ export const CreatePaymentModal = ({
     getPaymentData,
     resetForm,
   } = usePaymentSplits(tripMembers);
+
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const filteredTripMembers = useMemo(() => {
+    const normalized = memberSearchQuery.trim().toLowerCase();
+    if (!normalized) return tripMembers;
+    return tripMembers.filter(member => member.name.toLowerCase().includes(normalized));
+  }, [memberSearchQuery, tripMembers]);
+  const showMemberSearch = tripMembers.length >= LARGE_LIST_THRESHOLDS.paymentPickerSearchMinCount;
 
   // Attachments are only available for real (non-demo) trips with the kill switch on.
   const showAttachments = attachmentsEnabled && !demoActive;
@@ -251,17 +261,43 @@ export const CreatePaymentModal = ({
                   type="button"
                   onClick={selectAllParticipants}
                   className="text-xs text-green-400 hover:text-green-300 font-medium px-2 py-1 rounded bg-white/5 hover:bg-white/10 transition-colors"
+                  aria-label={
+                    allParticipantsSelected
+                      ? 'Deselect all trip members'
+                      : 'Select all trip members'
+                  }
                 >
-                  {allParticipantsSelected ? 'Deselect All' : 'Select All'}
+                  {allParticipantsSelected ? 'Deselect All' : 'Select All Trip Members'}
                 </button>
               </div>
+              {showMemberSearch && (
+                <div className="relative mb-2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    value={memberSearchQuery}
+                    onChange={event => setMemberSearchQuery(event.target.value)}
+                    placeholder="Search members…"
+                    className="pl-9 bg-white/5 border-white/10 text-white"
+                    aria-label="Search trip members"
+                  />
+                </div>
+              )}
+              {selectedParticipants.length > 0 && (
+                <p className="text-xs text-gray-400 mb-2">
+                  {selectedParticipants.length} of {tripMembers.length} selected
+                </p>
+              )}
               <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2 p-3 bg-white/5 border border-white/10 rounded-xl native-scroll">
                 {tripMembers.length === 0 ? (
                   <p className="text-sm text-gray-400 text-center py-2 w-full">
                     No trip members found
                   </p>
+                ) : filteredTripMembers.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-2 w-full">
+                    No members match your search
+                  </p>
                 ) : (
-                  tripMembers.map(member => {
+                  filteredTripMembers.map(member => {
                     const isSelected = selectedParticipants.includes(member.id);
                     return (
                       <button

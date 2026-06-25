@@ -32,7 +32,7 @@ import { CTA_GRADIENT, CTA_INTERACTIVE, CTA_DISABLED } from '@/lib/ctaButtonStyl
 const CTA_ICON_CHAT = 'w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]';
 const CTA_BUTTON_CHAT = `size-6 min-w-[24px] sm:size-10 sm:min-w-[40px] rounded-full flex items-center justify-center shrink-0 select-none touch-manipulation ${CTA_GRADIENT} ${CTA_INTERACTIVE} ${CTA_DISABLED}`;
 import { hapticService as haptics } from '@/services/hapticService';
-import { MentionPicker, TripMember } from './MentionPicker';
+import { MentionPicker, TripMember, filterMentionMembers } from './MentionPicker';
 import { VoiceButton } from './VoiceButton';
 import { useWebSpeechVoice } from '@/hooks/useWebSpeechVoice';
 import { EmojiMartPicker } from './EmojiMartPicker';
@@ -235,9 +235,7 @@ export const ChatInput = ({
     (e: React.KeyboardEvent) => {
       if (!showMentionPicker) return;
 
-      const filteredMembers = tripMembers.filter(m =>
-        m.name.toLowerCase().includes(mentionSearchQuery.toLowerCase()),
-      );
+      const filteredMembers = filterMentionMembers(tripMembers, mentionSearchQuery);
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();

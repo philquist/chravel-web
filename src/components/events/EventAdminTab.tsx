@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Shield,
   Globe,
@@ -41,6 +41,7 @@ import { Label } from '@/components/ui/label';
 import { useEventAdmin, MediaUploadMode } from '@/hooks/useEventAdmin';
 import { EVENT_TABS_CONFIG } from '@/lib/eventTabs';
 import { NativeSegmentedControl } from '@/components/native/NativeSegmentedControl';
+import { SearchableVirtualMemberList } from '@/components/members/SearchableVirtualMemberList';
 
 interface EventAdminTabProps {
   eventId: string;
@@ -91,6 +92,16 @@ export const EventAdminTab: React.FC<EventAdminTabProps> = ({ eventId }) => {
 
   const [mediaModalOpen, setMediaModalOpen] = useState(false);
   const [pendingMediaMode, setPendingMediaMode] = useState<MediaUploadMode>(mediaUploadMode);
+
+  const searchableAttendees = useMemo(
+    () =>
+      members.map(member => ({
+        ...member,
+        id: member.user_id,
+        searchText: member.display_name || 'Member',
+      })),
+    [members],
+  );
 
   if (isLoading) {
     return (
@@ -224,13 +235,14 @@ export const EventAdminTab: React.FC<EventAdminTabProps> = ({ eventId }) => {
             </span>
           </div>
 
-          <div className="overflow-y-auto space-y-2 max-h-[360px]">
+          <div className="flex-1 min-h-0">
             {members.length === 0 && (!isPrivate || joinRequests.length === 0) ? (
               <p className="text-sm text-muted-foreground text-center py-4">No attendees yet</p>
-            ) : (
-              <>
-                {members.map(member => (
-                  <div key={member.user_id} className="flex items-center gap-3 py-1.5">
+            ) : members.length > 0 ? (
+              <SearchableVirtualMemberList
+                items={searchableAttendees}
+                renderItem={member => (
+                  <div className="flex items-center gap-3 py-1.5">
                     <Avatar className="h-8 w-8 flex-shrink-0">
                       <AvatarImage src={member.avatar_url || undefined} />
                       <AvatarFallback className="text-xs bg-muted">
@@ -241,116 +253,122 @@ export const EventAdminTab: React.FC<EventAdminTabProps> = ({ eventId }) => {
                       {member.display_name || 'Member'}
                     </span>
                   </div>
-                ))}
-
-                {isPrivate && joinRequests.length > 0 && (
-                  <div className="border-t border-border pt-3 mt-2 space-y-2">
-                    <h4 className="text-xs font-semibold text-amber-400 uppercase tracking-wide">
-                      Pending Requests ({joinRequests.length})
-                    </h4>
-                    {joinRequests.map(req => (
-                      <div key={req.id} className="flex items-center justify-between py-1.5">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Avatar className="h-8 w-8 flex-shrink-0">
-                            <AvatarImage src={req.profile?.avatar_url || undefined} />
-                            <AvatarFallback className="text-xs bg-muted">
-                              {(req.profile?.display_name || '?').charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm text-foreground truncate">
-                            {req.profile?.display_name || 'Someone'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <button
-                                disabled={isProcessing}
-                                className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
-                                aria-label={`Approve ${req.profile?.display_name || 'request'}`}
-                                title="Approve"
-                              >
-                                <Check size={14} />
-                              </button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Approve join request?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {req.profile?.display_name || 'This person'} will be added to the
-                                  event.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={async () => {
-                                    try {
-                                      await approveRequest(req.id);
-                                      toast({
-                                        title: `${req.profile?.display_name || 'User'} approved`,
-                                      });
-                                    } catch {
-                                      toast({
-                                        title: 'Failed to approve request',
-                                        variant: 'destructive',
-                                      });
-                                    }
-                                  }}
-                                >
-                                  Approve
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <button
-                                disabled={isProcessing}
-                                className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
-                                aria-label={`Deny ${req.profile?.display_name || 'request'}`}
-                                title="Deny"
-                              >
-                                <X size={14} />
-                              </button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Deny join request?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {req.profile?.display_name || 'This person'} will not be added to
-                                  the event.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={async () => {
-                                    try {
-                                      await rejectRequest(req.id);
-                                      toast({
-                                        title: `${req.profile?.display_name || 'User'} denied`,
-                                      });
-                                    } catch {
-                                      toast({
-                                        title: 'Failed to deny request',
-                                        variant: 'destructive',
-                                      });
-                                    }
-                                  }}
-                                  className="bg-red-600 hover:bg-red-700 text-white"
-                                >
-                                  Deny
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 )}
-              </>
+                emptyLabel="No attendees yet"
+                noResultsLabel="No attendees match your search"
+                searchPlaceholder="Search attendees…"
+                listAriaLabel="Event attendees"
+                maxHeightClassName="max-h-[300px]"
+                rowHeight={44}
+              />
+            ) : null}
+
+            {isPrivate && joinRequests.length > 0 && (
+              <div className="border-t border-border pt-3 mt-2 space-y-2">
+                <h4 className="text-xs font-semibold text-amber-400 uppercase tracking-wide">
+                  Pending Requests ({joinRequests.length})
+                </h4>
+                {joinRequests.map(req => (
+                  <div key={req.id} className="flex items-center justify-between py-1.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar className="h-8 w-8 flex-shrink-0">
+                        <AvatarImage src={req.profile?.avatar_url || undefined} />
+                        <AvatarFallback className="text-xs bg-muted">
+                          {(req.profile?.display_name || '?').charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-foreground truncate">
+                        {req.profile?.display_name || 'Someone'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            disabled={isProcessing}
+                            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+                            aria-label={`Approve ${req.profile?.display_name || 'request'}`}
+                            title="Approve"
+                          >
+                            <Check size={14} />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Approve join request?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {req.profile?.display_name || 'This person'} will be added to the
+                              event.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={async () => {
+                                try {
+                                  await approveRequest(req.id);
+                                  toast({
+                                    title: `${req.profile?.display_name || 'User'} approved`,
+                                  });
+                                } catch {
+                                  toast({
+                                    title: 'Failed to approve request',
+                                    variant: 'destructive',
+                                  });
+                                }
+                              }}
+                            >
+                              Approve
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            disabled={isProcessing}
+                            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                            aria-label={`Deny ${req.profile?.display_name || 'request'}`}
+                            title="Deny"
+                          >
+                            <X size={14} />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Deny join request?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {req.profile?.display_name || 'This person'} will not be added to the
+                              event.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={async () => {
+                                try {
+                                  await rejectRequest(req.id);
+                                  toast({
+                                    title: `${req.profile?.display_name || 'User'} denied`,
+                                  });
+                                } catch {
+                                  toast({
+                                    title: 'Failed to deny request',
+                                    variant: 'destructive',
+                                  });
+                                }
+                              }}
+                              className="bg-red-600 hover:bg-red-700 text-white"
+                            >
+                              Deny
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>

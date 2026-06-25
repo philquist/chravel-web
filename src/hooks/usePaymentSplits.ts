@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { getDisplayPerPersonAmount } from '@/lib/splitAmountUtils';
 
 export interface TripMember {
   id: string;
@@ -60,7 +61,7 @@ export const usePaymentSplits = (tripMembers: TripMember[] = []) => {
 
   const calculatePerPersonAmount = useCallback((): number => {
     if (splitCount === 0) return 0;
-    return amount / splitCount;
+    return getDisplayPerPersonAmount(amount, splitCount);
   }, [amount, splitCount]);
 
   const validatePayment = useCallback((): { isValid: boolean; error?: string } => {

@@ -1,6 +1,9 @@
-import React from 'react';
-import { getInitials, isValidAvatarUrl } from '../../utils/avatarUtils';
-import { formatCollaboratorName } from '../../utils/nameFormatUtils';
+import React, { useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { LARGE_LIST_THRESHOLDS } from '@/lib/largeListThresholds';
+import { MemberAvatarStack } from '@/components/members/MemberAvatarStack';
+import { formatCollaboratorName } from '@/utils/nameFormatUtils';
+import { getInitials, isValidAvatarUrl } from '@/utils/avatarUtils';
 
 export interface CollaboratorItem {
   id: number | string;
@@ -12,19 +15,21 @@ export interface CollaboratorItem {
 interface CollaboratorsGridProps {
   participants: CollaboratorItem[];
   countLabel?: string;
-  maxRows?: number; // approximate rows to show before clamping
-  minColWidth?: number; // min width for each grid item
+  maxRows?: number;
+  minColWidth?: number;
   onShowAll: () => void;
   tripType?: 'consumer' | 'pro' | 'event';
-  displayContext?: 'home' | 'trip-detail'; // Controls whether to show avatars or initials
-  pendingRequestsCount?: number; // Badge for pending requests (admins only)
-  hideBottomRow?: boolean; // Hide the count label and "Show all" row (when integrated into header)
+  displayContext?: 'home' | 'trip-detail';
+  pendingRequestsCount?: number;
+  hideBottomRow?: boolean;
 }
+
+const COMPACT_PREVIEW_THRESHOLD = 8;
 
 export const CollaboratorsGrid: React.FC<CollaboratorsGridProps> = ({
   participants,
   countLabel,
-  maxRows = 1,
+  maxRows: _maxRows = 1,
   minColWidth: _minColWidth = 140,
   onShowAll,
   tripType = 'consumer',
@@ -32,34 +37,60 @@ export const CollaboratorsGrid: React.FC<CollaboratorsGridProps> = ({
   pendingRequestsCount: _pendingRequestsCount = 0,
   hideBottomRow = false,
 }) => {
-  // Determine whether to show avatars or initials
-  // Events: always show initials only (privacy)
-  // Consumer & Pro: show avatars in trip-detail, initials on home
+  const isMobile = useIsMobile();
   const showAvatars = tripType !== 'event' && displayContext === 'trip-detail';
+  const useCompactPreview = participants.length > COMPACT_PREVIEW_THRESHOLD;
 
-  // Approximate clamp height: each row ~ 44px with compact sizing
-  // 🔄 FIX: Show at least 3 members on mobile by allowing ~2 rows (88px min)
-  const clampHeight = Math.max(88, Math.min(160, maxRows * 52));
+  const stackMembers = useMemo(
+    () =>
+      participants.map(participant => ({
+        id: participant.id,
+        name: formatCollaboratorName(participant.name, tripType),
+        avatar: showAvatars ? participant.avatar : undefined,
+      })),
+    [participants, showAvatars, tripType],
+  );
+
+  if (useCompactPreview) {
+    return (
+      <section aria-labelledby="collab-title" className="relative">
+        <MemberAvatarStack
+          members={stackMembers}
+          totalCount={participants.length}
+          maxVisible={
+            isMobile
+              ? LARGE_LIST_THRESHOLDS.previewAvatarsMobile
+              : LARGE_LIST_THRESHOLDS.previewAvatarsDesktop
+          }
+          onOverflowClick={onShowAll}
+        />
+        {!hideBottomRow && (
+          <div className="mt-2 flex items-center justify-between">
+            <div className="text-xs text-gray-400">{countLabel}</div>
+            <button
+              className="text-xs font-medium underline text-gray-200 hover:text-white"
+              onClick={onShowAll}
+              aria-label="Show all members"
+            >
+              View all
+            </button>
+          </div>
+        )}
+      </section>
+    );
+  }
 
   return (
     <section aria-labelledby="collab-title" className="relative">
       <div className="relative">
-        {/* Use flex-wrap for content-sized pills instead of grid with 1fr */}
-        <div
-          className="flex flex-wrap gap-2"
-          style={{
-            maxHeight: `${clampHeight}px`,
-            overflow: 'hidden',
-          }}
-          role="list"
-          aria-label="Collaborators"
-        >
+        <div className="flex flex-wrap gap-2" role="list" aria-label="Collaborators">
           {participants.map(c => (
             <button
               key={c.id}
               className="group inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 transition w-auto shrink-0 max-w-[200px]"
               role="listitem"
               title={c.role ? `${c.name} • ${c.role}` : c.name}
+              onClick={onShowAll}
             >
               {showAvatars && isValidAvatarUrl(c.avatar) ? (
                 <img
@@ -82,12 +113,8 @@ export const CollaboratorsGrid: React.FC<CollaboratorsGridProps> = ({
             </button>
           ))}
         </div>
-
-        {/* gradient fade */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/60 to-transparent rounded-b-lg" />
       </div>
 
-      {/* Bottom row - conditionally hidden when integrated into parent header */}
       {!hideBottomRow && (
         <div className="mt-2 flex items-center justify-between">
           <div className="text-xs text-gray-400">{countLabel}</div>

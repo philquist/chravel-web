@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { getInitials, isValidAvatarUrl } from '../../utils/avatarUtils';
 import { formatCollaboratorName } from '../../utils/nameFormatUtils';
@@ -8,6 +8,7 @@ import { JoinRequest } from '@/hooks/useJoinRequests';
 import { formatDistanceToNow } from 'date-fns';
 import { MemberContactCard, MemberContactCardMember } from './MemberContactCard';
 import { SwipeableRow } from '../mobile/SwipeableRow';
+import { SearchableVirtualMemberList } from '@/components/members/SearchableVirtualMemberList';
 
 export interface CollaboratorItem {
   id: number | string;
@@ -142,6 +143,82 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
   const canManageRequests = (isAdmin || isConsumerTrip) && onApproveRequest && onRejectRequest;
   const pendingCount = pendingRequests.length;
 
+  const searchableParticipants = useMemo(
+    () =>
+      participants.map(participant => {
+        const idStr = participant.id.toString();
+        const displayName = formatCollaboratorName(participant.name, tripType);
+        return {
+          ...participant,
+          id: idStr,
+          searchText: [displayName, participant.role ?? ''].filter(Boolean).join(' '),
+        };
+      }),
+    [participants, tripType],
+  );
+
+  const renderMemberRow = (participant: (typeof searchableParticipants)[number]) => {
+    const idStr = participant.id;
+    const isCreator = idStr === tripCreatorId || participant.isCreator;
+    const isCurrentUser = idStr === currentUserId;
+    const showRemoveButton = canRemove(idStr);
+    const isClickable = !isCurrentUser;
+
+    return (
+      <div
+        onClick={isClickable ? () => handleMemberClick(participant) : undefined}
+        className={cn(
+          'flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 mb-2',
+          removingId === idStr && 'opacity-50',
+          isClickable && 'cursor-pointer hover:bg-white/10 transition-colors',
+        )}
+      >
+        {isValidAvatarUrl(participant.avatar) ? (
+          <img
+            src={participant.avatar}
+            alt={participant.name}
+            className="h-9 w-9 rounded-full object-cover border border-white/20"
+            loading="lazy"
+          />
+        ) : (
+          <div className="h-9 w-9 rounded-full bg-white/10 text-white/80 grid place-items-center text-xs font-semibold border border-white/20">
+            {getInitials(participant.name)}
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm font-medium text-white">
+              {formatCollaboratorName(participant.name, tripType)}
+            </span>
+            {isCreator && (
+              <span title="Trip Creator">
+                <Crown size={14} className="text-yellow-500 flex-shrink-0" />
+              </span>
+            )}
+            {isCurrentUser && !isCreator && <span className="text-xs text-gray-400">(you)</span>}
+          </div>
+          {participant.role && (
+            <div className="truncate text-xs text-gray-400">{participant.role}</div>
+          )}
+        </div>
+
+        {showRemoveButton && (
+          <button
+            onClick={e => {
+              e.stopPropagation();
+              void handleRemove(idStr, participant.name);
+            }}
+            disabled={removingId === idStr}
+            className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+            title={isCurrentUser ? 'Leave trip' : 'Remove from trip'}
+          >
+            <UserMinus size={16} />
+          </button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -183,240 +260,179 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
         </div>
 
         {/* Tab Content */}
-        <div className="mt-4 max-h-[60vh] overflow-auto pr-1">
+        <div className="mt-4 pr-1">
           {activeTab === 'members' ? (
-            // Members List
-            <div role="list" aria-label="All members">
-              {participants.map(c => {
-                const idStr = c.id.toString();
-                const isCreator = idStr === tripCreatorId || c.isCreator;
-                const isCurrentUser = idStr === currentUserId;
-                const showRemoveButton = canRemove(idStr);
-
-                const isClickable = !isCurrentUser; // Can click on other members to see contact card
-
-                return (
-                  <div
-                    key={c.id}
-                    role="listitem"
-                    onClick={isClickable ? () => handleMemberClick(c) : undefined}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 mb-2',
-                      removingId === idStr && 'opacity-50',
-                      isClickable && 'cursor-pointer hover:bg-white/10 transition-colors',
-                    )}
-                  >
-                    {isValidAvatarUrl(c.avatar) ? (
-                      <img
-                        src={c.avatar}
-                        alt={c.name}
-                        className="h-9 w-9 rounded-full object-cover border border-white/20"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="h-9 w-9 rounded-full bg-white/10 text-white/80 grid place-items-center text-xs font-semibold border border-white/20">
-                        {getInitials(c.name)}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-medium text-white">
-                          {formatCollaboratorName(c.name, tripType)}
-                        </span>
-                        {isCreator && (
-                          <span title="Trip Creator">
-                            <Crown size={14} className="text-yellow-500 flex-shrink-0" />
-                          </span>
-                        )}
-                        {isCurrentUser && !isCreator && (
-                          <span className="text-xs text-gray-400">(you)</span>
-                        )}
-                      </div>
-                      {c.role && <div className="truncate text-xs text-gray-400">{c.role}</div>}
-                    </div>
-
-                    {/* Remove button */}
-                    {showRemoveButton && (
-                      <button
-                        onClick={e => {
-                          e.stopPropagation(); // Prevent contact card from opening
-                          handleRemove(idStr, c.name);
-                        }}
-                        disabled={removingId === idStr}
-                        className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
-                        title={isCurrentUser ? 'Leave trip' : 'Remove from trip'}
-                      >
-                        <UserMinus size={16} />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-              {participants.length === 0 && (
-                <div className="text-center py-8 text-gray-400">No members yet</div>
-              )}
-            </div>
+            <SearchableVirtualMemberList
+              items={searchableParticipants}
+              renderItem={renderMemberRow}
+              emptyLabel="No members yet"
+              searchPlaceholder="Search trip members…"
+              noResultsLabel="No members match your search"
+              listAriaLabel="All members"
+              maxHeightClassName="max-h-[60vh]"
+            />
           ) : (
-            // Pending Requests List - Show different content for admins vs non-admins
-            <div role="list" aria-label="Pending join requests">
-              {canManageRequests ? (
-                // Admin view: can approve/reject requests
-                pendingRequests.length > 0 ? (
-                  <>
-                    {/* Swipe hint for mobile */}
-                    <div className="text-xs text-gray-500 mb-2 px-1 flex items-center gap-1">
-                      <span className="hidden sm:inline">←</span>
-                      <span>Swipe left to dismiss requests</span>
-                    </div>
-                    {pendingRequests.map(request => {
-                      const isProcessing = processingRequestId === request.id;
-                      // Use profile display_name which already has fallback logic applied
-                      const displayName =
-                        request.profile?.display_name ||
-                        request.requester_name ||
-                        request.requester_email?.split('@')[0] ||
-                        'New member';
-                      const avatarUrl = request.profile?.avatar_url || request.requester_avatar_url;
-                      const requestedAtDate = request.requested_at
-                        ? new Date(request.requested_at)
-                        : null;
-                      const hasValidRequestedAt =
-                        requestedAtDate !== null && !Number.isNaN(requestedAtDate.getTime());
-                      const requestedLabel = hasValidRequestedAt
-                        ? `Requested ${formatDistanceToNow(requestedAtDate, {
-                            addSuffix: true,
-                          })}`
-                        : 'Requested date unavailable';
+            <div className="max-h-[60vh] overflow-auto pr-1">
+              <div role="list" aria-label="Pending join requests">
+                {canManageRequests ? (
+                  pendingRequests.length > 0 ? (
+                    <>
+                      {/* Swipe hint for mobile */}
+                      <div className="text-xs text-gray-500 mb-2 px-1 flex items-center gap-1">
+                        <span className="hidden sm:inline">←</span>
+                        <span>Swipe left to dismiss requests</span>
+                      </div>
+                      {pendingRequests.map(request => {
+                        const isProcessing = processingRequestId === request.id;
+                        // Use profile display_name which already has fallback logic applied
+                        const displayName =
+                          request.profile?.display_name ||
+                          request.requester_name ||
+                          request.requester_email?.split('@')[0] ||
+                          'New member';
+                        const avatarUrl =
+                          request.profile?.avatar_url || request.requester_avatar_url;
+                        const requestedAtDate = request.requested_at
+                          ? new Date(request.requested_at)
+                          : null;
+                        const hasValidRequestedAt =
+                          requestedAtDate !== null && !Number.isNaN(requestedAtDate.getTime());
+                        const requestedLabel = hasValidRequestedAt
+                          ? `Requested ${formatDistanceToNow(requestedAtDate, {
+                              addSuffix: true,
+                            })}`
+                          : 'Requested date unavailable';
 
-                      // Check if this might be an orphaned request (no profile data)
-                      const mightBeOrphaned =
-                        !request.profile?.display_name &&
-                        !request.profile?.avatar_url &&
-                        request.requester_name;
+                        // Check if this might be an orphaned request (no profile data)
+                        const mightBeOrphaned =
+                          !request.profile?.display_name &&
+                          !request.profile?.avatar_url &&
+                          request.requester_name;
 
-                      const requestContent = (
-                        <div
-                          role="listitem"
-                          className={cn(
-                            'flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-3',
-                            isProcessing && 'opacity-50',
-                            mightBeOrphaned && 'border-yellow-500/30',
-                          )}
-                        >
-                          {/* Avatar */}
-                          {isValidAvatarUrl(avatarUrl) ? (
-                            <img
-                              src={avatarUrl}
-                              alt={displayName}
-                              className="h-10 w-10 rounded-full object-cover border border-white/20"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white grid place-items-center text-sm font-semibold border border-white/20">
-                              {getInitials(displayName)}
-                            </div>
-                          )}
-
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-medium text-white truncate">
-                                {displayName}
-                              </span>
-                              {mightBeOrphaned && (
-                                <span title="User may have deleted their account">
-                                  <AlertTriangle
-                                    size={14}
-                                    className="text-yellow-500 flex-shrink-0"
-                                  />
-                                </span>
-                              )}
-                            </div>
-                            {/* Show email if it's different from display name (helps identify new users) */}
-                            {request.requester_email && displayName !== request.requester_email && (
-                              <div className="text-xs text-gray-500 truncate">
-                                {request.requester_email}
+                        const requestContent = (
+                          <div
+                            role="listitem"
+                            className={cn(
+                              'flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-3',
+                              isProcessing && 'opacity-50',
+                              mightBeOrphaned && 'border-yellow-500/30',
+                            )}
+                          >
+                            {/* Avatar */}
+                            {isValidAvatarUrl(avatarUrl) ? (
+                              <img
+                                src={avatarUrl}
+                                alt={displayName}
+                                className="h-10 w-10 rounded-full object-cover border border-white/20"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white grid place-items-center text-sm font-semibold border border-white/20">
+                                {getInitials(displayName)}
                               </div>
                             )}
-                            <div className="flex items-center gap-1 text-xs text-gray-400">
-                              <Clock size={12} />
-                              <span>{requestedLabel}</span>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-medium text-white truncate">
+                                  {displayName}
+                                </span>
+                                {mightBeOrphaned && (
+                                  <span title="User may have deleted their account">
+                                    <AlertTriangle
+                                      size={14}
+                                      className="text-yellow-500 flex-shrink-0"
+                                    />
+                                  </span>
+                                )}
+                              </div>
+                              {/* Show email if it's different from display name (helps identify new users) */}
+                              {request.requester_email &&
+                                displayName !== request.requester_email && (
+                                  <div className="text-xs text-gray-500 truncate">
+                                    {request.requester_email}
+                                  </div>
+                                )}
+                              <div className="flex items-center gap-1 text-xs text-gray-400">
+                                <Clock size={12} />
+                                <span>{requestedLabel}</span>
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleApprove(request.id)}
+                                disabled={isProcessing}
+                                className="p-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 hover:text-green-300 rounded-lg transition-colors disabled:opacity-50"
+                                title="Approve request"
+                              >
+                                <Check size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleReject(request.id)}
+                                disabled={isProcessing}
+                                className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 rounded-lg transition-colors disabled:opacity-50"
+                                title="Reject request"
+                              >
+                                <X size={18} />
+                              </button>
                             </div>
                           </div>
-
-                          {/* Action Buttons */}
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handleApprove(request.id)}
-                              disabled={isProcessing}
-                              className="p-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 hover:text-green-300 rounded-lg transition-colors disabled:opacity-50"
-                              title="Approve request"
-                            >
-                              <Check size={18} />
-                            </button>
-                            <button
-                              onClick={() => handleReject(request.id)}
-                              disabled={isProcessing}
-                              className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 rounded-lg transition-colors disabled:opacity-50"
-                              title="Reject request"
-                            >
-                              <X size={18} />
-                            </button>
-                          </div>
-                        </div>
-                      );
-
-                      // Wrap in SwipeableRow if dismiss is available
-                      if (onDismissRequest) {
-                        return (
-                          <SwipeableRow
-                            key={request.id}
-                            rowId={request.id}
-                            openRowId={openSwipeRowId}
-                            onOpenRow={setOpenSwipeRowId}
-                            onDelete={async () => {
-                              await onDismissRequest(request.id);
-                            }}
-                            disabled={isProcessing}
-                            deleteLabel="Dismiss"
-                            requireConfirmation={true}
-                            className="mb-2"
-                          >
-                            {requestContent}
-                          </SwipeableRow>
                         );
-                      }
 
-                      return (
-                        <div key={request.id} className="mb-2">
-                          {requestContent}
-                        </div>
-                      );
-                    })}
-                  </>
+                        // Wrap in SwipeableRow if dismiss is available
+                        if (onDismissRequest) {
+                          return (
+                            <SwipeableRow
+                              key={request.id}
+                              rowId={request.id}
+                              openRowId={openSwipeRowId}
+                              onOpenRow={setOpenSwipeRowId}
+                              onDelete={async () => {
+                                await onDismissRequest(request.id);
+                              }}
+                              disabled={isProcessing}
+                              deleteLabel="Dismiss"
+                              requireConfirmation={true}
+                              className="mb-2"
+                            >
+                              {requestContent}
+                            </SwipeableRow>
+                          );
+                        }
+
+                        return (
+                          <div key={request.id} className="mb-2">
+                            {requestContent}
+                          </div>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                        <UserPlus size={24} className="text-gray-500" />
+                      </div>
+                      <p className="text-gray-400 text-sm">No pending requests</p>
+                      <p className="text-gray-500 text-xs mt-1">
+                        When someone requests to join, they'll appear here
+                      </p>
+                    </div>
+                  )
                 ) : (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
                       <UserPlus size={24} className="text-gray-500" />
                     </div>
-                    <p className="text-gray-400 text-sm">No pending requests</p>
+                    <p className="text-gray-400 text-sm">Join Requests</p>
                     <p className="text-gray-500 text-xs mt-1">
-                      When someone requests to join, they'll appear here
+                      Only trip admins can manage join requests for Pro/Event trips
                     </p>
                   </div>
-                )
-              ) : (
-                // Non-admin view: informational message (Pro/Event trips only)
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                    <UserPlus size={24} className="text-gray-500" />
-                  </div>
-                  <p className="text-gray-400 text-sm">Join Requests</p>
-                  <p className="text-gray-500 text-xs mt-1">
-                    Only trip admins can manage join requests for Pro/Event trips
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </div>
