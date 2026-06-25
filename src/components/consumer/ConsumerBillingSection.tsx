@@ -51,7 +51,7 @@ export const ConsumerBillingSection = () => {
 
 
   const handleManageSubscription = async () => {
-    if (blockConsumerCheckoutOnIOS) {
+    if (useAppleManagementOnIOS) {
       // Route to Apple's native subscription management, not the external Stripe portal.
       window.location.assign(IOS_SUBSCRIPTIONS_URL);
       return;
@@ -83,7 +83,7 @@ export const ConsumerBillingSection = () => {
   };
 
   const handleCancelSubscription = async () => {
-    if (blockConsumerCheckoutOnIOS) {
+    if (useAppleManagementOnIOS) {
       // Apple requires cancellation of digital subscriptions via iOS settings, not a web portal.
       window.location.assign(IOS_SUBSCRIPTIONS_URL);
       return;
@@ -200,7 +200,7 @@ export const ConsumerBillingSection = () => {
 
   return (
     <div className="space-y-3">
-      {blockConsumerCheckoutOnIOS && (
+      {useAppleManagementOnIOS && (
         <div className="rounded-xl p-4 bg-blue-500/10 border border-blue-500/30">
           <h4 className="text-white font-semibold mb-1">iOS Billing Update</h4>
           <p className="text-sm text-blue-200">
@@ -259,10 +259,10 @@ export const ConsumerBillingSection = () => {
         {!isSubscribed && (
           <button
             onClick={() => upgradeToTier('explorer', billingCycle)}
-            disabled={isLoading || blockConsumerCheckoutOnIOS}
+            disabled={isLoading || useAppleManagementOnIOS}
             className="bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-black px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
           >
-            {blockConsumerCheckoutOnIOS
+            {useAppleManagementOnIOS
               ? 'Unavailable on iOS'
               : isLoading
                 ? 'Processing...'
@@ -358,10 +358,10 @@ export const ConsumerBillingSection = () => {
             </div>
             <button
               onClick={() => setTripPassOpen(true)}
-              disabled={blockConsumerCheckoutOnIOS}
+              disabled={useAppleManagementOnIOS}
               className="min-h-[42px] bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-black px-5 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {blockConsumerCheckoutOnIOS ? 'Unavailable on iOS' : 'Get a Trip Pass'}
+              {useAppleManagementOnIOS ? 'Unavailable on iOS' : 'Get a Trip Pass'}
             </button>
           </div>
         </div>
