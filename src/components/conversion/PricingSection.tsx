@@ -306,15 +306,28 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
   const [tripPassOpen, setTripPassOpen] = useState(false);
   const [passLoading, setPassLoading] = useState<string | null>(null);
 
-  const blockOnIOS = isIOSNativeShell();
+  const iosNative = isIOSNativeShell();
 
   const handlePassPurchase = async (passId: string) => {
-    if (blockOnIOS) {
-      toast.info('Trip Passes are available on chravel.app on the web.');
-      return;
-    }
     setPassLoading(passId);
     try {
+      if (iosNative) {
+        const { purchaseTripPass } = await import('@/integrations/revenuecat/revenuecatClient');
+        const tier: 'explorer' | 'frequent-chraveler' =
+          passId === 'pass-explorer-45' ? 'explorer' : 'frequent-chraveler';
+        const result = await purchaseTripPass(tier);
+        if (result.success) {
+          toast.success('Trip Pass activated!');
+        } else if (result.errorCode === 'CANCELLED') {
+          // silent
+        } else if (!result.supported) {
+          toast.error('In-app purchases are not available on this device.');
+        } else {
+          toast.error(result.error || 'Failed to purchase Trip Pass.');
+        }
+        return;
+      }
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -339,6 +352,7 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
       setPassLoading(null);
     }
   };
+
 
   const tripPassTiers: PricingTier[] = [
     {
