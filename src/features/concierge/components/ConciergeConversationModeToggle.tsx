@@ -15,8 +15,8 @@ export const ConciergeConversationModeToggle: React.FC = () => {
             Conversation Mode
           </h3>
           <p className="text-gray-400 text-sm">
-            Hands-free — talk to your Concierge like a phone call. One full chat = one query.
-            When off, the mic button is hidden from the Concierge composer.
+            Hands-free — talk to your Concierge like a phone call. One full chat = one query. When
+            off, the mic button is hidden from the Concierge composer.
           </p>
         </div>
         <Switch

@@ -75,4 +75,3 @@ describe('openInstalledAuthBrowser', () => {
     });
   });
 });
-

@@ -78,4 +78,3 @@ export async function openInstalledAuthBrowser(url: string): Promise<InstalledAu
   window.location.assign(url);
   return { strategy: 'web-redirect' };
 }
-
