@@ -42,6 +42,10 @@ export const supabase: SupabaseClient<Database> = createClient<Database>(
       autoRefreshToken: true,
       storageKey: SUPABASE_AUTH_STORAGE_KEY,
       detectSessionInUrl: true,
+      // PKCE flow returns `?code=` (query) instead of `#access_token` (hash).
+      // The query survives the ASWebAuthenticationSession → main WebView handoff
+      // used by chravel-mobile, where hash params are otherwise lost (App Store 2.1a).
+      flowType: 'pkce',
     },
     realtime: {
       params: {
