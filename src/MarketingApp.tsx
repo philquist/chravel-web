@@ -93,7 +93,7 @@ export default function MarketingApp() {
       <AuthProvider>
         <PostAuthBoot />
         <Suspense fallback={fallback}>
-          <main>
+          <main data-marketing="true">
             <Routes>
               <Route
                 path="/"
