@@ -148,8 +148,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             textShadow: '0 2px 6px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)',
           }}
         >
-          Built for group planning. All your trip's important info In one place. Synced across web &
-          mobile
+          Built for group planning. Your trip's important info synced across web & mobile.
         </p>
       </div>
 
