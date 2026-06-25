@@ -1,58 +1,60 @@
-## Update app icons to new gold Chravel logo
 
-Use the uploaded square gold icon (1st image) as the master source for all platform icons. The PWA/favicon circular crops can be derived from it via masking.
+# Premium App Store Screenshots — 16 assets
 
-### Source asset
-- Master: `user-uploads://7ADFCE86-41B1-4CB1-A82D-FF67C6EDAEF3.png` (1252×1252, square w/ rounded corners on black)
-- Save master at `src/assets/chravel-icon-master.png` (via lovable-assets pointer) and also write a flat 1024×1024 PNG for native toolchains.
+## Scope
+8 features × 2 device sizes = **16 PNGs**.
 
-### Web (favicon + PWA) — `public/` + `index.html`
-Generate from master:
-- `public/favicon.ico` (multi-size 16/32/48, circular crop)
-- `public/favicon-16.png`, `favicon-32.png`, `favicon-48.png` (circular)
-- `public/apple-touch-icon.png` 180×180 (squircle, no transparency — iOS adds mask)
-- `public/icon-192.png`, `public/icon-512.png` (PWA, square rounded per current `manifest.json`)
-- `public/icon-maskable-192.png`, `public/icon-maskable-512.png` (safe-zone padded, square)
-- Update `index.html` <link rel="icon"> / `apple-touch-icon` references
-- Update `public/manifest.json` icon entries + `theme_color` if needed (keep existing gold/black)
+| Feature | Headline | Subhead (small caps) | Route captured |
+|---|---|---|---|
+| Plan | PLAN | your next adventure | `/` (dashboard / trip list) |
+| Chat | CHAT | with your group | trip → Chat tab |
+| Organize | ORGANIZE | every detail | trip → Calendar/Itinerary |
+| Ask | ASK | your AI travel guide | trip → Concierge |
+| Split | SPLIT | expenses effortlessly | trip → Payments |
+| Discover | DISCOVER | amazing places | trip → Places |
+| Share — Trip Memories | SHARE | trip memories | trip → Media |
+| Decide Together | DECIDE | together | trip → Polls |
 
-### iOS — Capacitor / Xcode asset catalog
-- Regenerate `ios/App/App/Assets.xcassets/AppIcon.appiconset/` PNGs at all required sizes (20/29/40/60/76/83.5 @1x/2x/3x + 1024 marketing) — full squircle, opaque background (Apple rejects alpha).
-- Update `appstore/` 1024 marketing icon referenced in `appstore/ASSETS_CHECKLIST.md`.
-- Run `npx cap sync ios` note for user (manual on their machine).
+Sizes:
+- **6.9" iPhone:** 1290 × 2796
+- **6.5" iPhone:** 1242 × 2688
 
-### Android — Capacitor
-- Regenerate `android/app/src/main/res/mipmap-*/ic_launcher.png`, `ic_launcher_round.png`, and `ic_launcher_foreground.png` (adaptive) at mdpi→xxxhdpi.
-- Background layer stays solid black (matches brand), foreground = gold icon with 33% safe-zone padding for adaptive masking.
-- Update `ic_launcher.xml` adaptive config if background color changes.
+## Approach
 
-### Generation approach
-Use Python/Pillow script (run once) to:
-1. Load master, trim transparent border.
-2. Produce square-rounded variants (iOS/Android legacy/PWA).
-3. Produce circular-masked variants (favicon, PWA round).
-4. Produce maskable variants (padded inside safe zone, square fill).
-5. Emit ICO via Pillow.
+### 1. Capture real mobile UI (Playwright)
+- Launch Chromium headless at exact iPhone viewport (`1290×2796`, dpr 3 emulated via CSS scale; second pass at `1242×2688`).
+- Restore Supabase session from `LOVABLE_BROWSER_*` env so authenticated trip data renders.
+- For each feature: `goto(localhost:8080/<route>)`, wait for network idle + key selector, take full-viewport screenshot.
+- Fall back: if a route is unauthenticated/empty, enable demo mode via `localStorage.setItem('TRIPS_DEMO_VIEW','app-preview')` so real seeded data appears (not blank states).
+- Save raw screens to `/tmp/appstore-raw/{size}/{feature}.png`.
 
-Script saved to `scripts/generate-app-icons.py` for future re-runs; existing `appstore/scripts/generate-icons.sh` updated to call it or deprecated.
+### 2. Editorial overlay composition (Python + PIL)
+Per asset:
+- Solid black canvas (1290×2796 / 1242×2688).
+- **Top band (~28% height):** generous negative space, centered.
+  - Headline: **DM Serif Display**, white, ~180pt, tight kerning.
+  - Thin **1px gold rule** (#c49746), 80px wide, centered, 32px below headline.
+  - Subhead: **Fira Sans**, small caps, letter-spaced ~0.25em, gold (#c49746), ~38pt.
+- **Device frame:** the raw screenshot inset into a rounded-corner black device shape (radius ~64px), centered horizontally, ~12% inset from bottom. Subtle gold inner stroke (1px, 20% opacity) + soft drop shadow (gold-tinted, low opacity) for depth.
+- Background: pure #000 with a very subtle radial gold glow (~4% opacity) behind the device for premium depth.
 
-### Files touched
-- `public/manifest.json`, `index.html`
-- `public/favicon.ico` + new png variants
-- `public/apple-touch-icon.png`, `public/icon-*.png`
-- `ios/App/App/Assets.xcassets/AppIcon.appiconset/*`
-- `android/app/src/main/res/mipmap-*/ic_launcher*.png`, `mipmap-anydpi-v26/ic_launcher*.xml` (only if bg changes)
-- `appstore/` 1024 marketing icon + checklist note
-- `src/assets/chravel-icon-master.png.asset.json`
-- `scripts/generate-app-icons.py` (new)
+Fonts: DM Serif Display + Fira Sans already in project font stack — download TTFs to `/tmp/fonts/` for PIL.
 
-### Verification
-- `npm run build` passes.
-- Visual check: favicon in browser tab, manifest icons via DevTools → Application → Manifest.
-- iOS/Android: user runs `npx cap sync` locally; provide checklist.
+### 3. Output
+- Write all 16 PNGs to `/mnt/documents/appstore-screenshots-v2/`:
+  - `6.9-inch/01-plan.png` … `08-decide.png`
+  - `6.5-inch/01-plan.png` … `08-decide.png`
+- Bundle into `/mnt/documents/chravel-appstore-screenshots-v2.zip` for one-click download.
+- Emit `<presentation-artifact>` tags for the zip + a contact sheet preview.
 
-### Out of scope
-- Splash screens (separate asset). Mention if user wants those updated too.
+### 4. QA loop (mandatory)
+- After generation, open each PNG, inspect for: clipped text, device frame overflow, missing UI in capture (blank/loading state), wrong route, low-contrast headline.
+- Re-capture/recomposite any failures before delivery.
 
-### Question before building
-Background for **iOS marketing icon (1024)**: Apple disallows transparency. Should I use **solid black** (matches your brand mockup) or **gold square w/ icon embossed** (matches the squircle itself with no surrounding black)? Recommend **gold squircle on solid black 1024** = the exact image you uploaded, which is what App Store will display.
+## Out of scope (this task)
+- Updating the Apple/Android **app icon** (already shipped previously).
+- Auto-uploading to App Store Connect (you'll drag the new files in manually or via Fastlane).
+- iPad screenshots.
+
+## Risk / rollback
+- Pure additive: writes to `/mnt/documents/` only. No project source files modified. Zero regression risk.
