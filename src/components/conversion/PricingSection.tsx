@@ -301,9 +301,82 @@ const _testimonials = [
 
 export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [activeTab, setActiveTab] = useState<'consumer' | 'pro'>('consumer');
+  const [activeTab, setActiveTab] = useState<'consumer' | 'pro' | 'pass'>('consumer');
   const [_openFaq, _setOpenFaq] = useState<number | null>(null);
   const [tripPassOpen, setTripPassOpen] = useState(false);
+  const [passLoading, setPassLoading] = useState<string | null>(null);
+
+  const handlePassPurchase = async (passId: string) => {
+    setPassLoading(passId);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please sign in to purchase a Trip Pass');
+        if (onSignUp) onSignUp();
+        return;
+      }
+      const billingPlatform =
+        typeof navigator === 'undefined'
+          ? 'web'
+          : detectNativeBillingPlatform(navigator.userAgent || '', isNativeWebView());
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { tier: passId, purchase_type: 'pass', platform: billingPlatform },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, '_blank');
+    } catch (err) {
+      console.error('Trip Pass checkout error:', err);
+      toast.error('Failed to start checkout. Please try again.');
+    } finally {
+      setPassLoading(null);
+    }
+  };
+
+  const tripPassTiers: PricingTier[] = [
+    {
+      id: 'pass-explorer-45',
+      name: 'Explorer Trip Pass',
+      price: TRIP_PASS_DISPLAY.explorer.price,
+      description: `Full Explorer features for ${TRIP_PASS_DISPLAY.explorer.durationDays} days — one trip, no commitment.`,
+      icon: <Globe size={24} />,
+      features: [
+        `${TRIP_PASS_DISPLAY.explorer.durationDays}-day access window`,
+        'Unlimited saved trips + restore archived',
+        '25 AI queries per user per trip',
+        'Unlimited PDF exports',
+        'Smart Import (Calendar, Agenda, Line-up from URL)',
+        'ICS calendar export',
+        'Location-aware AI recommendations',
+      ],
+      cta: passLoading === 'pass-explorer-45' ? 'Starting checkout…' : 'Get Explorer Pass',
+      category: 'consumer',
+      badge: 'One-time',
+      ctaAction: () => handlePassPurchase('pass-explorer-45'),
+    },
+    {
+      id: 'pass-frequent-90',
+      name: 'Frequent Chraveler Trip Pass',
+      price: TRIP_PASS_DISPLAY['frequent-chraveler'].price,
+      description: `Full Frequent Chraveler features for ${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays} days — multi-city trips covered.`,
+      icon: <Crown size={24} />,
+      features: [
+        `${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays}-day access window`,
+        'Everything in Explorer Trip Pass',
+        'Unlimited AI queries (24/7 concierge)',
+        'Smart Import (URL, paste, or file)',
+        'Role-based channels & Pro features',
+        'Custom trip categories',
+        'Early feature access',
+      ],
+      cta: passLoading === 'pass-frequent-90' ? 'Starting checkout…' : 'Get Frequent Pass',
+      category: 'consumer',
+      popular: true,
+      badge: 'Best for multi-city',
+      ctaAction: () => handlePassPurchase('pass-frequent-90'),
+    },
+  ];
 
   const handlePlanSelect = (planId: string, tier?: PricingTier) => {
     // If tier has custom action, use it
@@ -324,6 +397,8 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
         return consumerTiers;
       case 'pro':
         return proTiers;
+      case 'pass':
+        return tripPassTiers;
       default:
         return consumerTiers;
     }
