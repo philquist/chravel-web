@@ -5,7 +5,6 @@ import { useJoinRequests } from './useJoinRequests';
 import { ALWAYS_ON_EVENT_TABS, getMutableEventEnabledFeatures } from '@/lib/eventTabs';
 import {
   canEnableEveryoneChat,
-  EVENT_OPEN_CHAT_MAX_ATTENDEES,
   resolveEffectiveMainChatMode,
   type ChatMode,
   type TripType,
@@ -184,13 +183,6 @@ export const useEventAdmin = ({ eventId, enabled = true }: UseEventAdminProps) =
   const setChatMode = useCallback(
     async (mode: ChatMode) => {
       if (!eventId || isSaving) return;
-
-      if (mode === 'everyone' && !canUseEveryoneChat) {
-        toast.error(
-          `Everyone can chat is only available for events with ${EVENT_OPEN_CHAT_MAX_ATTENDEES} attendees or fewer.`,
-        );
-        return;
-      }
 
       const prev = chatMode;
       setIsSaving(true);

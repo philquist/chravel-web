@@ -261,6 +261,24 @@ serve(async req => {
       );
     }
 
+    // Check if trip is at member capacity before accepting join requests
+    const { data: atCapacity, error: capacityError } = await supabaseClient.rpc(
+      'is_trip_at_member_capacity',
+      { p_trip_id: invite.trip_id },
+    );
+
+    if (capacityError) {
+      logStep('WARNING: member capacity check failed', { error: capacityError.message });
+    } else if (atCapacity === true) {
+      logStep('ERROR: Trip at member capacity', { tripId: invite.trip_id });
+      return errorResponse(
+        'This trip has reached its member limit. Ask the organizer to upgrade their plan or remove members.',
+        403,
+        corsHeaders,
+        'TRIP_FULL',
+      );
+    }
+
     logStep('Trip found', { tripName: trip.name, tripType: trip.trip_type });
 
     // SECURITY: All trip types require approval for join requests.

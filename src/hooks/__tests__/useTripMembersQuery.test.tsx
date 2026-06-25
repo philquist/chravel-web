@@ -13,6 +13,8 @@ import { tripService } from '@/services/tripService';
 vi.mock('@/services/tripService', () => ({
   tripService: {
     getTripMembersWithCreator: vi.fn(),
+    getTripMemberMeta: vi.fn(),
+    listTripMembersPage: vi.fn(),
   },
 }));
 
@@ -52,6 +54,10 @@ const createWrapper = () => {
 describe('useTripMembersQuery', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(tripService.getTripMemberMeta).mockResolvedValue({
+      memberCount: 10,
+      creatorId: 'user-1',
+    });
   });
 
   it('returns members from getTripMembersWithCreator', async () => {

@@ -15,7 +15,7 @@ describe('eventChatPermissions', () => {
   });
 
   it('keeps event chat open even above 50 attendees', () => {
-    expect(canEnableEveryoneChat('event', EVENT_OPEN_CHAT_MAX_ATTENDEES + 1)).toBe(false);
+    expect(canEnableEveryoneChat('event', EVENT_OPEN_CHAT_MAX_ATTENDEES + 1)).toBe(true);
     expect(
       resolveEffectiveMainChatMode('everyone', 'event', EVENT_OPEN_CHAT_MAX_ATTENDEES + 1),
     ).toBe('everyone');

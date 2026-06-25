@@ -17,6 +17,7 @@ function makeChain(result: { data: any; error: any }) {
     select: vi.fn(() => chain),
     eq: vi.fn(() => chain),
     update: vi.fn(() => chain),
+    order: vi.fn(() => chain),
     single: vi.fn().mockResolvedValue(result),
     then: (resolve: any) => resolve(result),
   };
@@ -30,45 +31,47 @@ describe('paymentService.updatePaymentMessage', () => {
     (supabase.from as any).mockReset();
   });
 
-  it('uses optimistic locking and only rewrites UNSETTLED splits on amount change', async () => {
-    const readChain = makeChain({ data: { version: 3, split_count: 4 }, error: null });
+  it('uses optimistic locking and redistributes UNSETTLED splits with penny rounding', async () => {
+    const readChain = makeChain({ data: { version: 3, split_count: 3 }, error: null });
     const updateChain = makeChain({ data: [{ id: 'pay-1' }], error: null });
-    const splitChain = makeChain({ data: null, error: null });
-
-    (supabase.from as any)
-      .mockReturnValueOnce(readChain) // read version + split_count
-      .mockReturnValueOnce(updateChain) // optimistic-locked message update
-      .mockReturnValueOnce(splitChain); // unsettled split recalculation
-
-    const ok = await paymentService.updatePaymentMessage('pay-1', { amount: 100 });
-
-    expect(ok).toBe(true);
-    // Optimistic lock: update guarded by the version we read, and version bumped.
-    expect(updateChain.update).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: 100, version: 4 }),
-    );
-    expect(updateChain.eq).toHaveBeenCalledWith('version', 3);
-    // Settled splits are preserved — recalculation is scoped to is_settled = false.
-    expect(splitChain.update).toHaveBeenCalledWith({ amount_owed: 25 });
-    expect(splitChain.eq).toHaveBeenCalledWith('is_settled', false);
-  });
-
-  it('returns false on a version conflict and does not touch splits', async () => {
-    const readChain = makeChain({ data: { version: 3, split_count: 4 }, error: null });
-    // 0 rows updated => another writer bumped the version first.
-    const updateChain = makeChain({ data: [], error: null });
-    const splitChain = makeChain({ data: null, error: null });
+    const splitsReadChain = makeChain({
+      data: [{ id: 'split-1' }, { id: 'split-2' }, { id: 'split-3' }],
+      error: null,
+    });
+    const splitUpdate1 = makeChain({ data: null, error: null });
+    const splitUpdate2 = makeChain({ data: null, error: null });
+    const splitUpdate3 = makeChain({ data: null, error: null });
 
     (supabase.from as any)
       .mockReturnValueOnce(readChain)
       .mockReturnValueOnce(updateChain)
-      .mockReturnValueOnce(splitChain);
+      .mockReturnValueOnce(splitsReadChain)
+      .mockReturnValueOnce(splitUpdate1)
+      .mockReturnValueOnce(splitUpdate2)
+      .mockReturnValueOnce(splitUpdate3);
+
+    const ok = await paymentService.updatePaymentMessage('pay-1', { amount: 10 });
+
+    expect(ok).toBe(true);
+    expect(updateChain.update).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 10, version: 4 }),
+    );
+    expect(updateChain.eq).toHaveBeenCalledWith('version', 3);
+    expect(splitUpdate1.update).toHaveBeenCalledWith({ amount_owed: 3.34 });
+    expect(splitUpdate2.update).toHaveBeenCalledWith({ amount_owed: 3.33 });
+    expect(splitUpdate3.update).toHaveBeenCalledWith({ amount_owed: 3.33 });
+  });
+
+  it('returns false on a version conflict and does not touch splits', async () => {
+    const readChain = makeChain({ data: { version: 3, split_count: 4 }, error: null });
+    const updateChain = makeChain({ data: [], error: null });
+
+    (supabase.from as any).mockReturnValueOnce(readChain).mockReturnValueOnce(updateChain);
 
     const ok = await paymentService.updatePaymentMessage('pay-1', { amount: 100 });
 
     expect(ok).toBe(false);
-    // Split recalculation must not run when the locked update did not apply.
-    expect(splitChain.update).not.toHaveBeenCalled();
+    expect(supabase.from).toHaveBeenCalledTimes(2);
   });
 
   it('does not recalculate splits when only the description changes', async () => {

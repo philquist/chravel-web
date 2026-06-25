@@ -3,10 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { tripKeys } from '@/lib/queryKeys';
 import { syncTripMemberToStreamAndEmitMemberJoined } from '@/lib/streamTripMemberInlineActivity';
+import { createInviteError } from '@/types/inviteErrors';
 
 type RpcResult = {
   success: boolean;
   message: string;
+  error_code?: string;
   cleaned_up?: boolean;
   trip_id?: string;
   user_id?: string;
@@ -50,6 +52,11 @@ export async function approveJoinRequestById(
       toast.info(result.message || 'This request is no longer valid');
       invalidateTripJoinCaches(queryClient, tripId, 'approve');
       return;
+    }
+    if (result.error_code === 'TRIP_FULL') {
+      const tripFullError = createInviteError('TRIP_FULL');
+      toast.error(tripFullError.message);
+      throw new Error(tripFullError.message);
     }
     throw new Error(result.message || 'Failed to approve request');
   }
