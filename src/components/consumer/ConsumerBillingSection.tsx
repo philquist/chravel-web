@@ -459,21 +459,22 @@ export const ConsumerBillingSection = () => {
                     {key !== 'free' && key !== tier && (
                       <button
                         onClick={() =>
-                          upgradeToTier(key as 'explorer' | 'frequent-chraveler', billingCycle)
+                          handleConsumerUpgrade(
+                            key as 'explorer' | 'frequent-chraveler',
+                            billingCycle,
+                          )
                         }
-                        disabled={
-                          isLoading ||
-                          (isNativeIOS && (key === 'explorer' || key === 'frequent-chraveler'))
-                        }
+                        disabled={isLoading}
                         className="mt-4 bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-black px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
                       >
-                        {isNativeIOS && (key === 'explorer' || key === 'frequent-chraveler')
-                          ? 'Unavailable on iOS'
-                          : isLoading
-                            ? 'Processing...'
+                        {isLoading
+                          ? 'Processing...'
+                          : isNativeIOS
+                            ? `Subscribe with Apple — ${plan.name}`
                             : `Upgrade to ${plan.name}`}
                       </button>
                     )}
+
                   </div>
                 </CollapsibleContent>
               </Collapsible>
