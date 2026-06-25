@@ -5,7 +5,9 @@ import { useIsMobile } from '../hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { SUBSCRIPTION_TIER_MAP } from '@/constants/stripe';
 import { detectNativeBillingPlatform, isIOSNativeShell, isNativeWebView } from '@/utils/platformDetection';
+import { purchaseProSubscription } from '@/integrations/revenuecat/revenuecatClient';
 import { toast } from 'sonner';
+
 
 interface ProUpgradeModalProps {
   isOpen: boolean;
