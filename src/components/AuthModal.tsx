@@ -362,6 +362,7 @@ export const AuthModal = ({
   return createPortal(
     <div
       data-testid="auth-modal-backdrop"
+      data-marketing="true"
       className="fixed inset-0 z-[100] animate-fade-in"
       role="presentation"
     >
@@ -377,7 +378,7 @@ export const AuthModal = ({
             <div className="flex flex-col items-center mb-2" data-testid="auth-modal-logo" />
 
             <div className="relative flex items-center justify-center mb-6 min-h-[2.5rem]">
-              <h2 className="text-2xl font-bold text-white text-center px-10">{authHeading}</h2>
+              <h2 className="text-3xl font-display font-normal tracking-tight text-white text-center px-10">{authHeading}</h2>
               <button
                 onClick={onClose}
                 className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg"
