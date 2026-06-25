@@ -119,9 +119,22 @@ export const ConsumerBillingSection = () => {
   };
 
   const handleUpgradeToProPlan = async (planKey: string) => {
-    // App Store 3.1.1: no external purchase entry points from the iOS app.
+    // iOS native shell — Apple IAP via RevenueCat (Guideline 3.1.1)
     if (isNativeIOS) {
-      toast.info('Subscriptions are managed on chravel.app on the web.');
+      const result = await purchaseProSubscription(
+        planKey as 'pro-starter' | 'pro-growth' | 'pro-enterprise',
+        'monthly',
+      );
+      if (result.success) {
+        toast.success('Chravel Pro activated!');
+        await checkSubscription();
+      } else if (result.errorCode === 'CANCELLED') {
+        // silent
+      } else if (!result.supported) {
+        toast.error('In-app purchases are not available on this device.');
+      } else {
+        toast.error(result.error || 'Failed to start purchase.');
+      }
       return;
     }
     try {
@@ -138,6 +151,7 @@ export const ConsumerBillingSection = () => {
       }
     } catch (error) {
       toast.error(
+
         `Failed to start checkout: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
       console.error(error);
