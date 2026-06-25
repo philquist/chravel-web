@@ -161,17 +161,16 @@ export const TripPassModal: React.FC<TripPassModalProps> = ({ open, onOpenChange
               <CardFooter className="flex flex-col gap-2 px-4 pb-4">
                 <Button
                   onClick={() => handlePurchase(pass.id)}
-                  disabled={loading !== null || blockOnIOS}
+                  disabled={loading !== null}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {loading === pass.id ? (
                     <div className="h-4 w-4 mr-2 animate-spin gold-gradient-spinner" />
                   ) : null}
-                  {blockOnIOS ? 'Manage on chravel.app' : 'Get Trip Pass'}
+                  {iosNative ? 'Buy with Apple' : 'Get Trip Pass'}
                 </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  {blockOnIOS ? 'Trip Passes are purchased on the web.' : pass.nudge}
-                </p>
+                <p className="text-xs text-muted-foreground text-center">{pass.nudge}</p>
+
               </CardFooter>
             </Card>
           ))}
