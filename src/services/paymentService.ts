@@ -6,6 +6,7 @@ import { isDemoTrip } from '@/utils/demoUtils';
 import { toAppPayment } from '@/lib/adapters/paymentAdapter';
 import { FEATURE_LIMITS } from '@/billing/entitlements';
 import { resolveEffectiveTier } from './entitlementService';
+import { distributeEqualSplitCents } from '@/lib/splitAmountUtils';
 
 /** Typed error code returned when the per-trip payment split cap is hit. */
 export const SPLIT_LIMIT_ERROR_CODE = 'SPLIT_LIMIT_REACHED';
@@ -487,13 +488,28 @@ export const paymentService = {
       // If the total changed, redistribute across UNSETTLED splits only. Settled
       // participants already paid their agreed share; their amount_owed must not be
       // overwritten (doing so corrupts the settled ledger).
-      if (updates.amount !== undefined && current.split_count > 0) {
-        const newSplitAmount = updates.amount / current.split_count;
-        await supabase
+      if (updates.amount !== undefined) {
+        const { data: unsettledSplits, error: splitsReadError } = await supabase
           .from('payment_splits')
-          .update({ amount_owed: newSplitAmount })
+          .select('id')
           .eq('payment_message_id', paymentId)
-          .eq('is_settled', false);
+          .eq('is_settled', false)
+          .order('created_at', { ascending: true });
+
+        if (splitsReadError) throw splitsReadError;
+
+        const splitCount = unsettledSplits?.length ?? 0;
+        if (splitCount > 0) {
+          const shares = distributeEqualSplitCents(updates.amount, splitCount);
+          await Promise.all(
+            (unsettledSplits ?? []).map((split, index) =>
+              supabase
+                .from('payment_splits')
+                .update({ amount_owed: shares[index] })
+                .eq('id', split.id),
+            ),
+          );
+        }
       }
 
       return true;

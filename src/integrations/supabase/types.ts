@@ -5469,6 +5469,17 @@ export type Database = {
         Args: { _trip_id: string; _user_id: string }
         Returns: boolean
       }
+      get_trip_member_limit: { Args: { p_trip_id: string }; Returns: number }
+      is_trip_at_member_capacity: { Args: { p_trip_id: string }; Returns: boolean }
+      list_trip_members: {
+        Args: {
+          p_trip_id: string
+          p_search?: string
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: Json
+      }
       is_user_sms_entitled: { Args: { p_user_id: string }; Returns: boolean }
       list_applied_migrations: {
         Args: never

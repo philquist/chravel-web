@@ -178,7 +178,9 @@ export const ForTeams = () => {
             Choose Your Plan
           </h2>
           <p className="text-xl text-center text-foreground mb-12">
-            From startups to enterprises, we have a plan that scales with you
+            From startups to enterprises, we have a plan that scales with you. Large events keep
+            group chat open for all attendees — switch to admin-only chat in Event Admin when you
+            want announcements-only.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
