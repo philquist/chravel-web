@@ -21,6 +21,14 @@ export default defineConfig({
     },
     // Fix compatibility issues with complex DOM/storage interactions
     pool: 'forks',
+    // Heavy component specs (e.g. AIConciergeChat.test.tsx) occasionally need
+    // more than the default 10s for their forks worker to finish v8-coverage
+    // teardown on a loaded CI runner. That surfaced as intermittent
+    // "Timeout terminating forks worker" failures — a teardown flake, not a real
+    // test failure (see agent_memory #51, PR #746/#749). A generous grace window
+    // keeps the shard from going red on slow cleanup without masking assertions
+    // (each test still has to pass within testTimeout).
+    teardownTimeout: 30000,
   },
   resolve: {
     alias: {
