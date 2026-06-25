@@ -613,3 +613,171 @@ export function setupGlobalPurchaseListener() {
     };
   }
 }
+
+/**
+ * Runtime: hit RevenueCat's offerings and confirm every REQUIRED_IOS_PRODUCT_ID
+ * is attached to at least one offering. Run this after `configureRevenueCat`
+ * on iOS to detect App Store Connect / RevenueCat dashboard misconfiguration
+ * before users tap Buy. Non-fatal — returns the diff and logs to console.
+ */
+export async function assertIosOfferingsContainRequiredProducts(
+  isDemoMode: boolean = false,
+): Promise<{ ok: boolean; missing: string[]; available: string[] }> {
+  if (isDemoMode || getPlatform() !== 'ios') {
+    return { ok: true, missing: [], available: [] };
+  }
+  const offeringsRes = await getOfferings(isDemoMode);
+  if (!offeringsRes.success || !offeringsRes.data) {
+    return { ok: false, missing: [...REQUIRED_IOS_PRODUCT_IDS], available: [] };
+  }
+  const offerings = offeringsRes.data;
+  const all = [...Object.values(offerings.all || {}), offerings.current].filter(
+    Boolean,
+  ) as Array<{ availablePackages?: Array<{ product?: { identifier?: string } }> }>;
+
+  const available = new Set<string>();
+  for (const off of all) {
+    for (const pkg of off.availablePackages || []) {
+      const id = pkg.product?.identifier;
+      if (id) available.add(id);
+    }
+  }
+  const missing = REQUIRED_IOS_PRODUCT_IDS.filter(id => !available.has(id));
+  if (missing.length) {
+    console.warn('[RevenueCat] Missing iOS products in offerings:', missing);
+  }
+  return { ok: missing.length === 0, missing, available: [...available] };
+}
+
+/**
+ * Single entrypoint for the "Restore Purchases" button. Configures
+ * RevenueCat for the user (if not already), calls native `restorePurchases`,
+ * then pushes the resulting entitlements to the backend via
+ * `sync-revenuecat-entitlement` so the rest of the app sees the new tier.
+ *
+ * Returns derived plan + customerInfo so the caller can update the UI
+ * immediately without waiting for the next sync poll.
+ */
+export async function restoreAndSyncEntitlements(
+  userId: string,
+  isDemoMode: boolean = false,
+): Promise<
+  RevenueCatResult<{ customerInfo: RevenueCatCustomerInfo; plan: DerivedPlan }>
+> {
+  if (isDemoMode) {
+    return { success: false, supported: false, error: 'Demo mode active' };
+  }
+  if (!isRevenueCatAvailable()) {
+    return { success: false, supported: false, errorCode: 'NOT_SUPPORTED' };
+  }
+
+  const configured = await configureRevenueCat(userId, isDemoMode);
+  if (!configured.success || !configured.supported) {
+    return {
+      success: configured.success,
+      supported: configured.supported,
+      errorCode: configured.errorCode,
+      error: configured.error,
+    };
+  }
+
+  const restoreRes = await restorePurchases(isDemoMode);
+  if (!restoreRes.success || !restoreRes.data) {
+    return {
+      success: false,
+      supported: restoreRes.supported,
+      errorCode: restoreRes.errorCode,
+      error: restoreRes.error,
+    };
+  }
+
+  const customerInfo = restoreRes.data;
+  const plan = derivePlanFromCustomerInfo(customerInfo);
+
+  // Push restored entitlements to the backend so server-side checks
+  // (`useConsumerSubscription`, edge function gating) reflect them.
+  const syncRes = await supabase.functions.invoke('sync-revenuecat-entitlement', {
+    body: { customerInfo },
+  });
+  if (syncRes.error) {
+    console.warn('[RevenueCat] Restore sync failed:', syncRes.error);
+  }
+
+  // Sanity-check entitlement → feature mapping for diagnosability after
+  // restore / app relaunch. Warnings here mean RevenueCat is returning an
+  // entitlement ID we don't know about (dashboard drift).
+  verifyEntitlementMapping(customerInfo);
+
+  return { success: true, supported: true, data: { customerInfo, plan } };
+}
+
+/**
+ * Diagnostic: confirms every active RevenueCat entitlement maps to a known
+ * Chravel tier in ENTITLEMENT_TO_TIER. Logs (but does not throw) on drift so
+ * we catch dashboard/code divergence after purchase, restore, and app relaunch.
+ */
+export function verifyEntitlementMapping(customerInfo: RevenueCatCustomerInfo): {
+  ok: boolean;
+  unmapped: string[];
+  mapped: string[];
+} {
+  const active = customerInfo.entitlements?.active || {};
+  const unmapped: string[] = [];
+  const mapped: string[] = [];
+  for (const id of Object.keys(active)) {
+    if (ENTITLEMENT_TO_TIER[id]) mapped.push(id);
+    else unmapped.push(id);
+  }
+  if (unmapped.length) {
+    console.warn(
+      '[RevenueCat] Active entitlements with no Chravel tier mapping (check ENTITLEMENT_TO_TIER):',
+      unmapped,
+    );
+  }
+  return { ok: unmapped.length === 0, unmapped, mapped };
+}
+
+/**
+ * Shared toast handler for purchase / restore results. Maps error codes to
+ * user-readable copy and attaches a Retry action when retry is meaningful
+ * (network / unknown errors). Silent on user cancellation per Apple HIG.
+ */
+export function handlePurchaseResult(
+  result: RevenueCatPurchaseResult | RevenueCatResult,
+  options: {
+    successMessage?: string;
+    successDescription?: string;
+    onRetry?: () => void;
+    context?: string;
+  } = {},
+): void {
+  const { successMessage = 'Purchase successful', successDescription, onRetry, context } = options;
+
+  if (result.success) {
+    toast.success(successMessage, successDescription ? { description: successDescription } : undefined);
+    return;
+  }
+
+  switch (result.errorCode) {
+    case 'CANCELLED':
+      // Apple HIG: do not nag the user after they dismiss the sheet.
+      return;
+    case 'NOT_SUPPORTED':
+      toast.error('In-app purchases are not available on this device.');
+      return;
+    case 'NOT_CONFIGURED':
+      toast.error('Purchases are temporarily unavailable. Please try again later.');
+      return;
+    case 'NETWORK_ERROR':
+      toast.error('Network error. Check your connection and try again.', {
+        action: onRetry ? { label: 'Retry', onClick: onRetry } : undefined,
+      });
+      return;
+    case 'UNKNOWN':
+    default:
+      toast.error(result.error || `Purchase failed${context ? ` (${context})` : ''}.`, {
+        action: onRetry ? { label: 'Retry', onClick: onRetry } : undefined,
+      });
+  }
+}
+
