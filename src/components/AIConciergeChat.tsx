@@ -33,7 +33,7 @@ import { useConciergeVoice } from '@/features/concierge/hooks/useConciergeVoice'
 import { useConciergeStreaming } from '@/features/concierge/hooks/useConciergeStreaming';
 import { useSmartImportTaste } from '@/features/smart-import/hooks/useSmartImportTaste';
 import { useConciergeConversationMode } from '@/features/concierge/hooks/useConciergeConversationMode';
-import { ConciergeConversationButton } from '@/features/concierge/components/ConciergeConversationButton';
+import { ConciergeConversationMic } from '@/features/concierge/components/ConciergeConversationMic';
 import { useConversationModePreference } from '@/features/concierge/hooks/useConversationModePreference';
 import { useFeatureFlag } from '@/lib/featureFlags';
 
@@ -555,18 +555,9 @@ export const AIConciergeChat = ({
                 </select>
               </div>
             )}
-          {/* Conversation Mode toggle moved to Settings → AI Concierge → Conversation Mode */}
-          {conversationModeEffective && conversation.isSupported && (
-            <ConciergeConversationButton
-              active={conversation.active}
-              state={conversation.state}
-              onToggle={conversation.toggle}
-              onCancel={conversation.cancel}
-              liveTranscript={conversation.liveTranscript}
-              lastFinalTranscript={conversation.lastFinalTranscript}
-              disabled={usage?.isLimitReached ?? false}
-            />
-          )}
+          {/* Conversation Mode is enabled in Settings → AI Concierge → Conversation Mode.
+              The mic now lives inside the composer row (see `leftAccessory` below) so it
+              no longer consumes vertical chat space. */}
           <AiChatInput
             inputMessage={inputMessage}
             onInputChange={setInputMessage}
@@ -602,6 +593,20 @@ export const AIConciergeChat = ({
             convoVoiceState={convoVoiceState}
             onConvoToggle={handleConvoToggle}
             isVoiceEligible={true}
+            leftAccessory={
+              conversationModeEffective && conversation.isSupported ? (
+                <ConciergeConversationMic
+                  active={conversation.active}
+                  state={conversation.state}
+                  onToggle={conversation.toggle}
+                  // Keep the mic tappable while a conversation is active so it can always
+                  // be stopped — even if the usage limit flips to reached mid-session (the
+                  // old Stop pill was never gated by the limit). Only block *starting* a
+                  // new hands-free session when the user is out of quota.
+                  disabled={!conversation.active && (usage?.isLimitReached ?? false)}
+                />
+              ) : undefined
+            }
             onQuickAction={
               UPLOAD_ENABLED && (attachedImages.length > 0 || attachedDocuments.length > 0)
                 ? (action: string) => {

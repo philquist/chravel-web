@@ -872,7 +872,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
 
-
         return {};
       } catch (error) {
         if (import.meta.env.DEV) {
@@ -959,7 +958,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             };
           }
         }
-
 
         return {};
       } catch (error) {

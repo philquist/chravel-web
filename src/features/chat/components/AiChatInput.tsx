@@ -39,6 +39,12 @@ interface AiChatInputProps {
   onRemoveDocument?: (index: number) => void;
   /** Accepted MIME types for file drop/paste (images + documents) */
   acceptedFileTypes?: Set<string>;
+  /**
+   * Optional control rendered to the LEFT of the textarea, immediately after the
+   * dictation button. The concierge uses this to host the hands-free Conversation
+   * Mode mic so it sits in the composer row instead of taking up chat space above.
+   */
+  leftAccessory?: React.ReactNode;
 }
 
 export const AiChatInput = ({
@@ -62,6 +68,7 @@ export const AiChatInput = ({
   attachedDocuments = [],
   onRemoveDocument,
   acceptedFileTypes,
+  leftAccessory,
 }: AiChatInputProps) => {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isDragActive, setIsDragActive] = useState(false);
@@ -289,7 +296,7 @@ export const AiChatInput = ({
       )}
 
       <div className="chat-composer flex flex-nowrap items-center gap-2 sm:gap-3 min-w-0">
-        {/* Waveform / Dictation button */}
+        {/* Waveform / Dictation button (one-shot speech-to-text) */}
         {onConvoToggle && (
           <VoiceButton
             voiceState={convoVoiceState}
@@ -298,6 +305,9 @@ export const AiChatInput = ({
             onUpgrade={onVoiceUpgrade}
           />
         )}
+
+        {/* Optional extra control on the left — hands-free Conversation Mode mic. */}
+        {leftAccessory}
 
         {/* Input container — clean, no embedded Live button */}
         <div className="relative flex-1 min-w-0 rounded-full">

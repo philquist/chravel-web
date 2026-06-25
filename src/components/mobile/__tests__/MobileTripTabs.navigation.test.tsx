@@ -121,4 +121,50 @@ describe('MobileTripTabs tab navigation', () => {
     // Falls back to 100dvh when no keyboard is open.
     expect((contentPane as HTMLElement).style.height).toContain('100dvh');
   });
+
+  it('activates tabs beyond the first three (regression: scrolled-in tabs went dead on iOS)', async () => {
+    // On iOS WKWebView the tab row used to carry `scroll-snap-type: x mandatory`
+    // (with a non-existent `scroll-snap-align-start` child class → no real snap
+    // targets) plus `-webkit-overflow-scrolling: touch`, nested inside the
+    // position:fixed `.mobile-trip-shell`. That left tabs scrolled into view
+    // (Media…Tasks) unable to receive taps while Chat/Calendar/Concierge — visible
+    // at rest — kept working. Every tab's activation path must stay intact.
+    const onTabChange = vi.fn();
+
+    render(
+      <MobileTripTabs
+        activeTab="chat"
+        onTabChange={onTabChange}
+        tripId="trip-1"
+        basecamp={{ name: 'Hotel', address: 'Tokyo' }}
+        variant="pro"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /media/i }));
+    await waitFor(() => expect(onTabChange).toHaveBeenCalledWith('media'));
+
+    fireEvent.click(screen.getByRole('button', { name: /tasks/i }));
+    await waitFor(() => expect(onTabChange).toHaveBeenCalledWith('tasks'));
+  });
+
+  it('does not arm the iOS-hostile momentum-scroll + mandatory-snap combo on the tab row', () => {
+    const { container } = render(
+      <MobileTripTabs
+        activeTab="chat"
+        onTabChange={vi.fn()}
+        tripId="trip-1"
+        basecamp={{ name: 'Hotel', address: 'Tokyo' }}
+        variant="pro"
+      />,
+    );
+
+    const scroller = container.querySelector('.scrollbar-hide') as HTMLElement | null;
+    expect(scroller).toBeTruthy();
+    // These two together broke tap hit-testing for scrolled-in tabs on WKWebView.
+    expect(scroller!.style.scrollSnapType).toBe('');
+    expect(scroller!.style.getPropertyValue('-webkit-overflow-scrolling')).toBe('');
+    // touch-action: manipulation keeps taps instant and unambiguous.
+    expect(scroller!.style.touchAction).toBe('manipulation');
+  });
 });

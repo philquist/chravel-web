@@ -572,8 +572,17 @@ export const MobileTripTabs = ({
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
-            scrollSnapType: 'x mandatory',
-            WebkitOverflowScrolling: 'touch',
+            // ⚠️ iOS tap-reliability — do NOT add `scrollSnapType: 'x mandatory'` or
+            // `WebkitOverflowScrolling: 'touch'` here. This row lives inside the
+            // position:fixed `.mobile-trip-shell`. On iOS WKWebView, a momentum-scroll
+            // compositor layer (made worse by a mandatory snap with no real snap
+            // targets — the buttons' old `scroll-snap-align-start` class doesn't exist)
+            // leaves the hit-test rects of horizontally scrolled-in tabs stale, so
+            // Media → Tasks silently stop responding to taps while Chat/Calendar/
+            // Concierge (visible at rest) keep working. Plain overflow scrolling
+            // hit-tests correctly; `touch-action: manipulation` drops the 300ms delay.
+            touchAction: 'manipulation',
+            overscrollBehaviorX: 'contain',
           }}
         >
           {tabs.map(tab => {
@@ -595,7 +604,7 @@ export const MobileTripTabs = ({
                   rounded-lg font-medium text-sm
                   transition-all duration-200
                   flex-shrink-0
-                  scroll-snap-align-start
+                  touch-manipulation
                   ${enabled ? 'active:scale-95' : variant === 'event' ? '' : 'cursor-not-allowed'}
                   ${
                     isActive && enabled
