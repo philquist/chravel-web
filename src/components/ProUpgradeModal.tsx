@@ -4,7 +4,7 @@ import { SUBSCRIPTION_TIERS } from '../types/pro';
 import { useIsMobile } from '../hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { SUBSCRIPTION_TIER_MAP } from '@/constants/stripe';
-import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
+import { detectNativeBillingPlatform, isIOSNativeShell, isNativeWebView } from '@/utils/platformDetection';
 import { toast } from 'sonner';
 
 interface ProUpgradeModalProps {
@@ -21,7 +21,13 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
 
   if (!isOpen) return null;
 
+  const blockOnIOS = isIOSNativeShell();
+
   const handleStartFreeTrial = async (tier: string) => {
+    if (blockOnIOS) {
+      toast.info('Subscriptions are managed on chravel.app on the web.');
+      return;
+    }
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
@@ -195,17 +201,21 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
         {/* CTA Section */}
         <div className="text-center">
           <div className="text-sm text-gold-light mb-4">
-            14-day free trial • No credit card required • Cancel anytime
+            {blockOnIOS
+              ? 'Subscriptions are managed on chravel.app on the web.'
+              : '14-day free trial • No credit card required • Cancel anytime'}
           </div>
           <div className={`flex justify-center ${isMobile ? '' : ''}`}>
             <button
               onClick={() => handleStartFreeTrial(selectedTier)}
-              disabled={isLoading}
+              disabled={isLoading || blockOnIOS}
               className="px-8 py-3 bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-primary-foreground font-medium rounded-2xl transition-all duration-200 hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading
-                ? 'Processing...'
-                : `Start Free Trial - ${SUBSCRIPTION_TIERS[selectedTier].name}`}
+              {blockOnIOS
+                ? 'Manage on chravel.app'
+                : isLoading
+                  ? 'Processing...'
+                  : `Start Free Trial - ${SUBSCRIPTION_TIERS[selectedTier].name}`}
             </button>
           </div>
         </div>

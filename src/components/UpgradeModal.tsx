@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useConsumerSubscription } from '../hooks/useConsumerSubscription';
 import { supabase } from '@/integrations/supabase/client';
-import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
+import { detectNativeBillingPlatform, isIOSNativeShell, isNativeWebView } from '@/utils/platformDetection';
 import { toast } from 'sonner';
 import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
 
@@ -37,7 +37,13 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
   const consumerPlan: 'explorer' | 'frequent-chraveler' =
     selectedPlan === 'frequent-chraveler' ? 'frequent-chraveler' : 'explorer';
 
+  const blockOnIOS = isIOSNativeShell();
+
   const handleUpgrade = async () => {
+    if (blockOnIOS) {
+      toast.info('Subscriptions are managed on chravel.app on the web.');
+      return;
+    }
     if (['explorer', 'frequent-chraveler'].includes(selectedPlan)) {
       await upgradeToTier(selectedPlan as 'explorer' | 'frequent-chraveler', billingCycle);
       onClose();
@@ -393,13 +399,18 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
         )}
 
         {/* Action Buttons */}
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center">
+          {blockOnIOS && (
+            <p className="text-xs text-muted-foreground mb-3">
+              Subscriptions are managed on chravel.app on the web.
+            </p>
+          )}
           <button
             onClick={handleUpgrade}
-            disabled={isLoading}
+            disabled={isLoading || blockOnIOS}
             className="px-8 py-3 bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-primary-foreground font-medium rounded-2xl transition-all duration-200 hover:scale-105 shadow-lg disabled:opacity-50"
           >
-            {isLoading ? 'Processing...' : 'Start Free Trial'}
+            {blockOnIOS ? 'Manage on chravel.app' : isLoading ? 'Processing...' : 'Start Free Trial'}
           </button>
         </div>
       </div>
