@@ -430,9 +430,9 @@ export const AuthModal = ({
                     setMode('signin');
                     setError('');
                   }}
-                  className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
+                  className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold tracking-wide transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
                     mode === 'signin'
-                      ? 'bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground shadow-md'
+                      ? 'bg-gold-metallic'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -446,9 +446,9 @@ export const AuthModal = ({
                     setMode('signup');
                     setError('');
                   }}
-                  className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
+                  className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold tracking-wide transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
                     mode === 'signup'
-                      ? 'bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground shadow-md'
+                      ? 'bg-gold-metallic'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
