@@ -494,9 +494,10 @@ export const ConsumerBillingSection = () => {
         </p>
         {isNativeIOS && (
           <p className="text-xs text-muted-foreground mb-3">
-            Subscriptions are managed on chravel.app on the web.
+            Pro plans are also purchasable in-app via Apple. Enterprise+ requires Sales — visit chravel.app.
           </p>
         )}
+
 
         <div className="space-y-3">
           {Object.entries(proPlans).map(([key, plan]) => {
