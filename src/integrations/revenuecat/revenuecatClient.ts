@@ -126,6 +126,18 @@ export async function configureRevenueCat(
   }
 
   try {
+    // Fail-fast guard: surface configuration drift (blank/missing product IDs)
+    // BEFORE any purchase flow lands users in an opaque "product not found" error.
+    if (platform === 'ios') {
+      const productAssertion = assertIosProductIdsConfigured();
+      if (!productAssertion.ok) {
+        console.error(
+          '[RevenueCat] REQUIRED_IOS_PRODUCT_IDS contains blank entries:',
+          productAssertion.blank,
+        );
+      }
+    }
+
     // Configure RevenueCat
     await (purchases as any).configure({
       apiKey,
@@ -134,6 +146,7 @@ export async function configureRevenueCat(
 
     console.log('[RevenueCat] Configured successfully for user:', userId);
     return { success: true, supported: true };
+
   } catch (error) {
     console.error('[RevenueCat] Configuration failed:', error);
     return {
