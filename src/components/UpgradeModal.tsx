@@ -15,8 +15,13 @@ import {
 import { useConsumerSubscription } from '../hooks/useConsumerSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { detectNativeBillingPlatform, isIOSNativeShell, isNativeWebView } from '@/utils/platformDetection';
+import {
+  purchaseConsumerSubscription,
+  purchaseProSubscription,
+} from '@/integrations/revenuecat/revenuecatClient';
 import { toast } from 'sonner';
 import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
+
 
 interface UpgradeModalProps {
   isOpen: boolean;
