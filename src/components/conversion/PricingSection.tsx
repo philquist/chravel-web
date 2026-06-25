@@ -18,7 +18,12 @@ import {
   FileText,
   MapPin,
   TrendingUp,
+  Ticket,
+  Clock,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
+import { toast } from 'sonner';
 // Pricing/tier data from the central source of truth (billing/config.ts).
 import { SUBSCRIPTION_TIERS } from '@/types/pro';
 import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
