@@ -9,6 +9,10 @@ vi.mock('@/hooks/useConsumerSubscription', () => ({
   }),
 }));
 
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: () => true,
+}));
+
 vi.mock('@/hooks/usePdfExportUsage', () => ({
   usePdfExportUsage: () => ({
     recordExport: vi.fn(),
@@ -29,40 +33,72 @@ describe('TripExportModal layout (footer visibility)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: {
+        height: 667,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      },
+    });
   });
 
   afterEach(() => {
     cleanup();
   });
 
-  it('keeps footer actions in the modal flex column so they are not pushed below max-height', () => {
+  it('keeps footer actions in the modal grid so they are not pushed below max-height', () => {
     render(<TripExportModal {...baseProps} />);
 
     const panel = screen.getByTestId('trip-export-modal-panel');
     expect(panel).toBeTruthy();
+    expect(panel.className).toContain('grid-rows-[auto_minmax(0,1fr)_auto]');
 
     const scrollRegion = screen.getByTestId('trip-export-modal-scroll');
     expect(scrollRegion.className).toContain('min-h-0');
-    expect(scrollRegion.className).toContain('flex-1');
     expect(scrollRegion.className).toContain('overflow-y-auto');
 
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeVisible();
     expect(screen.getByRole('button', { name: /create recap/i })).toBeVisible();
 
-    const footer = screen.getByRole('button', { name: 'Cancel' }).parentElement;
-    expect(footer).toBeTruthy();
-    expect(panel?.contains(footer)).toBe(true);
+    const footer = screen.getByTestId('trip-export-modal-footer');
+    expect(panel.contains(footer)).toBe(true);
+    expect(footer.contains(screen.getByRole('button', { name: 'Cancel' }))).toBe(true);
+    expect(footer.contains(screen.getByRole('button', { name: /create recap/i }))).toBe(true);
   });
 
-  it('bounds the panel height via the viewport-aware CSS class (not a brittle svh-only inline cap)', () => {
-    // Older iOS WebViews drop `calc(100svh - …)` as invalid, leaving the panel
-    // unbounded so the footer slides off-screen with nothing scrollable. The
-    // height cap must come from the `.trip-export-modal-panel` class (which
-    // cascades 100vh → --visual-viewport-height) instead of an inline svh calc.
+  it('pins the privacy note in the footer with the action buttons', () => {
+    render(<TripExportModal {...baseProps} />);
+
+    const footer = screen.getByTestId('trip-export-modal-footer');
+    expect(footer.textContent).toContain('Emails and phone numbers hidden');
+
+    const scrollRegion = screen.getByTestId('trip-export-modal-scroll');
+    expect(scrollRegion.textContent).not.toContain('Emails and phone numbers hidden');
+  });
+
+  it('bounds the panel height via visual viewport when open (iOS Safari trips list)', () => {
     render(<TripExportModal {...baseProps} />);
 
     const panel = screen.getByTestId('trip-export-modal-panel');
     expect(panel.className).toContain('trip-export-modal-panel');
-    expect(panel.style.maxHeight).toBe('');
+    expect(panel.style.maxHeight).toBe('667px');
+  });
+
+  it('falls back to window.innerHeight when visualViewport is unavailable', () => {
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 768,
+    });
+
+    render(<TripExportModal {...baseProps} />);
+
+    const panel = screen.getByTestId('trip-export-modal-panel');
+    expect(panel.className).toContain('trip-export-modal-panel');
+    expect(panel.style.maxHeight).toBe('768px');
   });
 });
