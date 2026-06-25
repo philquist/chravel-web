@@ -1451,7 +1451,7 @@ const MONTHS = [
 export const formatBlogDate = (iso: string): string => {
   const [y, m, d] = iso.split('-').map(Number);
   if (!y || !m || !d) return iso;
-  return `${MONTHS[m - 1]} ${d}, ${y}`;
+  return `${MONTHS[m - 1]}\u00A0${d}, ${y}`;
 };
 
 /** Rough reading time at ~200 words/min over the post's text. */
