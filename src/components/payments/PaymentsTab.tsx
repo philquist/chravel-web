@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { usePayments } from '../../hooks/usePayments';
 import { useBalanceSummary } from '../../hooks/useBalanceSummary';
 import { useTripMembersQuery } from '../../hooks/useTripMembersQuery';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useToast } from '../../hooks/use-toast';
 import { PaymentErrorHandler } from '../../services/paymentErrors';
 import { formatCurrency } from '@/services/currencyService';
@@ -40,12 +41,17 @@ export const PaymentsTab = React.memo(({ tripId }: PaymentsTabProps) => {
   const { balanceSummary, balanceLoading, refreshBalanceSummary } = useBalanceSummary(tripId);
 
   // ⚡ TanStack Query: trip members (reuses shared cache instead of separate fetch)
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const debouncedMemberSearch = useDebouncedValue(memberSearchQuery, 300);
   const {
     tripMembers: rawMembers,
     loading: membersLoading,
     hadMembersError,
     refreshMembers,
-  } = useTripMembersQuery(tripId);
+    isPaginatedRoster,
+    memberTotalCount,
+    isSearchingMembers,
+  } = useTripMembersQuery(tripId, { rosterSearch: debouncedMemberSearch });
 
   const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -198,6 +204,11 @@ export const PaymentsTab = React.memo(({ tripId }: PaymentsTabProps) => {
             tripMembers={tripMembers}
             isVisible={true}
             tripId={tripId}
+            isPaginatedRoster={isPaginatedRoster}
+            memberSearchQuery={memberSearchQuery}
+            onMemberSearchChange={setMemberSearchQuery}
+            memberTotalCount={memberTotalCount}
+            isSearchingMembers={isSearchingMembers}
           />
         )}
       </section>

@@ -20,6 +20,9 @@ export const tripKeys = {
   members: (tripId: string) => ['trip-members', tripId] as const,
   memberMeta: (tripId: string) => ['trip-member-meta', tripId] as const,
   membersPaginated: (tripId: string) => ['trip-members', tripId, 'paginated'] as const,
+  membersSearch: (tripId: string, search: string) =>
+    [...tripKeys.members(tripId), 'search', search] as const,
+  membersSearchAll: (tripId: string) => [...tripKeys.members(tripId), 'search'] as const,
   membersWithRevision: (tripId: string, revision: number) =>
     [...tripKeys.members(tripId), revision] as const,
 

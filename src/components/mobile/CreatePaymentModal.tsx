@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { X, DollarSign, Users, Check, Search } from 'lucide-react';
+import { X, DollarSign, Users, Check, Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { demoModeService } from '@/services/demoModeService';
@@ -39,6 +39,11 @@ interface CreatePaymentModalProps {
   demoActive?: boolean;
   /** Required when demoActive is false — used for DB persistence */
   userId?: string;
+  isPaginatedRoster?: boolean;
+  memberSearchQuery?: string;
+  onMemberSearchChange?: (query: string) => void;
+  memberTotalCount?: number;
+  isSearchingMembers?: boolean;
 }
 
 export const CreatePaymentModal = ({
@@ -49,6 +54,11 @@ export const CreatePaymentModal = ({
   onPaymentCreated,
   demoActive = true,
   userId,
+  isPaginatedRoster = false,
+  memberSearchQuery = '',
+  onMemberSearchChange,
+  memberTotalCount,
+  isSearchingMembers = false,
 }: CreatePaymentModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -73,13 +83,29 @@ export const CreatePaymentModal = ({
     resetForm,
   } = usePaymentSplits(tripMembers);
 
-  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [localMemberSearchQuery, setLocalMemberSearchQuery] = useState('');
+  const isControlledMemberSearch = onMemberSearchChange !== undefined;
+  const effectiveMemberSearchQuery = isControlledMemberSearch
+    ? memberSearchQuery
+    : localMemberSearchQuery;
+  const handleMemberSearchChange = (query: string) => {
+    if (isControlledMemberSearch) {
+      onMemberSearchChange?.(query);
+      return;
+    }
+    setLocalMemberSearchQuery(query);
+  };
+
   const filteredTripMembers = useMemo(() => {
-    const normalized = memberSearchQuery.trim().toLowerCase();
+    if (isPaginatedRoster) return tripMembers;
+    const normalized = effectiveMemberSearchQuery.trim().toLowerCase();
     if (!normalized) return tripMembers;
     return tripMembers.filter(member => member.name.toLowerCase().includes(normalized));
-  }, [memberSearchQuery, tripMembers]);
-  const showMemberSearch = tripMembers.length >= LARGE_LIST_THRESHOLDS.paymentPickerSearchMinCount;
+  }, [effectiveMemberSearchQuery, isPaginatedRoster, tripMembers]);
+  const showMemberSearch =
+    isPaginatedRoster || tripMembers.length >= LARGE_LIST_THRESHOLDS.paymentPickerSearchMinCount;
+  const resolvedMemberTotalCount = memberTotalCount ?? tripMembers.length;
+  const hasActiveMemberSearch = effectiveMemberSearchQuery.trim().length > 0;
 
   // Attachments are only available for real (non-demo) trips with the kill switch on.
   const showAttachments = attachmentsEnabled && !demoActive;
@@ -263,32 +289,51 @@ export const CreatePaymentModal = ({
                   className="text-xs text-green-400 hover:text-green-300 font-medium px-2 py-1 rounded bg-white/5 hover:bg-white/10 transition-colors"
                   aria-label={
                     allParticipantsSelected
-                      ? 'Deselect all trip members'
-                      : 'Select all trip members'
+                      ? hasActiveMemberSearch
+                        ? 'Deselect all shown members'
+                        : 'Deselect all trip members'
+                      : hasActiveMemberSearch
+                        ? 'Select all shown members'
+                        : 'Select all trip members'
                   }
                 >
-                  {allParticipantsSelected ? 'Deselect All' : 'Select All Trip Members'}
+                  {allParticipantsSelected
+                    ? 'Deselect All'
+                    : hasActiveMemberSearch
+                      ? 'Select All Shown'
+                      : 'Select All Trip Members'}
                 </button>
               </div>
               {showMemberSearch && (
                 <div className="relative mb-2">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    value={memberSearchQuery}
-                    onChange={event => setMemberSearchQuery(event.target.value)}
+                    value={effectiveMemberSearchQuery}
+                    onChange={event => handleMemberSearchChange(event.target.value)}
                     placeholder="Search members…"
-                    className="pl-9 bg-white/5 border-white/10 text-white"
+                    className="pl-9 pr-9 bg-white/5 border-white/10 text-white"
                     aria-label="Search trip members"
                   />
+                  {isSearchingMembers && (
+                    <Loader2
+                      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400"
+                      aria-hidden
+                    />
+                  )}
                 </div>
               )}
               {selectedParticipants.length > 0 && (
                 <p className="text-xs text-gray-400 mb-2">
-                  {selectedParticipants.length} of {tripMembers.length} selected
+                  {selectedParticipants.length} of {resolvedMemberTotalCount} selected
+                </p>
+              )}
+              {showMemberSearch && hasActiveMemberSearch && (
+                <p className="text-xs text-gray-400 mb-2">
+                  Showing {filteredTripMembers.length} of {resolvedMemberTotalCount}
                 </p>
               )}
               <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2 p-3 bg-white/5 border border-white/10 rounded-xl native-scroll">
-                {tripMembers.length === 0 ? (
+                {filteredTripMembers.length === 0 ? (
                   <p className="text-sm text-gray-400 text-center py-2 w-full">
                     No trip members found
                   </p>

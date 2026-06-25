@@ -26,6 +26,7 @@ import { CollaboratorsModal } from './trip/CollaboratorsModal';
 import { EditTripModal } from './EditTripModal';
 import { cn } from '@/lib/utils';
 import { useTripMembers } from '../hooks/useTripMembers';
+import { PAGINATED_ROSTER_THRESHOLD } from '@/lib/tripMemberLimits';
 import { useAuth } from '../hooks/useAuth';
 import { useDemoMode } from '../hooks/useDemoMode';
 import { useJoinRequests } from '../hooks/useJoinRequests';
@@ -163,6 +164,9 @@ export const TripHeader = ({
   // This prevents duplicate network requests when parent already has this data
   const needsOwnMemberData = preloadedTripCreatorId === undefined;
   const memberHookData = useTripMembers(needsOwnMemberData ? trip.id.toString() : undefined);
+  const isPaginatedRoster = needsOwnMemberData
+    ? (memberHookData.isPaginatedRoster ?? false)
+    : trip.participants.length > PAGINATED_ROSTER_THRESHOLD;
 
   // Use preloaded data if available, otherwise use hook data
   const tripCreatorId = preloadedTripCreatorId ?? memberHookData.tripCreatorId;
@@ -806,6 +810,7 @@ export const TripHeader = ({
         onDismissRequest={dismissRequest}
         isProcessingRequest={isProcessingRequest}
         initialTab={collaboratorsInitialTab}
+        isPaginatedRoster={isPaginatedRoster}
       />
 
       <EditTripModal

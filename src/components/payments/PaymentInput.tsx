@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { DollarSign, Users, CheckSquare, Wand2, Check, Search } from 'lucide-react';
+import { DollarSign, Users, CheckSquare, Wand2, Check, Search, Loader2 } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
@@ -38,6 +38,15 @@ interface PaymentInputProps {
   isVisible: boolean;
   tripId: string;
   /**
+   * When true, member search is server-driven (list_trip_members RPC).
+   * Parent should pass debounced search via memberSearchQuery / onMemberSearchChange.
+   */
+  isPaginatedRoster?: boolean;
+  memberSearchQuery?: string;
+  onMemberSearchChange?: (query: string) => void;
+  memberTotalCount?: number;
+  isSearchingMembers?: boolean;
+  /**
    * Whether to offer the optional attachment picker. Off for surfaces that don't persist a
    * payment id we can attach to (e.g. chat payment mode). Defaults to true.
    */
@@ -49,6 +58,11 @@ export const PaymentInput = ({
   tripMembers,
   isVisible,
   tripId,
+  isPaginatedRoster = false,
+  memberSearchQuery = '',
+  onMemberSearchChange,
+  memberTotalCount,
+  isSearchingMembers = false,
   enableAttachments = true,
 }: PaymentInputProps) => {
   const { user } = useAuth();
@@ -81,15 +95,30 @@ export const PaymentInput = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [localMemberSearchQuery, setLocalMemberSearchQuery] = useState('');
+  const isControlledMemberSearch = onMemberSearchChange !== undefined;
+  const effectiveMemberSearchQuery = isControlledMemberSearch
+    ? memberSearchQuery
+    : localMemberSearchQuery;
+  const handleMemberSearchChange = (query: string) => {
+    if (isControlledMemberSearch) {
+      onMemberSearchChange?.(query);
+      return;
+    }
+    setLocalMemberSearchQuery(query);
+  };
 
   const filteredTripMembers = useMemo(() => {
-    const normalized = memberSearchQuery.trim().toLowerCase();
+    if (isPaginatedRoster) return tripMembers;
+    const normalized = effectiveMemberSearchQuery.trim().toLowerCase();
     if (!normalized) return tripMembers;
     return tripMembers.filter(member => member.name.toLowerCase().includes(normalized));
-  }, [memberSearchQuery, tripMembers]);
+  }, [effectiveMemberSearchQuery, isPaginatedRoster, tripMembers]);
 
-  const showMemberSearch = tripMembers.length >= LARGE_LIST_THRESHOLDS.paymentPickerSearchMinCount;
+  const showMemberSearch =
+    isPaginatedRoster || tripMembers.length >= LARGE_LIST_THRESHOLDS.paymentPickerSearchMinCount;
+  const resolvedMemberTotalCount = memberTotalCount ?? tripMembers.length;
+  const hasActiveMemberSearch = effectiveMemberSearchQuery.trim().length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -290,10 +319,20 @@ export const PaymentInput = ({
                 onClick={selectAllParticipants}
                 className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
                 aria-label={
-                  allParticipantsSelected ? 'Deselect all trip members' : 'Select all trip members'
+                  allParticipantsSelected
+                    ? hasActiveMemberSearch
+                      ? 'Deselect all shown members'
+                      : 'Deselect all trip members'
+                    : hasActiveMemberSearch
+                      ? 'Select all shown members'
+                      : 'Select all trip members'
                 }
               >
-                {allParticipantsSelected ? 'Deselect All' : 'Select All Trip Members'}
+                {allParticipantsSelected
+                  ? 'Deselect All'
+                  : hasActiveMemberSearch
+                    ? 'Select All Shown'
+                    : 'Select All Trip Members'}
               </button>
             </div>
 
@@ -301,18 +340,30 @@ export const PaymentInput = ({
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  value={memberSearchQuery}
-                  onChange={event => setMemberSearchQuery(event.target.value)}
+                  value={effectiveMemberSearchQuery}
+                  onChange={event => handleMemberSearchChange(event.target.value)}
                   placeholder="Search members to split with…"
-                  className="pl-9"
+                  className="pl-9 pr-9"
                   aria-label="Search trip members"
                 />
+                {isSearchingMembers && (
+                  <Loader2
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground"
+                    aria-hidden
+                  />
+                )}
               </div>
             )}
 
             {selectedParticipants.length > 0 && (
               <p className="text-xs text-muted-foreground mb-2">
-                {selectedParticipants.length} of {tripMembers.length} members selected
+                {selectedParticipants.length} of {resolvedMemberTotalCount} members selected
+              </p>
+            )}
+
+            {showMemberSearch && hasActiveMemberSearch && (
+              <p className="text-xs text-muted-foreground mb-2">
+                Showing {filteredTripMembers.length} of {resolvedMemberTotalCount}
               </p>
             )}
 

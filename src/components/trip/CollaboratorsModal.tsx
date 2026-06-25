@@ -9,6 +9,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { MemberContactCard, MemberContactCardMember } from './MemberContactCard';
 import { SwipeableRow } from '../mobile/SwipeableRow';
 import { SearchableVirtualMemberList } from '@/components/members/SearchableVirtualMemberList';
+import { useTripMembersQuery } from '@/hooks/useTripMembersQuery';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 export interface CollaboratorItem {
   id: number | string;
@@ -37,6 +39,8 @@ interface CollaboratorsModalProps {
   isProcessingRequest?: boolean;
   // Initial tab to show when modal opens
   initialTab?: TabType;
+  /** When true, member search uses list_trip_members RPC instead of client-side filter. */
+  isPaginatedRoster?: boolean;
 }
 
 type TabType = 'members' | 'requests';
@@ -58,7 +62,27 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
   onDismissRequest,
   isProcessingRequest = false,
   initialTab = 'members',
+  isPaginatedRoster = false,
 }) => {
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const debouncedMemberSearch = useDebouncedValue(memberSearchQuery, 300);
+
+  const paginatedRosterQuery = useTripMembersQuery(open && isPaginatedRoster ? tripId : undefined, {
+    rosterSearch: debouncedMemberSearch,
+  });
+
+  const rosterParticipants = useMemo<CollaboratorItem[]>(() => {
+    if (!isPaginatedRoster) return participants;
+    return paginatedRosterQuery.tripMembers.map(member => ({
+      id: member.id,
+      name: member.name,
+      avatar: member.avatar,
+      role: member.role,
+      isCreator: member.isCreator,
+    }));
+  }, [isPaginatedRoster, participants, paginatedRosterQuery.tripMembers]);
+
+  const activeParticipants = isPaginatedRoster ? rosterParticipants : participants;
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
@@ -145,7 +169,7 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
 
   const searchableParticipants = useMemo(
     () =>
-      participants.map(participant => {
+      activeParticipants.map(participant => {
         const idStr = participant.id.toString();
         const displayName = formatCollaboratorName(participant.name, tripType);
         return {
@@ -154,7 +178,7 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
           searchText: [displayName, participant.role ?? ''].filter(Boolean).join(' '),
         };
       }),
-    [participants, tripType],
+    [activeParticipants, tripType],
   );
 
   const renderMemberRow = (participant: (typeof searchableParticipants)[number]) => {
@@ -238,7 +262,10 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
             )}
           >
             <Users size={16} />
-            <span>Members ({participants.length})</span>
+            <span>
+              Members (
+              {isPaginatedRoster ? paginatedRosterQuery.memberTotalCount : participants.length})
+            </span>
           </button>
           <button
             onClick={() => setActiveTab('requests')}
@@ -270,6 +297,11 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
               noResultsLabel="No members match your search"
               listAriaLabel="All members"
               maxHeightClassName="max-h-[60vh]"
+              serverSearch={isPaginatedRoster}
+              searchQuery={memberSearchQuery}
+              onSearchQueryChange={setMemberSearchQuery}
+              totalCount={paginatedRosterQuery.memberTotalCount}
+              isSearchLoading={paginatedRosterQuery.isSearchingMembers}
             />
           ) : (
             <div className="max-h-[60vh] overflow-auto pr-1">

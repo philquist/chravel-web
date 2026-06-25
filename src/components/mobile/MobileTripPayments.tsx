@@ -39,6 +39,7 @@ import { getTripById } from '@/data/tripsData';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { useAuth } from '@/hooks/useAuth';
 import { useTripMembersQuery } from '@/hooks/useTripMembersQuery';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { getConsistentAvatar, getInitials } from '@/utils/avatarUtils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { tripKeys, QUERY_CACHE_CONFIG } from '@/lib/queryKeys';
@@ -75,6 +76,8 @@ export const MobileTripPayments = ({ tripId }: MobileTripPaymentsProps) => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const debouncedMemberSearch = useDebouncedValue(memberSearchQuery, 300);
 
   const { isDemoMode, isLoading: demoLoading } = useDemoMode();
 
@@ -91,7 +94,12 @@ export const MobileTripPayments = ({ tripId }: MobileTripPaymentsProps) => {
     loading: membersLoading,
     hadMembersError,
     refreshMembers,
-  } = useTripMembersQuery(demoActive ? undefined : tripId);
+    isPaginatedRoster,
+    memberTotalCount,
+    isSearchingMembers,
+  } = useTripMembersQuery(demoActive ? undefined : tripId, {
+    rosterSearch: debouncedMemberSearch,
+  });
 
   // Ensure current user in members when viewing (e.g. shared trip)
   const tripMembers = useMemo(() => {
@@ -803,12 +811,20 @@ export const MobileTripPayments = ({ tripId }: MobileTripPaymentsProps) => {
       {/* Create Payment Modal */}
       <CreatePaymentModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setMemberSearchQuery('');
+        }}
         tripId={tripId}
         tripMembers={effectiveTripMembers}
         onPaymentCreated={handlePaymentCreated}
         demoActive={demoActive}
         userId={user?.id}
+        isPaginatedRoster={isPaginatedRoster}
+        memberSearchQuery={memberSearchQuery}
+        onMemberSearchChange={setMemberSearchQuery}
+        memberTotalCount={memberTotalCount}
+        isSearchingMembers={isSearchingMembers}
       />
     </div>
   );

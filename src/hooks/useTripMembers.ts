@@ -1,12 +1,25 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useTripMembersQuery, type TripMember } from './useTripMembersQuery';
+import {
+  useTripMembersQuery,
+  type TripMember,
+  type UseTripMembersQueryOptions,
+} from './useTripMembersQuery';
 
 export type { TripMember };
 
-export const useTripMembers = (tripId?: string) => {
-  const { tripCreatorId, tripMembers, loading, removeMember, leaveTrip, refreshMembers } =
-    useTripMembersQuery(tripId);
+export const useTripMembers = (tripId?: string, options?: UseTripMembersQueryOptions) => {
+  const {
+    tripCreatorId,
+    tripMembers,
+    loading,
+    removeMember,
+    leaveTrip,
+    refreshMembers,
+    isPaginatedRoster,
+    memberTotalCount,
+    isSearchingMembers,
+  } = useTripMembersQuery(tripId, options);
 
   // Check if current user can remove members (creator or admin)
   const canRemoveMembers = useCallback(async (): Promise<boolean> => {
@@ -70,5 +83,8 @@ export const useTripMembers = (tripId?: string) => {
     removeMember: removeMemberAsBoolean,
     leaveTrip: leaveTripAsBoolean,
     refreshMembers,
+    isPaginatedRoster,
+    memberTotalCount,
+    isSearchingMembers,
   };
 };

@@ -108,7 +108,12 @@ async function fetchTripMembersData(tripId: string, isDemoMode: boolean): Promis
   }
 }
 
-export const useTripMembersQuery = (tripId?: string) => {
+export interface UseTripMembersQueryOptions {
+  /** When roster is paginated, filters via list_trip_members RPC (server-side). */
+  rosterSearch?: string;
+}
+
+export const useTripMembersQuery = (tripId?: string, options?: UseTripMembersQueryOptions) => {
   const queryClient = useQueryClient();
   const { isDemoMode } = useDemoMode();
   const { user } = useAuth();
@@ -117,6 +122,7 @@ export const useTripMembersQuery = (tripId?: string) => {
     tripId ? state.addedMembers[tripId]?.length || 0 : 0,
   );
   const membersQueryKey = tripKeys.membersWithRevision(tripId || '', demoAddedMembersCount);
+  const rosterSearch = options?.rosterSearch?.trim() ?? '';
 
   const { data: tripMeta, isLoading: metaLoading } = useQuery({
     queryKey: tripKeys.memberMeta(tripId || ''),
@@ -127,11 +133,26 @@ export const useTripMembersQuery = (tripId?: string) => {
   });
 
   const usePaginatedRoster = (tripMeta?.memberCount ?? 0) > PAGINATED_ROSTER_THRESHOLD;
+  const useServerSearch = usePaginatedRoster && rosterSearch.length > 0;
+  const metaReady = tripMeta !== undefined || !tripId || isDemoMode;
+
+  const serverSearchQuery = useQuery({
+    queryKey: tripKeys.membersSearch(tripId || '', rosterSearch),
+    queryFn: () =>
+      tripService.listTripMembersPage(tripId!, {
+        search: rosterSearch,
+        offset: 0,
+        limit: 100,
+      }),
+    enabled: !!tripId && metaReady && useServerSearch && !isDemoMode,
+    staleTime: QUERY_CACHE_CONFIG.members.staleTime,
+    gcTime: QUERY_CACHE_CONFIG.members.gcTime,
+  });
 
   const standardQuery = useQuery({
     queryKey: membersQueryKey,
     queryFn: () => fetchTripMembersData(tripId!, isDemoMode),
-    enabled: !!tripId && (!usePaginatedRoster || isDemoMode),
+    enabled: !!tripId && metaReady && (!usePaginatedRoster || isDemoMode),
     staleTime: QUERY_CACHE_CONFIG.members.staleTime,
     gcTime: QUERY_CACHE_CONFIG.members.gcTime,
     refetchOnWindowFocus: QUERY_CACHE_CONFIG.members.refetchOnWindowFocus,
@@ -149,20 +170,21 @@ export const useTripMembersQuery = (tripId?: string) => {
       const nextOffset = lastPage.offset + lastPage.members.length;
       return nextOffset < lastPage.total_count ? nextOffset : undefined;
     },
-    enabled: !!tripId && usePaginatedRoster && !isDemoMode,
+    enabled: !!tripId && metaReady && usePaginatedRoster && !isDemoMode && !useServerSearch,
     staleTime: QUERY_CACHE_CONFIG.members.staleTime,
     gcTime: QUERY_CACHE_CONFIG.members.gcTime,
     refetchOnWindowFocus: QUERY_CACHE_CONFIG.members.refetchOnWindowFocus,
   });
 
   useEffect(() => {
-    if (!usePaginatedRoster || isDemoMode) return;
+    if (!usePaginatedRoster || isDemoMode || useServerSearch) return;
     if (paginatedQuery.hasNextPage && !paginatedQuery.isFetchingNextPage) {
       void paginatedQuery.fetchNextPage();
     }
   }, [
     usePaginatedRoster,
     isDemoMode,
+    useServerSearch,
     paginatedQuery.hasNextPage,
     paginatedQuery.isFetchingNextPage,
     paginatedQuery.fetchNextPage,
@@ -170,24 +192,43 @@ export const useTripMembersQuery = (tripId?: string) => {
   ]);
 
   const paginatedMembers = paginatedQuery.data?.pages.flatMap(page => page.members) ?? [];
-  const tripCreatorId = usePaginatedRoster
-    ? (paginatedQuery.data?.pages[0]?.creatorId ?? tripMeta?.creatorId ?? null)
-    : (standardQuery.data?.creatorId ?? null);
-  const tripMembers = usePaginatedRoster ? paginatedMembers : (standardQuery.data?.members ?? []);
-  const hadMembersError = usePaginatedRoster
-    ? paginatedQuery.isError
-    : (standardQuery.data?.hadError ?? false);
-  const isLoading = usePaginatedRoster
-    ? metaLoading || paginatedQuery.isLoading
-    : standardQuery.isLoading;
+  const serverSearchMembers = serverSearchQuery.data?.members ?? [];
+  const tripCreatorId = useServerSearch
+    ? (serverSearchQuery.data?.creatorId ?? tripMeta?.creatorId ?? null)
+    : usePaginatedRoster
+      ? (paginatedQuery.data?.pages[0]?.creatorId ?? tripMeta?.creatorId ?? null)
+      : (standardQuery.data?.creatorId ?? null);
+  const tripMembers = useServerSearch
+    ? serverSearchMembers
+    : usePaginatedRoster
+      ? paginatedMembers
+      : (standardQuery.data?.members ?? []);
+  const memberTotalCount = useServerSearch
+    ? (serverSearchQuery.data?.total_count ?? 0)
+    : (tripMeta?.memberCount ?? tripMembers.length);
+  const hadMembersError = useServerSearch
+    ? serverSearchQuery.isError
+    : usePaginatedRoster
+      ? paginatedQuery.isError
+      : (standardQuery.data?.hadError ?? false);
+  const isLoading = useServerSearch
+    ? metaLoading || serverSearchQuery.isLoading
+    : usePaginatedRoster
+      ? metaLoading || paginatedQuery.isLoading
+      : standardQuery.isLoading;
+  const isSearchingMembers = useServerSearch && serverSearchQuery.isFetching;
 
   const refetch = useCallback(async () => {
+    if (useServerSearch) {
+      await serverSearchQuery.refetch();
+      return;
+    }
     if (usePaginatedRoster) {
       await paginatedQuery.refetch();
       return;
     }
     await standardQuery.refetch();
-  }, [usePaginatedRoster, paginatedQuery, standardQuery]);
+  }, [usePaginatedRoster, useServerSearch, serverSearchQuery, paginatedQuery, standardQuery]);
 
   useEffect(() => {
     if (!tripId || isDemoMode) return;
@@ -201,6 +242,7 @@ export const useTripMembersQuery = (tripId?: string) => {
           queryClient.invalidateQueries({ queryKey: tripKeys.members(tripId) });
           queryClient.invalidateQueries({ queryKey: tripKeys.memberMeta(tripId) });
           queryClient.invalidateQueries({ queryKey: tripKeys.membersPaginated(tripId) });
+          queryClient.invalidateQueries({ queryKey: tripKeys.membersSearchAll(tripId) });
         },
       )
       .subscribe();
@@ -272,6 +314,7 @@ export const useTripMembersQuery = (tripId?: string) => {
       queryClient.invalidateQueries({ queryKey: tripKeys.members(tripId!) });
       queryClient.invalidateQueries({ queryKey: tripKeys.memberMeta(tripId!) });
       queryClient.invalidateQueries({ queryKey: tripKeys.membersPaginated(tripId!) });
+      queryClient.invalidateQueries({ queryKey: tripKeys.membersSearchAll(tripId!) });
     },
   });
 
@@ -331,6 +374,7 @@ export const useTripMembersQuery = (tripId?: string) => {
       queryClient.invalidateQueries({ queryKey: tripKeys.members(tripId!) });
       queryClient.invalidateQueries({ queryKey: tripKeys.memberMeta(tripId!) });
       queryClient.invalidateQueries({ queryKey: tripKeys.membersPaginated(tripId!) });
+      queryClient.invalidateQueries({ queryKey: tripKeys.membersSearchAll(tripId!) });
     },
     onError: () => {
       toast.error('Failed to leave trip');
@@ -347,6 +391,8 @@ export const useTripMembersQuery = (tripId?: string) => {
     leaveTrip: (tripName: string) => leaveTripMutation.mutateAsync(tripName),
     refreshMembers: refetch,
     isPaginatedRoster: usePaginatedRoster,
+    memberTotalCount,
+    isSearchingMembers,
     hasMoreMembers: paginatedQuery.hasNextPage ?? false,
     isFetchingMoreMembers: paginatedQuery.isFetchingNextPage,
     fetchMoreMembers: paginatedQuery.fetchNextPage,

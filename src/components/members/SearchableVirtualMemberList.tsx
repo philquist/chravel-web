@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Search } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { LARGE_LIST_THRESHOLDS } from '@/lib/largeListThresholds';
 
@@ -18,6 +18,12 @@ interface SearchableVirtualMemberListProps<T extends SearchableMemberListItem> {
   listAriaLabel?: string;
   maxHeightClassName?: string;
   rowHeight?: number;
+  /** When true, search is server-driven via onSearchQueryChange (no client-side filter). */
+  serverSearch?: boolean;
+  searchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
+  totalCount?: number;
+  isSearchLoading?: boolean;
 }
 
 export function SearchableVirtualMemberList<T extends SearchableMemberListItem>({
@@ -29,21 +35,38 @@ export function SearchableVirtualMemberList<T extends SearchableMemberListItem>(
   listAriaLabel = 'Member list',
   maxHeightClassName = 'max-h-[50vh]',
   rowHeight = 56,
+  serverSearch = false,
+  searchQuery = '',
+  onSearchQueryChange,
+  totalCount,
+  isSearchLoading = false,
 }: SearchableVirtualMemberListProps<T>) {
-  const [query, setQuery] = useState('');
   const parentRef = useRef<HTMLDivElement>(null);
+  const [internalQuery, setInternalQuery] = useState('');
+  const isControlledSearch = onSearchQueryChange !== undefined;
+  const effectiveQuery = isControlledSearch ? searchQuery : internalQuery;
 
-  const filteredItems = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+  const handleSearchChange = (nextQuery: string) => {
+    if (isControlledSearch) {
+      onSearchQueryChange?.(nextQuery);
+      return;
+    }
+    setInternalQuery(nextQuery);
+  };
+
+  const displayedItems = useMemo(() => {
+    if (serverSearch) return items;
+    const normalized = effectiveQuery.trim().toLowerCase();
     if (!normalized) return items;
     return items.filter(item => item.searchText.toLowerCase().includes(normalized));
-  }, [items, query]);
+  }, [items, effectiveQuery, serverSearch]);
 
-  const shouldVirtualize = filteredItems.length > LARGE_LIST_THRESHOLDS.virtualizeMinCount;
-  const showSearch = items.length >= LARGE_LIST_THRESHOLDS.searchMinCount;
+  const shouldVirtualize = displayedItems.length > LARGE_LIST_THRESHOLDS.virtualizeMinCount;
+  const showSearch = serverSearch || items.length >= LARGE_LIST_THRESHOLDS.searchMinCount;
+  const resolvedTotalCount = totalCount ?? items.length;
 
   const virtualizer = useVirtualizer({
-    count: shouldVirtualize ? filteredItems.length : 0,
+    count: shouldVirtualize ? displayedItems.length : 0,
     getScrollElement: () => parentRef.current,
     estimateSize: () => rowHeight,
     overscan: 5,
@@ -55,18 +78,24 @@ export function SearchableVirtualMemberList<T extends SearchableMemberListItem>(
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            value={query}
-            onChange={event => setQuery(event.target.value)}
+            value={effectiveQuery}
+            onChange={event => handleSearchChange(event.target.value)}
             placeholder={searchPlaceholder}
-            className="pl-9"
+            className="pl-9 pr-9"
             aria-label="Search members"
           />
+          {isSearchLoading && (
+            <Loader2
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground"
+              aria-hidden
+            />
+          )}
         </div>
       )}
 
-      {filteredItems.length === 0 ? (
+      {displayedItems.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6">
-          {items.length === 0 ? emptyLabel : noResultsLabel}
+          {items.length === 0 && !isSearchLoading ? emptyLabel : noResultsLabel}
         </p>
       ) : shouldVirtualize ? (
         <div
@@ -83,7 +112,7 @@ export function SearchableVirtualMemberList<T extends SearchableMemberListItem>(
             }}
           >
             {virtualizer.getVirtualItems().map(virtualRow => {
-              const item = filteredItems[virtualRow.index];
+              const item = displayedItems[virtualRow.index];
               return (
                 <div
                   key={item.id}
@@ -108,7 +137,7 @@ export function SearchableVirtualMemberList<T extends SearchableMemberListItem>(
           role="list"
           aria-label={listAriaLabel}
         >
-          {filteredItems.map(item => (
+          {displayedItems.map(item => (
             <div key={item.id} role="listitem">
               {renderItem(item)}
             </div>
@@ -116,9 +145,9 @@ export function SearchableVirtualMemberList<T extends SearchableMemberListItem>(
         </div>
       )}
 
-      {showSearch && query.trim() && (
+      {showSearch && effectiveQuery.trim() && (
         <p className="text-xs text-muted-foreground">
-          Showing {filteredItems.length} of {items.length}
+          Showing {displayedItems.length} of {resolvedTotalCount}
         </p>
       )}
     </div>
