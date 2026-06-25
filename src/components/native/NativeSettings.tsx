@@ -123,25 +123,22 @@ export const NativeSettings = ({
   const { user: authUser } = useAuth();
   const [restoreLoading, setRestoreLoading] = useState(false);
 
-  const handlePurchaseTripPass = useCallback(
-    async (tier: 'explorer' | 'frequent-chraveler') => {
-      await hapticService.light();
-      setTripPassLoading(tier);
-      try {
-        const result = await purchaseTripPass(tier);
-        if (result.success) await hapticService.success();
-        handlePurchaseResult(result, {
-          successMessage: 'Trip Pass activated!',
-          successDescription: 'Premium features are unlocking now.',
-          onRetry: () => void handlePurchaseTripPass(tier),
-          context: `trip-pass:${tier}`,
-        });
-      } finally {
-        setTripPassLoading(null);
-      }
-    },
-    [],
-  );
+  const handlePurchaseTripPass = useCallback(async (tier: 'explorer' | 'frequent-chraveler') => {
+    await hapticService.light();
+    setTripPassLoading(tier);
+    try {
+      const result = await purchaseTripPass(tier);
+      if (result.success) await hapticService.success();
+      handlePurchaseResult(result, {
+        successMessage: 'Trip Pass activated!',
+        successDescription: 'Premium features are unlocking now.',
+        onRetry: () => void handlePurchaseTripPass(tier),
+        context: `trip-pass:${tier}`,
+      });
+    } finally {
+      setTripPassLoading(null);
+    }
+  }, []);
 
   const handleRestorePurchases = useCallback(async () => {
     if (!authUser?.id) {
@@ -171,7 +168,6 @@ export const NativeSettings = ({
       setRestoreLoading(false);
     }
   }, [authUser?.id]);
-
 
   const isPro = subscriptionTier !== 'free';
   const showTripPasses = !isPro && platform !== 'web';
@@ -255,21 +251,15 @@ export const NativeSettings = ({
             {platform !== 'web' && (
               <NativeListItem
                 icon={
-                  <RefreshCw
-                    size={18}
-                    className={restoreLoading ? 'animate-spin' : undefined}
-                  />
+                  <RefreshCw size={18} className={restoreLoading ? 'animate-spin' : undefined} />
                 }
                 label="Restore Purchases"
                 sublabel="Re-apply subscriptions or Trip Passes from this Apple ID"
-                value={
-                  restoreLoading ? <span className="text-gray-400">…</span> : undefined
-                }
+                value={restoreLoading ? <span className="text-gray-400">…</span> : undefined}
                 onPress={restoreLoading ? undefined : () => void handleRestorePurchases()}
               />
             )}
           </NativeListSection>
-
 
           {/* Notifications Section */}
           <NativeListSection

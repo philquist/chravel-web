@@ -4,10 +4,13 @@ import { SUBSCRIPTION_TIERS } from '../types/pro';
 import { useIsMobile } from '../hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { SUBSCRIPTION_TIER_MAP } from '@/constants/stripe';
-import { detectNativeBillingPlatform, isIOSNativeShell, isNativeWebView } from '@/utils/platformDetection';
+import {
+  detectNativeBillingPlatform,
+  isIOSNativeShell,
+  isNativeWebView,
+} from '@/utils/platformDetection';
 import { purchaseProSubscription } from '@/integrations/revenuecat/revenuecatClient';
 import { toast } from 'sonner';
-
 
 interface ProUpgradeModalProps {
   isOpen: boolean;
@@ -37,7 +40,8 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
           toast.info('Contact sales for Enterprise+ pricing.');
           return;
         }
-        const proTier = (tierKey as 'pro-starter' | 'pro-growth' | 'pro-enterprise') || 'pro-starter';
+        const proTier =
+          (tierKey as 'pro-starter' | 'pro-growth' | 'pro-enterprise') || 'pro-starter';
         const result = await purchaseProSubscription(proTier, 'monthly');
         if (result.success) {
           toast.success('Chravel Pro activated!');
@@ -71,7 +75,6 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
       setIsLoading(false);
     }
   };
-
 
   const tierIcons = {
     starter: <Zap size={isMobile ? 20 : 24} className="text-primary" />,
@@ -239,7 +242,6 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

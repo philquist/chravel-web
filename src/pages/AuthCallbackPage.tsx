@@ -50,7 +50,7 @@ interface OutcomeLog {
 function logOutcome(outcome: OutcomeLog): void {
   // Intentional production log: critical for App Review resubmit forensics on
   // physical-device runs. Low-volume (fires once per callback navigation).
-  // eslint-disable-next-line no-console
+
   console.info('[AuthCallback]', outcome);
 }
 
@@ -66,7 +66,11 @@ const AuthCallbackPage: React.FC = () => {
     let cancelled = false;
     const startedAt = Date.now();
 
-    const fail = (flow: Flow, message: string, hints: { hasCode: boolean; hasHash: boolean; hasError: boolean }) => {
+    const fail = (
+      flow: Flow,
+      message: string,
+      hints: { hasCode: boolean; hasHash: boolean; hasError: boolean },
+    ) => {
       if (cancelled) return;
       setErrorMessage(message);
       setStatus('error');
@@ -81,7 +85,10 @@ const AuthCallbackPage: React.FC = () => {
       });
     };
 
-    const succeed = (flow: Flow, hints: { hasCode: boolean; hasHash: boolean; hasError: boolean }) => {
+    const succeed = (
+      flow: Flow,
+      hints: { hasCode: boolean; hasHash: boolean; hasError: boolean },
+    ) => {
       if (cancelled) return;
       setStatus('success');
       logOutcome({
@@ -131,11 +138,7 @@ const AuthCallbackPage: React.FC = () => {
           }
         } else if (!hasHash) {
           // 4. Nothing to exchange and no existing session — fail fast.
-          fail(
-            'empty',
-            'No sign-in response detected. Please try again.',
-            hints,
-          );
+          fail('empty', 'No sign-in response detected. Please try again.', hints);
           return;
         }
 

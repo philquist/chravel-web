@@ -22,7 +22,11 @@ import {
   Clock,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { detectNativeBillingPlatform, isIOSNativeShell, isNativeWebView } from '@/utils/platformDetection';
+import {
+  detectNativeBillingPlatform,
+  isIOSNativeShell,
+  isNativeWebView,
+} from '@/utils/platformDetection';
 import { toast } from 'sonner';
 // Pricing/tier data from the central source of truth (billing/config.ts).
 import { SUBSCRIPTION_TIERS } from '@/types/pro';
@@ -353,7 +357,6 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
     }
   };
 
-
   const tripPassTiers: PricingTier[] = [
     {
       id: 'pass-explorer-45',
@@ -550,7 +553,6 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
             </p>
           </div>
         )}
-
       </div>
 
       {/* Pricing Cards */}

@@ -53,6 +53,101 @@ export const BLOG_AUTHOR = 'The ChravelApp Team';
 
 export const BLOG_POSTS: BlogPost[] = [
   {
+    slug: 'fraternity-and-sorority-chapter-management-app',
+    title: 'ChravelApp for Fraternities and Sororities: Rush, Formals, and Chapter Operations',
+    description:
+      'How a fraternity or sorority chapter runs rush, formals, the social calendar, photos, tasks, and house votes in ChravelApp — separate from family and work chats.',
+    h1: 'ChravelApp for fraternities and sororities: run rush, formals, and chapter life in one app',
+    excerpt:
+      'Running a chapter takes more than one giant group chat. Here’s what rush, formals, the social calendar, member tasks, and house votes look like when a fraternity or sorority runs them in ChravelApp — in a space that stays private from everyday life.',
+    datePublished: '2026-06-25',
+    author: BLOG_AUTHOR,
+    tags: ['Greek Life', 'Students'],
+    sections: [
+      {
+        paragraphs: [
+          'Running a fraternity or sorority chapter is a logistics job nobody fully signed up for. Rush week, formals, retreats, philanthropy, chapter meetings, house duties, and a social calendar that changes weekly — usually crammed into one overflowing group chat where the message that mattered is three hundred replies deep by the time anyone reads it. Whether your chapter is Kappa Alpha Psi, Alpha Phi Alpha, Alpha Chi Omega, or any IFC, NPHC, or Panhellenic organization, the problem is the same: too many moving parts, too few tools built for them. Here is what chapter life looks like when you run it in ChravelApp instead.',
+        ],
+      },
+      {
+        heading: 'What rush could look like in ChravelApp',
+        paragraphs: [
+          'Rush is the highest-stakes stretch on the calendar, and it runs on timing. Put every rush event on a shared Calendar — info nights, mixers, interviews, bid day — so prospective members and the chapter always know what is next and where to be. When a venue or time changes, update it once and send a Broadcast instead of starting another thread; nobody is left acting on last week’s plan. And because rush lives in its own space, those conversations and decisions are not buried in the same chat as everyday chapter chatter.',
+        ],
+      },
+      {
+        heading: 'Run the whole chapter, not just one event',
+        paragraphs: [
+          'A chapter is not a single trip — it is a year. ChravelApp gives you one home for the social calendar, a shared Media album so the chapter’s photos and videos actually end up in one place instead of scattered across a hundred phones, and a Tasks list for the work that keeps a house running. Assign who is on the cleaning rotation this week, what the social chair owes for the next mixer, and who is handling philanthropy sign-ups — so responsibilities are visible instead of falling on whoever happens to remember. Member roles mean the right people can post, edit, and manage without handing the keys to everyone.',
+        ],
+      },
+      {
+        heading: 'Put house decisions to a vote with Polls',
+        paragraphs: [
+          'Chapters run on votes. Should we add this to the formal budget? Do we want to make this change to the house? Which weekend works for the retreat? Instead of counting hands in a loud meeting or tallying reactions in a group chat, drop a Poll and let everyone weigh in. The result is clear, it is on the record, and the members who could not make the meeting still get a say.',
+        ],
+      },
+      {
+        heading: 'Base Camps for formals, retreats, and away trips',
+        paragraphs: [
+          'When the chapter travels — a formal, a retreat, a philanthropy event, or an away game — set a Base Camp to the exact address of the venue, hotel, or house you are headed to. Everyone gets the location pinned on a map instead of sending forty “wait, where is it again?” texts. Pair it with the Calendar and a shared album and the whole trip runs off one screen.',
+        ],
+      },
+      {
+        heading: 'Make the house manager’s job easier',
+        paragraphs: [
+          'Every chapter has the person who actually keeps it running — often the house manager. Today that means updating the whiteboard in the living room, blasting a text, or emailing everyone every time the schedule shifts, and then answering the same questions anyway. With ChravelApp, they manage one chapter Calendar and everyone sees the update live. Change a chapter meeting, a cleaning rotation, or a payment deadline once, and it is current for the whole house — no whiteboard, no reply-all.',
+        ],
+      },
+      {
+        heading: 'Keep chapter life private — separate from family and work',
+        paragraphs: [
+          'Some of what a chapter shares is not meant for the rest of your life. There are photos, files, and conversations you would never want surfacing in your family thread, your work chat, or an old school group chat — and trying to keep them straight across the same handful of messaging apps is exactly how something ends up in the wrong place. ChravelApp keeps chapter media and discussion in its own space, with access limited to the members who belong there. The chapter’s moments stay with the chapter, not mixed in with everyone else’s everyday.',
+        ],
+      },
+      {
+        paragraphs: [
+          'None of this requires a new system to learn or an app only half the chapter can install. ChravelApp runs on the web and as an installable app on iPhone and Android, so the whole roster is covered — actives, the exec board, and the house manager alike.',
+        ],
+        link: {
+          label: 'See how ChravelApp works for group trips',
+          to: '/group-travel-planning-app',
+        },
+      },
+    ],
+    faq: [
+      {
+        q: 'Does this work for both fraternities and sororities?',
+        a: 'Yes. Any chapter — IFC, NPHC, Panhellenic, or a similar organization — runs into the same calendar, tasks, photos, payments, and privacy needs, and the same tools cover all of them.',
+      },
+      {
+        q: 'Can we keep rush or a formal separate from everyday chapter chat?',
+        a: 'Yes. You can run rush, a formal, or a retreat as its own space so its chat and media stay compartmentalized instead of living forever in one endless thread.',
+      },
+      {
+        q: 'Who manages the chapter calendar?',
+        a: 'Whoever holds the role — often the house manager or social chair. They update it once and the whole chapter sees the change live, with member roles controlling who can edit.',
+      },
+      {
+        q: 'Does everyone need an iPhone?',
+        a: 'No. ChravelApp runs on the web and as an installable app on iOS and Android, so every member is covered, including the shared photo album.',
+      },
+    ],
+    related: [
+      { label: 'ChravelApp for group trips', to: '/group-travel-planning-app' },
+      { label: 'All ChravelApp use cases', to: '/use-cases' },
+    ],
+    cta: {
+      heading: 'Run your chapter in one place',
+      subtext:
+        'Put rush, formals, the social calendar, tasks, votes, and a private photo album in one chapter space — and invite the whole roster.',
+      primaryLabel: 'Start a chapter space',
+      primaryTo: '/auth',
+      secondaryLabel: 'See ChravelApp for group trips',
+      secondaryTo: '/group-travel-planning-app',
+    },
+  },
+  {
     slug: 'travel-concierge-better-client-experience-after-booking',
     title: 'How Travel Concierge Companies Can Deliver a Better Client Experience After Booking',
     description:

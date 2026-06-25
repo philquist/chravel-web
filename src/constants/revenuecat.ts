@@ -123,8 +123,6 @@ export function assertIosProductIdsConfigured(): ProductIdAssertion {
   return { ok: blank.length === 0, missing: [], blank };
 }
 
-
-
 /**
  * Pricing display (for UI)
  *

@@ -12,7 +12,7 @@ interface Scenario {
   after: string;
   badge: string;
   isHero?: boolean;
-  /** Links to the matching /use-cases page when one exists. */
+  /** Links to the matching /use-cases page (or a /blog post) when one exists. */
   href?: string;
 }
 
@@ -69,6 +69,7 @@ const scenarios: Scenario[] = [
     after:
       'Separate vaults per event — Rush, Formal, Retreat. Chat and media stay compartmentalized. Access controlled, moments stay private.',
     badge: 'Private trip vaults with access controls',
+    href: '/blog/fraternity-and-sorority-chapter-management-app',
   },
   {
     title: 'Youth, Amateur, & Pro sports programs.',
@@ -169,7 +170,7 @@ export const UseCasesSection = () => {
                 onClick={() => toggleCard(index)}
                 onKeyDown={e => {
                   // Toggle only when the card itself is focused, so activating an inner
-                  // link (the "See how" / hub links) doesn't also toggle the card.
+                  // link (the CTA / hub links) doesn't also toggle the card.
                   if (e.target !== e.currentTarget) return;
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -247,7 +248,7 @@ export const UseCasesSection = () => {
                           {scenario.badge}
                         </div>
 
-                        {/* Link to the full use-case page (when one exists) */}
+                        {/* Link to the full use-case page or blog post (when one exists) */}
                         {scenario.href && (
                           <div>
                             <Link
@@ -255,7 +256,9 @@ export const UseCasesSection = () => {
                               onClick={e => e.stopPropagation()}
                               className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
                             >
-                              See how ChravelApp helps
+                              {scenario.href.startsWith('/blog')
+                                ? 'See the ChravelApp blog for more'
+                                : 'See how ChravelApp helps'}
                               <ArrowRight className="w-4 h-4" />
                             </Link>
                           </div>

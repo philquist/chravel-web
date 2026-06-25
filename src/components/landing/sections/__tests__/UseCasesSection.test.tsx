@@ -19,12 +19,23 @@ describe('UseCasesSection (homepage)', () => {
     expect(hubLink).toHaveAttribute('href', '/use-cases');
   });
 
-  it('reveals a card’s use-case page link when expanded', () => {
+  it('shows use-case CTA copy on a /use-cases card when expanded', () => {
     renderSection();
-    // The per-card "See how" link only appears once the card is expanded.
+    // The per-card CTA link only appears once the card is expanded.
     fireEvent.click(screen.getByText('Travel Concierge & Advisors'));
     const link = screen.getByRole('link', { name: /see how chravelapp helps/i });
     expect(link).toHaveAttribute('href', '/use-cases/travel-concierge-client-portal');
+    // Per-destination labeling: a /use-cases card must not show blog-oriented copy.
+    expect(
+      screen.queryByRole('link', { name: /see the chravelapp blog for more/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('links the Fraternities/Sororities card to the new blog post when expanded', () => {
+    renderSection();
+    fireEvent.click(screen.getByText('Fraternities/Sororities & Similar Organizations'));
+    const link = screen.getByRole('link', { name: /see the chravelapp blog for more/i });
+    expect(link).toHaveAttribute('href', '/blog/fraternity-and-sorority-chapter-management-app');
   });
 
   it('is keyboard-accessible: cards are buttons that toggle on Enter', () => {
