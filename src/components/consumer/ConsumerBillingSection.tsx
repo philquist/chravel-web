@@ -234,14 +234,18 @@ export const ConsumerBillingSection = () => {
   return (
     <div className="space-y-3">
       {useAppleManagementOnIOS && (
-        <div className="rounded-xl p-4 bg-blue-500/10 border border-blue-500/30">
-          <h4 className="text-white font-semibold mb-1">iOS Billing</h4>
-          <p className="text-sm text-blue-200">
-            Purchases are processed by Apple In-App Purchase. Manage or cancel from
-            Settings → [your name] → Subscriptions.
-          </p>
+        <div className="rounded-xl p-4 bg-blue-500/10 border border-blue-500/30 space-y-3">
+          <div>
+            <h4 className="text-white font-semibold mb-1">iOS Billing</h4>
+            <p className="text-sm text-blue-200">
+              Purchases are processed by Apple In-App Purchase. Manage or cancel from
+              Settings → [your name] → Subscriptions.
+            </p>
+          </div>
+          <RestorePurchasesButton variant="block" onRestored={checkSubscription} />
         </div>
       )}
+
 
 
       {/* Current Plan */}
