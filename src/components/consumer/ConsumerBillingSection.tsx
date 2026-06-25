@@ -557,16 +557,17 @@ export const ConsumerBillingSection = () => {
                     {!isCurrentProPlan && (
                       <button
                         onClick={() => handleUpgradeToProPlan(key)}
-                        disabled={isLoading || isNativeIOS}
+                        disabled={isLoading}
                         className="mt-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
                       >
-                        {isNativeIOS
-                          ? 'Manage on chravel.app'
-                          : isLoading
-                            ? 'Processing...'
+                        {isLoading
+                          ? 'Processing...'
+                          : isNativeIOS
+                            ? `Subscribe with Apple — ${plan.name}`
                             : `Upgrade to ${plan.name}`}
                       </button>
                     )}
+
                   </div>
                 </CollapsibleContent>
               </Collapsible>
