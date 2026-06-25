@@ -76,6 +76,54 @@ export const REVENUECAT_PRODUCTS = {
   proEnterpriseAnnual: 'com.chravel.pro.enterprise.annual',
 } as const;
 
+/**
+ * Single source of truth for which RevenueCat / App Store Connect product IDs
+ * MUST exist for iOS purchases to function. Used at runtime by
+ * `assertIosProductIdsConfigured()` to surface configuration drift early
+ * (App Store Connect product missing, RevenueCat dashboard not attached, etc.)
+ * instead of producing a confusing "Product … not found in RevenueCat offerings"
+ * error deep inside the purchase flow.
+ */
+export const REQUIRED_IOS_PRODUCT_IDS = [
+  REVENUECAT_PRODUCTS.explorerMonthly,
+  REVENUECAT_PRODUCTS.explorerAnnual,
+  REVENUECAT_PRODUCTS.frequentChravelerMonthly,
+  REVENUECAT_PRODUCTS.frequentChravelerAnnual,
+  REVENUECAT_PRODUCTS.explorerPass45,
+  REVENUECAT_PRODUCTS.frequentChravelerPass90,
+  REVENUECAT_PRODUCTS.proStarterMonthly,
+  REVENUECAT_PRODUCTS.proStarterAnnual,
+  REVENUECAT_PRODUCTS.proGrowthMonthly,
+  REVENUECAT_PRODUCTS.proGrowthAnnual,
+  REVENUECAT_PRODUCTS.proEnterpriseMonthly,
+  REVENUECAT_PRODUCTS.proEnterpriseAnnual,
+] as const;
+
+export interface ProductIdAssertion {
+  ok: boolean;
+  missing: string[];
+  blank: string[];
+}
+
+/**
+ * Validate the static REQUIRED_IOS_PRODUCT_IDS list. This guards against an
+ * empty / mistyped / undefined entry in REVENUECAT_PRODUCTS. It does NOT call
+ * the RevenueCat SDK — that happens in `assertIosOfferingsContainRequiredProducts`
+ * after `configureRevenueCat`.
+ */
+export function assertIosProductIdsConfigured(): ProductIdAssertion {
+  const blank: string[] = [];
+  const seen = new Set<string>();
+  for (const id of REQUIRED_IOS_PRODUCT_IDS) {
+    if (!id || typeof id !== 'string' || id.trim() === '') {
+      blank.push(String(id));
+    }
+    seen.add(id);
+  }
+  return { ok: blank.length === 0, missing: [], blank };
+}
+
+
 
 /**
  * Pricing display (for UI)
