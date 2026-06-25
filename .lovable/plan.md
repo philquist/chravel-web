@@ -1,46 +1,82 @@
-# Concierge UI cleanup + tab-load glitch
+## Goal
+Transform the marketing surface from generic SaaS into a premium editorial feel — without rewriting any copy. Hierarchy comes from **typeface contrast (serif ↔ sans)**, **weight contrast (300 vs 700)**, and **tracking** — not from color tricks or rainbow gradients.
 
-## Part 1 — Clean up the Concierge composer
+## Type system
 
-The composer is busy because of a duplicated "Conversation mode" block (label + Switch in `AIConciergeChat.tsx` lines 552–572) **plus** the `ConciergeConversationButton` row underneath (which already shows its own "Hands-free — talk to your concierge like a phone call" caption + mic). That's why the screenshot shows "Conversation mode" *twice* stacked.
+**Install via `@fontsource`** (per workspace rules — no CDN, no `<link>` in index.html):
+- `@fontsource/dm-serif-display` (400, 400-italic) → display
+- `@fontsource/fira-sans` (300, 400, 500, 600, 700) → body + eyebrow
 
-### Changes
-1. **Remove the inline toggle row** in `src/components/AIConciergeChat.tsx` (lines 552–573) — the `<label>` + `<Switch>` block.
-2. **Move the toggle into Concierge settings** by adding a new `ConciergeConversationModeToggle` component (a labeled Switch reading the same `useConversationModePreference` hook) and rendering it in `src/components/consumer/ConsumerAIConciergeSection.tsx` directly above the existing `ConciergeLanguagePicker` (around line 147).
-3. **Keep `ConciergeConversationButton` in the composer** (the mic + transcript bar) — but only render it when the user has enabled the mode in settings. If the feature flag is on and the user pref is off, render nothing extra in the composer.
-4. Result: composer goes from `[duplicate toggle row] + [Conversation mode caption + mic] + [input]` to just `[mic] + [input]` when enabled, or `[input]` when disabled.
+Wire in `src/main.tsx`, register in `tailwind.config.ts`:
+```
+fontFamily: {
+  display: ['"DM Serif Display"', 'Georgia', 'serif'],
+  sans:    ['"Fira Sans"', 'system-ui', 'sans-serif'],
+}
+```
 
-No behavior change to the underlying conversation engine, feature flag, or hook — pure UI relocation.
+Keep existing `font-sans` default = Fira Sans. App-shell (authenticated product) is untouched.
 
-## Part 2 — Tabs (Polls, Payments, etc.) not loading
+## Stylization recipe — "Pure weight contrast"
 
-I need a quick diagnostic pass before committing a fix, because nothing in the screenshot tells me *why* they don't load. The likely suspects given recent changes:
+One rule per element type, applied consistently:
 
-- An open modal/sheet (e.g. the Concierge or settings modal) intercepting clicks per the single-active-modal rule, so tab taps register but the route doesn't switch.
-- A render error inside one of the tabs throwing silently (we'd see it in console).
-- Recent voice/streaming hook holding a state lock that blocks tab content mounting.
+| Element | Treatment |
+|---|---|
+| Eyebrow / kicker | `font-sans` · `uppercase` · `tracking-[0.22em]` · `text-xs` · `font-medium` · muted gold (existing `--primary`) |
+| H1 / hero | `font-display` · `font-normal` · `tracking-[-0.02em]` · `leading-[1.05]` · oversized (clamp 44→96px) |
+| H2 / section | `font-display` · `font-normal` · `tracking-[-0.015em]` · clamp 32→64px |
+| H3 / card title | `font-sans` · `font-semibold` (600) · `tracking-tight` |
+| Lede / sub-headline | `font-sans` · `font-light` (300) · `text-lg/relaxed` · 80ch max |
+| Body | `font-sans` · `font-normal` · `leading-relaxed` |
+| Button / nav | `font-sans` · `font-medium` · `tracking-wide` |
+| Stat number | `font-display` · oversized · `tabular-nums` |
 
-### Diagnostic step (build mode)
-- Run the preview, open the trip, tap Polls/Payments while console logs are captured, and inspect:
-  - Console for thrown errors or React warnings on tab mount.
-  - Whether the active tab state in `TripDetailContent` actually updates (add a one-line log, remove after).
-  - Whether a modal `open` flag is stuck true after closing the Concierge.
+**Weight contrast inside headlines:** the existing copy already has em-dashes and natural breaks. Where a headline has two clauses, set the lead-in in `font-light italic` (DM Serif's italic) and the payoff in regular roman — e.g. *"Built for group planning."* / "All your trip's important info." This adds rhythm without changing copy.
 
-### Likely fix paths (pick one after diagnosis)
-- **If a stuck modal:** ensure Concierge modal close path resets the shared `activeModal` state on unmount.
-- **If a render error:** wrap the offending tab in its existing ErrorBoundary surface and fix the throw.
-- **If state-lock from voice hook:** ensure `useConciergeConversationMode` cleans up its session when the Concierge view unmounts (cancel + release mic + reset `state`).
+**No** gold word-highlights, **no** per-word color swaps, **no** rainbow gradients. Premium = restraint.
 
-I'll report root cause + the surgical fix in the implementation response rather than guessing now.
+## Files to touch (full marketing surface)
 
-## Files touched
-- `src/components/AIConciergeChat.tsx` — delete lines 552–573
-- `src/components/consumer/ConsumerAIConciergeSection.tsx` — add toggle above language picker
-- `src/features/concierge/components/ConciergeConversationModeToggle.tsx` — new, ~30 lines
-- Tab fix: TBD after diagnosis (one file expected)
+Landing sections (`src/components/landing/sections/`):
+- `HeroSection.tsx`
+- `AiFeaturesSection.tsx`
+- `UseCasesSection.tsx`
+- `HowItWorksSection.tsx`
+- `FaqSection.tsx`
+- `FullPageLandingSection.tsx` (eyebrow + section-title wrapper if present)
+
+Conversion blocks (`src/components/conversion/`):
+- `PricingSection.tsx`
+- `ReplacesGrid.tsx`
+- any CTA blocks rendered on landing
+
+Marketing pages:
+- `src/pages/BlogIndex.tsx`, `src/pages/BlogPost.tsx`
+- `src/pages/UseCasesHub.tsx`, `src/pages/UseCasePage.tsx`
+
+Nav:
+- `src/components/landing/StickyLandingNav.tsx`
+- `src/components/landing/MobileLandingNav.tsx`
+(font-family + tracking only; no layout changes)
+
+Config:
+- `src/main.tsx` — font imports
+- `tailwind.config.ts` — `fontFamily.display` + `fontFamily.sans`
+- `src/index.css` — optional `font-feature-settings: 'ss01','liga','kern'` on `body` for refined rendering
+
+## Out of scope
+- No copy edits (user explicit: keep all text as is)
+- No layout, spacing, or section reordering
+- No color/background changes — backgrounds stay the cinematic gold-black photography
+- App-shell (post-login) untouched
+- No new dependencies beyond the two `@fontsource` packages
+
+## Verification
+1. `npm run typecheck && npm run lint && npm run build` clean
+2. Visual pass at 440px, 768px, 1280px on `/`, `/blog`, `/use-cases`
+3. Confirm DM Serif Display loads (no FOUT flash to Georgia) — `font-display: swap` via @fontsource default is fine
+4. Confirm authenticated app shell visually unchanged
 
 ## Risk
-Low for Part 1 (UI move, no logic change). Part 2 risk depends on diagnosis; will keep the fix to one file.
-
-## Rollback
-Revert the two-commit series; toggle returns to composer, tab fix reverts cleanly.
+LOW. Additive font registration + className swaps. Rollback = revert the touched files; fonts auto-tree-shake if unused.
