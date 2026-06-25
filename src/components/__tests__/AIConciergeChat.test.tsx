@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import { AIConciergeChat } from '../AIConciergeChat';
 import { conciergeCacheService } from '../../services/conciergeCacheService';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -153,6 +153,14 @@ describe('AIConciergeChat', () => {
   });
 
   afterEach(() => {
+    // Unmount the component tree first so effect cleanups (status-watchdog
+    // timers) run, then drop every query in the client. TanStack Query schedules
+    // a gcTime timer (default 5 min) for each query the concierge hooks activate;
+    // left pending, those timers keep the vitest forks worker's event loop alive
+    // long past any teardown window and surface as the intermittent
+    // "Timeout terminating forks worker for AIConciergeChat.test.tsx" flake.
+    cleanup();
+    queryClient.clear();
     vi.restoreAllMocks();
   });
 
