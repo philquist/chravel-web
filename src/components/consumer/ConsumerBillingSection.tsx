@@ -44,9 +44,11 @@ export const ConsumerBillingSection = () => {
       typeof navigator !== 'undefined' ? navigator.userAgent : '',
       isNativeWebView(),
     ) === 'ios';
-  // Consumer (Explorer / Frequent Chraveler) digital subscriptions are IAP-only on iOS;
-  // Pro/Enterprise (B2B) checkout stays on Stripe per the reader-rule exception.
-  const blockConsumerCheckoutOnIOS = isNativeIOS;
+  // Manage / cancel of an existing subscription still routes to Apple's native
+  // subscription settings on iOS (required), but new purchases now go through
+  // Apple IAP via RevenueCat instead of being blocked.
+  const useAppleManagementOnIOS = isNativeIOS;
+
 
   const handleManageSubscription = async () => {
     if (blockConsumerCheckoutOnIOS) {
