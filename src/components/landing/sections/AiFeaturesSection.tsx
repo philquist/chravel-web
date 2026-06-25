@@ -85,7 +85,8 @@ export const AiFeaturesSection = () => {
           className="text-lg sm:text-xl md:text-2xl text-white/90 font-medium max-w-3xl mx-auto"
           style={{ textShadow: '0 2px 6px rgba(0,0,0,0.5)' }}
         >
-          Get answers with your trip's context: itinerary, budget, etc — Instead of generic advice.
+          Get answers with your trip's context: itinerary, budget, etc — not{"\n"}&nbsp;generic
+          advice.
         </p>
       </motion.div>
 
