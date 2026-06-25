@@ -120,25 +120,58 @@ export const NativeSettings = ({
     null,
   );
 
-  const handlePurchaseTripPass = useCallback(async (tier: 'explorer' | 'frequent-chraveler') => {
+  const { user: authUser } = useAuth();
+  const [restoreLoading, setRestoreLoading] = useState(false);
+
+  const handlePurchaseTripPass = useCallback(
+    async (tier: 'explorer' | 'frequent-chraveler') => {
+      await hapticService.light();
+      setTripPassLoading(tier);
+      try {
+        const result = await purchaseTripPass(tier);
+        if (result.success) await hapticService.success();
+        handlePurchaseResult(result, {
+          successMessage: 'Trip Pass activated!',
+          successDescription: 'Premium features are unlocking now.',
+          onRetry: () => void handlePurchaseTripPass(tier),
+          context: `trip-pass:${tier}`,
+        });
+      } finally {
+        setTripPassLoading(null);
+      }
+    },
+    [],
+  );
+
+  const handleRestorePurchases = useCallback(async () => {
+    if (!authUser?.id) {
+      toast.error('Please sign in before restoring purchases.');
+      return;
+    }
     await hapticService.light();
-    setTripPassLoading(tier);
+    setRestoreLoading(true);
     try {
-      const result = await purchaseTripPass(tier);
-      if (result.success) {
+      const result = await restoreAndSyncEntitlements(authUser.id);
+      if (result.success && result.data) {
         await hapticService.success();
-        toast.success('Trip Pass activated! Premium features are unlocking…');
-      } else if (result.errorCode === 'CANCELLED') {
-        // user dismissed — silent
-      } else if (!result.supported) {
-        toast.error('Trip Pass purchase is not available on this device.');
+        const tier = result.data.plan.tier;
+        toast.success('Purchases restored', {
+          description:
+            tier === 'free'
+              ? 'No active purchases were found on this Apple ID.'
+              : `Your ${tier.replace('-', ' ')} entitlement is now active.`,
+        });
       } else {
-        toast.error(result.error || 'Failed to purchase Trip Pass. Please try again.');
+        handlePurchaseResult(
+          { ...result, success: false },
+          { onRetry: handleRestorePurchases, context: 'restore' },
+        );
       }
     } finally {
-      setTripPassLoading(null);
+      setRestoreLoading(false);
     }
-  }, []);
+  }, [authUser?.id]);
+
 
   const isPro = subscriptionTier !== 'free';
   const showTripPasses = !isPro && platform !== 'web';
