@@ -133,7 +133,7 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           paddingRight: 'env(safe-area-inset-right)',
         }}
       >
-        {/* Section 1: Hero */}
+        {/* Section 1: Hero — golden-hour coastline */}
         <FullPageLandingSection
           id="section-hero"
           gradientColors={GRADIENTS.hero.colors}
@@ -141,34 +141,40 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           accentGlow={GRADIENTS.hero.accentGlow}
           minHeight="90vh"
           goldOverlay="hero"
+          backgroundImage={bgCoastline}
+          backgroundOverlayOpacity={0.7}
         >
           <HeroSection onSignUp={onSignUp} />
         </FullPageLandingSection>
 
-        {/* Section 2: What It Replaces */}
+        {/* Section 2: What It Replaces — city skyline */}
         <FullPageLandingSection
           id="section-replaces"
           gradientColors={GRADIENTS.replaces.colors}
           gradientDirection={GRADIENTS.replaces.direction}
           goldOverlay="waves"
+          backgroundImage={bgSkyline}
+          backgroundOverlayOpacity={0.78}
         >
           <Suspense fallback={<SectionLoader />}>
             <ReplacesSection />
           </Suspense>
         </FullPageLandingSection>
 
-        {/* Section 3: How It Works */}
+        {/* Section 3: How It Works — mountain sunrise */}
         <FullPageLandingSection
           id="section-features"
           gradientColors={GRADIENTS.howItWorks.colors}
           gradientDirection={GRADIENTS.howItWorks.direction}
           accentGlow={GRADIENTS.howItWorks.accentGlow}
           goldOverlay="triangles"
+          backgroundImage={bgMountain}
+          backgroundOverlayOpacity={0.78}
         >
           <ProblemSolutionSection />
         </FullPageLandingSection>
 
-        {/* Section 4: Use Cases */}
+        {/* Section 4: Use Cases — private jet */}
         <FullPageLandingSection
           id="section-use-cases"
           gradientColors={GRADIENTS.useCases.colors}
@@ -176,26 +182,31 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           accentGlow={GRADIENTS.useCases.accentGlow}
           minHeight="120vh"
           goldOverlay="diamonds"
+          backgroundImage={bgJet}
+          backgroundOverlayOpacity={0.76}
         >
           <Suspense fallback={<SectionLoader />}>
             <UseCasesSection />
           </Suspense>
         </FullPageLandingSection>
 
-        {/* Section 5: AI Features */}
+        {/* Section 5: AI Features — city skyline reprise */}
         <FullPageLandingSection
           id="section-ai"
           gradientColors={GRADIENTS.aiFeatures.colors}
           gradientDirection={GRADIENTS.aiFeatures.direction}
           accentGlow={GRADIENTS.aiFeatures.accentGlow}
           goldOverlay="circles"
+          backgroundImage={bgSkyline}
+          backgroundOverlayOpacity={0.8}
+          backgroundPosition="center 30%"
         >
           <Suspense fallback={<SectionLoader />}>
             <AiFeaturesSection />
           </Suspense>
         </FullPageLandingSection>
 
-        {/* Section 6: Pricing */}
+        {/* Section 6: Pricing — coastline reprise */}
         <FullPageLandingSection
           id="section-pricing"
           gradientColors={GRADIENTS.pricing.colors}
@@ -203,19 +214,23 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           accentGlow={GRADIENTS.pricing.accentGlow}
           minHeight="110vh"
           goldOverlay="mesh"
+          backgroundImage={bgCoastline}
+          backgroundOverlayOpacity={0.8}
         >
           <Suspense fallback={<SectionLoader />}>
             <PricingLandingSection onSignUp={onSignUp} />
           </Suspense>
         </FullPageLandingSection>
 
-        {/* Section 7: FAQ */}
+        {/* Section 7: FAQ — mountain reprise */}
         <FullPageLandingSection
           id="section-faq"
           gradientColors={GRADIENTS.faq.colors}
           gradientDirection={GRADIENTS.faq.direction}
           accentGlow={GRADIENTS.faq.accentGlow}
           goldOverlay="aurora"
+          backgroundImage={bgMountain}
+          backgroundOverlayOpacity={0.82}
         >
           <Suspense fallback={<SectionLoader />}>
             <FAQSection />
