@@ -18,7 +18,12 @@ import {
   FileText,
   MapPin,
   TrendingUp,
+  Ticket,
+  Clock,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { detectNativeBillingPlatform, isIOSNativeShell, isNativeWebView } from '@/utils/platformDetection';
+import { toast } from 'sonner';
 // Pricing/tier data from the central source of truth (billing/config.ts).
 import { SUBSCRIPTION_TIERS } from '@/types/pro';
 import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
@@ -296,9 +301,102 @@ const _testimonials = [
 
 export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [activeTab, setActiveTab] = useState<'consumer' | 'pro'>('consumer');
+  const [activeTab, setActiveTab] = useState<'consumer' | 'pro' | 'pass'>('consumer');
   const [_openFaq, _setOpenFaq] = useState<number | null>(null);
   const [tripPassOpen, setTripPassOpen] = useState(false);
+  const [passLoading, setPassLoading] = useState<string | null>(null);
+
+  const iosNative = isIOSNativeShell();
+
+  const handlePassPurchase = async (passId: string) => {
+    setPassLoading(passId);
+    try {
+      if (iosNative) {
+        const { purchaseTripPass } = await import('@/integrations/revenuecat/revenuecatClient');
+        const tier: 'explorer' | 'frequent-chraveler' =
+          passId === 'pass-explorer-45' ? 'explorer' : 'frequent-chraveler';
+        const result = await purchaseTripPass(tier);
+        if (result.success) {
+          toast.success('Trip Pass activated!');
+        } else if (result.errorCode === 'CANCELLED') {
+          // silent
+        } else if (!result.supported) {
+          toast.error('In-app purchases are not available on this device.');
+        } else {
+          toast.error(result.error || 'Failed to purchase Trip Pass.');
+        }
+        return;
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please sign in to purchase a Trip Pass');
+        if (onSignUp) onSignUp();
+        return;
+      }
+      const billingPlatform =
+        typeof navigator === 'undefined'
+          ? 'web'
+          : detectNativeBillingPlatform(navigator.userAgent || '', isNativeWebView());
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { tier: passId, purchase_type: 'pass', platform: billingPlatform },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, '_blank');
+    } catch (err) {
+      console.error('Trip Pass checkout error:', err);
+      toast.error('Failed to start checkout. Please try again.');
+    } finally {
+      setPassLoading(null);
+    }
+  };
+
+
+  const tripPassTiers: PricingTier[] = [
+    {
+      id: 'pass-explorer-45',
+      name: 'Explorer Trip Pass',
+      price: TRIP_PASS_DISPLAY.explorer.price,
+      description: `Full Explorer features for ${TRIP_PASS_DISPLAY.explorer.durationDays} days — one trip, no commitment.`,
+      icon: <Globe size={24} />,
+      features: [
+        `${TRIP_PASS_DISPLAY.explorer.durationDays}-day access window`,
+        'Unlimited saved trips + restore archived',
+        '25 AI queries per user per trip',
+        'Unlimited PDF exports',
+        'Smart Import (Calendar, Agenda, Line-up from URL)',
+        'ICS calendar export',
+        'Location-aware AI recommendations',
+      ],
+      cta: passLoading === 'pass-explorer-45' ? 'Starting checkout…' : 'Get Explorer Pass',
+      category: 'consumer',
+      badge: 'One-time',
+      ctaAction: () => handlePassPurchase('pass-explorer-45'),
+    },
+    {
+      id: 'pass-frequent-90',
+      name: 'Frequent Chraveler Trip Pass',
+      price: TRIP_PASS_DISPLAY['frequent-chraveler'].price,
+      description: `Full Frequent Chraveler features for ${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays} days — multi-city trips covered.`,
+      icon: <Crown size={24} />,
+      features: [
+        `${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays}-day access window`,
+        'Everything in Explorer Trip Pass',
+        'Unlimited AI queries (24/7 concierge)',
+        'Smart Import (URL, paste, or file)',
+        'Role-based channels & Pro features',
+        'Custom trip categories',
+        'Early feature access',
+      ],
+      cta: passLoading === 'pass-frequent-90' ? 'Starting checkout…' : 'Get Frequent Pass',
+      category: 'consumer',
+      popular: true,
+      badge: 'Best for multi-city',
+      ctaAction: () => handlePassPurchase('pass-frequent-90'),
+    },
+  ];
 
   const handlePlanSelect = (planId: string, tier?: PricingTier) => {
     // If tier has custom action, use it
@@ -319,6 +417,8 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
         return consumerTiers;
       case 'pro':
         return proTiers;
+      case 'pass':
+        return tripPassTiers;
       default:
         return consumerTiers;
     }
@@ -383,12 +483,13 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
           </div>
         )}
 
-        {/* Category Tabs - Only 2 tabs now: Chravel Plus and Chravel Pro */}
+        {/* Category Tabs */}
         <div className="flex justify-center">
-          <div className="bg-card/50 rounded-lg p-1 flex gap-1">
+          <div className="bg-card/50 rounded-lg p-1 flex gap-1 flex-wrap">
             {[
               { id: 'consumer', label: 'ChravelApp Plus', icon: <Users size={16} /> },
               { id: 'pro', label: 'ChravelApp Pro', icon: <Building size={16} /> },
+              { id: 'pass', label: 'Trip Passes', icon: <Ticket size={16} /> },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -439,17 +540,17 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
           </div>
         )}
 
-        {/* Trip Pass CTA */}
-        {activeTab === 'consumer' && (
-          <div className="text-center">
-            <button
-              onClick={() => setTripPassOpen(true)}
-              className="text-sm text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
-            >
-              🎫 Only need ChravelApp for a trip or two? Get a Trip Pass.
-            </button>
+        {/* Trip Pass helper note */}
+        {activeTab === 'pass' && (
+          <div className="text-center max-w-2xl mx-auto">
+            <p className="text-sm text-muted-foreground inline-flex items-center justify-center gap-1.5">
+              <Clock size={14} className="text-primary" />
+              One-time purchase. Full premium features for a fixed window. Your exports stay
+              forever.
+            </p>
           </div>
         )}
+
       </div>
 
       {/* Pricing Cards */}
@@ -457,7 +558,9 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
         className={`grid gap-4 tablet:gap-6 max-w-7xl mx-auto px-2 ${
           activeTab === 'consumer'
             ? 'grid-cols-1 lg:grid-cols-3'
-            : 'grid-cols-1 tablet:grid-cols-2 lg:grid-cols-3'
+            : activeTab === 'pass'
+              ? 'grid-cols-1 md:grid-cols-2 max-w-4xl'
+              : 'grid-cols-1 tablet:grid-cols-2 lg:grid-cols-3'
         }`}
       >
         {getCurrentTiers().map(tier => (

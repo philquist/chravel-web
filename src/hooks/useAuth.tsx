@@ -17,7 +17,11 @@ import { SUPER_ADMIN_EMAILS } from '@/constants/admins';
 import { useDemoModeStore } from '@/store/demoModeStore';
 import { conciergeCacheService } from '@/services/conciergeCacheService';
 import { isSessionTokenValid } from '@/utils/tokenValidation';
-import { isInstalledApp } from '@/utils/platformDetection';
+import {
+  isInstalledApp,
+  isCapacitorNativeShell,
+  isChravelNativeShell,
+} from '@/utils/platformDetection';
 import { authDebug } from '@/utils/authDebug';
 import { telemetry } from '@/telemetry/service';
 import { toast } from '@/hooks/use-toast';
@@ -938,6 +942,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             return {
               error:
                 'Your Chravel app needs an update to sign in with Apple. Please update from the App Store and try again.',
+            };
+          }
+          // Belt-and-suspenders: if we're in a native shell but ended up on the
+          // unsafe `web-redirect` path (no Capacitor Browser, no ChravelNative
+          // bridge), refuse to strand the user inside the WebView's provider
+          // chain — surface an actionable error instead (App Store 2.1a).
+          if (
+            result.strategy === 'web-redirect' &&
+            (isCapacitorNativeShell() || isChravelNativeShell())
+          ) {
+            return {
+              error:
+                'Your Chravel app needs an update to sign in with Apple. Please update from the App Store, or sign in with email.',
             };
           }
         }

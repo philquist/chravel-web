@@ -5,9 +5,11 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Check, Globe, Crown, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
+import { detectNativeBillingPlatform, isIOSNativeShell, isNativeWebView } from '@/utils/platformDetection';
+import { purchaseTripPass } from '@/integrations/revenuecat/revenuecatClient';
 import { toast } from 'sonner';
 import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
+
 
 interface TripPassModalProps {
   open: boolean;
@@ -56,16 +58,35 @@ const passes = [
 
 export const TripPassModal: React.FC<TripPassModalProps> = ({ open, onOpenChange }) => {
   const [loading, setLoading] = useState<string | null>(null);
+  const iosNative = isIOSNativeShell();
 
   const handlePurchase = async (passId: string) => {
     setLoading(passId);
     try {
+      // iOS native shell — Apple IAP via RevenueCat (Guideline 3.1.1)
+      if (iosNative) {
+        const tier: 'explorer' | 'frequent-chraveler' =
+          passId === 'pass-explorer-45' ? 'explorer' : 'frequent-chraveler';
+        const result = await purchaseTripPass(tier);
+        if (result.success) {
+          toast.success('Trip Pass activated! Premium features are unlocking…');
+          onOpenChange(false);
+        } else if (result.errorCode === 'CANCELLED') {
+          // user dismissed — silent
+        } else if (!result.supported) {
+          toast.error('In-app purchases are not available on this device.');
+        } else {
+          toast.error(result.error || 'Failed to purchase Trip Pass. Please try again.');
+        }
+        return;
+      }
+
+      // Web / Android web shell — Stripe Checkout
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) {
         toast.error('Please sign in to purchase a Trip Pass');
-        setLoading(null);
         return;
       }
 
@@ -92,6 +113,7 @@ export const TripPassModal: React.FC<TripPassModalProps> = ({ open, onOpenChange
       setLoading(null);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -145,9 +167,10 @@ export const TripPassModal: React.FC<TripPassModalProps> = ({ open, onOpenChange
                   {loading === pass.id ? (
                     <div className="h-4 w-4 mr-2 animate-spin gold-gradient-spinner" />
                   ) : null}
-                  Get Trip Pass
+                  {iosNative ? 'Buy with Apple' : 'Get Trip Pass'}
                 </Button>
                 <p className="text-xs text-muted-foreground text-center">{pass.nudge}</p>
+
               </CardFooter>
             </Card>
           ))}

@@ -124,3 +124,13 @@ export function isNativeAuthSurface(): boolean {
   if (isStandalonePWA()) return true;
   return false;
 }
+
+/**
+ * True when running inside a native iOS shell (Capacitor or ChravelNative WebView on iOS).
+ * Used to gate App Store 3.1.1 — no external purchase entry points on iOS.
+ */
+export function isIOSNativeShell(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  if (!isNativeWebView()) return false;
+  return detectNativeBillingPlatform(navigator.userAgent || '', true) === 'ios';
+}

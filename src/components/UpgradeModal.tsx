@@ -14,9 +14,14 @@ import {
 } from 'lucide-react';
 import { useConsumerSubscription } from '../hooks/useConsumerSubscription';
 import { supabase } from '@/integrations/supabase/client';
-import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
+import { detectNativeBillingPlatform, isIOSNativeShell, isNativeWebView } from '@/utils/platformDetection';
+import {
+  purchaseConsumerSubscription,
+  purchaseProSubscription,
+} from '@/integrations/revenuecat/revenuecatClient';
 import { toast } from 'sonner';
 import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
+
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -37,7 +42,42 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
   const consumerPlan: 'explorer' | 'frequent-chraveler' =
     selectedPlan === 'frequent-chraveler' ? 'frequent-chraveler' : 'explorer';
 
+  const iosNative = isIOSNativeShell();
+
   const handleUpgrade = async () => {
+    // iOS native shell — Apple IAP via RevenueCat for every plan (Guideline 3.1.1)
+    if (iosNative) {
+      if (selectedPlan === 'travel-pro') {
+        const result = await purchaseProSubscription('pro-starter', billingCycle);
+        if (result.success) {
+          toast.success('Chravel Pro activated!');
+          onClose();
+        } else if (result.errorCode === 'CANCELLED') {
+          // silent
+        } else if (!result.supported) {
+          toast.error('In-app purchases are not available on this device.');
+        } else {
+          toast.error(result.error || 'Failed to start purchase.');
+        }
+        return;
+      }
+      const result = await purchaseConsumerSubscription(
+        selectedPlan as 'explorer' | 'frequent-chraveler',
+        billingCycle,
+      );
+      if (result.success) {
+        toast.success('Subscription activated!');
+        onClose();
+      } else if (result.errorCode === 'CANCELLED') {
+        // silent
+      } else if (!result.supported) {
+        toast.error('In-app purchases are not available on this device.');
+      } else {
+        toast.error(result.error || 'Failed to start purchase.');
+      }
+      return;
+    }
+
     if (['explorer', 'frequent-chraveler'].includes(selectedPlan)) {
       await upgradeToTier(selectedPlan as 'explorer' | 'frequent-chraveler', billingCycle);
       onClose();
@@ -47,8 +87,6 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
         const { data, error } = await supabase.functions.invoke('create-checkout', {
           body: {
             tier: 'pro-starter',
-            // Defense-in-depth: forward platform so the edge function can enforce
-            // the Apple IAP boundary if tier classification ever regresses.
             platform: detectNativeBillingPlatform(navigator.userAgent || '', isNativeWebView()),
           },
         });
@@ -65,6 +103,7 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
       }
     }
   };
+
 
   return (
     <div className="modal-backdrop z-50 flex items-center justify-center p-4">
@@ -393,15 +432,16 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
         )}
 
         {/* Action Buttons */}
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center">
           <button
             onClick={handleUpgrade}
             disabled={isLoading}
             className="px-8 py-3 bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-primary-foreground font-medium rounded-2xl transition-all duration-200 hover:scale-105 shadow-lg disabled:opacity-50"
           >
-            {isLoading ? 'Processing...' : 'Start Free Trial'}
+            {isLoading ? 'Processing...' : iosNative ? 'Subscribe with Apple' : 'Start Free Trial'}
           </button>
         </div>
+
       </div>
     </div>
   );

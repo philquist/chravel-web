@@ -106,6 +106,7 @@ const DemoEntry = lazy(() => retryImport(() => import('./pages/DemoEntry')));
 const TripPreview = lazy(() => retryImport(() => import('./pages/TripPreview')));
 // Shares its import() loader with main.tsx's boot warm-up via routeChunks.ts.
 const AuthPage = lazy(() => retryImport(importAuthPage));
+const AuthCallbackPage = lazy(() => retryImport(() => import('./pages/AuthCallbackPage')));
 const ResetPasswordPage = lazy(() => retryImport(() => import('./pages/ResetPasswordPage')));
 const SeoLandingPage = lazy(() => retryImport(() => import('./pages/SeoLandingPage')));
 const UseCasesHub = lazy(() => retryImport(() => import('./pages/UseCasesHub')));
@@ -390,7 +391,7 @@ const App = () => {
                         path="/auth-callback"
                         element={
                           <LazyRoute>
-                            <AuthPage />
+                            <AuthCallbackPage />
                           </LazyRoute>
                         }
                       />

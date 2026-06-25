@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../ui/collapsible';
-import { ChevronDown } from 'lucide-react';
+import React from 'react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 const faqItems = [
   {
@@ -49,8 +53,6 @@ const faqItems = [
   },
 ];
 export const FAQSection = () => {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-
   return (
     <div className="container mx-auto px-4 py-8 tablet:py-16 flex flex-col items-center justify-start tablet:justify-center min-h-0 tablet:min-h-screen space-y-8 tablet:space-y-12">
       {/* Header with bold white text and shadow for contrast */}
@@ -70,33 +72,30 @@ export const FAQSection = () => {
       </div>
 
       {/* FAQ Items */}
-      <div className="w-full max-w-3xl space-y-4">
+      <Accordion
+        type="single"
+        collapsible
+        className="w-full max-w-3xl space-y-4"
+      >
         {faqItems.map((item, index) => (
-          <Collapsible
+          <AccordionItem
             key={index}
-            open={openFaq === index}
-            onOpenChange={open => setOpenFaq(open ? index : null)}
+            value={`faq-${index}`}
+            className="bg-card/50 backdrop-blur-sm border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-all duration-300 data-[state=open]:border-primary/50"
           >
-            <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-all duration-300">
-              <CollapsibleTrigger className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-card/30 transition-colors">
-                <span className="font-semibold text-lg tablet:text-xl text-foreground pr-4">
-                  {item.question}
-                </span>
-                <ChevronDown
-                  className={`w-5 h-5 text-primary transition-transform duration-200 flex-shrink-0 ${
-                    openFaq === index ? 'rotate-180' : ''
-                  }`}
-                />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="px-6 pb-4 pt-2 text-base tablet:text-lg text-foreground leading-relaxed">
-                  {item.answer}
-                </div>
-              </CollapsibleContent>
-            </div>
-          </Collapsible>
+            <AccordionTrigger className="w-full px-6 py-4 text-left hover:bg-card/30 transition-colors hover:no-underline [&[data-state=open]>svg]:rotate-180">
+              <span className="font-semibold text-lg tablet:text-xl text-foreground pr-4">
+                {item.question}
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="px-6 pb-4 pt-2 text-base tablet:text-lg text-foreground leading-relaxed">
+                {item.answer}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
     </div>
   );
 };

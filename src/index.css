@@ -1496,6 +1496,40 @@
     transform: translateZ(0);
   }
 
+  /* Premium metallic gold surface — buttons, active tabs, primary CTAs */
+  .bg-gold-metallic {
+    background-image: linear-gradient(
+      135deg,
+      #533517 0%,
+      #8a6326 18%,
+      #c49746 42%,
+      #feeaa5 62%,
+      #c49746 82%,
+      #7a571f 100%
+    );
+    background-size: 200% 200%;
+    background-position: 0% 50%;
+    color: #1a1208;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 234, 165, 0.55),
+      inset 0 -1px 0 rgba(83, 53, 23, 0.55),
+      0 6px 18px -8px rgba(196, 151, 70, 0.55);
+    transition:
+      background-position 600ms ease,
+      transform 200ms ease,
+      box-shadow 200ms ease;
+  }
+  .bg-gold-metallic:hover {
+    background-position: 100% 50%;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 234, 165, 0.7),
+      inset 0 -1px 0 rgba(83, 53, 23, 0.55),
+      0 10px 24px -8px rgba(196, 151, 70, 0.7);
+  }
+  .bg-gold-metallic:disabled {
+    box-shadow: none;
+  }
+
   /* Hide scrollbars while maintaining scroll functionality */
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
@@ -1817,3 +1851,72 @@
   -webkit-transform: translateZ(0);
   isolation: isolate;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MARKETING TYPOGRAPHY — editorial display serif for landing surfaces only.
+   Scoped to [data-marketing] so the authenticated app shell is untouched.
+   Recipe: "Pure weight contrast" — DM Serif Display (single 400 weight) for
+   H1/H2, Inter for body/UI. Hierarchy via type-family contrast + tracking,
+   not color tricks. Heading shadows are preserved by the inline styles on
+   each section component.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-marketing] {
+  font-feature-settings: 'ss01', 'cv11', 'kern', 'liga';
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+[data-marketing] h1,
+[data-marketing] h2 {
+  font-family: 'DM Serif Display', Georgia, Cambria, 'Times New Roman', serif !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.022em;
+  line-height: 1.04;
+  font-synthesis-weight: none;
+}
+
+/* DM Serif italic carries the emotional accents — let <em> inside marketing
+   headlines render as the real italic cut, not synthesized. */
+[data-marketing] h1 em,
+[data-marketing] h2 em {
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Ledes / subheads under marketing headings: lighter Inter at a generous
+   measure reads as editorial calm next to the serif headline. */
+[data-marketing] h1 + p,
+[data-marketing] h2 + p {
+  font-weight: 300;
+  letter-spacing: 0.005em;
+  max-width: 64ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* H3 / card titles stay sans for utility, but with tighter tracking so the
+   serif/sans pairing reads intentional rather than mixed. */
+[data-marketing] h3 {
+  letter-spacing: -0.012em;
+  font-feature-settings: 'ss01', 'cv11', 'kern', 'liga';
+}
+
+/* Eyebrow / kicker — uppercase sans, wide tracking. Targets explicit
+   .marketing-eyebrow opt-in plus the existing tracking-[0.32em] pattern
+   used by the hero chip, so we don't touch components that have already
+   styled their eyebrow inline. */
+[data-marketing] .marketing-eyebrow {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  font-size: 0.72rem;
+}
+
+/* Buttons inside marketing get a touch of tracking — Stripe/Linear move. */
+[data-marketing] button,
+[data-marketing] a[role='button'],
+[data-marketing] .btn {
+  letter-spacing: 0.005em;
+}
+

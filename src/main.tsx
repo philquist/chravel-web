@@ -14,6 +14,8 @@ import { isChravelNativeShell, isInstalledApp } from './utils/platformDetection'
 import { installChunkErrorRecovery, claimOneShotReload } from '@/utils/chunkRecovery';
 import { warmRouteChunksForPath } from './lib/routeChunks';
 import { getSafeStorage, safeGetItem, safeSetItem } from '@/utils/safeStorage';
+import '@fontsource/dm-serif-display/400.css';
+import '@fontsource/dm-serif-display/400-italic.css';
 import './index.css';
 
 // Boot-timeline anchor: raw mark (not performanceService) so the entry chunk

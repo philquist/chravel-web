@@ -1,46 +1,76 @@
-# Concierge UI cleanup + tab-load glitch
 
-## Part 1 — Clean up the Concierge composer
+## Goal
 
-The composer is busy because of a duplicated "Conversation mode" block (label + Switch in `AIConciergeChat.tsx` lines 552–572) **plus** the `ConciergeConversationButton` row underneath (which already shows its own "Hands-free — talk to your concierge like a phone call" caption + mic). That's why the screenshot shows "Conversation mode" *twice* stacked.
+Guarantee the Lovable/web half of the Apple/Google sign-in fix matches the contract chravel-mobile depends on, before App Store resubmit:
 
-### Changes
-1. **Remove the inline toggle row** in `src/components/AIConciergeChat.tsx` (lines 552–573) — the `<label>` + `<Switch>` block.
-2. **Move the toggle into Concierge settings** by adding a new `ConciergeConversationModeToggle` component (a labeled Switch reading the same `useConversationModePreference` hook) and rendering it in `src/components/consumer/ConsumerAIConciergeSection.tsx` directly above the existing `ConciergeLanguagePicker` (around line 147).
-3. **Keep `ConciergeConversationButton` in the composer** (the mic + transcript bar) — but only render it when the user has enabled the mode in settings. If the feature flag is on and the user pref is off, render nothing extra in the composer.
-4. Result: composer goes from `[duplicate toggle row] + [Conversation mode caption + mic] + [input]` to just `[mic] + [input]` when enabled, or `[input]` when disabled.
+1. Supabase client uses **PKCE** (`flowType: 'pkce'`).
+2. `/auth-callback` runs `exchangeCodeForSession` and **never** silently bounces to `/auth`.
+3. The path is observable (logs) and protected by a unit test.
 
-No behavior change to the underlying conversation engine, feature flag, or hook — pure UI relocation.
+## Audit findings (current state)
 
-## Part 2 — Tabs (Polls, Payments, etc.) not loading
+Already correct — no behavioral change needed:
 
-I need a quick diagnostic pass before committing a fix, because nothing in the screenshot tells me *why* they don't load. The likely suspects given recent changes:
+- `src/integrations/supabase/client.ts` sets `flowType: 'pkce'` with `detectSessionInUrl: true` and `persistSession: true`. ✅
+- `src/App.tsx` registers `<Route path="/auth-callback">` lazily with `AuthCallbackPage`. ✅
+- `src/hooks/useAuth.tsx` Apple + Google flows set `redirectTo: https://chravel.app/auth-callback?returnTo=…` for installed shells (Capacitor / PWA / ChravelNative). The native shell rewrites the universal link to `chravel://auth-callback` per Claude's note. ✅
+- `AuthCallbackPage` already (a) calls `exchangeCodeForSession(window.location.href)` when `?code=` is present, (b) polls `getSession()` for ~3s as a hash-flow safety net, (c) on failure shows an actionable error screen with "Sign in with email" — it does **not** auto-redirect to `/auth`. ✅
 
-- An open modal/sheet (e.g. the Concierge or settings modal) intercepting clicks per the single-active-modal rule, so tab taps register but the route doesn't switch.
-- A render error inside one of the tabs throwing silently (we'd see it in console).
-- Recent voice/streaming hook holding a state lock that blocks tab content mounting.
+## Gaps to harden
 
-### Diagnostic step (build mode)
-- Run the preview, open the trip, tap Polls/Payments while console logs are captured, and inspect:
-  - Console for thrown errors or React warnings on tab mount.
-  - Whether the active tab state in `TripDetailContent` actually updates (add a one-line log, remove after).
-  - Whether a modal `open` flag is stuck true after closing the Concierge.
+Three small, surgical issues that could still produce the App Review failure ("app back to login page after login with Apple"):
 
-### Likely fix paths (pick one after diagnosis)
-- **If a stuck modal:** ensure Concierge modal close path resets the shared `activeModal` state on unmount.
-- **If a render error:** wrap the offending tab in its existing ErrorBoundary surface and fix the throw.
-- **If state-lock from voice hook:** ensure `useConciergeConversationMode` cleans up its session when the Concierge view unmounts (cancel + release mic + reset `state`).
+1. **Provider-side errors are missed.** Supabase OAuth failures arrive as `?error=…&error_description=…` (no `code`, no hash). The current `useEffect` skips the PKCE branch, polls `getSession()` for 3s, then shows the generic "We couldn't complete sign-in" message — burying the real reason (e.g. "Apple identity not linked", "user cancelled"). Handle `?error=` first and surface `error_description` verbatim.
 
-I'll report root cause + the surgical fix in the implementation response rather than guessing now.
+2. **No-credential landings are indistinguishable from slow handoffs.** If the page is opened with neither `?code=`, `?error=`, nor `#access_token`, we still spin for 3s. Detect "nothing to exchange" up front and either (a) immediately succeed if a session already exists, or (b) error fast with a clear message — never spin.
 
-## Files touched
-- `src/components/AIConciergeChat.tsx` — delete lines 552–573
-- `src/components/consumer/ConsumerAIConciergeSection.tsx` — add toggle above language picker
-- `src/features/concierge/components/ConciergeConversationModeToggle.tsx` — new, ~30 lines
-- Tab fix: TBD after diagnosis (one file expected)
+3. **No telemetry.** App Review and our own device QA can't tell from the screen which branch executed (PKCE exchange vs. hash detect vs. error). Add a single structured log line per outcome — `[AuthCallback] outcome=…` with `flow`, `hasCode`, `hasHash`, `durationMs`, `error` — so Sentry/console traces on the physical iPhone test cleanly show what happened.
 
-## Risk
-Low for Part 1 (UI move, no logic change). Part 2 risk depends on diagnosis; will keep the fix to one file.
+These are **additive**: the existing happy-path code stays. The error-handling branch gets stricter and louder.
+
+## Changes
+
+### A. `src/pages/AuthCallbackPage.tsx` (edit)
+
+- Read `?error` / `?error_description` first; if present, set `status='error'` immediately with the provider message. No polling.
+- Check existing session before polling: if `getSession()` already returns a session on entry, navigate immediately (covers native shell pre-injecting the session).
+- If `!hasCode && !hasHash && !hasError`, error fast with: "No sign-in response detected. Please try again."
+- Wrap each outcome in a single `console.info('[AuthCallback]', { flow, hasCode, hasHash, error, durationMs })` (dev + prod — this is intentional, low-volume, and critical for resubmit forensics).
+- Keep the existing "Sign in with email" / "Back to home" buttons. Do **not** auto-redirect on error.
+
+### B. `src/pages/__tests__/AuthCallbackPage.test.tsx` (new)
+
+Vitest + React Testing Library. Mock `@/integrations/supabase/client` and `react-router-dom`'s `useNavigate`. Three cases — these are the resubmit-blocking ones:
+
+1. **PKCE success**: URL has `?code=abc`. `exchangeCodeForSession` resolves, then `getSession()` returns a session → asserts `navigate('/', { replace: true })` is called, no error UI rendered.
+2. **Provider error**: URL has `?error=access_denied&error_description=User%20cancelled`. Asserts error UI renders with "User cancelled" and `navigate` is **not** called with `/auth`.
+3. **Empty landing**: URL has no `code`/`hash`/`error` and no existing session. Asserts error UI renders fast (no 3s wait) and `navigate` is not called with `/auth`.
+
+### C. `TODO.md` resubmit checklist (append, do not rewrite)
+
+Add a short "Web side — pre-resubmit" section so the chravel-mobile TODO and this repo agree on what's already done and what's still external:
+
+- [x] Supabase client: `flowType: 'pkce'`
+- [x] `/auth-callback` page calls `exchangeCodeForSession` and shows actionable errors (no silent bounce to `/auth`)
+- [x] Vitest coverage for PKCE success, provider error, empty landing
+- [ ] **External (manual, Supabase dashboard):** Auth → URL Configuration → add `chravel://auth-callback` to "Redirect URLs" alongside `https://chravel.app/auth-callback`. Without this, the custom-scheme redirect is rejected by Supabase and the native handoff fails before reaching this page.
+- [ ] Physical iPhone (iOS 26+) verification: Continue with Apple → Face ID → home (not `/auth`), Google sign-in same path, no Stripe checkout opens from iOS billing.
+
+If you'd rather keep this off `TODO.md`, I can drop it into `appstore/UPLOAD_GUIDE.md` instead.
+
+## Out of scope (intentional)
+
+- No change to `useAuth.tsx`, the Apple native bridge, or `redirectTo` URLs — those already match the chravel-mobile contract.
+- No change to `flowType` or session storage.
+- No Supabase dashboard automation — that config is captured as a manual checklist item only.
+
+## Verification
+
+- `npm run typecheck && npm run lint`
+- `npx vitest run src/pages/__tests__/AuthCallbackPage.test.tsx`
+- Manual on preview: visit `/auth-callback?error=access_denied&error_description=Test` → error UI with "Test", no redirect.
+- Physical-device step stays in `TODO.md` for the resubmit run.
 
 ## Rollback
-Revert the two-commit series; toggle returns to composer, tab fix reverts cleanly.
+
+Single-commit revert. `AuthCallbackPage.tsx` is the only behavior change; the new test file and TODO entry are non-functional.

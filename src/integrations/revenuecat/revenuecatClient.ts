@@ -12,7 +12,10 @@ import {
   ENTITLEMENT_TO_TIER,
   REVENUECAT_ENTITLEMENTS,
   REVENUECAT_PRODUCTS,
+  REQUIRED_IOS_PRODUCT_IDS,
+  assertIosProductIdsConfigured,
 } from '@/constants/revenuecat';
+
 import type {
   RevenueCatPlatform,
   RevenueCatResult,
@@ -123,6 +126,18 @@ export async function configureRevenueCat(
   }
 
   try {
+    // Fail-fast guard: surface configuration drift (blank/missing product IDs)
+    // BEFORE any purchase flow lands users in an opaque "product not found" error.
+    if (platform === 'ios') {
+      const productAssertion = assertIosProductIdsConfigured();
+      if (!productAssertion.ok) {
+        console.error(
+          '[RevenueCat] REQUIRED_IOS_PRODUCT_IDS contains blank entries:',
+          productAssertion.blank,
+        );
+      }
+    }
+
     // Configure RevenueCat
     await (purchases as any).configure({
       apiKey,
@@ -130,7 +145,18 @@ export async function configureRevenueCat(
     });
 
     console.log('[RevenueCat] Configured successfully for user:', userId);
+
+    // Fire-and-forget runtime audit: do every REQUIRED iOS product ID exist
+    // in the live RevenueCat offerings? Logs missing IDs so dashboard drift
+    // surfaces in Sentry/console rather than as opaque purchase failures.
+    if (platform === 'ios') {
+      void assertIosOfferingsContainRequiredProducts(isDemoMode).catch(err => {
+        console.warn('[RevenueCat] Offerings audit failed:', err);
+      });
+    }
+
     return { success: true, supported: true };
+
   } catch (error) {
     console.error('[RevenueCat] Configuration failed:', error);
     return {
@@ -284,19 +310,13 @@ export async function purchasePackage(
 }
 
 /**
- * Purchase a non-renewing Trip Pass (one-time consumer pass).
- *
- * Looks up the RevenueCat package whose product identifier matches the
- * App Store Connect / Play Console SKU for the requested pass tier, then
- * routes through the standard purchasePackage flow so the global purchase
- * listener, entitlement sync, and toast UX all fire identically to a
- * recurring subscription purchase.
- *
- * Duration (45 / 90 days) is enforced server-side by RevenueCat's
- * non-renewing product configuration in the dashboard.
+ * Generic: purchase any RevenueCat package by its underlying store
+ * product identifier (App Store Connect / Play Console SKU). Looks the
+ * product up across **all** offerings so non-default offerings (Pro,
+ * Trip Pass, etc.) resolve correctly.
  */
-export async function purchaseTripPass(
-  passTier: 'explorer' | 'frequent-chraveler',
+export async function purchaseByProductId(
+  productId: string,
   isDemoMode: boolean = false,
 ): Promise<RevenueCatPurchaseResult> {
   if (isDemoMode) {
@@ -312,15 +332,8 @@ export async function purchaseTripPass(
     return { success: false, supported: true, errorCode: 'NOT_SUPPORTED' };
   }
 
-  const productId =
-    passTier === 'explorer'
-      ? REVENUECAT_PRODUCTS.explorerPass45
-      : REVENUECAT_PRODUCTS.frequentChravelerPass90;
-
   try {
     const offerings = await (purchases as any).getOfferings();
-    // Search every offering — passes typically live in a dedicated "trip_pass"
-    // offering rather than the default subscription offering.
     const allOfferings = [...Object.values(offerings?.all || {}), offerings?.current].filter(
       Boolean,
     ) as Array<{ availablePackages?: Array<{ product?: { identifier?: string } }> }>;
@@ -339,19 +352,19 @@ export async function purchaseTripPass(
         success: false,
         supported: true,
         errorCode: 'UNKNOWN',
-        error: `Trip Pass product ${productId} not found in RevenueCat offerings`,
+        error: `Product ${productId} not found in RevenueCat offerings`,
       };
     }
 
     const { customerInfo } = await (purchases as any).purchasePackage({ aPackage: pkg });
-    console.log('[RevenueCat] Trip Pass purchase successful', { productId });
+    console.log('[RevenueCat] Purchase successful', { productId });
     return {
       success: true,
       supported: true,
       data: customerInfo as unknown as RevenueCatCustomerInfo,
     };
   } catch (error: unknown) {
-    console.error('[RevenueCat] Trip Pass purchase failed:', error);
+    console.error('[RevenueCat] Purchase failed:', error, { productId });
     const errorObj = error as { userCancelled?: boolean; message?: string };
     if (errorObj?.userCancelled) {
       return {
@@ -369,6 +382,73 @@ export async function purchaseTripPass(
     };
   }
 }
+
+/**
+ * Purchase a non-renewing Trip Pass (one-time consumer pass).
+ *
+ * Duration (45 / 90 days) is enforced server-side by RevenueCat's
+ * non-renewing product configuration in the dashboard.
+ */
+export async function purchaseTripPass(
+  passTier: 'explorer' | 'frequent-chraveler',
+  isDemoMode: boolean = false,
+): Promise<RevenueCatPurchaseResult> {
+  const productId =
+    passTier === 'explorer'
+      ? REVENUECAT_PRODUCTS.explorerPass45
+      : REVENUECAT_PRODUCTS.frequentChravelerPass90;
+  return purchaseByProductId(productId, isDemoMode);
+}
+
+/**
+ * Purchase a recurring consumer subscription (Explorer / Frequent Chraveler)
+ * via Apple IAP / Google Play Billing through RevenueCat.
+ */
+export async function purchaseConsumerSubscription(
+  tier: 'explorer' | 'frequent-chraveler',
+  cycle: 'monthly' | 'annual',
+  isDemoMode: boolean = false,
+): Promise<RevenueCatPurchaseResult> {
+  const map = {
+    explorer: {
+      monthly: REVENUECAT_PRODUCTS.explorerMonthly,
+      annual: REVENUECAT_PRODUCTS.explorerAnnual,
+    },
+    'frequent-chraveler': {
+      monthly: REVENUECAT_PRODUCTS.frequentChravelerMonthly,
+      annual: REVENUECAT_PRODUCTS.frequentChravelerAnnual,
+    },
+  } as const;
+  return purchaseByProductId(map[tier][cycle], isDemoMode);
+}
+
+/**
+ * Purchase a Chravel Pro subscription via RevenueCat. Pro is B2B and also
+ * available through web Stripe checkout, but exposing IAP keeps every plan
+ * purchasable on iOS without forcing users to leave the app.
+ */
+export async function purchaseProSubscription(
+  tier: 'pro-starter' | 'pro-growth' | 'pro-enterprise',
+  cycle: 'monthly' | 'annual' = 'monthly',
+  isDemoMode: boolean = false,
+): Promise<RevenueCatPurchaseResult> {
+  const map = {
+    'pro-starter': {
+      monthly: REVENUECAT_PRODUCTS.proStarterMonthly,
+      annual: REVENUECAT_PRODUCTS.proStarterAnnual,
+    },
+    'pro-growth': {
+      monthly: REVENUECAT_PRODUCTS.proGrowthMonthly,
+      annual: REVENUECAT_PRODUCTS.proGrowthAnnual,
+    },
+    'pro-enterprise': {
+      monthly: REVENUECAT_PRODUCTS.proEnterpriseMonthly,
+      annual: REVENUECAT_PRODUCTS.proEnterpriseAnnual,
+    },
+  } as const;
+  return purchaseByProductId(map[tier][cycle], isDemoMode);
+}
+
 
 /**
  * Restore purchases (required for Apple compliance)
@@ -543,3 +623,171 @@ export function setupGlobalPurchaseListener() {
     };
   }
 }
+
+/**
+ * Runtime: hit RevenueCat's offerings and confirm every REQUIRED_IOS_PRODUCT_ID
+ * is attached to at least one offering. Run this after `configureRevenueCat`
+ * on iOS to detect App Store Connect / RevenueCat dashboard misconfiguration
+ * before users tap Buy. Non-fatal — returns the diff and logs to console.
+ */
+export async function assertIosOfferingsContainRequiredProducts(
+  isDemoMode: boolean = false,
+): Promise<{ ok: boolean; missing: string[]; available: string[] }> {
+  if (isDemoMode || getPlatform() !== 'ios') {
+    return { ok: true, missing: [], available: [] };
+  }
+  const offeringsRes = await getOfferings(isDemoMode);
+  if (!offeringsRes.success || !offeringsRes.data) {
+    return { ok: false, missing: [...REQUIRED_IOS_PRODUCT_IDS], available: [] };
+  }
+  const offerings = offeringsRes.data;
+  const all = [...Object.values(offerings.all || {}), offerings.current].filter(
+    Boolean,
+  ) as Array<{ availablePackages?: Array<{ product?: { identifier?: string } }> }>;
+
+  const available = new Set<string>();
+  for (const off of all) {
+    for (const pkg of off.availablePackages || []) {
+      const id = pkg.product?.identifier;
+      if (id) available.add(id);
+    }
+  }
+  const missing = REQUIRED_IOS_PRODUCT_IDS.filter(id => !available.has(id));
+  if (missing.length) {
+    console.warn('[RevenueCat] Missing iOS products in offerings:', missing);
+  }
+  return { ok: missing.length === 0, missing, available: [...available] };
+}
+
+/**
+ * Single entrypoint for the "Restore Purchases" button. Configures
+ * RevenueCat for the user (if not already), calls native `restorePurchases`,
+ * then pushes the resulting entitlements to the backend via
+ * `sync-revenuecat-entitlement` so the rest of the app sees the new tier.
+ *
+ * Returns derived plan + customerInfo so the caller can update the UI
+ * immediately without waiting for the next sync poll.
+ */
+export async function restoreAndSyncEntitlements(
+  userId: string,
+  isDemoMode: boolean = false,
+): Promise<
+  RevenueCatResult<{ customerInfo: RevenueCatCustomerInfo; plan: DerivedPlan }>
+> {
+  if (isDemoMode) {
+    return { success: false, supported: false, error: 'Demo mode active' };
+  }
+  if (!isRevenueCatAvailable()) {
+    return { success: false, supported: false, errorCode: 'NOT_SUPPORTED' };
+  }
+
+  const configured = await configureRevenueCat(userId, isDemoMode);
+  if (!configured.success || !configured.supported) {
+    return {
+      success: configured.success,
+      supported: configured.supported,
+      errorCode: configured.errorCode,
+      error: configured.error,
+    };
+  }
+
+  const restoreRes = await restorePurchases(isDemoMode);
+  if (!restoreRes.success || !restoreRes.data) {
+    return {
+      success: false,
+      supported: restoreRes.supported,
+      errorCode: restoreRes.errorCode,
+      error: restoreRes.error,
+    };
+  }
+
+  const customerInfo = restoreRes.data;
+  const plan = derivePlanFromCustomerInfo(customerInfo);
+
+  // Push restored entitlements to the backend so server-side checks
+  // (`useConsumerSubscription`, edge function gating) reflect them.
+  const syncRes = await supabase.functions.invoke('sync-revenuecat-entitlement', {
+    body: { customerInfo },
+  });
+  if (syncRes.error) {
+    console.warn('[RevenueCat] Restore sync failed:', syncRes.error);
+  }
+
+  // Sanity-check entitlement → feature mapping for diagnosability after
+  // restore / app relaunch. Warnings here mean RevenueCat is returning an
+  // entitlement ID we don't know about (dashboard drift).
+  verifyEntitlementMapping(customerInfo);
+
+  return { success: true, supported: true, data: { customerInfo, plan } };
+}
+
+/**
+ * Diagnostic: confirms every active RevenueCat entitlement maps to a known
+ * Chravel tier in ENTITLEMENT_TO_TIER. Logs (but does not throw) on drift so
+ * we catch dashboard/code divergence after purchase, restore, and app relaunch.
+ */
+export function verifyEntitlementMapping(customerInfo: RevenueCatCustomerInfo): {
+  ok: boolean;
+  unmapped: string[];
+  mapped: string[];
+} {
+  const active = customerInfo.entitlements?.active || {};
+  const unmapped: string[] = [];
+  const mapped: string[] = [];
+  for (const id of Object.keys(active)) {
+    if (ENTITLEMENT_TO_TIER[id]) mapped.push(id);
+    else unmapped.push(id);
+  }
+  if (unmapped.length) {
+    console.warn(
+      '[RevenueCat] Active entitlements with no Chravel tier mapping (check ENTITLEMENT_TO_TIER):',
+      unmapped,
+    );
+  }
+  return { ok: unmapped.length === 0, unmapped, mapped };
+}
+
+/**
+ * Shared toast handler for purchase / restore results. Maps error codes to
+ * user-readable copy and attaches a Retry action when retry is meaningful
+ * (network / unknown errors). Silent on user cancellation per Apple HIG.
+ */
+export function handlePurchaseResult(
+  result: RevenueCatPurchaseResult | RevenueCatResult,
+  options: {
+    successMessage?: string;
+    successDescription?: string;
+    onRetry?: () => void;
+    context?: string;
+  } = {},
+): void {
+  const { successMessage = 'Purchase successful', successDescription, onRetry, context } = options;
+
+  if (result.success) {
+    toast.success(successMessage, successDescription ? { description: successDescription } : undefined);
+    return;
+  }
+
+  switch (result.errorCode) {
+    case 'CANCELLED':
+      // Apple HIG: do not nag the user after they dismiss the sheet.
+      return;
+    case 'NOT_SUPPORTED':
+      toast.error('In-app purchases are not available on this device.');
+      return;
+    case 'NOT_CONFIGURED':
+      toast.error('Purchases are temporarily unavailable. Please try again later.');
+      return;
+    case 'NETWORK_ERROR':
+      toast.error('Network error. Check your connection and try again.', {
+        action: onRetry ? { label: 'Retry', onClick: onRetry } : undefined,
+      });
+      return;
+    case 'UNKNOWN':
+    default:
+      toast.error(result.error || `Purchase failed${context ? ` (${context})` : ''}.`, {
+        action: onRetry ? { label: 'Retry', onClick: onRetry } : undefined,
+      });
+  }
+}
+

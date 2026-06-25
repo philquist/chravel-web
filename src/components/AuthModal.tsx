@@ -214,7 +214,7 @@ export const AuthModal = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground font-medium py-3 rounded-xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 min-h-[44px]"
+            className="w-full bg-gold-metallic font-semibold py-3 rounded-xl hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-50 min-h-[44px]"
           >
             {isLoading ? 'Sending...' : 'Send Reset Link'}
           </button>
@@ -322,7 +322,7 @@ export const AuthModal = ({
       <button
         type="submit"
         disabled={isLoading || awaitingAuth}
-        className="w-full bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground font-medium py-3 rounded-xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 min-h-[44px]"
+        className="w-full bg-gold-metallic font-semibold tracking-wide py-3 rounded-xl hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-50 min-h-[44px]"
       >
         {awaitingAuth
           ? 'Signing you in...'
@@ -362,6 +362,7 @@ export const AuthModal = ({
   return createPortal(
     <div
       data-testid="auth-modal-backdrop"
+      data-marketing="true"
       className="fixed inset-0 z-[100] animate-fade-in"
       role="presentation"
     >
@@ -377,7 +378,7 @@ export const AuthModal = ({
             <div className="flex flex-col items-center mb-2" data-testid="auth-modal-logo" />
 
             <div className="relative flex items-center justify-center mb-6 min-h-[2.5rem]">
-              <h2 className="text-2xl font-bold text-white text-center px-10">{authHeading}</h2>
+              <h2 className="text-3xl font-display font-normal tracking-tight text-white text-center px-10">{authHeading}</h2>
               <button
                 onClick={onClose}
                 className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg"
@@ -429,9 +430,9 @@ export const AuthModal = ({
                     setMode('signin');
                     setError('');
                   }}
-                  className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
+                  className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold tracking-wide transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
                     mode === 'signin'
-                      ? 'bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground shadow-md'
+                      ? 'bg-gold-metallic'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -445,9 +446,9 @@ export const AuthModal = ({
                     setMode('signup');
                     setError('');
                   }}
-                  className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
+                  className={`flex-1 min-h-[44px] rounded-lg text-sm font-semibold tracking-wide transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
                     mode === 'signup'
-                      ? 'bg-gradient-to-r from-gold-primary to-gold-mid text-primary-foreground shadow-md'
+                      ? 'bg-gold-metallic'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
