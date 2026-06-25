@@ -1517,9 +1517,14 @@ const UnauthIndex = ({
 };
 
 const Index = () => {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, session, isLoading: authLoading, isHydrated } = useAuth();
   const { demoView } = useDemoMode();
   if (demoView === 'off' && !user) {
+    // Session can exist while profile enrichment is still running — never flash the
+    // sign-in modal during that window (common on mobile resume / cold start).
+    if (!isHydrated || authLoading || session) {
+      return <BootHydrationFallback />;
+    }
     return <UnauthIndex authLoading={authLoading} isInstalled={isNativeAuthSurface()} />;
   }
 

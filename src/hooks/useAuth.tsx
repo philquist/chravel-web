@@ -35,6 +35,7 @@ import { performanceService } from '@/services/performanceService';
 import type { AuthUser as User, UserProfile, AuthContextType } from './auth/types';
 import { createDemoUser, getOAuthReturnTo, withTimeout } from './auth/authHelpers';
 import { captureAppleRefreshToken, captureAppleAuthorizationCode } from './auth/captureAppleToken';
+import { isFatalAuthRefreshError } from './auth/sessionRefreshPolicy';
 
 const TRIPS_QUERY_KEY = 'trips';
 
@@ -362,9 +363,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           message: error.message,
           name: error.name,
           status: (error as unknown as { status?: number }).status,
+          fatal: isFatalAuthRefreshError(error),
         });
-        // Clear corrupted session
-        await supabase.auth.signOut();
+        // Only destroy persisted sessions on definitive auth failures. Network blips
+        // must not sign users out — autoRefreshToken will retry when connectivity returns.
+        if (isFatalAuthRefreshError(error)) {
+          await supabase.auth.signOut();
+        }
         return null;
       }
 
@@ -384,7 +389,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return data.session;
     } catch (err) {
       authDebug('forceRefreshSession:exception', { error: String(err) });
-      await supabase.auth.signOut();
+      // Transient exceptions (offline, timeout) must not clear the stored refresh token.
       return null;
     }
   }, []);
@@ -498,6 +503,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             prefetchUserTrips(refreshedSession.user.id);
             void transformUser(refreshedSession.user).then(u => {
               if (u && activeSessionUserIdRef.current === refreshedSession.user.id) setUser(u);
+            });
+          } else if (session?.user) {
+            authDebug('init:getSession:tokenInvalid:refreshFailed:keepSession');
+            // Transient refresh failure — keep the stored session so autoRefreshToken can retry.
+            setAuthTransition({
+              session,
+              user: buildSessionDerivedUser(session.user),
+              errorReason: null,
+            });
+            prefetchUserTrips(session.user.id);
+            void transformUser(session.user).then(u => {
+              if (u && activeSessionUserIdRef.current === session.user.id) setUser(u);
             });
           } else {
             authDebug('init:getSession:tokenInvalid:refreshFailed');
@@ -692,27 +709,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             });
         }, 0);
       } else {
-        authDebug('onAuthStateChange:signedOutOrNoSession');
+        authDebug('onAuthStateChange:signedOutOrNoSession', { event });
         invalidateAuthCache();
-        // Clear cached data and subscriptions on token-expiry-triggered signouts.
-        // The persisted IDB copy is deleted explicitly: clear() propagates via the
-        // persister's 1s throttle, which a crash could outrun.
-        queryClient.clear();
-        void removePersistedQueryCache();
-        void supabase.removeAllChannels();
-        conciergeCacheService.clearAllCaches();
-        void clearNotificationRealtimeStore();
+        // Only wipe client caches on explicit sign-out. Spurious null-session events
+        // during refresh/resume must not nuke in-memory trip data or flash auth UI.
+        if (event === 'SIGNED_OUT') {
+          queryClient.clear();
+          void removePersistedQueryCache();
+          void supabase.removeAllChannels();
+          conciergeCacheService.clearAllCaches();
+          void clearNotificationRealtimeStore();
+          telemetry.reset();
+        }
         // App-preview: keep demo user when logged out.
         setAuthTransition({
           user: shouldUseDemoUserRef.current ? demoUser : null,
           errorReason: event === 'SIGNED_OUT' ? null : 'session_missing',
         });
         setIsLoading(false);
-
-        // Reset analytics identity on explicit sign-out only (not initial page load)
-        if (event === 'SIGNED_OUT') {
-          telemetry.reset();
-        }
       }
     });
 
@@ -726,45 +740,52 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Visibility change listener: refresh session when user returns to tab
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // Standard behavior: only check/refresh if there's an existing session
-        if (session) {
-          supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-            if (!currentSession && session) {
-              if (import.meta.env.DEV) {
-                console.log('[Auth] Session lost while away, attempting refresh...');
-              }
-              // Session was lost - try to refresh
-              supabase.auth.refreshSession().catch(() => {
-                // Refresh failed - user needs to log in again
-                if (import.meta.env.DEV) {
-                  console.warn('[Auth] Session refresh failed, user must re-authenticate');
-                }
-                setAuthTransition({
-                  session: null,
-                  user: shouldUseDemoUserRef.current ? demoUser : null,
-                  errorReason: 'visibility_refresh_failed',
-                });
+      if (document.visibilityState !== 'visible' || !session) return;
+
+      void (async () => {
+        const {
+          data: { session: currentSession },
+        } = await supabase.auth.getSession();
+
+        if (!currentSession) {
+          if (import.meta.env.DEV) {
+            console.log('[Auth] Session missing on resume, attempting refresh...');
+          }
+          const { error } = await supabase.auth.refreshSession();
+          if (error) {
+            authDebug('visibility:refreshSession:error', {
+              message: error.message,
+              fatal: isFatalAuthRefreshError(error),
+            });
+            // Do not clear in-memory auth on transient failures — that flashes the sign-in modal
+            // while the refresh token may still be valid in storage.
+            if (isFatalAuthRefreshError(error)) {
+              setAuthTransition({
+                session: null,
+                user: shouldUseDemoUserRef.current ? demoUser : null,
+                errorReason: 'visibility_refresh_failed',
               });
-            } else if (currentSession && currentSession.expires_at) {
-              // Check if session is near expiry
-              const expiresAt = currentSession.expires_at * 1000;
-              const fiveMinutesFromNow = Date.now() + 5 * 60 * 1000;
-              if (expiresAt < fiveMinutesFromNow) {
-                if (import.meta.env.DEV) {
-                  console.log('[Auth] Session near expiry on tab focus, refreshing...');
-                }
-                supabase.auth.refreshSession();
-              }
             }
-          });
+          }
+          return;
         }
-      }
+
+        if (currentSession.expires_at) {
+          const expiresAt = currentSession.expires_at * 1000;
+          const fiveMinutesFromNow = Date.now() + 5 * 60 * 1000;
+          if (expiresAt < fiveMinutesFromNow) {
+            if (import.meta.env.DEV) {
+              console.log('[Auth] Session near expiry on tab focus, refreshing...');
+            }
+            void supabase.auth.refreshSession();
+          }
+        }
+      })();
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [session, demoUser]);
+  }, [session, demoUser, setAuthTransition]);
 
   // Respond to demo mode toggles while logged out (no session).
   useEffect(() => {

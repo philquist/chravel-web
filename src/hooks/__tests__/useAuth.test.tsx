@@ -219,6 +219,30 @@ describe('AuthProvider', () => {
     expect(result.current.authState).toBe('authenticated');
   });
 
+  it('does not sign out on transient refresh failures during bootstrap', async () => {
+    const expiredSession = {
+      ...mockSession,
+      access_token: 'bad.token.payload',
+    };
+    mockSupabaseClient.auth.getSession.mockResolvedValue({
+      data: { session: expiredSession },
+      error: null,
+    });
+    mockSupabaseClient.auth.refreshSession.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'Failed to fetch', name: 'AuthRetryableFetchError' },
+    });
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(mockSupabaseClient.auth.refreshSession).toHaveBeenCalled();
+    expect(mockSupabaseClient.auth.signOut).not.toHaveBeenCalled();
+    expect(result.current.user?.id).toBe(mockUser.id);
+    expect(result.current.authState).toBe('authenticated');
+  });
   it('handles logout race by ending in signed-out state', async () => {
     let authListener: ((event: string, session: any) => void) | undefined;
     (mockSupabaseClient.auth.onAuthStateChange as any).mockImplementation((cb: any) => {
