@@ -1,37 +1,122 @@
 import { PaymentMethod } from '../types/receipts';
 import { PAYMENT_METHOD_DISPLAY_NAMES } from '../types/paymentMethods';
 
-export const generatePaymentDeeplink = (
-  method: PaymentMethod,
-  amount: number,
-  recipientName: string,
-): string | null => {
+export interface PaymentDeeplinkRequest {
+  method: PaymentMethod;
+  amount: number;
+  handle: string;
+  note?: string;
+  isIos?: boolean;
+}
+
+export interface PaymentDeeplinkTarget {
+  method: PaymentMethod;
+  appUrl: string | null;
+  webUrl: string | null;
+  displayHandle: string;
+  canOpenDirectly: boolean;
+}
+
+const DEFAULT_PAYMENT_NOTE = 'Trip expense';
+
+const stripLeadingPaymentHandleSymbol = (handle: string, symbols: string[]): string => {
+  let normalized = handle.trim();
+  while (symbols.some(symbol => normalized.startsWith(symbol))) {
+    normalized = normalized.slice(1).trim();
+  }
+  return normalized;
+};
+
+export const isIosUserAgent = (
+  userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '',
+): boolean =>
+  /iPad|iPhone|iPod/.test(userAgent) ||
+  (userAgent.includes('Macintosh') &&
+    typeof navigator !== 'undefined' &&
+    navigator.maxTouchPoints > 1);
+
+export const buildPaymentDeeplink = ({
+  method,
+  amount,
+  handle,
+  note = DEFAULT_PAYMENT_NOTE,
+  isIos = isIosUserAgent(),
+}: PaymentDeeplinkRequest): PaymentDeeplinkTarget | null => {
   const formattedAmount = amount.toFixed(2);
+  const trimmedHandle = handle.trim();
+  const encodedNote = encodeURIComponent(note);
+
+  if (!trimmedHandle) return null;
 
   switch (method) {
-    case 'venmo':
-      // Venmo deeplink format
-      return `venmo://paycharge?txn=pay&recipients=${encodeURIComponent(recipientName)}&amount=${formattedAmount}&note=${encodeURIComponent('Trip expense')}`;
+    case 'venmo': {
+      const venmoHandle = stripLeadingPaymentHandleSymbol(trimmedHandle, ['@']);
+      if (!venmoHandle) return null;
+      const encodedHandle = encodeURIComponent(venmoHandle);
+      return {
+        method,
+        appUrl: `venmo://paycharge?txn=pay&recipients=${encodedHandle}&amount=${formattedAmount}&note=${encodedNote}`,
+        webUrl: `https://venmo.com/${encodedHandle}?txn=pay&amount=${formattedAmount}&note=${encodedNote}`,
+        displayHandle: `@${venmoHandle}`,
+        canOpenDirectly: true,
+      };
+    }
 
-    case 'cashapp':
-      // Cash App deeplink format
-      return `https://cash.app/$${encodeURIComponent(recipientName)}/${formattedAmount}`;
+    case 'cashapp': {
+      const cashtag = stripLeadingPaymentHandleSymbol(trimmedHandle, ['$']);
+      if (!cashtag) return null;
+      return {
+        method,
+        appUrl: null,
+        webUrl: `https://cash.app/$${encodeURIComponent(cashtag)}/${formattedAmount}`,
+        displayHandle: `$${cashtag}`,
+        canOpenDirectly: true,
+      };
+    }
+
+    case 'paypal': {
+      const paypalSlug = stripLeadingPaymentHandleSymbol(trimmedHandle, ['@']);
+      if (!paypalSlug) return null;
+      return {
+        method,
+        appUrl: null,
+        webUrl: `https://paypal.me/${encodeURIComponent(paypalSlug)}/${formattedAmount}`,
+        displayHandle: paypalSlug,
+        canOpenDirectly: true,
+      };
+    }
 
     case 'zelle':
-      // Zelle doesn't have direct deeplinks, redirect to banking apps or web
-      return `https://www.zellepay.com/send-money`;
-
-    case 'paypal':
-      // PayPal.Me deeplink format
-      return `https://paypal.me/${encodeURIComponent(recipientName)}/${formattedAmount}`;
+      return {
+        method,
+        appUrl: null,
+        webUrl: 'https://www.zellepay.com',
+        displayHandle: trimmedHandle,
+        canOpenDirectly: false,
+      };
 
     case 'applecash':
-      // Apple Cash is handled through iMessage, no direct web link
-      return null;
+      if (!isIos) return null;
+      return {
+        method,
+        appUrl: `sms:&body=${encodeURIComponent(`${note}: ${formattedAmount}`)}`,
+        webUrl: null,
+        displayHandle: trimmedHandle,
+        canOpenDirectly: true,
+      };
 
     default:
       return null;
   }
+};
+
+export const generatePaymentDeeplink = (
+  method: PaymentMethod,
+  amount: number,
+  handle: string,
+): string | null => {
+  const target = buildPaymentDeeplink({ method, amount, handle });
+  return target?.appUrl ?? target?.webUrl ?? null;
 };
 
 export const getPaymentMethodDisplayName = (method: PaymentMethod | string): string => {

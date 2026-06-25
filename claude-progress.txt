@@ -94,3 +94,8 @@
 - Chose 3 free AI Concierge queries per user per trip (instead of 5 or a pooled lifetime cap) to give a quick taste while bounding abuse from users creating multiple free trips.
 - Updated client and edge-function permission maps, pricing/FAQ/settings/upsell copy, usage meter test data, and product-ground-truth docs from Free=10 to Free=3 while keeping Explorer=25 and Frequent Chraveler=unlimited.
 - Added/updated parity coverage so `FEATURE_LIMITS.ai_concierge.free`, `FREEMIUM_LIMITS.free.aiQueriesPerTrip`, and the shared concierge trip-limit helper agree. Targeted billing/limit tests, typecheck, lint:check, and build pass; AIConciergeChat usage-meter suite still hangs in this environment after startup and was killed.
+
+2026-06-25 — Payment method deep-link hardening
+- Replaced single payment CTA generation with canonical per-method deep-link targets for Venmo, Cash App, PayPal, Zelle copy-first, and iOS-only Apple Cash while preserving manual mark-as-paid settlement.
+- Wired balance rows to recipient `user_payment_methods` handles via `availablePaymentMethods`, highlighting the preferred method but showing all saved recipient rails.
+- Added a Capacitor-aware payment opener that uses native App/Browser plugins when present and web fallback without adding dependencies; targeted deep-link tests, typecheck, lint:check, and build pass. Merge preflight still cannot fetch origin/main in this environment.

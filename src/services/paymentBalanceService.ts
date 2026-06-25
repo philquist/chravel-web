@@ -9,6 +9,7 @@ export interface PersonalBalance {
   amountOwed: number; // negative = you owe them, positive = they owe you
   amountOwedCurrency: string; // Base currency (normalized)
   preferredPaymentMethod: PaymentMethod | null;
+  availablePaymentMethods?: PaymentMethod[];
   unsettledPayments: Array<{
     paymentId: string;
     description: string;
@@ -271,12 +272,17 @@ export const paymentBalanceService = {
 
         const profile = profiles?.find(p => p.user_id === personUserId);
         const userMethods = paymentMethods?.filter(m => m.user_id === personUserId) || [];
-        const primaryMethod = getPrimaryMethod(
-          userMethods.map(m => ({
-            ...m,
-            type: m.method_type as PaymentMethod['type'],
-          })),
-        );
+        const normalizedUserMethods = userMethods.map(m => ({
+          id: m.id,
+          type: m.method_type as PaymentMethod['type'],
+          method_type: m.method_type,
+          identifier: m.identifier,
+          displayName: m.display_name || undefined,
+          display_name: m.display_name || undefined,
+          isPreferred: m.is_preferred || false,
+          is_preferred: m.is_preferred || false,
+        }));
+        const primaryMethod = getPrimaryMethod(normalizedUserMethods);
 
         balances.push({
           userId: personUserId,
@@ -284,15 +290,8 @@ export const paymentBalanceService = {
           avatar: profile?.avatar_url,
           amountOwed: entry.netAmount,
           amountOwedCurrency: baseCurrency,
-          preferredPaymentMethod: primaryMethod
-            ? {
-                id: primaryMethod.id,
-                type: primaryMethod.method_type as PaymentMethod['type'],
-                identifier: primaryMethod.identifier,
-                displayName: primaryMethod.display_name || undefined,
-                isPreferred: primaryMethod.is_preferred || false,
-              }
-            : null,
+          preferredPaymentMethod: primaryMethod ?? null,
+          availablePaymentMethods: normalizedUserMethods,
           unsettledPayments: entry.payments,
           confirmationStatus: entry.confirmationStatus,
         });
