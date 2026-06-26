@@ -137,7 +137,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-2">
       <div
         data-testid="trip-export-modal-panel"
-        className="trip-export-modal-panel grid min-h-0 w-full max-w-md grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-2xl border border-gray-700 bg-gray-900 shadow-2xl md:max-w-xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-xl"
+        className="trip-export-modal-panel grid min-h-0 w-full max-w-md grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-2xl border border-gray-700 bg-gray-900 shadow-2xl md:max-w-xl max-h-[100dvh] sm:max-h-[calc(100dvh-2rem)] sm:rounded-xl"
         style={panelMaxHeight ? { maxHeight: panelMaxHeight } : undefined}
       >
         {/* Header — safe top inset without stacking extra padding on top of large notches */}
@@ -219,14 +219,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
                 </div>
               )}
 
-              <div className="mb-2 md:mb-3 flex items-baseline justify-between gap-2">
-                <h3 className="text-white font-semibold text-sm truncate">
-                  {isEvent ? 'Event' : 'Trip'}: {tripName}
-                </h3>
-                <p className="text-gray-400 text-xs whitespace-nowrap flex-shrink-0">
-                  Select sections to include
-                </p>
-              </div>
+              <p className="text-gray-400 text-xs mb-2 md:mb-3">Select sections to include</p>
 
               {/* Section Selection */}
               <div className="grid grid-cols-2 gap-1.5 mb-2 md:mb-3 md:gap-2">
