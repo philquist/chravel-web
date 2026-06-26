@@ -1922,3 +1922,27 @@
 [data-marketing] .btn {
   letter-spacing: 0.005em;
 }
+
+/* Marketing legibility: subtle text shadow so white copy reads cleanly over
+   the cinematic black-and-gold photo backgrounds. Layered shadow = soft halo
+   plus a tight contact shadow for crispness on any background luminance. */
+[data-marketing] h1,
+[data-marketing] h2,
+[data-marketing] h3,
+[data-marketing] h4 {
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.55),
+    0 4px 18px rgba(0, 0, 0, 0.45);
+}
+
+[data-marketing] p,
+[data-marketing] li,
+[data-marketing] blockquote {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
+
+/* Opt-out: cards / pills with their own surface treatment don't need shadows. */
+[data-marketing] .no-text-shadow,
+[data-marketing] .no-text-shadow * {
+  text-shadow: none;
+}
