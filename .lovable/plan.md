@@ -1,60 +1,70 @@
+## Why the old icon is still showing
 
-# Premium App Store Screenshots — 16 assets
+The iOS App Store and Google Play do **not** pull icons from this `chravel-web` repo. This repo only controls **PWA / browser / "Add to Home Screen"** icons. The native app icons live in a **separate repo**: `chravel-mobile` (documented in `docs/mobile/SPLASH_BRANDING_HANDOFF.md`).
 
-## Scope
-8 features × 2 device sizes = **16 PNGs**.
+Evidence from this codebase:
+- No `ios/` or `android/` folder exists at the repo root.
+- `appstore/scripts/generate-icons.sh` writes to `$PROJECT_ROOT/ios/App/App/Assets.xcassets/AppIcon.appiconset/` — that path **does not exist here**, so the script has been a no-op for native builds from this repo.
+- `public/chravel-pwa-icon.png` (the "canonical" web icon per `docs/app-icons.md`) is still the **old white globe-with-mini-icons** image (482 KB, last regenerated in a previous PWA pass).
+- `index.html` + `public/manifest.json` reference: `favicon.ico`, `icon-16/32/192/512.png`, `icon-maskable-192/512.png`, `apple-touch-icon.png`, `chravel-pwa-icon.png`.
 
-| Feature | Headline | Subhead (small caps) | Route captured |
-|---|---|---|---|
-| Plan | PLAN | your next adventure | `/` (dashboard / trip list) |
-| Chat | CHAT | with your group | trip → Chat tab |
-| Organize | ORGANIZE | every detail | trip → Calendar/Itinerary |
-| Ask | ASK | your AI travel guide | trip → Concierge |
-| Split | SPLIT | expenses effortlessly | trip → Payments |
-| Discover | DISCOVER | amazing places | trip → Places |
-| Share — Trip Memories | SHARE | trip memories | trip → Media |
-| Decide Together | DECIDE | together | trip → Polls |
+### Where each store actually pulls from
 
-Sizes:
-- **6.9" iPhone:** 1290 × 2796
-- **6.5" iPhone:** 1242 × 2688
+| Surface | Source of truth | Repo |
+|---|---|---|
+| iOS App Store + iPhone home screen | `ios/App/App/Assets.xcassets/AppIcon.appiconset/` (all 18 sizes + `Contents.json`) | **chravel-mobile** |
+| Google Play + Android launcher | `android/app/src/main/res/mipmap-*/ic_launcher*.png` + `mipmap-anydpi-v26/ic_launcher.xml` (adaptive: foreground + background) | **chravel-mobile** |
+| iOS "Add to Home Screen" (Safari PWA) | `<link rel="apple-touch-icon">` → `public/apple-touch-icon.png` | chravel-web (this repo) |
+| Android Chrome PWA install | `public/manifest.json` → `icon-192`, `icon-512`, `icon-maskable-*` | chravel-web (this repo) |
+| Browser tab favicon | `public/favicon.ico`, `icon-16.png`, `icon-32.png` | chravel-web (this repo) |
 
-## Approach
+## Plan
 
-### 1. Capture real mobile UI (Playwright)
-- Launch Chromium headless at exact iPhone viewport (`1290×2796`, dpr 3 emulated via CSS scale; second pass at `1242×2688`).
-- Restore Supabase session from `LOVABLE_BROWSER_*` env so authenticated trip data renders.
-- For each feature: `goto(localhost:8080/<route>)`, wait for network idle + key selector, take full-viewport screenshot.
-- Fall back: if a route is unauthenticated/empty, enable demo mode via `localStorage.setItem('TRIPS_DEMO_VIEW','app-preview')` so real seeded data appears (not blank states).
-- Save raw screens to `/tmp/appstore-raw/{size}/{feature}.png`.
+### Part A — Fix the web/PWA icons in this repo (what I can do here)
 
-### 2. Editorial overlay composition (Python + PIL)
-Per asset:
-- Solid black canvas (1290×2796 / 1242×2688).
-- **Top band (~28% height):** generous negative space, centered.
-  - Headline: **DM Serif Display**, white, ~180pt, tight kerning.
-  - Thin **1px gold rule** (#c49746), 80px wide, centered, 32px below headline.
-  - Subhead: **Fira Sans**, small caps, letter-spaced ~0.25em, gold (#c49746), ~38pt.
-- **Device frame:** the raw screenshot inset into a rounded-corner black device shape (radius ~64px), centered horizontally, ~12% inset from bottom. Subtle gold inner stroke (1px, 20% opacity) + soft drop shadow (gold-tinted, low opacity) for depth.
-- Background: pure #000 with a very subtle radial gold glow (~4% opacity) behind the device for premium depth.
+1. You upload the **gold C with airplane indentation** master at 1024×1024 PNG (transparent background preferred). I'll save it as `public/chravel-pwa-icon.png` (canonical source).
+2. Regenerate from that master and overwrite in `public/`:
+   - `favicon.ico` (multi-res 16/32/48)
+   - `icon-16.png`, `icon-32.png`, `icon-192.png`, `icon-512.png`
+   - `icon-maskable-192.png`, `icon-maskable-512.png` (with safe-area padding so Android's circular/squircle mask doesn't clip the airplane notch)
+   - `apple-touch-icon.png` (180×180, flattened on near-black `#0A0A0A` — iOS does not honor transparency)
+3. Bump the asset query string on icon `<link>` tags in `index.html` (e.g. `?v=2026-06-26`) to defeat the iOS Safari home-screen icon cache.
+4. Verify `public/manifest.json` references match and include a `purpose: "maskable"` entry.
 
-Fonts: DM Serif Display + Fira Sans already in project font stack — download TTFs to `/tmp/fonts/` for PIL.
+### Part B — Exact handoff for chravel-mobile (what you/Claude must run in the other repo)
 
-### 3. Output
-- Write all 16 PNGs to `/mnt/documents/appstore-screenshots-v2/`:
-  - `6.9-inch/01-plan.png` … `08-decide.png`
-  - `6.5-inch/01-plan.png` … `08-decide.png`
-- Bundle into `/mnt/documents/chravel-appstore-screenshots-v2.zip` for one-click download.
-- Emit `<presentation-artifact>` tags for the zip + a contact sheet preview.
+I can't touch the native repo from here. In `chravel-mobile`, run:
 
-### 4. QA loop (mandatory)
-- After generation, open each PNG, inspect for: clipped text, device frame overflow, missing UI in capture (blank/loading state), wrong route, low-contrast headline.
-- Re-capture/recomposite any failures before delivery.
+```bash
+# 1. Drop the same 1024×1024 master at:
+#    chravel-mobile/assets/icon-source-1024.png
+# 2. Regenerate native icons:
+cd chravel-mobile
+./appstore/scripts/generate-icons.sh assets/icon-source-1024.png
+#    → writes ios/App/App/Assets.xcassets/AppIcon.appiconset/*
 
-## Out of scope (this task)
-- Updating the Apple/Android **app icon** (already shipped previously).
-- Auto-uploading to App Store Connect (you'll drag the new files in manually or via Fastlane).
-- iPad screenshots.
+# 3. Android adaptive icon — replace:
+#    android/app/src/main/res/mipmap-*/ic_launcher.png
+#    android/app/src/main/res/mipmap-*/ic_launcher_round.png
+#    android/app/src/main/res/mipmap-*/ic_launcher_foreground.png   (gold C only, transparent)
+#    android/app/src/main/res/values/ic_launcher_background.xml      (#0A0A0A)
+#    Easiest: open Android Studio → right-click res → New → Image Asset → Launcher Icons (Adaptive).
 
-## Risk / rollback
-- Pure additive: writes to `/mnt/documents/` only. No project source files modified. Zero regression risk.
+# 4. Sync + rebuild:
+npx cap sync ios
+npx cap sync android
+# Then bump CFBundleVersion (iOS) and versionCode (Android), archive, and upload a NEW build.
+```
+
+**The App Store and Play Store will only show the new icon after a brand-new build is uploaded and approved** — re-using the same build number won't refresh it. TestFlight users must delete the old app and reinstall to escape the iOS icon cache.
+
+### Technical notes (non-blocking)
+
+- iOS rejects transparent app icons — the generator must flatten onto an opaque background. Use near-black `#0A0A0A` to match the brand.
+- Android maskable icons need ~20% safe-area padding around the C; otherwise the airplane notch gets cropped on Pixel/Samsung launchers.
+- The `apple-touch-icon` query-string cache-bust only affects browser PWAs, not the installed native iOS app.
+
+### What I need from you to proceed
+
+1. The **1024×1024 gold-C-with-airplane PNG** (drop it into chat). Transparent background is best; if it's already on dark, I'll flatten as-is.
+2. Confirm you want me to do **Part A here** and you'll hand Part B to the chravel-mobile repo (or paste the handoff to Claude there).
