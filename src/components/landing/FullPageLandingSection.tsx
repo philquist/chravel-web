@@ -27,7 +27,7 @@ interface FullPageLandingSectionProps {
     | 'aurora'
     | 'footer'
     | 'none';
-  backgroundImage?: string;
+  backgroundImage?: string | ResponsiveBackground;
   backgroundOverlayOpacity?: number; // 0-1, dark scrim over image for legibility
   backgroundPosition?: string;
 }
