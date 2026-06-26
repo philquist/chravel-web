@@ -198,7 +198,9 @@ export const useInviteLink = ({
         created_by: user.id,
         is_active: true,
         current_uses: 0,
-        require_approval: requireApproval,
+        // Backend join policy is approval-only. Persist that canonical behavior even if
+        // legacy UI state still surfaces a toggle.
+        require_approval: true,
         expires_at: expireIn7Days
           ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
           : null,

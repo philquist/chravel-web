@@ -5,8 +5,12 @@
  * This is the ONLY place where onboarding display logic should be determined.
  */
 
-// Storage keys
-const PENDING_INVITE_KEY = 'chravel_pending_invite_code';
+import {
+  clearPendingInviteCode as clearStoredPendingInviteCode,
+  getPendingInviteCode,
+  PENDING_INVITE_KEY,
+} from '@/lib/pendingInviteStorage';
+
 const PENDING_DESTINATION_KEY = 'chravel_onboarding_pending_destination';
 
 export interface OnboardingContext {
@@ -64,7 +68,7 @@ export function shouldShowOnboarding(context: OnboardingContext): boolean {
  */
 export function capturePendingDestination(currentPath: string): string | null {
   // Check for pending invite code first (highest priority)
-  const pendingInviteCode = sessionStorage.getItem(PENDING_INVITE_KEY);
+  const pendingInviteCode = getPendingInviteCode();
   if (pendingInviteCode) {
     return `/join/${pendingInviteCode}`;
   }
@@ -114,14 +118,14 @@ export function retrievePendingDestination(): string | null {
  * Clears the pending invite code (after it's been processed).
  */
 export function clearPendingInviteCode(): void {
-  sessionStorage.removeItem(PENDING_INVITE_KEY);
+  clearStoredPendingInviteCode();
 }
 
 /**
  * Checks if there's a pending destination that should take priority.
  */
 export function hasPendingDestination(): boolean {
-  return !!(
-    sessionStorage.getItem(PENDING_INVITE_KEY) || sessionStorage.getItem(PENDING_DESTINATION_KEY)
-  );
+  return !!(getPendingInviteCode() || sessionStorage.getItem(PENDING_DESTINATION_KEY));
 }
+
+export { PENDING_INVITE_KEY };

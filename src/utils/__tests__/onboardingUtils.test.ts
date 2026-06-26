@@ -26,4 +26,11 @@ describe('capturePendingDestination', () => {
       '/trip/preview-id/preview?source=push',
     );
   });
+
+  it('picks up pending invite code from mirrored invite storage', () => {
+    localStorage.setItem('chravel_pending_invite_code', 'chravelinvite123');
+
+    expect(capturePendingDestination('/')).toBe('/join/chravelinvite123');
+    expect(sessionStorage.getItem('chravel_pending_invite_code')).toBe('chravelinvite123');
+  });
 });

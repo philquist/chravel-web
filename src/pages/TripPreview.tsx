@@ -26,8 +26,16 @@ interface TripPreviewData {
 
 type JoinRequestStatus = 'pending' | 'approved' | 'rejected' | null;
 
+type TripMemberAccessRow = {
+  id: string;
+  status?: string | null;
+};
+
 const isUuid = (value: string): boolean =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const isActiveTripMember = (member: TripMemberAccessRow | null | undefined): boolean =>
+  Boolean(member && (member.status == null || member.status === 'active'));
 
 const fetchTripPreviewPayload = async (
   tripId: string,
@@ -172,7 +180,7 @@ const TripPreview = () => {
       const [memberResult, joinRequestResult] = await Promise.all([
         supabase
           .from('trip_members')
-          .select('id')
+          .select('id, status')
           .eq('trip_id', tripId!)
           .eq('user_id', user!.id)
           .maybeSingle(),
@@ -196,7 +204,7 @@ const TripPreview = () => {
       }
 
       setAccessCheckFailed(false);
-      setIsMember(!!memberResult.data);
+      setIsMember(isActiveTripMember(memberResult.data as TripMemberAccessRow | null));
       setJoinRequestStatus((joinRequestResult.data?.status as JoinRequestStatus) ?? null);
     }
 
@@ -237,9 +245,11 @@ const TripPreview = () => {
       }
     }
 
-    // Real trip (UUID) - fetch via public edge function to avoid RLS blank/404 for unauthenticated users
+    // Real trip (UUID) - fetch via public edge function to avoid RLS blank/404 for
+    // unauthenticated users. Do not auto-provision invite codes here; preview routes
+    // are read-only unless the backend explicitly returns an active invite.
     try {
-      const previewTrip = await fetchTripPreviewPayload(tripId, { ensureInvite: !!user });
+      const previewTrip = await fetchTripPreviewPayload(tripId);
       if (!previewTrip) {
         setError('Trip not found');
         return;
@@ -334,19 +344,10 @@ const TripPreview = () => {
         navigate(`/join/${activeInviteCode}`);
         return;
       }
-      // Retry once in case invite was not yet provisioned when preview loaded.
-      const refreshedPreview = await fetchTripPreviewPayload(tripId, { ensureInvite: true });
-      const refreshedInviteCode = refreshedPreview?.active_invite_code || null;
-      if (refreshedInviteCode) {
-        setActiveInviteCode(refreshedInviteCode);
-        navigate(`/join/${refreshedInviteCode}`);
-        return;
-      }
-
       const [refreshedMemberResult, refreshedJoinRequestResult] = await Promise.all([
         supabase
           .from('trip_members')
-          .select('id')
+          .select('id, status')
           .eq('trip_id', tripId)
           .eq('user_id', user.id)
           .maybeSingle(),
@@ -368,7 +369,7 @@ const TripPreview = () => {
       const refreshedMember = refreshedMemberResult.data;
       const refreshedJoinRequest = refreshedJoinRequestResult.data;
 
-      if (refreshedMember) {
+      if (isActiveTripMember(refreshedMember as TripMemberAccessRow | null)) {
         setIsMember(true);
         navigate(tripRoute);
         return;
@@ -381,8 +382,9 @@ const TripPreview = () => {
         return;
       }
 
-      // No invite code/membership/request after retry — stay on preview and inform the user.
-      toast.info('Trip access is still syncing. Please try again in a moment.');
+      // No invite code/membership/request after refresh — preview links are read-only
+      // without an invite bootstrap, so direct the user to request a fresh invite.
+      toast.info('Ask the organizer for an invite link to join this trip.');
       return;
     }
 

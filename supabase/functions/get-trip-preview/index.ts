@@ -143,7 +143,7 @@ serve(async (req): Promise<Response> => {
       description: tripRow.description,
     };
 
-    // Verify trip membership (only members/admins/creator may see or create invite codes)
+    // Verify trip membership (only active members/admins/creator may see or create invite codes)
     let isTripMember = false;
     if (authedUserId) {
       if (tripRow.created_by === authedUserId) {
@@ -151,11 +151,15 @@ serve(async (req): Promise<Response> => {
       } else {
         const { data: memberRow } = await supabaseClient
           .from('trip_members')
-          .select('user_id')
+          .select('user_id, status')
           .eq('trip_id', tripId)
           .eq('user_id', authedUserId)
           .maybeSingle();
-        isTripMember = !!memberRow;
+        isTripMember =
+          !!memberRow &&
+          (memberRow.status === null ||
+            memberRow.status === undefined ||
+            memberRow.status === 'active');
       }
     }
 

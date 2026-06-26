@@ -116,8 +116,38 @@ describe('TripPreview invite flow', () => {
     });
 
     expect(mockInvoke).toHaveBeenCalledWith('get-trip-preview', {
-      body: { tripId: '11111111-1111-4111-8111-111111111111', ensureInvite: true },
+      body: { tripId: '11111111-1111-4111-8111-111111111111', ensureInvite: false },
     });
+  });
+
+  it('treats left memberships as rejoin flows instead of open-trip access', async () => {
+    const user = userEvent.setup();
+
+    mockMaybeSingle.mockResolvedValue({
+      data: { id: 'member-1', status: 'left' },
+      error: null,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/trip/11111111-1111-4111-8111-111111111111/preview']}>
+        <Routes>
+          <Route path="/trip/:tripId/preview" element={<TripPreview />} />
+          <Route path="/join/:token" element={<div>Join Route</div>} />
+          <Route path="/trip/:tripId" element={<div>Trip Route</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const joinButton = await screen.findByRole('button', {
+      name: /join this trip|request to join/i,
+    });
+    await user.click(joinButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Join Route')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Trip Route')).not.toBeInTheDocument();
   });
 
   it('supports branded /t/:tripId path and still routes non-members through /join/:code', async () => {
@@ -142,50 +172,31 @@ describe('TripPreview invite flow', () => {
     });
   });
 
-  it('retries preview fetch on join click when invite code is initially missing', async () => {
+  it('keeps preview read-only when no invite code is available for a non-member', async () => {
     const user = userEvent.setup();
 
-    mockInvoke
-      .mockResolvedValueOnce({
-        data: {
-          success: true,
-          trip: {
-            id: '11111111-1111-4111-8111-111111111111',
-            name: 'Festival Weekend',
-            destination: 'Los Angeles',
-            start_date: '2026-05-02',
-            end_date: '2026-05-11',
-            cover_image_url: null,
-            trip_type: 'consumer',
-            member_count: 5,
-            active_invite_code: null,
-          },
+    mockInvoke.mockResolvedValueOnce({
+      data: {
+        success: true,
+        trip: {
+          id: '11111111-1111-4111-8111-111111111111',
+          name: 'Festival Weekend',
+          destination: 'Los Angeles',
+          start_date: '2026-05-02',
+          end_date: '2026-05-11',
+          cover_image_url: null,
+          trip_type: 'consumer',
+          member_count: 5,
+          active_invite_code: null,
         },
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: {
-          success: true,
-          trip: {
-            id: '11111111-1111-4111-8111-111111111111',
-            name: 'Festival Weekend',
-            destination: 'Los Angeles',
-            start_date: '2026-05-02',
-            end_date: '2026-05-11',
-            cover_image_url: null,
-            trip_type: 'consumer',
-            member_count: 5,
-            active_invite_code: 'chravelretry99',
-          },
-        },
-        error: null,
-      });
+      },
+      error: null,
+    });
 
     render(
       <MemoryRouter initialEntries={['/trip/11111111-1111-4111-8111-111111111111/preview']}>
         <Routes>
           <Route path="/trip/:tripId/preview" element={<TripPreview />} />
-          <Route path="/join/:token" element={<div>Join Route</div>} />
         </Routes>
       </MemoryRouter>,
     );
@@ -196,10 +207,12 @@ describe('TripPreview invite flow', () => {
     await user.click(joinButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Join Route')).toBeInTheDocument();
+      expect(toast.info).toHaveBeenCalledWith(
+        'Ask the organizer for an invite link to join this trip.',
+      );
     });
 
-    expect(mockInvoke).toHaveBeenCalledTimes(2);
+    expect(mockInvoke).toHaveBeenCalledTimes(1);
   });
 
   it('routes non-members with pending requests back to home status view', async () => {

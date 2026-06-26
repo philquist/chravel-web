@@ -35,6 +35,11 @@ import {
   createInviteError,
 } from '../types/inviteErrors';
 import { invalidatePendingRequestState } from '@/hooks/pendingRequestsCache';
+import {
+  clearPendingInviteCode,
+  getPendingInviteCode,
+  storePendingInviteCode,
+} from '@/lib/pendingInviteStorage';
 
 interface InvitePreviewData {
   invite: {
@@ -55,8 +60,6 @@ interface InvitePreviewData {
     member_count: number;
   };
 }
-
-const INVITE_CODE_STORAGE_KEY = 'chravel_pending_invite_code';
 
 function resolveAuthUserDisplayName(user: User): string {
   const meta = user.user_metadata as Record<string, unknown> | undefined;
@@ -105,31 +108,23 @@ export interface JoinActionPresentation {
 }
 
 /**
- * Resolve the join CTA and approval framing from the invite's
- * `require_approval` flag. Invites that require approval keep the
- * request/review framing; open invites present a direct join.
+ * Join requests are approval-only on the backend. Keep the UI in the same
+ * request/review framing even if legacy invite rows still carry
+ * `require_approval = false`.
  */
-export function getJoinActionPresentation(requireApproval: boolean): JoinActionPresentation {
-  if (requireApproval) {
-    return {
-      ctaLabel: 'Request to Join',
-      ctaBusyLabel: 'Requesting...',
-      showApprovalNotice: true,
-      signedOutPrompt: 'Sign in or create a free account to request to join this trip.',
-    };
-  }
+export function getJoinActionPresentation(_requireApproval: boolean): JoinActionPresentation {
   return {
-    ctaLabel: 'Join Trip',
-    ctaBusyLabel: 'Joining...',
-    showApprovalNotice: false,
-    signedOutPrompt: 'Sign in or create a free account to join this trip.',
+    ctaLabel: 'Request to Join',
+    ctaBusyLabel: 'Requesting...',
+    showApprovalNotice: true,
+    signedOutPrompt: 'Sign in or create a free account to request to join this trip.',
   };
 }
 
 /**
  * Resolve the invite code from three sources (priority order):
  * 1. URL param (:token)
- * 2. localStorage (INVITE_CODE_STORAGE_KEY)
+ * 2. shared pending invite storage (session/local mirror)
  * 3. `invite` query param
  */
 function resolveInviteCode(
@@ -138,35 +133,13 @@ function resolveInviteCode(
 ): string | null {
   if (token) return token;
 
-  try {
-    const stored = localStorage.getItem(INVITE_CODE_STORAGE_KEY);
-    if (stored) return stored;
-  } catch {
-    // localStorage unavailable in sandboxed environments
-  }
+  const stored = getPendingInviteCode();
+  if (stored) return stored;
 
   const fromQuery = searchParams.get('invite');
   if (fromQuery) return fromQuery;
 
   return null;
-}
-
-/** Safely store invite code in localStorage */
-function storeInviteCode(code: string): void {
-  try {
-    localStorage.setItem(INVITE_CODE_STORAGE_KEY, code);
-  } catch {
-    // localStorage unavailable — fall through to query param fallback
-  }
-}
-
-/** Remove invite code from localStorage */
-function clearInviteCode(): void {
-  try {
-    localStorage.removeItem(INVITE_CODE_STORAGE_KEY);
-  } catch {
-    // ignore
-  }
 }
 
 const JoinTrip = () => {
@@ -194,7 +167,7 @@ const JoinTrip = () => {
 
     const resolved = resolveInviteCode(undefined, searchParams);
     if (resolved) {
-      clearInviteCode();
+      clearPendingInviteCode();
       navigate(`/join/${resolved}`, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount-only
@@ -279,7 +252,7 @@ const JoinTrip = () => {
     const resolved = resolveInviteCode(undefined, searchParams);
     if (resolved && user && !token) {
       // User just logged in with a pending invite
-      clearInviteCode();
+      clearPendingInviteCode();
       navigate(`/join/${resolved}`, { replace: true });
     }
   }, [user, token, navigate, searchParams]);
@@ -417,7 +390,7 @@ const JoinTrip = () => {
   const handleJoinTrip = async (isAutoJoin = false) => {
     if (!user) {
       if (token) {
-        storeInviteCode(token);
+        storePendingInviteCode(token);
       }
       setAuthModalMode('signin');
       return;
@@ -465,7 +438,7 @@ const JoinTrip = () => {
       // Post-join cleanup: invalidate queries and clear stored invite code
       const tripId = data.trip_id || inviteData.invite.trip_id;
 
-      clearInviteCode();
+      clearPendingInviteCode();
       void invalidatePendingRequestState(queryClient, { tripId });
 
       if (data.requires_approval) {
@@ -538,7 +511,7 @@ const JoinTrip = () => {
   const openAuthModal = useCallback(
     (mode: 'signin' | 'signup') => {
       if (token) {
-        storeInviteCode(token);
+        storePendingInviteCode(token);
       }
       setAuthModalMode(mode);
     },
@@ -615,7 +588,7 @@ const JoinTrip = () => {
         case 'switch_account':
           // Sign out and redirect to login with invite preserved
           if (token) {
-            storeInviteCode(token);
+            storePendingInviteCode(token);
           }
           supabase.auth.signOut().then(() => {
             setAuthModalMode('signin');
@@ -1007,7 +980,10 @@ const JoinTrip = () => {
         isOpen={authModalMode !== null}
         initialMode={authModalMode ?? 'signin'}
         oauthReturnTo={inviteReturnTo}
-        onClose={() => setAuthModalMode(null)}
+        onClose={() => {
+          clearPendingInviteCode();
+          setAuthModalMode(null);
+        }}
       />
     </div>
   );

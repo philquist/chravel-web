@@ -3,10 +3,9 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthModal } from '@/components/AuthModal';
 import { useAuth } from '@/hooks/useAuth';
 import { notifyNativeShellReady } from '@/utils/nativeBridge';
+import { clearPendingInviteCode, storePendingInviteCode } from '@/lib/pendingInviteStorage';
 
 type AuthMode = 'signin' | 'signup';
-
-const INVITE_CODE_STORAGE_KEY = 'chravel_pending_invite_code';
 
 function getSafeReturnTo(value: string | null, fallback: string): string {
   if (!value) return fallback;
@@ -34,16 +33,12 @@ const AuthPage = () => {
     return raw === 'signup' ? 'signup' : 'signin';
   }, [searchParams]);
 
-  // Restore invite context from query param into localStorage
-  // This ensures the invite code survives OAuth redirects that may clear localStorage
+  // Restore invite context from query param into the shared pending-invite store
+  // so both auth resume and onboarding pickup read the same source of truth.
   useEffect(() => {
     const inviteCode = searchParams.get('invite');
     if (inviteCode) {
-      try {
-        localStorage.setItem(INVITE_CODE_STORAGE_KEY, inviteCode);
-      } catch {
-        // localStorage unavailable — JoinTrip will fall back to query param
-      }
+      storePendingInviteCode(inviteCode);
     }
   }, [searchParams]);
 
@@ -72,7 +67,10 @@ const AuthPage = () => {
       <AuthModal
         isOpen={true}
         initialMode={mode}
-        onClose={() => navigate(returnTo, { replace: true })}
+        onClose={() => {
+          clearPendingInviteCode();
+          navigate(returnTo, { replace: true });
+        }}
       />
     </div>
   );
