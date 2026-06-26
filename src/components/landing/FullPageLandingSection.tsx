@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { GoldAccentOverlay } from './GoldAccentOverlay';
+import type { ResponsiveBackground } from '@/assets/landing/backgrounds';
 
 interface FullPageLandingSectionProps {
   id: string;
