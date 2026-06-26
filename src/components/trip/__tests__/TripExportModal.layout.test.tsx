@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { TripExportModal } from '../TripExportModal';
 
+vi.mock('sonner', () => ({
+  toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() },
+}));
+
 vi.mock('@/hooks/useConsumerSubscription', () => ({
   useConsumerSubscription: () => ({
     upgradeToTier: vi.fn(),
