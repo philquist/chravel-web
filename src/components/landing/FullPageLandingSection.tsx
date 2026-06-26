@@ -107,7 +107,7 @@ export const FullPageLandingSection: React.FC<FullPageLandingSectionProps> = ({
     <section
       id={id}
       className={cn(
-        'relative w-full flex',
+        'relative w-full flex overflow-hidden',
         // Mobile/phone: content flows from top naturally. Tablet+: vertically centered
         'items-start tablet:items-center justify-center',
         // Mobile/phone: fill viewport so content starts at top. Tablet+: use CSS variable for min-height
