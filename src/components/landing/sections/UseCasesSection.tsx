@@ -258,7 +258,7 @@ export const UseCasesSection = () => {
                             >
                               {scenario.href.startsWith('/blog')
                                 ? 'See the ChravelApp blog for more'
-                                : 'See how ChravelApp helps'}
+                                : 'See the ChravelApp blog'}
                               <ArrowRight className="w-4 h-4" />
                             </Link>
                           </div>
