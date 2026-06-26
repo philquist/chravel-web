@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { GoldAccentOverlay } from './GoldAccentOverlay';
+import type { ResponsiveBackground } from '@/assets/landing/backgrounds';
 
 interface FullPageLandingSectionProps {
   id: string;
@@ -26,7 +27,7 @@ interface FullPageLandingSectionProps {
     | 'aurora'
     | 'footer'
     | 'none';
-  backgroundImage?: string;
+  backgroundImage?: string | ResponsiveBackground;
   backgroundOverlayOpacity?: number; // 0-1, dark scrim over image for legibility
   backgroundPosition?: string;
 }
@@ -106,7 +107,7 @@ export const FullPageLandingSection: React.FC<FullPageLandingSectionProps> = ({
     <section
       id={id}
       className={cn(
-        'relative w-full flex',
+        'relative w-full flex overflow-hidden',
         // Mobile/phone: content flows from top naturally. Tablet+: vertically centered
         'items-start tablet:items-center justify-center',
         // Mobile/phone: fill viewport so content starts at top. Tablet+: use CSS variable for min-height
@@ -120,24 +121,51 @@ export const FullPageLandingSection: React.FC<FullPageLandingSectionProps> = ({
         background: getGradientStyle(),
       }}
     >
-      {/* Cinematic photo background (black & gold travel scenes) */}
+      {/* Cinematic photo background (black & gold travel scenes).
+          We render an <img> with srcset so the browser picks the right resolution
+          per device DPR / viewport — prevents blurring 1920px sources on 4K/retina. */}
       {backgroundImage && (
         <>
+          {typeof backgroundImage === 'string' ? (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                backgroundImage: `url(${backgroundImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition,
+                backgroundRepeat: 'no-repeat',
+              }}
+              aria-hidden="true"
+            />
+          ) : (
+            <img
+              src={backgroundImage.src}
+              srcSet={backgroundImage.srcSet}
+              sizes={backgroundImage.sizes}
+              alt=""
+              aria-hidden="true"
+              decoding="async"
+              loading="eager"
+              fetchPriority="high"
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+              style={{ objectPosition: backgroundPosition }}
+              draggable={false}
+            />
+          )}
+          {/* Layered scrim: stronger top/bottom + radial vignette so white text
+              pops without flattening the imagery in the middle. */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              backgroundImage: `url(${backgroundImage})`,
-              backgroundSize: 'cover',
-              backgroundPosition,
-              backgroundRepeat: 'no-repeat',
+              background: `linear-gradient(180deg, rgba(0,0,0,${Math.min(1, backgroundOverlayOpacity + 0.15)}) 0%, rgba(0,0,0,${backgroundOverlayOpacity}) 40%, rgba(0,0,0,${backgroundOverlayOpacity}) 60%, rgba(0,0,0,${Math.min(1, backgroundOverlayOpacity + 0.2)}) 100%)`,
             }}
             aria-hidden="true"
           />
-          {/* Dark scrim for legibility */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: `linear-gradient(180deg, rgba(0,0,0,${Math.min(1, backgroundOverlayOpacity + 0.1)}) 0%, rgba(0,0,0,${backgroundOverlayOpacity}) 45%, rgba(0,0,0,${Math.min(1, backgroundOverlayOpacity + 0.15)}) 100%)`,
+              background:
+                'radial-gradient(ellipse 80% 60% at 50% 50%, transparent 0%, rgba(0,0,0,0.35) 100%)',
             }}
             aria-hidden="true"
           />
