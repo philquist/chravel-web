@@ -18,7 +18,7 @@ import type { StreamChat } from 'stream-chat';
 import { supabase } from '@/integrations/supabase/client';
 import { getStreamToken, clearStreamTokenCache } from './streamTokenService';
 
-const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY || 'k2dbmuesv2a9';
+const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY || '';
 
 let clientInstance: StreamChat | null = null;
 let connectionPromise: Promise<void> | null = null;

@@ -95,47 +95,25 @@ serve(async (req): Promise<Response> => {
 
     const isSuperAdmin = isSuperAdminEmail(authData.user.email);
     const tripRow = trip as TripRow;
-    const isCreator = tripRow.created_by === authData.user.id;
-
-    // Access based on active membership only (creator who left loses access)
+    // Access is based on active membership only; creators who left or were removed
+    // must not regain access through created_by or a route-param lookup.
     const { data: membership } = await supabaseAdmin
       .from('trip_members')
       .select('id')
       .eq('trip_id', tripId)
       .eq('user_id', authData.user.id)
+      .eq('status', 'active')
       .maybeSingle();
 
-    let hasAccess = !!membership;
-    if (isCreator && !membership) {
-      const { data: anyRow } = await supabaseAdmin
-        .from('trip_members')
-        .select('id')
-        .eq('trip_id', tripId)
-        .eq('user_id', authData.user.id)
-        .maybeSingle();
-      if (!anyRow) {
-        const { error: upsertError } = await supabaseAdmin
-          .from('trip_members')
-          .upsert(
-            { trip_id: tripId, user_id: authData.user.id, role: 'admin', status: 'active' },
-            { onConflict: 'trip_id,user_id' },
-          );
-        if (!upsertError) hasAccess = true;
-        else
-          logError('GET_TRIP_DETAIL_MEMBERSHIP_UPSERT', upsertError, {
-            tripId,
-            userId: authData.user.id,
-          });
-      }
-    }
+    const hasAccess = !!membership;
 
     if (isSuperAdmin || hasAccess) {
       return buildResponse({ success: true, trip: tripRow }, 200, corsHeaders);
     }
 
     return buildResponse(
-      { success: false, error: 'Access denied', error_code: 'ACCESS_DENIED' },
-      403,
+      { success: false, error: 'Trip not found', error_code: 'TRIP_NOT_FOUND' },
+      404,
       corsHeaders,
     );
   } catch (error) {

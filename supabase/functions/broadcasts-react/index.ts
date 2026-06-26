@@ -44,6 +44,28 @@ serve(async req => {
       throw new Error('Invalid reaction_type. Must be: coming, wait, or cant');
     }
 
+    const { data: broadcast, error: broadcastError } = await supabase
+      .from('broadcasts')
+      .select('id, trip_id')
+      .eq('id', broadcast_id)
+      .maybeSingle();
+
+    if (broadcastError || !broadcast) {
+      return createErrorResponse('Broadcast not found', 404);
+    }
+
+    const { data: membership } = await supabase
+      .from('trip_members')
+      .select('id')
+      .eq('trip_id', broadcast.trip_id)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!membership) {
+      return createErrorResponse('Broadcast not found', 404);
+    }
+
     // Get user profile for reaction info
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -105,8 +127,7 @@ serve(async req => {
     );
   } catch (error) {
     console.error('Error in broadcasts-react function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ error: 'Unexpected error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

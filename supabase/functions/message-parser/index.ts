@@ -16,16 +16,41 @@ serve(async req => {
   }
 
   try {
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return createErrorResponse('Authentication required', 401);
+    }
+
     const { messageId, content, tripId } = await req.json();
 
     if (!messageId || !content || !tripId) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return createErrorResponse('Missing required fields', 400);
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+    });
+    const token = authHeader.replace('Bearer ', '');
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return createErrorResponse('Unauthorized', 401);
+    }
+
+    const { data: membership } = await supabase
+      .from('trip_members')
+      .select('id')
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!membership) {
+      return createErrorResponse('Trip not found', 404);
+    }
 
     // Extract URLs from message content
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -59,41 +84,10 @@ serve(async req => {
           metadata: { source: 'chat' },
         });
       } else {
-        // Fetch Open Graph data for regular links
-        let ogData: { title: string; description: string; image: string } = {
-          title: '',
-          description: '',
-          image: '',
-        };
-        try {
-          const response = await fetch(url, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LinkPreview/1.0)' },
-            signal: AbortSignal.timeout(10_000),
-          });
-
-          if (response.ok) {
-            const html = await response.text();
-
-            // Basic OG meta extraction
-            const titleMatch = html.match(
-              /<meta[^>]*property="og:title"[^>]*content="([^"]*)"[^>]*>/i,
-            );
-            const descMatch = html.match(
-              /<meta[^>]*property="og:description"[^>]*content="([^"]*)"[^>]*>/i,
-            );
-            const imageMatch = html.match(
-              /<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/i,
-            );
-
-            ogData = {
-              title: titleMatch?.[1] || '',
-              description: descMatch?.[1] || '',
-              image: imageMatch?.[1] || '',
-            };
-          }
-        } catch (error) {
-          console.log(`Failed to fetch OG data for ${url}:`, error);
-        }
+        // Do not server-fetch arbitrary user-provided URLs here. Link previews
+        // are stored without Open Graph metadata to avoid SSRF through service-role
+        // edge execution; a future worker may enrich only allowlisted URLs.
+        const ogData = { title: '', description: '', image: '' };
 
         // Insert into link index
         await supabase.from('trip_link_index').insert({
@@ -119,12 +113,9 @@ serve(async req => {
     );
   } catch (error) {
     console.error('Error parsing message:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    );
+    return new Response(JSON.stringify({ error: 'Unexpected error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

@@ -52,14 +52,6 @@ const PRODUCT_TO_TIER: Record<string, string> = {
   prod_U73W99ebeJvbLB: 'frequent-chraveler',
 };
 
-const SUPER_ADMIN_EMAILS = new Set([
-  'ccamechi@gmail.com',
-  'christian@chravelapp.com',
-  'demo@chravelapp.com',
-  'phil@philquist.com',
-  'darren.hartgee@gmail.com',
-]);
-
 const pickBestStripeSubscription = (
   subscriptions: Stripe.Subscription[],
 ): Stripe.Subscription | null => {
@@ -223,11 +215,11 @@ serve(async req => {
       return createErrorResponse('Unauthorized', 401);
     }
     const user = userData.user;
-    logStep('User authenticated', { userId: user.id, email: user.email });
+    logStep('User authenticated', { userId: user.id });
 
     // Super admin bypass - return max tier without Stripe check
     if (isSuperAdminEmail(user.email)) {
-      logStep('Super admin detected - bypassing Stripe check', { email: user.email });
+      logStep('Super admin detected - bypassing Stripe check', { userId: user.id });
       return createSecureResponse({
         subscribed: true,
         status: 'active',
