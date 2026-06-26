@@ -48,4 +48,10 @@ describe('streamClient auth listener', () => {
 
     expect(clearStreamTokenCacheMock).toHaveBeenCalledTimes(1);
   });
+
+  it('does not ship a hard-coded Stream API key fallback', async () => {
+    const { getStreamApiKey } = await import('../streamClient');
+
+    expect(getStreamApiKey()).toBeNull();
+  });
 });

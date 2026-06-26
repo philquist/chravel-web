@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { verifyCronAuth } from '../_shared/cronGuard.ts';
 
 serve(async req => {
   const corsHeaders = getCorsHeaders(req);
@@ -11,14 +12,7 @@ serve(async req => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // Authenticate: require valid user JWT for POST, cron secret for GET (poll)
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'Authentication required' }), {
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
+  const authHeader = req.headers.get('Authorization') ?? req.headers.get('authorization');
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -27,6 +21,13 @@ serve(async req => {
   try {
     if (req.method === 'POST') {
       // Verify caller identity from JWT
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: 'Authentication required' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       const token = authHeader.replace('Bearer ', '');
       const { data: userData, error: userError } = await supabase.auth.getUser(token);
       if (userError || !userData.user) {
@@ -40,9 +41,24 @@ serve(async req => {
       const { content, send_at, trip_id, priority } = body;
       // Use authenticated user ID instead of client-supplied user_id
       const user_id = userData.user.id;
-      if (!content || !send_at || !user_id) {
+      if (!content || !send_at || !trip_id || !user_id) {
         return new Response(JSON.stringify({ error: 'Missing required fields' }), {
           status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { data: membership } = await supabase
+        .from('trip_members')
+        .select('id')
+        .eq('trip_id', trip_id)
+        .eq('user_id', user_id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (!membership) {
+        return new Response(JSON.stringify({ error: 'Trip not found' }), {
+          status: 404,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -62,6 +78,9 @@ serve(async req => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const cronGuard = verifyCronAuth(req, corsHeaders);
+    if (!cronGuard.authorized) return cronGuard.response!;
 
     // Poll for due messages
     const now = new Date().toISOString();
@@ -86,12 +105,9 @@ serve(async req => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
-      {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    );
+    return new Response(JSON.stringify({ error: 'Unexpected error' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

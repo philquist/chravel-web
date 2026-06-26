@@ -41,10 +41,31 @@ serve(async req => {
 
     const formData = await req.formData();
     const file = formData.get('file') as File;
-    const folder = (formData.get('folder') as string) || 'ad-images';
+    const requestedFolder = (formData.get('folder') as string) || 'ad-images';
+    const folder = 'ad-images';
 
     if (!file) {
       throw new Error('No file provided');
+    }
+
+    if (requestedFolder !== folder) {
+      return new Response(JSON.stringify({ error: 'Invalid upload folder' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { data: advertiserProfile, error: advertiserError } = await supabase
+      .from('advertiser_profiles')
+      .select('id')
+      .eq('user_id', userData.user.id)
+      .maybeSingle();
+
+    if (advertiserError || !advertiserProfile) {
+      return new Response(JSON.stringify({ error: 'Advertiser access required' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Validate using Zod schema
@@ -94,7 +115,7 @@ serve(async req => {
 
     // Generate unique filename
     const fileExt = file.name.split('.').pop();
-    const fileName = `${userData.user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const fileName = `${advertiserProfile.id}/${userData.user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `${folder}/${fileName}`;
 
     // Convert file to ArrayBuffer
@@ -131,12 +152,9 @@ serve(async req => {
     );
   } catch (error) {
     console.error('Error:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
-      {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    );
+    return new Response(JSON.stringify({ error: 'Upload failed' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

@@ -464,3 +464,16 @@ Known security anti-patterns discovered during audits. Reference this before int
 - **Smallest safe fix:** Track `visualViewport.offsetTop` into `--visual-viewport-offset-top` (in `useKeyboardHandler`, alongside `--visual-viewport-height`) and apply it as the shell's `top` so the fixed shell follows the visible region. Clear the var on keyboard hide.
 - **Required tests:** Verify `useKeyboardHandler` sets `--visual-viewport-offset-top` from `visualViewport.offsetTop` on resize/scroll and clears it on hide (`src/hooks/__tests__/useKeyboardHandler.test.tsx`).
 - **Fixed in:** `src/index.css`, `src/hooks/useKeyboardHandler.ts` (June 2026 follow-up after PR #722)
+
+---
+
+## Service-Role Edge Functions Need an Authz Gate Before Every Write
+
+**Symptom:** Edge function authenticates weakly (or not at all), then uses `SUPABASE_SERVICE_ROLE_KEY` to write rows or storage objects from caller-supplied IDs/paths.
+**Risk:** CRITICAL — BOLA/IDOR, tenant data poisoning, destructive jobs, or cross-tenant storage writes because service role bypasses RLS.
+**Root Cause:** Treating a valid bearer token, route param, or request body `trip_id`/`broadcast_id`/`folder` as authorization instead of loading the target object server-side and checking active membership/ownership.
+**How to Confirm:** Search service-role edge functions for request-body `trip_id`, `broadcast_id`, `folder`, or cron-like work before `auth.getUser`, `verifyCronAuth`, and active membership/owner checks.
+**Smallest Safe Fix:** Authenticate first, load the canonical target record server-side, check active membership/ownership/admin permission, derive storage paths server-side, and return 404 for unauthorized private objects.
+**Required Tests:** Unauthenticated denied, authenticated non-member denied, member/owner allowed, caller-supplied mismatched IDs/paths ignored or rejected.
+**Regression Surfaces:** Message parsing, broadcast reactions, scheduled messages, advertiser asset uploads, search-index population, and any new service-role edge function.
+**Fixed in:** `supabase/functions/message-parser/index.ts`, `broadcasts-react`, `message-scheduler`, `populate-search-index`, `image-upload` (June 2026 P0 hardening)

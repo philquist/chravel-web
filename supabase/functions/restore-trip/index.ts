@@ -3,6 +3,7 @@ import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { sanitizeErrorForClient, logError } from '../_shared/errorHandling.ts';
+import { isSuperAdminEmail } from '../_shared/superAdmins.ts';
 import {
   canRestoreArchivedTrip,
   pickPrimaryEntitlementRow,
@@ -78,20 +79,7 @@ serve(async req => {
       });
     }
 
-    const FOUNDER_EMAILS = [
-      'ccamechi@gmail.com',
-      'christian@chravelapp.com',
-      'demo@chravelapp.com',
-      'phil@philquist.com',
-      'darren.hartgee@gmail.com',
-    ];
-    const envAdminEmails = (Deno.env.get('SUPER_ADMIN_EMAILS') || '')
-      .split(',')
-      .map(e => e.trim().toLowerCase())
-      .filter(Boolean);
-    const allSuperAdmins = [...new Set([...FOUNDER_EMAILS, ...envAdminEmails])];
-    const authEmail = user.email?.toLowerCase();
-    const isSuperAdmin = authEmail ? allSuperAdmins.includes(authEmail) : false;
+    const isSuperAdmin = isSuperAdminEmail(user.email);
 
     if (!isSuperAdmin && trip.trip_type === 'consumer') {
       const [
