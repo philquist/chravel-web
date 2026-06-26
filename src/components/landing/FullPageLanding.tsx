@@ -6,7 +6,7 @@ import { HeroSection } from './sections/HeroSection';
 import { ProblemSolutionSection } from './sections/ProblemSolutionSection';
 import bgCoastline from '@/assets/landing/bg-coastline.jpg';
 import bgSkyline from '@/assets/landing/bg-skyline.jpg';
-import bgJet from '@/assets/landing/bg-jet.jpg';
+import bgStadium from '@/assets/landing/bg-stadium.jpg';
 import bgMountain from '@/assets/landing/bg-mountain.jpg';
 
 // Lazy load sections for better performance
@@ -142,7 +142,7 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           minHeight="90vh"
           goldOverlay="hero"
           backgroundImage={bgCoastline}
-          backgroundOverlayOpacity={0.7}
+          backgroundOverlayOpacity={0.58}
         >
           <HeroSection onSignUp={onSignUp} />
         </FullPageLandingSection>
@@ -154,7 +154,7 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           gradientDirection={GRADIENTS.replaces.direction}
           goldOverlay="waves"
           backgroundImage={bgSkyline}
-          backgroundOverlayOpacity={0.78}
+          backgroundOverlayOpacity={0.64}
         >
           <Suspense fallback={<SectionLoader />}>
             <ReplacesSection />
@@ -169,12 +169,12 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           accentGlow={GRADIENTS.howItWorks.accentGlow}
           goldOverlay="triangles"
           backgroundImage={bgMountain}
-          backgroundOverlayOpacity={0.78}
+          backgroundOverlayOpacity={0.64}
         >
           <ProblemSolutionSection />
         </FullPageLandingSection>
 
-        {/* Section 4: Use Cases — private jet */}
+        {/* Section 4: Use Cases — stadium / concert */}
         <FullPageLandingSection
           id="section-use-cases"
           gradientColors={GRADIENTS.useCases.colors}
@@ -182,8 +182,8 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           accentGlow={GRADIENTS.useCases.accentGlow}
           minHeight="120vh"
           goldOverlay="diamonds"
-          backgroundImage={bgJet}
-          backgroundOverlayOpacity={0.76}
+          backgroundImage={bgStadium}
+          backgroundOverlayOpacity={0.62}
         >
           <Suspense fallback={<SectionLoader />}>
             <UseCasesSection />
@@ -198,7 +198,7 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           accentGlow={GRADIENTS.aiFeatures.accentGlow}
           goldOverlay="circles"
           backgroundImage={bgSkyline}
-          backgroundOverlayOpacity={0.8}
+          backgroundOverlayOpacity={0.66}
           backgroundPosition="center 30%"
         >
           <Suspense fallback={<SectionLoader />}>
@@ -215,7 +215,7 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           minHeight="110vh"
           goldOverlay="mesh"
           backgroundImage={bgCoastline}
-          backgroundOverlayOpacity={0.8}
+          backgroundOverlayOpacity={0.66}
         >
           <Suspense fallback={<SectionLoader />}>
             <PricingLandingSection onSignUp={onSignUp} />
@@ -230,7 +230,7 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           accentGlow={GRADIENTS.faq.accentGlow}
           goldOverlay="aurora"
           backgroundImage={bgMountain}
-          backgroundOverlayOpacity={0.82}
+          backgroundOverlayOpacity={0.68}
         >
           <Suspense fallback={<SectionLoader />}>
             <FAQSection />
