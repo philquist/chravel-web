@@ -74,8 +74,6 @@ const consumerTiers: PricingTier[] = [
       'AI Trip Assistant (3 queries per user per trip)',
       '1 PDF export per trip (sample it!)',
       'Save up to 3 active trips',
-      '🎁 1 free Pro trip to try',
-      'Up to 3 events (upgrade to Frequent Chraveler for unlimited)',
     ],
     cta: 'Start First Trip Free',
     category: 'consumer',
