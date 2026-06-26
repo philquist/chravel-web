@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
-import { X, Download, FileText, Crown, Gift, Check } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { X, Download, FileText, Crown, Check } from 'lucide-react';
 import { ExportSection } from '@/types/tripExport';
 import { isConsumerTrip } from '@/utils/tripTierDetector';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
@@ -65,6 +66,13 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
   const isMobile = useIsMobile();
   const visualViewportHeight = useVisualViewportHeight(isOpen && isMobile);
 
+  // Notify free users who have used up their free export — replaces the old persistent banner
+  useEffect(() => {
+    if (isOpen && !isPaidUser && !canExport) {
+      toast.info("You've used your free export for this trip. Upgrade for unlimited recaps.");
+    }
+  }, [isOpen, isPaidUser, canExport]);
+
   const toggleSection = (sectionId: ExportSection) => {
     setSelectedSections(prev =>
       prev.includes(sectionId) ? prev.filter(id => id !== sectionId) : [...prev, sectionId],
@@ -118,7 +126,6 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
   // Free users: 1 export per trip, Paid users: unlimited
   const hasAccess = hasExportAccess;
   const _usageStatus = getUsageStatus();
-  const showFreeExportBanner = !isPaidUser && canExport;
   const showUpgradePrompt = !isPaidUser && !canExport;
 
   const headerTitle = isEvent ? 'Create Event Recap' : 'Create Trip Recap';
@@ -130,7 +137,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-2">
       <div
         data-testid="trip-export-modal-panel"
-        className="trip-export-modal-panel grid min-h-0 w-full max-w-md grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-2xl border border-gray-700 bg-gray-900 shadow-2xl md:max-w-xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-xl"
+        className="trip-export-modal-panel grid min-h-0 w-full max-w-md grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-2xl border border-gray-700 bg-gray-900 shadow-2xl md:max-w-xl max-h-[100dvh] sm:max-h-[calc(100dvh-2rem)] sm:rounded-xl"
         style={panelMaxHeight ? { maxHeight: panelMaxHeight } : undefined}
       >
         {/* Header — safe top inset without stacking extra padding on top of large notches */}
@@ -199,25 +206,6 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
             </div>
           ) : (
             <>
-              {/* Free export banner for free users */}
-              {showFreeExportBanner && (
-                <div className="bg-gradient-to-r from-green-900/40 to-emerald-900/40 border border-green-500/30 rounded-lg py-1.5 px-2.5 mb-3 md:mb-4">
-                  <div className="flex items-center gap-2">
-                    <Gift size={12} className="text-green-400" />
-                    <div className="flex-1">
-                      <span className="text-green-300 text-[11px] font-medium">1 Free Export</span>
-                      <span className="text-green-400/70 text-[10px] ml-1">per trip</span>
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      className="bg-green-500/20 text-green-300 text-[9px] py-0 px-1.5 h-5"
-                    >
-                      Sample it!
-                    </Badge>
-                  </div>
-                </div>
-              )}
-
               {/* Unlimited badge for paid users */}
               {isPaidUser && (
                 <div className="flex items-center gap-2 mb-3 md:mb-4">
@@ -231,12 +219,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
                 </div>
               )}
 
-              <div className="mb-2 md:mb-3">
-                <h3 className="text-white font-semibold text-sm mb-1">
-                  {isEvent ? 'Event' : 'Trip'}: {tripName}
-                </h3>
-                <p className="text-gray-400 text-xs">Select sections to include in your recap</p>
-              </div>
+              <p className="text-gray-400 text-xs mb-2 md:mb-3">Select sections to include</p>
 
               {/* Section Selection */}
               <div className="grid grid-cols-2 gap-1.5 mb-2 md:mb-3 md:gap-2">
@@ -297,8 +280,7 @@ export const TripExportModal: React.FC<TripExportModalProps> = ({
             style={{ paddingBottom: 'max(8px, calc(env(safe-area-inset-bottom, 0px) + 8px))' }}
           >
             <p className="px-3 pt-2 text-[10px] leading-snug text-gray-400">
-              <span className="text-[#c49746]">🔒</span> Emails and phone numbers hidden. Chat and
-              AI history never included.
+              <span className="text-[#c49746]">🔒</span> Emails and phone numbers hidden.
             </p>
             <div className="flex items-center justify-end gap-2 px-3 py-2">
               <button
