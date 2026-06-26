@@ -1004,13 +1004,16 @@
  * the enhanced value only applies where `dvh` actually works.
  */
 .trip-export-modal-panel {
-  max-height: 100vh;
+  max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
 
 @supports (height: 100dvh) {
   .trip-export-modal-panel {
     /* Keyboard-aware dynamic viewport — same var the mobile shell uses. */
-    max-height: var(--visual-viewport-height, 100dvh);
+    max-height: calc(
+      var(--visual-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) -
+        env(safe-area-inset-bottom, 0px)
+    );
   }
 }
 
