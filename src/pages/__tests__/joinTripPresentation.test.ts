@@ -1,9 +1,9 @@
 /**
- * Approval-framing gating spec for the JoinTrip invite page.
+ * Approval-framing spec for the JoinTrip invite page.
  *
- * The CTA and "Member Approval" review notice must follow the invite's
- * require_approval flag: approval-required invites keep the request/review
- * framing, open invites present a direct "Join Trip".
+ * Backend join policy is approval-only, so the invite page always stays in the
+ * request/review framing even if legacy invite rows still carry
+ * `require_approval = false`.
  */
 import { describe, expect, it, vi } from 'vitest';
 
@@ -37,14 +37,14 @@ describe('getJoinActionPresentation', () => {
     );
   });
 
-  it('presents a direct join with no review notice when approval is not required', () => {
+  it('keeps the request framing even when a legacy invite says approval is not required', () => {
     const presentation = getJoinActionPresentation(false);
 
-    expect(presentation.ctaLabel).toBe('Join Trip');
-    expect(presentation.ctaBusyLabel).toBe('Joining...');
-    expect(presentation.showApprovalNotice).toBe(false);
+    expect(presentation.ctaLabel).toBe('Request to Join');
+    expect(presentation.ctaBusyLabel).toBe('Requesting...');
+    expect(presentation.showApprovalNotice).toBe(true);
     expect(presentation.signedOutPrompt).toBe(
-      'Sign in or create a free account to join this trip.',
+      'Sign in or create a free account to request to join this trip.',
     );
   });
 

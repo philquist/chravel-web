@@ -19,6 +19,11 @@ const JOIN_TRIP_RATE_LIMIT_WINDOW_SECONDS = 60;
 const MAX_INVITE_CODE_LENGTH = 128;
 const MAX_REQUEST_CONTENT_LENGTH_BYTES = 4 * 1024;
 
+type TripMemberAccessRow = {
+  id: string;
+  status?: string | null;
+};
+
 /**
  * Error codes for join-trip failures.
  * These map to the InviteErrorCode type in the frontend for targeted CTAs.
@@ -60,6 +65,45 @@ function errorResponse(
 
 function successResponse(data: Record<string, unknown>, corsHeaders: HeadersInit): Response {
   return createJsonResponse({ success: true, ...data }, 200, corsHeaders);
+}
+
+function isMissingTripMemberStatusError(error: { message?: string } | null): boolean {
+  const message = error?.message ?? '';
+  return message.includes('status') && message.includes('trip_members');
+}
+
+async function fetchTripMemberAccessRow(
+  supabaseClient: ReturnType<typeof createClient>,
+  tripId: string,
+  userId: string,
+): Promise<TripMemberAccessRow | null> {
+  const statusQuery = await supabaseClient
+    .from('trip_members')
+    .select('id, status')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (!statusQuery.error) {
+    return statusQuery.data as TripMemberAccessRow | null;
+  }
+
+  if (!isMissingTripMemberStatusError(statusQuery.error)) {
+    throw statusQuery.error;
+  }
+
+  const fallbackQuery = await supabaseClient
+    .from('trip_members')
+    .select('id')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (fallbackQuery.error) {
+    throw fallbackQuery.error;
+  }
+
+  return fallbackQuery.data as TripMemberAccessRow | null;
 }
 
 serve(async req => {
@@ -203,15 +247,17 @@ serve(async req => {
       );
     }
 
-    // Check if user is already an active member (exclude status=left for re-join)
-    const { data: existingMember } = await supabaseClient
-      .from('trip_members')
-      .select('id')
-      .eq('trip_id', invite.trip_id)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    // Check if user is already an active member. Left/inactive rows must fall back
+    // through the request flow so approval can reactivate membership cleanly.
+    const existingMember = await fetchTripMemberAccessRow(supabaseClient, invite.trip_id, user.id);
 
-    if (existingMember) {
+    const isActiveMember =
+      !!existingMember &&
+      (existingMember.status === null ||
+        existingMember.status === undefined ||
+        existingMember.status === 'active');
+
+    if (isActiveMember) {
       logStep('User already a member', { tripId: invite.trip_id });
 
       // Get trip details for redirect
@@ -457,21 +503,6 @@ serve(async req => {
 
         joinRequestId = joinRequest?.id;
         logStep('Join request created successfully', { requestId: joinRequestId });
-
-        // Increment current_uses on the invite with optimistic concurrency
-        const currentUses = invite.current_uses ?? 0;
-        const { error: incrementError } = await supabaseClient
-          .from('trip_invites')
-          .update({ current_uses: currentUses + 1 })
-          .eq('code', normalizedInviteCode)
-          .eq('current_uses', currentUses); // optimistic lock
-
-        if (incrementError) {
-          // Non-fatal: log but don't fail the join request
-          logStep('WARNING: Failed to increment current_uses', { error: incrementError.message });
-        } else {
-          logStep('Incremented current_uses', { from: currentUses, to: currentUses + 1 });
-        }
       }
 
       // Note: requesterName and requesterEmail were already captured above
@@ -498,11 +529,16 @@ serve(async req => {
         // Consumer trips (My Trips): Notify ALL current trip members
         const { data: members } = await supabaseClient
           .from('trip_members')
-          .select('user_id')
+          .select('user_id, status')
           .eq('trip_id', invite.trip_id);
 
         if (members && members.length > 0) {
-          recipientIds = members.map(m => m.user_id);
+          recipientIds = members
+            .filter(
+              member =>
+                member.status === null || member.status === undefined || member.status === 'active',
+            )
+            .map(member => member.user_id);
         } else {
           // Fallback to just creator if no members found
           recipientIds = [trip.created_by];

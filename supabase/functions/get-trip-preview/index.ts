@@ -16,6 +16,16 @@ type TripPreview = {
   description?: string | null;
 };
 
+type TripMemberAccessRow = {
+  user_id: string;
+  status?: string | null;
+};
+
+const isMissingTripMemberStatusError = (error: { message?: string } | null): boolean => {
+  const message = error?.message ?? '';
+  return message.includes('status') && message.includes('trip_members');
+};
+
 const generateInviteCode = (): string => {
   const randomPart = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
   return `chravel${randomPart}`;
@@ -53,6 +63,40 @@ async function createActiveInviteForTrip(
   }
 
   return null;
+}
+
+async function fetchTripMemberAccessRow(
+  supabaseClient: ReturnType<typeof createClient>,
+  tripId: string,
+  userId: string,
+): Promise<TripMemberAccessRow | null> {
+  const statusQuery = await supabaseClient
+    .from('trip_members')
+    .select('user_id, status')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (!statusQuery.error) {
+    return statusQuery.data as TripMemberAccessRow | null;
+  }
+
+  if (!isMissingTripMemberStatusError(statusQuery.error)) {
+    throw statusQuery.error;
+  }
+
+  const fallbackQuery = await supabaseClient
+    .from('trip_members')
+    .select('user_id')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (fallbackQuery.error) {
+    throw fallbackQuery.error;
+  }
+
+  return fallbackQuery.data as TripMemberAccessRow | null;
 }
 
 serve(async (req): Promise<Response> => {
@@ -143,19 +187,18 @@ serve(async (req): Promise<Response> => {
       description: tripRow.description,
     };
 
-    // Verify trip membership (only members/admins/creator may see or create invite codes)
+    // Verify trip membership (only active members/admins/creator may see or create invite codes)
     let isTripMember = false;
     if (authedUserId) {
       if (tripRow.created_by === authedUserId) {
         isTripMember = true;
       } else {
-        const { data: memberRow } = await supabaseClient
-          .from('trip_members')
-          .select('user_id')
-          .eq('trip_id', tripId)
-          .eq('user_id', authedUserId)
-          .maybeSingle();
-        isTripMember = !!memberRow;
+        const memberRow = await fetchTripMemberAccessRow(supabaseClient, tripId, authedUserId);
+        isTripMember =
+          !!memberRow &&
+          (memberRow.status === null ||
+            memberRow.status === undefined ||
+            memberRow.status === 'active');
       }
     }
 

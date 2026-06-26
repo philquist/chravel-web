@@ -89,6 +89,7 @@ import { shouldShowOnboarding, capturePendingDestination } from '../utils/onboar
 // in their own lazy chunk instead of riding along in the Index bundle.
 import { useChaosSurveyStore } from '../features/onboarding/hooks/useChaosSurveyStore';
 import { useFeatureFlagStatus } from '../lib/featureFlags';
+import { clearPendingInviteCode, getPendingInviteCode } from '../lib/pendingInviteStorage';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '../components/mobile/PullToRefreshIndicator';
 import { clearDataCaches } from '../utils/pwaCacheUtils';
@@ -205,8 +206,7 @@ const AuthIndex = () => {
     const pendingDest = getPendingDestination();
     if (pendingDest) {
       clearPendingDestination();
-      // Also clear the original invite code storage
-      sessionStorage.removeItem('chravel_pending_invite_code');
+      clearPendingInviteCode();
       navigate(pendingDest, { replace: true });
     }
     // Otherwise stay on dashboard (default)
@@ -758,7 +758,7 @@ const AuthIndex = () => {
   useEffect(() => {
     if (!user) return;
 
-    const pendingInviteCode = sessionStorage.getItem('chravel_pending_invite_code');
+    const pendingInviteCode = getPendingInviteCode();
     if (pendingInviteCode) {
       const destination = `/join/${pendingInviteCode}`;
 
@@ -768,7 +768,7 @@ const AuthIndex = () => {
         // Don't remove the invite code yet - onboarding will handle cleanup
       } else {
         // User has completed onboarding - navigate immediately
-        sessionStorage.removeItem('chravel_pending_invite_code');
+        clearPendingInviteCode();
         navigate(destination, { replace: true });
       }
     }

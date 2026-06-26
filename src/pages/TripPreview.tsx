@@ -26,8 +26,55 @@ interface TripPreviewData {
 
 type JoinRequestStatus = 'pending' | 'approved' | 'rejected' | null;
 
+type TripMemberAccessRow = {
+  id: string;
+  status?: string | null;
+};
+
 const isUuid = (value: string): boolean =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const isActiveTripMember = (member: TripMemberAccessRow | null | undefined): boolean =>
+  Boolean(member && (member.status == null || member.status === 'active'));
+
+const isMissingTripMemberStatusError = (error: unknown): boolean => {
+  const message =
+    error && typeof error === 'object' && 'message' in error ? String(error.message) : '';
+  return message.includes('status') && message.includes('trip_members');
+};
+
+const fetchTripMemberAccessRow = async (
+  tripId: string,
+  userId: string,
+): Promise<TripMemberAccessRow | null> => {
+  const statusQuery = await supabase
+    .from('trip_members')
+    .select('id, status')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (!statusQuery.error) {
+    return (statusQuery.data as unknown as TripMemberAccessRow | null) ?? null;
+  }
+
+  if (!isMissingTripMemberStatusError(statusQuery.error)) {
+    throw statusQuery.error;
+  }
+
+  const fallbackQuery = await supabase
+    .from('trip_members')
+    .select('id')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (fallbackQuery.error) {
+    throw fallbackQuery.error;
+  }
+
+  return (fallbackQuery.data as unknown as TripMemberAccessRow | null) ?? null;
+};
 
 const fetchTripPreviewPayload = async (
   tripId: string,
@@ -169,35 +216,37 @@ const TripPreview = () => {
     let mounted = true;
 
     async function checkMembership() {
-      const [memberResult, joinRequestResult] = await Promise.all([
-        supabase
-          .from('trip_members')
-          .select('id')
-          .eq('trip_id', tripId!)
-          .eq('user_id', user!.id)
-          .maybeSingle(),
-        supabase
-          .from('trip_join_requests')
-          .select('status')
-          .eq('trip_id', tripId!)
-          .eq('user_id', user!.id)
-          .order('requested_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
+      try {
+        const [memberRow, joinRequestResult] = await Promise.all([
+          fetchTripMemberAccessRow(tripId!, user!.id),
+          supabase
+            .from('trip_join_requests')
+            .select('status')
+            .eq('trip_id', tripId!)
+            .eq('user_id', user!.id)
+            .order('requested_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ]);
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      if (memberResult.error || joinRequestResult.error) {
+        if (joinRequestResult.error) {
+          setAccessCheckFailed(true);
+          setIsMember(false);
+          setJoinRequestStatus(null);
+          return;
+        }
+
+        setAccessCheckFailed(false);
+        setIsMember(isActiveTripMember(memberRow));
+        setJoinRequestStatus((joinRequestResult.data?.status as JoinRequestStatus) ?? null);
+      } catch {
+        if (!mounted) return;
         setAccessCheckFailed(true);
         setIsMember(false);
         setJoinRequestStatus(null);
-        return;
       }
-
-      setAccessCheckFailed(false);
-      setIsMember(!!memberResult.data);
-      setJoinRequestStatus((joinRequestResult.data?.status as JoinRequestStatus) ?? null);
     }
 
     checkMembership();
@@ -237,9 +286,11 @@ const TripPreview = () => {
       }
     }
 
-    // Real trip (UUID) - fetch via public edge function to avoid RLS blank/404 for unauthenticated users
+    // Real trip (UUID) - fetch via public edge function to avoid RLS blank/404 for
+    // unauthenticated users. Do not auto-provision invite codes here; preview routes
+    // are read-only unless the backend explicitly returns an active invite.
     try {
-      const previewTrip = await fetchTripPreviewPayload(tripId, { ensureInvite: !!user });
+      const previewTrip = await fetchTripPreviewPayload(tripId);
       if (!previewTrip) {
         setError('Trip not found');
         return;
@@ -334,41 +385,33 @@ const TripPreview = () => {
         navigate(`/join/${activeInviteCode}`);
         return;
       }
-      // Retry once in case invite was not yet provisioned when preview loaded.
-      const refreshedPreview = await fetchTripPreviewPayload(tripId, { ensureInvite: true });
-      const refreshedInviteCode = refreshedPreview?.active_invite_code || null;
-      if (refreshedInviteCode) {
-        setActiveInviteCode(refreshedInviteCode);
-        navigate(`/join/${refreshedInviteCode}`);
-        return;
-      }
-
-      const [refreshedMemberResult, refreshedJoinRequestResult] = await Promise.all([
-        supabase
-          .from('trip_members')
-          .select('id')
-          .eq('trip_id', tripId)
-          .eq('user_id', user.id)
-          .maybeSingle(),
-        supabase
-          .from('trip_join_requests')
-          .select('status')
-          .eq('trip_id', tripId)
-          .eq('user_id', user.id)
-          .order('requested_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
-
-      if (refreshedMemberResult.error || refreshedJoinRequestResult.error) {
+      let refreshedMember: TripMemberAccessRow | null = null;
+      let refreshedJoinRequestResult;
+      try {
+        [refreshedMember, refreshedJoinRequestResult] = await Promise.all([
+          fetchTripMemberAccessRow(tripId, user.id),
+          supabase
+            .from('trip_join_requests')
+            .select('status')
+            .eq('trip_id', tripId)
+            .eq('user_id', user.id)
+            .order('requested_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ]);
+      } catch {
         toast.error('Could not verify trip access. Check your connection and try again.');
         return;
       }
 
-      const refreshedMember = refreshedMemberResult.data;
+      if (refreshedJoinRequestResult.error) {
+        toast.error('Could not verify trip access. Check your connection and try again.');
+        return;
+      }
+
       const refreshedJoinRequest = refreshedJoinRequestResult.data;
 
-      if (refreshedMember) {
+      if (isActiveTripMember(refreshedMember)) {
         setIsMember(true);
         navigate(tripRoute);
         return;
@@ -381,8 +424,9 @@ const TripPreview = () => {
         return;
       }
 
-      // No invite code/membership/request after retry — stay on preview and inform the user.
-      toast.info('Trip access is still syncing. Please try again in a moment.');
+      // No invite code/membership/request after refresh — preview links are read-only
+      // without an invite bootstrap, so direct the user to request a fresh invite.
+      toast.info('Ask the organizer for an invite link to join this trip.');
       return;
     }
 
