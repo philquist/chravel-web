@@ -5394,7 +5394,7 @@ export type Database = {
         }[]
       }
       grant_super_admin: {
-        Args: { _email: string; _note?: string }
+        Args: { reason?: string; target_email: string }
         Returns: undefined
       }
       has_admin_permission: {
