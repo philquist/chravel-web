@@ -25,6 +25,7 @@ import { useTripMembers } from '../hooks/useTripMembers';
 import { demoModeService } from '../services/demoModeService';
 import { ProTripData, ProParticipant } from '../types/pro';
 import { usePendingActions } from '../hooks/usePendingActions';
+import { TripRealtimeHubMount } from '@/components/trip/TripRealtimeHubMount';
 
 // 🚀 OPTIMIZATION: Lazy load heavy components for faster initial render
 const TripHeader = lazy(() =>
@@ -519,6 +520,7 @@ export const ProTripDetailDesktop = () => {
 
   return (
     <TripVariantProvider variant="pro">
+      <TripRealtimeHubMount tripId={proTripId} />
       <div className="min-h-screen bg-black text-white">
         <div className="container mx-auto px-6 py-4 pb-8 max-w-7xl">
           <ProTripDetailHeader

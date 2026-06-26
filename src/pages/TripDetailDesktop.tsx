@@ -34,6 +34,7 @@ import { isDemoTrip } from '@/utils/demoUtils';
 import { useQueryClient } from '@tanstack/react-query';
 import { tripKeys } from '@/lib/queryKeys';
 import { usePendingActions } from '../hooks/usePendingActions';
+import { TripRealtimeHubMount } from '@/components/trip/TripRealtimeHubMount';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   TripDetailContentSkeleton,
@@ -562,6 +563,7 @@ export const TripDetailDesktop = () => {
   // Desktop experience
   return (
     <div className="min-h-screen bg-black">
+      <TripRealtimeHubMount tripId={tripId} />
       <div className={desktopContainerClass}>
         {/* Top Navigation */}
         <TripDetailHeader

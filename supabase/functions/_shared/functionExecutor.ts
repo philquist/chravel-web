@@ -1,5 +1,6 @@
 import { withCircuitBreaker } from './circuitBreaker.ts';
 import { normalizeGeminiModel } from './gemini.ts';
+import { assertAiToolPermission } from './tripPermissionGuard.ts';
 
 const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY');
 const GOOGLE_CUSTOM_SEARCH_CX = Deno.env.get('GOOGLE_CUSTOM_SEARCH_CX');
@@ -86,6 +87,13 @@ async function _executeImpl(
   userId?: string,
   locationContext?: LocationContext | null,
 ): Promise<any> {
+  try {
+    await assertAiToolPermission(supabase, userId, tripId, functionName);
+  } catch (permErr) {
+    const message = permErr instanceof Error ? permErr.message : 'PERMISSION_DENIED';
+    return { error: message };
+  }
+
   switch (functionName) {
     case 'addToCalendar': {
       const { title, datetime, endDatetime, location, notes } = args;

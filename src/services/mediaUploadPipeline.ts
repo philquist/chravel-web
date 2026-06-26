@@ -12,6 +12,7 @@ export interface UploadJob {
   attempts: number;
   checksum: string;
   error?: string;
+  mediaRow?: Record<string, unknown>;
 }
 
 const MAX_ATTEMPTS = 3;
@@ -61,7 +62,7 @@ export async function executeUploadJob(job: UploadJob): Promise<UploadJob> {
       const { data: authData } = await supabase.auth.getUser();
       const uploadedBy = authData?.user?.id;
 
-      await insertMediaIndex({
+      const mediaRow = await insertMediaIndex({
         tripId: next.tripId,
         mediaType: next.mediaType,
         url: cachedUpload.publicUrl,
@@ -73,7 +74,7 @@ export async function executeUploadJob(job: UploadJob): Promise<UploadJob> {
         uploadedBy,
       });
 
-      return { ...next, state: 'ready' };
+      return { ...next, state: 'ready', mediaRow: mediaRow as Record<string, unknown> };
     } catch (error) {
       const err = error instanceof Error ? error.message : 'Upload failed';
       if (next.attempts >= MAX_ATTEMPTS) {
