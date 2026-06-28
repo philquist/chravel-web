@@ -31,6 +31,7 @@ import { demoModeService } from '../services/demoModeService';
 import { toast } from 'sonner';
 import { buildTripPreviewLink } from '@/lib/unfurlConfig';
 import { usePendingActions } from '../hooks/usePendingActions';
+import { TripRealtimeHubMount } from '@/components/trip/TripRealtimeHubMount';
 
 export const MobileProTripDetail = () => {
   const { proTripId } = useParams();
@@ -433,6 +434,7 @@ export const MobileProTripDetail = () => {
 
   return (
     <MobileErrorBoundary>
+      <TripRealtimeHubMount tripId={proTripId} />
       <div className="mobile-trip-shell flex flex-col h-[100dvh] bg-black overflow-hidden">
         {/* Mobile Header - Fixed flex item (not sticky) for reliable iOS PWA visibility */}
         <div

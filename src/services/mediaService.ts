@@ -13,6 +13,11 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getUploadContentType, inferMimeTypeFromFilename } from '@/utils/mime';
 import { systemMessageService } from '@/services/systemMessageService';
+import {
+  computeFileChecksum,
+  createUploadJob,
+  executeUploadJob,
+} from '@/services/mediaUploadPipeline';
 
 // Default page size for media list queries. Realtime subscriptions handle
 // new inserts so capping the initial fetch is safe and reduces egress.
@@ -121,6 +126,52 @@ export async function uploadTripMedia(
     else if (mime.startsWith('video/')) mediaType = 'video';
   }
 
+  // Route image/video uploads through the canonical pipeline (quota + dedupe + retry).
+  if (mediaType === 'image' || mediaType === 'video') {
+    const checksum = await computeFileChecksum(file);
+    const job = createUploadJob({ tripId, file, mediaType, checksum });
+    const result = await executeUploadJob(job);
+    if (result.state !== 'ready' || !result.mediaRow) {
+      throw new Error(result.error ?? 'Upload failed');
+    }
+
+    const media = result.mediaRow;
+    if (mediaType === 'image') {
+      try {
+        const profile = await supabase
+          .from('profiles')
+          .select('display_name, first_name, email')
+          .eq('user_id', userId)
+          .maybeSingle();
+        const displayName =
+          profile.data?.display_name ||
+          profile.data?.first_name ||
+          profile.data?.email?.split('@')[0] ||
+          'Someone';
+        void systemMessageService.createBatchedUploadMessage(
+          tripId,
+          userId,
+          displayName,
+          mediaType === 'image' ? 'photo' : 'file',
+        );
+      } catch {
+        // non-critical
+      }
+    }
+
+    return {
+      id: String(media.id),
+      trip_id: String(media.trip_id),
+      media_url: String(media.media_url),
+      mime_type: String(media.mime_type ?? mime),
+      file_name: (media.filename as string | null) ?? file.name,
+      media_type: mediaType,
+      metadata: (media.metadata as Record<string, unknown>) ?? {},
+      created_at: String(media.created_at ?? new Date().toISOString()),
+      file_size: (media.file_size as number | null) ?? file.size,
+    };
+  }
+
   const fileExt = file.name.split('.').pop();
   const storagePath = `${tripId}/${crypto.randomUUID()}.${fileExt}`;
 
@@ -160,7 +211,7 @@ export async function uploadTripMedia(
 
   // Inline activity update (consumer trips only; batched server-side in the
   // service). Best-effort — never block the upload return.
-  if (mediaType === 'image' || mediaType === 'document') {
+  if (mediaType === 'document') {
     try {
       const profile = await supabase
         .from('profiles')
@@ -176,7 +227,7 @@ export async function uploadTripMedia(
         tripId,
         userId,
         displayName,
-        mediaType === 'image' ? 'photo' : 'file',
+        'file',
       );
     } catch {
       // non-critical

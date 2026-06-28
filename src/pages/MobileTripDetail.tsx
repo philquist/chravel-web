@@ -28,6 +28,7 @@ import { buildTripPreviewLink } from '@/lib/unfurlConfig';
 import { useQueryClient } from '@tanstack/react-query';
 import { tripKeys } from '@/lib/queryKeys';
 import { usePendingActions } from '../hooks/usePendingActions';
+import { TripRealtimeHubMount } from '@/components/trip/TripRealtimeHubMount';
 
 export const MobileTripDetail = () => {
   const { tripId } = useParams();
@@ -553,6 +554,7 @@ export const MobileTripDetail = () => {
 
   return (
     <MobileErrorBoundary>
+      <TripRealtimeHubMount tripId={tripId} />
       <div className="mobile-trip-shell flex flex-col h-[100dvh] bg-black overflow-hidden">
         {/* Mobile Header - Fixed flex item (not sticky) for reliable iOS PWA visibility */}
         <div
