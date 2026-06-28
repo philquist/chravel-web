@@ -750,6 +750,9 @@ export const TripGrid = React.memo(
                         onArchiveSuccess={onTripStateChange}
                         onHideSuccess={onTripStateChange}
                         onDeleteSuccess={onTripStateChange}
+                        reorderMode={reorderMode === 'events'}
+                        onMoveTrip={() => enterReorderMode('events')}
+                        onExitMoveMode={exitReorderMode}
                       />
                     ) : (
                       <EventCard
@@ -757,6 +760,9 @@ export const TripGrid = React.memo(
                         onArchiveSuccess={onTripStateChange}
                         onHideSuccess={onTripStateChange}
                         onDeleteSuccess={onTripStateChange}
+                        reorderMode={reorderMode === 'events'}
+                        onMoveTrip={() => enterReorderMode('events')}
+                        onExitMoveMode={exitReorderMode}
                       />
                     )
                   }

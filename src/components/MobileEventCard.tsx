@@ -11,6 +11,7 @@ import {
   Trash2,
   FileDown,
   Share2,
+  ArrowUpDown,
 } from 'lucide-react';
 import { CardStatItem } from './ui/CardStatItem';
 import { CalendarGlyph } from './ui/CalendarGlyph';
@@ -42,6 +43,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 
@@ -51,6 +53,9 @@ interface MobileEventCardProps {
   onArchiveSuccess?: () => void;
   onHideSuccess?: () => void;
   onDeleteSuccess?: () => void;
+  reorderMode?: boolean;
+  onMoveTrip?: () => void;
+  onExitMoveMode?: () => void;
 }
 
 export const MobileEventCard = ({
@@ -58,6 +63,9 @@ export const MobileEventCard = ({
   onArchiveSuccess,
   onHideSuccess,
   onDeleteSuccess,
+  reorderMode = false,
+  onMoveTrip,
+  onExitMoveMode,
 }: MobileEventCardProps) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -66,6 +74,7 @@ export const MobileEventCard = ({
   const [showShareModal, setShowShareModal] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -78,7 +87,23 @@ export const MobileEventCard = ({
   const coverFit = event.coverDisplayMode === 'contain' ? 'contain' : 'cover';
   const eventTags = Array.isArray(event.tags) ? event.tags : [];
 
+  const handleMoveModeCardClick = useCallback(
+    (eventClick: React.MouseEvent<HTMLDivElement>) => {
+      if (!reorderMode) return;
+      eventClick.preventDefault();
+      eventClick.stopPropagation();
+      setIsMenuOpen(false);
+      onExitMoveMode?.();
+    },
+    [reorderMode, onExitMoveMode],
+  );
+
   const handleViewEvent = () => {
+    if (reorderMode) {
+      setIsMenuOpen(false);
+      onExitMoveMode?.();
+      return;
+    }
     navigate(`/event/${event.id}`);
   };
 
@@ -207,6 +232,7 @@ export const MobileEventCard = ({
   return (
     <div
       className={`bg-gradient-to-br ${eventColor.cardGradient} backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden transition-all duration-300 shadow-enterprise motion-safe:hover:-translate-y-1 group relative`}
+      onClickCapture={handleMoveModeCardClick}
     >
       {/* Mobile Header */}
       <div
@@ -246,24 +272,42 @@ export const MobileEventCard = ({
           </div>
 
           {/* Menu Button */}
-          <DropdownMenu>
+          <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <DropdownMenuTrigger asChild>
-              <button className="text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200 p-2 rounded-xl shrink-0">
+              <button
+                className="text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200 p-2 rounded-xl shrink-0 min-h-11 min-w-11 inline-flex items-center justify-center"
+                aria-label="Event actions"
+              >
                 <MoreHorizontal size={16} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-background border-border">
-              <DropdownMenuItem onClick={() => setShowArchiveDialog(true)}>
+              {onMoveTrip && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onMoveTrip();
+                    }}
+                    className="min-h-11"
+                  >
+                    <ArrowUpDown className="mr-2 h-4 w-4" />
+                    Move Trip
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem onClick={() => setShowArchiveDialog(true)} className="min-h-11">
                 <Archive className="mr-2 h-4 w-4" />
                 Archive
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleHideEvent}>
+              <DropdownMenuItem onClick={handleHideEvent} className="min-h-11">
                 <EyeOff className="mr-2 h-4 w-4" />
                 Hide
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setShowDeleteDialog(true)}
-                className="text-destructive"
+                className="text-destructive min-h-11"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete for me
