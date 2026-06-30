@@ -7,7 +7,7 @@
  *   - User transcript BELOW the line (what you said)
  * Both transcripts stay readable so a missed/quiet response can always be read.
  */
-import { useEffect, useMemo, useRef } from 'react';
+import { type RefObject, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Mic, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,12 @@ interface RealtimeVoiceOverlayProps {
   isPlaying: boolean;
   errorMessage: string | null;
   onEnd: () => void;
+  /**
+   * Element to confine the overlay to (the concierge chat window). When provided, the
+   * overlay renders `absolute inset-0` inside it instead of covering the whole viewport.
+   * The element must be `position: relative`. Falls back to full-screen if absent.
+   */
+  containerRef?: RefObject<HTMLElement | null>;
 }
 
 const PHASE_LABEL: Record<RealtimeVoicePhase, string> = {
@@ -110,6 +116,7 @@ export function RealtimeVoiceOverlay({
   isPlaying,
   errorMessage,
   onEnd,
+  containerRef,
 }: RealtimeVoiceOverlayProps) {
   const assistantTurns = turns.filter(t => t.role === 'assistant');
   const userTurns = turns.filter(t => t.role === 'user');
@@ -133,16 +140,25 @@ export function RealtimeVoiceOverlay({
     return () => window.removeEventListener('keydown', onKey);
   }, [onEnd]);
 
+  // Confine to the chat window when a container is given; otherwise cover the viewport.
+  const target = containerRef?.current ?? null;
   const overlay = (
     <div
-      className="fixed inset-0 z-[120] flex flex-col bg-gradient-to-b from-[#0b0b0f] via-[#0d0c12] to-black/95 backdrop-blur-xl animate-fade-in"
+      className={cn(
+        'z-[120] flex flex-col bg-gradient-to-b from-[#0b0b0f] via-[#0d0c12] to-black/95 backdrop-blur-xl animate-fade-in',
+        target ? 'absolute inset-0' : 'fixed inset-0',
+      )}
       role="dialog"
       aria-modal="true"
       aria-label="Voice concierge"
-      style={{
-        paddingTop: 'max(env(safe-area-inset-top, 0px), 16px)',
-        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)',
-      }}
+      style={
+        target
+          ? { paddingTop: 16, paddingBottom: 16 }
+          : {
+              paddingTop: 'max(env(safe-area-inset-top, 0px), 16px)',
+              paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)',
+            }
+      }
     >
       {/* Header: status + close */}
       <div className="flex items-center justify-between px-5">
@@ -255,5 +271,5 @@ export function RealtimeVoiceOverlay({
   );
 
   if (typeof document === 'undefined') return null;
-  return createPortal(overlay, document.body);
+  return createPortal(overlay, target ?? document.body);
 }

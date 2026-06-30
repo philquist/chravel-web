@@ -191,6 +191,9 @@ export const AIConciergeChat = ({
   const handleSendMessageRef = useRef<(messageOverride?: string) => Promise<void>>(async () =>
     Promise.resolve(),
   );
+  // The chat-window card — the realtime voice overlay confines itself to this element
+  // instead of taking over the whole viewport.
+  const chatWindowRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages or typing indicator
   // Uses RAF batching + bottom-proximity stickiness to prevent iOS vibration bug
@@ -339,7 +342,10 @@ export const AIConciergeChat = ({
 
   return (
     <div className="flex flex-col overflow-hidden flex-1 min-h-0 min-w-0 h-full">
-      <div className="rounded-2xl border border-white/10 bg-black/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden flex flex-col flex-1">
+      <div
+        ref={chatWindowRef}
+        className="relative rounded-2xl border border-white/10 bg-black/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden flex flex-col flex-1"
+      >
         {/* Header — title row + controls row */}
         <div className="border-b border-white/10 bg-black/30 px-3 py-2 flex-shrink-0">
           {/* Row 1: Title */}
@@ -602,6 +608,7 @@ export const AIConciergeChat = ({
                 // Primary left control: full bidirectional realtime voice.
                 <RealtimeVoiceButton
                   tripId={tripId}
+                  containerRef={chatWindowRef}
                   // Stop the turn-based hands-free mic before opening a realtime session
                   // so the two never contend for the microphone.
                   onSessionStart={() => {

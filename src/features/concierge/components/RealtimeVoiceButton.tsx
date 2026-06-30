@@ -4,7 +4,7 @@
  * Self-contained so the (complex) AIConciergeChat only needs a one-line mount. Gated
  * behind the `concierge_realtime_voice` kill switch — renders nothing when disabled.
  */
-import { useCallback } from 'react';
+import { type RefObject, useCallback } from 'react';
 import { AudioLines } from 'lucide-react';
 import { useFeatureFlag } from '@/lib/featureFlags';
 import { cn } from '@/lib/utils';
@@ -17,12 +17,15 @@ interface RealtimeVoiceButtonProps {
   className?: string;
   /** Called when a voice session starts, so the parent can pause dictation/typing flows. */
   onSessionStart?: () => void;
+  /** Confine the voice overlay to this element (the chat window) instead of the viewport. */
+  containerRef?: RefObject<HTMLElement | null>;
 }
 
 export function RealtimeVoiceButton({
   tripId,
   className,
   onSessionStart,
+  containerRef,
 }: RealtimeVoiceButtonProps) {
   const enabled = useFeatureFlag('concierge_realtime_voice', false);
   const voice = useRealtimeVoice();
@@ -56,6 +59,7 @@ export function RealtimeVoiceButton({
           isPlaying={voice.isPlaying}
           errorMessage={voice.errorMessage}
           onEnd={voice.stop}
+          containerRef={containerRef}
         />
       )}
     </>
