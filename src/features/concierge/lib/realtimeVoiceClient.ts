@@ -3,7 +3,7 @@
  * the Vercel AI Gateway).
  *
  * Three server round-trips, all authenticated with the user's Supabase JWT:
- *  1. fetchRealtimeToken        → Vercel `/api/realtime-token` mints a short-lived
+ *  1. fetchRealtimeToken        → Supabase `mint-realtime-token` mints a short-lived
  *                                 AI Gateway client secret (provider key stays server-side).
  *  2. fetchRealtimeSessionConfig→ Supabase `realtime-voice-session` builds the
  *                                 trip-aware system prompt + the concierge tool set.
@@ -60,30 +60,36 @@ async function getAccessToken(): Promise<string> {
   return accessToken;
 }
 
-/** Mint a short-lived realtime token from the Vercel Gateway function (same origin). */
+/**
+ * Mint a short-lived realtime token from the `mint-realtime-token` Supabase Edge
+ * Function. Lives on Lovable Cloud so preview + prod use the same code path —
+ * the prior Vercel `/api/realtime-token` only existed on the chravel.app host
+ * and returned the SPA `index.html` everywhere else (the "Unexpected token '<'"
+ * symptom in the voice overlay).
+ */
 export async function fetchRealtimeToken(
   model: RealtimeVoiceModelId = DEFAULT_REALTIME_VOICE_MODEL,
 ): Promise<RealtimeTokenResponse> {
   const accessToken = await getAccessToken();
-  const resp = await fetch('/api/realtime-token', {
+  const resp = await fetch(`${SUPABASE_PROJECT_URL}/functions/v1/mint-realtime-token`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
+      apikey: SUPABASE_PUBLIC_ANON_KEY,
     },
     body: JSON.stringify({ model }),
   });
   if (!resp.ok) {
-    // Surface the real status + body so the overlay shows the precise cause (e.g. a 404
-    // means the function isn't deployed on this host; a 502 carries the Gateway's message;
-    // a non-JSON body means an HTML error page). Handle non-JSON responses gracefully.
+    // Surface the real status + body so the overlay shows the precise cause (e.g.
+    // 401 missing auth, 429 rate limit, 502 with the Gateway's own message).
     const raw = await resp.text().catch(() => '');
     let message = raw;
     try {
       const parsed = JSON.parse(raw) as { error?: string };
       if (parsed?.error) message = parsed.error;
     } catch {
-      /* non-JSON body (e.g. HTML error page) — use the raw text */
+      /* non-JSON body — use the raw text */
     }
     const snippet = message ? `: ${message.slice(0, 200)}` : '';
     throw new Error(`Voice token request failed (${resp.status})${snippet}`);
