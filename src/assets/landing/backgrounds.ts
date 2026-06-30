@@ -23,6 +23,17 @@ import stadium1920 from './bg-stadium-1920.webp?url';
 import stadium2560 from './bg-stadium-2560.webp?url';
 import stadium3840 from './bg-stadium-3840.webp?url';
 
+import wedding1280 from './bg-wedding-1280.webp?url';
+import wedding1920 from './bg-wedding-1920.webp?url';
+import wedding2560 from './bg-wedding-2560.webp?url';
+import wedding3840 from './bg-wedding-3840.webp?url';
+
+import teamBus1280 from './bg-team-bus-1280.webp?url';
+import teamBus1920 from './bg-team-bus-1920.webp?url';
+import teamBus2560 from './bg-team-bus-2560.webp?url';
+import teamBus3840 from './bg-team-bus-3840.webp?url';
+
+
 export interface ResponsiveBackground {
   src: string; // fallback for browsers without srcset
   srcSet: string;
