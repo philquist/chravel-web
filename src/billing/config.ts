@@ -242,10 +242,12 @@ export const FREE_ENTITLEMENTS: EntitlementId[] = [
  */
 export const BILLING_FLAGS = {
   /**
-   * Set to true when Apple IAP is fully implemented.
-   * When false, iOS users will see "Subscribe on web" prompt.
+   * Apple IAP must stay enabled for iOS-native review builds. The iOS paywall
+   * surfaces call RevenueCat directly; disabling this flag or reintroducing
+   * web checkout references in native iOS builds risks App Review 2.1(b)/3.1.1
+   * rejection when subscriptions are visible in the binary.
    */
-  APPLE_IAP_ENABLED: false,
+  APPLE_IAP_ENABLED: true,
 
   /**
    * Set to true when Google Play Billing is implemented.
