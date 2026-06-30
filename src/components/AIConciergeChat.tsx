@@ -34,6 +34,7 @@ import { useConciergeStreaming } from '@/features/concierge/hooks/useConciergeSt
 import { useSmartImportTaste } from '@/features/smart-import/hooks/useSmartImportTaste';
 import { useConciergeConversationMode } from '@/features/concierge/hooks/useConciergeConversationMode';
 import { ConciergeConversationMic } from '@/features/concierge/components/ConciergeConversationMic';
+import { RealtimeVoiceButton } from '@/features/concierge/components/RealtimeVoiceButton';
 import { useConversationModePreference } from '@/features/concierge/hooks/useConversationModePreference';
 import { useFeatureFlag } from '@/lib/featureFlags';
 
@@ -279,6 +280,9 @@ export const AIConciergeChat = ({
   const conversationModeFlag = useFeatureFlag('concierge_conversation_mode', true);
   const { enabled: conversationModeUserPref } = useConversationModePreference();
   const conversationModeEffective = conversationModeFlag && conversationModeUserPref && !isDemoMode;
+  // Bidirectional realtime voice — when enabled it becomes the primary left-of-input
+  // control, superseding the turn-based conversation mic. (In-box mic stays dictation.)
+  const realtimeVoiceEnabled = useFeatureFlag('concierge_realtime_voice', false) && !isDemoMode;
 
   const buildSpeechForMessage = useCallback((msg: ChatMessage) => {
     if (msg.type !== 'assistant' || !msg.content) return '';
@@ -594,7 +598,18 @@ export const AIConciergeChat = ({
             onConvoToggle={handleConvoToggle}
             isVoiceEligible={true}
             leftAccessory={
-              conversationModeEffective && conversation.isSupported ? (
+              realtimeVoiceEnabled ? (
+                // Primary left control: full bidirectional realtime voice.
+                <RealtimeVoiceButton
+                  tripId={tripId}
+                  // Stop the turn-based hands-free mic before opening a realtime session
+                  // so the two never contend for the microphone.
+                  onSessionStart={() => {
+                    if (conversation.active) conversation.toggle();
+                  }}
+                />
+              ) : conversationModeEffective && conversation.isSupported ? (
+                // Fallback while realtime voice is dark-launched: turn-based conversation mic.
                 <ConciergeConversationMic
                   active={conversation.active}
                   state={conversation.state}
