@@ -13,13 +13,14 @@
  * Secrets (Vercel project env): AI_GATEWAY_API_KEY (used by the `gateway` default
  * instance), SUPABASE_ANON_KEY (to verify the caller's JWT).
  *
- * Edge runtime: Web Standards API only (no @vercel/node).
+ * Runtime: Node.js (NOT Edge) — this file intentionally has NO `runtime: 'edge'`
+ * config, so Vercel deploys it on the default Node.js runtime. The AI SDK `ai`
+ * gateway provider does not reliably bundle for the Edge runtime (the Edge build
+ * produced no function, so the SPA catch-all served index.html for this route).
+ * Vercel's Node runtime supports this Web-standard `Request`→`Response` handler and
+ * bundles the AI SDK fine.
  */
 import { gateway } from 'ai';
-
-export const config = {
-  runtime: 'edge',
-};
 
 // Realtime models routable through the AI Gateway. Keep in sync with the client.
 const ALLOWED_MODELS = new Set<string>([
