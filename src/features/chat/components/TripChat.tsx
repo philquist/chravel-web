@@ -41,7 +41,7 @@ import { useTripChatMode } from '@/hooks/useTripChatMode';
 import { useLinkPreviews } from '../hooks/useLinkPreviews';
 import { useLinkPreviewActivation } from '../hooks/useLinkPreviewActivation';
 import { useBlockedUsers, useReportContent } from '@/hooks/useUserSafety';
-import { getStreamClient } from '@/services/stream/streamClient';
+import { getStreamApiKey, getStreamClient } from '@/services/stream/streamClient';
 import { derivePinnedMessages } from '../utils/pinnedMessages';
 import { extractQuotedReferenceFromStreamMessage } from '@/services/stream/streamMessagePayload';
 import { messageEvents } from '@/telemetry/events';
