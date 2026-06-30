@@ -751,7 +751,16 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
   ]);
 
   const reload = useCallback(async () => {
-    if (!tripId || !isEnabled || !channelRef.current) return;
+    if (!tripId || !isEnabled) return;
+
+    if (!channelRef.current) {
+      setError(null);
+      setIsLoading(true);
+      setStreamClientReady(Boolean(getStreamClient()?.userID));
+      setReloadSeed(prev => prev + 1);
+      return;
+    }
+
     const channel = channelRef.current;
 
     try {
