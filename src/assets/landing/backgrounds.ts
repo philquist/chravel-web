@@ -76,3 +76,18 @@ export const bgStadium = buildSet({
   2560: stadium2560,
   3840: stadium3840,
 });
+
+export const bgWedding = buildSet({
+  1280: wedding1280,
+  1920: wedding1920,
+  2560: wedding2560,
+  3840: wedding3840,
+});
+
+export const bgTeamBus = buildSet({
+  1280: teamBus1280,
+  1920: teamBus1920,
+  2560: teamBus2560,
+  3840: teamBus3840,
+});
+
