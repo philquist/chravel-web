@@ -1,59 +1,39 @@
-## Root cause (first principles)
+## Objective
+Restore trip chat without broad rewrites by proving where the Stream pipeline stops, then fixing only that boundary.
 
-The whole chat pipeline now runs through Stream only — `useTripChat` is a thin wrapper around `useStreamTripChat`, and the legacy Supabase chat path has been deprecated:
+## What I found
+- The frontend currently shows the chat failure state, but browser/network signals show no request to `/functions/v1/stream-token`.
+- Supabase has the backend secrets needed for Stream: `STREAM_API_KEY`, `STREAM_API_SECRET`, and `STREAM_ADMIN_SECRET` exist.
+- Hosted edge logs also show no recent `stream-token` invocation, confirming the client is not reaching the token function.
+- Stream feature flags are enabled for trip chat/channels/broadcasts.
 
-```
-src/features/chat/hooks/useTripChat.ts → useStreamTripChat (only path)
-```
+## Likely root cause
+The last change added `VITE_STREAM_API_KEY` locally, but if the running preview/published build does not actually receive that build-time env var, `getStreamApiKey()` returns empty and `connectStreamClient()` exits before requesting `stream-token`. That matches the observed absence of network and edge-function logs.
 
-For Stream to work, three things have to line up:
+## Fix plan
+1. **Verify build-time Stream key availability**
+   - Add a safe diagnostics path that reports whether the client build sees a non-empty `VITE_STREAM_API_KEY` without exposing the key.
+   - Confirm the deployed/preview bundle is not stale.
 
-1. **Client env**: `VITE_STREAM_API_KEY` baked into the bundle (read in `src/services/stream/streamClient.ts` and `streamTransportGuards.ts`).
-2. **Server secrets**: `STREAM_API_KEY` + `STREAM_API_SECRET` available to the `stream-token` edge function.
-3. **API keys match**: `streamClient.connectStreamClient()` aborts with “Stream API key mismatch” if `apiKey` from `stream-token` ≠ `VITE_STREAM_API_KEY`.
+2. **Repair the client connection lifecycle**
+   - Make `useStreamClient` and `useStreamTripChat` treat missing client config as an explicit “configuration unavailable” state, not a generic chat failure.
+   - If `VITE_STREAM_API_KEY` is present, force the Stream connect attempt to surface a specific error when `stream-token` is never called.
 
-Current state in this project:
+3. **Verify the backend function directly**
+   - Call `stream-token` with the preview auth session if available.
+   - If it fails, inspect logs and fix only that edge-function/CORS/auth issue.
+   - If it succeeds, the remaining issue is strictly frontend env/deployment propagation.
 
-- ✅ Server has `STREAM_API_KEY` and `STREAM_API_SECRET` set as Supabase secrets.
-- ❌ Client `.env` has `VITE_STREAM_API_KEY=` (empty). I just confirmed it.
-- Consequence: `getStreamApiKey()` returns `null` → `useStreamClient` early-returns → Stream client is never connected → `useStreamTripChat` init throws (or never gets `streamClientReady`) → `chatError` flips on → the panel renders:
+4. **Deployment/config correction**
+   - Ensure `VITE_STREAM_API_KEY` is in the project’s frontend env/build config in the same place as other `VITE_*` values.
+   - Restart/rebuild the preview so `import.meta.env.VITE_STREAM_API_KEY` is compiled into the bundle.
 
-  > **Something went wrong in Chat** — _Some chat enhancements are temporarily unavailable._ — `Retry`
+5. **Proof**
+   - Verify browser network shows `POST /functions/v1/stream-token`.
+   - Verify Supabase edge logs show `stream-token` executed.
+   - Verify Stream WebSocket/channel watch happens and the chat panel loads messages instead of the reload/error state.
 
-  Pressing Retry calls `reload()`, which immediately fails the same way, so the toast `“Chat needs a refresh”` keeps re-appearing. That is exactly the symptom you’re seeing.
-
-This is a configuration regression, not a logic bug — no code change broke chat; the client lost its Stream key.
-
-## Fix (regression-free, surgical)
-
-### 1. Restore the client Stream API key
-- Add `VITE_STREAM_API_KEY` as a project secret using the publishable Stream API key (same value as the existing `STREAM_API_KEY` server secret). Lovable will inject it into the build so `import.meta.env.VITE_STREAM_API_KEY` is no longer empty.
-- I cannot read the existing `STREAM_API_KEY` value (secrets are encrypted), so I’ll need you to paste it once when prompted, or confirm I can copy it from your Stream dashboard. No code change required for this step.
-
-### 2. Verify parity, no key mismatch
-- After the secret is set, the next build will have `VITE_STREAM_API_KEY` populated. `connectStreamClient()` will compare it against the `apiKey` returned by the `stream-token` edge function and throw if they diverge.
-- Run `node scripts/check-stream-config-parity.cjs` in CI/locally to confirm `frontend VITE_STREAM_API_KEY === supabase STREAM_API_KEY`. No new code, just exercising the existing guard.
-
-### 3. Quick health check of `stream-token`
-- Hit `POST /functions/v1/stream-token` with a real Supabase JWT and confirm it returns `{ token, userId, apiKey }`. No deploy needed unless logs show an error.
-
-### 4. Soften the failure UI so a future outage doesn’t spam toasts (small, non-aggressive)
-Two tiny edits in `src/features/chat/components/TripChat.tsx`:
-
-- When `getStreamApiKey()` is `null` (Stream simply not configured in this environment, e.g. preview/dev without the key), render a calm “Chat is initializing — try again in a moment.” block instead of the red-flag “Something went wrong in Chat” panel. This avoids alarming users when the cause is config, not corruption.
-- Stop firing the `toast.error('Chat needs a refresh', …)` on the Retry click. The toast is redundant with the inline state and is what makes it feel like the chat is yelling “reload me” repeatedly. Keep the `reload?.()` call; just drop the toast.
-
-No changes to `useStreamTripChat`, `streamClient`, `streamTokenService`, RLS, or the membership recovery flow. Stream wiring stays exactly as it is — we only restore the missing key and stop the noisy retry toast.
-
-## Verification
-- `npm run typecheck && npm run lint && npm run build` clean.
-- Load a trip → chat panel hydrates, messages render, no “Something went wrong in Chat”.
-- DevTools network → `stream-token` returns 200, then Stream WebSocket (`wss://chat.stream-io-api.com`) connects.
-- Console shows no `[Stream] membership recovery failed` or `read_channel_denied`.
-
-## Rollback
-- Single-commit revert of the two `TripChat.tsx` edits.
-- Removing `VITE_STREAM_API_KEY` returns us to the current broken-but-known state.
-
-## Risk
-LOW. No data model, RLS, edge function, or hook-graph changes. Pure config + two cosmetic lines.
+## Scope control
+- No chat rewrite.
+- No legacy Supabase chat resurrection unless Stream backend is proven unavailable.
+- No changes to trip permissions, RLS, or message data model.
