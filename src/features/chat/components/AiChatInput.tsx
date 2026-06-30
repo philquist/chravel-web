@@ -29,8 +29,6 @@ interface AiChatInputProps {
   showImageAttach?: boolean;
   /** Callback when a Smart Import quick action chip is tapped */
   onQuickAction?: (action: string) => void;
-  /** Whether Gemini Live is currently active (for textarea styling) */
-  isLiveActive?: boolean;
   /** Callback when user drops or selects document files (PDF, ICS, CSV) */
   onDocumentAttach?: (files: File[]) => void;
   /** Currently attached document files */
@@ -63,7 +61,6 @@ export const AiChatInput = ({
   onRemoveImage,
   showImageAttach: _showImageAttach = false,
   onQuickAction,
-  isLiveActive = false,
   onDocumentAttach,
   attachedDocuments = [],
   onRemoveDocument,
@@ -201,7 +198,6 @@ export const AiChatInput = ({
   // Dynamic placeholder based on active mode
   const getPlaceholder = () => {
     if (isConvoActive) return 'Listening\u2026';
-    if (isLiveActive) return 'Live conversation active\u2026';
     return '';
   };
 
@@ -323,16 +319,10 @@ export const AiChatInput = ({
             aria-label={
               isConvoActive
                 ? 'Dictation in progress. Speak to add text.'
-                : isLiveActive
-                  ? 'Live voice conversation active'
-                  : 'Message your AI Concierge'
+                : 'Message your AI Concierge'
             }
             className={`w-full bg-white/5 border rounded-2xl px-4 py-3 text-white placeholder-neutral-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 backdrop-blur-sm resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
-              isConvoActive
-                ? 'border-primary/30 bg-primary/5'
-                : isLiveActive
-                  ? 'border-[#c49746]/30 bg-[#c49746]/5'
-                  : 'border-white/10'
+              isConvoActive ? 'border-primary/30 bg-primary/5' : 'border-white/10'
             }`}
           />
           {/* Dictation active indicator for screen readers */}

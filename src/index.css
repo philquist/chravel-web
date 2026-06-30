@@ -1101,6 +1101,26 @@
   }
 }
 
+/* Realtime voice: seamless horizontal drift of the gold wave (viewBox tile = 1000). */
+@keyframes realtime-wave-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-1000px);
+  }
+}
+
+.realtime-wave-drift {
+  animation: realtime-wave-drift 7s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .realtime-wave-drift {
+    animation: none;
+  }
+}
+
 @keyframes ios-bounce {
   0% {
     transform: scale(0.9) translateY(20px);
