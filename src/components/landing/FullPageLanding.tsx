@@ -220,7 +220,8 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           accentGlow={GRADIENTS.pricing.accentGlow}
           minHeight="110vh"
           goldOverlay="mesh"
-          backgroundImage={bgCoastline}
+          backgroundImage={bgTeamBus}
+
           backgroundOverlayOpacity={0.66}
         >
           <Suspense fallback={<SectionLoader />}>
