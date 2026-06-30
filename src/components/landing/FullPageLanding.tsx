@@ -9,7 +9,10 @@ import {
   bgSkyline,
   bgStadium,
   bgMountain,
+  bgWedding,
+  bgTeamBus,
 } from '@/assets/landing/backgrounds';
+
 
 // Lazy load sections for better performance
 const AiFeaturesSection = lazy(() =>
@@ -170,7 +173,8 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           gradientDirection={GRADIENTS.howItWorks.direction}
           accentGlow={GRADIENTS.howItWorks.accentGlow}
           goldOverlay="triangles"
-          backgroundImage={bgMountain}
+          backgroundImage={bgWedding}
+
           backgroundOverlayOpacity={0.64}
         >
           <ProblemSolutionSection />
@@ -216,7 +220,8 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           accentGlow={GRADIENTS.pricing.accentGlow}
           minHeight="110vh"
           goldOverlay="mesh"
-          backgroundImage={bgCoastline}
+          backgroundImage={bgTeamBus}
+
           backgroundOverlayOpacity={0.66}
         >
           <Suspense fallback={<SectionLoader />}>

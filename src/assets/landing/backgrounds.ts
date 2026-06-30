@@ -23,6 +23,17 @@ import stadium1920 from './bg-stadium-1920.webp?url';
 import stadium2560 from './bg-stadium-2560.webp?url';
 import stadium3840 from './bg-stadium-3840.webp?url';
 
+import wedding1280 from './bg-wedding-1280.webp?url';
+import wedding1920 from './bg-wedding-1920.webp?url';
+import wedding2560 from './bg-wedding-2560.webp?url';
+import wedding3840 from './bg-wedding-3840.webp?url';
+
+import teamBus1280 from './bg-team-bus-1280.webp?url';
+import teamBus1920 from './bg-team-bus-1920.webp?url';
+import teamBus2560 from './bg-team-bus-2560.webp?url';
+import teamBus3840 from './bg-team-bus-3840.webp?url';
+
+
 export interface ResponsiveBackground {
   src: string; // fallback for browsers without srcset
   srcSet: string;
@@ -65,3 +76,18 @@ export const bgStadium = buildSet({
   2560: stadium2560,
   3840: stadium3840,
 });
+
+export const bgWedding = buildSet({
+  1280: wedding1280,
+  1920: wedding1920,
+  2560: wedding2560,
+  3840: wedding3840,
+});
+
+export const bgTeamBus = buildSet({
+  1280: teamBus1280,
+  1920: teamBus1920,
+  2560: teamBus2560,
+  3840: teamBus3840,
+});
+
