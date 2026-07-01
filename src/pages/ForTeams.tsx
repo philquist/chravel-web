@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Building, Users, Shield, Zap, BarChart3, Phone } from 'lucide-react';
+import { Building, Users, Shield, Zap, BarChart3, Phone, Trophy, Mic2, Building2, Tent, GraduationCap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import channelsPro from '@/assets/app-screenshots/channels-pro.png';
 
@@ -33,27 +33,33 @@ export const ForTeams = () => {
 
   const useCases = [
     {
-      icon: '🏆',
+      icon: <Trophy size={28} strokeWidth={1.25} className="text-primary" />,
       title: 'Sports Teams',
       description:
         'College athletics, youth leagues, and professional teams managing travel, schedules, and rosters',
     },
     {
-      icon: '🎤',
+      icon: <Mic2 size={28} strokeWidth={1.25} className="text-primary" />,
       title: 'Touring Artists',
       description:
         'Bands, performers, and production crews coordinating multi-city tours and logistics',
     },
     {
-      icon: '🏢',
+      icon: <Building2 size={28} strokeWidth={1.25} className="text-primary" />,
       title: 'Corporate Travel',
       description: 'Companies managing team offsites, conferences, and business travel programs',
     },
     {
-      icon: '🎪',
+      icon: <Tent size={28} strokeWidth={1.25} className="text-primary" />,
       title: 'Event Organizers',
       description:
         'Professional event planners running conferences, festivals, and large-scale gatherings',
+    },
+    {
+      icon: <GraduationCap size={28} strokeWidth={1.25} className="text-primary" />,
+      title: 'Greek Life & Chapters',
+      description:
+        'Fraternities, sororities, and alumni chapters coordinating rush, formals, retreats, and philanthropy',
     },
   ];
 
@@ -154,17 +160,19 @@ export const ForTeams = () => {
             Built For
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {useCases.map((useCase, index) => (
               <div
                 key={index}
                 className="bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-6 text-center hover:border-primary/50 transition-all duration-300"
               >
-                <div className="text-4xl mb-4">{useCase.icon}</div>
-                <h3 className="font-bold text-lg md:text-xl mb-2 text-foreground">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-primary/30 bg-primary/5">
+                  {useCase.icon}
+                </div>
+                <h3 className="font-display text-lg md:text-xl mb-2 text-foreground tracking-tight">
                   {useCase.title}
                 </h3>
-                <p className="text-sm md:text-base text-foreground">{useCase.description}</p>
+                <p className="text-sm md:text-base text-foreground/80">{useCase.description}</p>
               </div>
             ))}
           </div>
