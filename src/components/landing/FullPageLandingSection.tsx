@@ -113,12 +113,14 @@ export const FullPageLandingSection: React.FC<FullPageLandingSectionProps> = ({
       {/* Gold decorative overlay — original, generative black/gold pattern per section */}
       {goldOverlay !== 'none' && <GoldAccentOverlay variant={goldOverlay} />}
 
-      {/* Subtle noise texture overlay */}
+      {/* Fine film grain — extremely subtle, high-frequency, keeps blacks
+          from banding on OLED without the "grainy overlay" AI look. */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-[0.018]"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.77 0 0 0 0 0.59 0 0 0 0 0.28 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
           backgroundRepeat: 'repeat',
+          backgroundSize: '128px 128px',
         }}
       />
 

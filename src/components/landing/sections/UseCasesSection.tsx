@@ -243,8 +243,11 @@ export const UseCasesSection = () => {
                         </div>
 
                         {/* Outcome Badge */}
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/20 text-primary rounded-full text-xs sm:text-sm font-semibold">
-                          <span className="text-primary">🟠</span>
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-primary/40 bg-primary/10 text-primary rounded-full text-xs sm:text-sm font-semibold tracking-wide">
+                          <span
+                            className="inline-block w-1.5 h-1.5 rounded-full bg-primary"
+                            aria-hidden="true"
+                          />
                           {scenario.badge}
                         </div>
 

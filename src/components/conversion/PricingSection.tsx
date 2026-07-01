@@ -136,9 +136,7 @@ const proTiers: PricingTier[] = [
     price: `$${SUBSCRIPTION_TIERS.starter.price}`,
     description: 'Perfect for small touring acts, AAU teams, local clubs',
     icon: <Building size={24} />,
-    features: SUBSCRIPTION_TIERS.starter.features.map(f =>
-      f.includes('Events') ? `🎉 ${f}` : f.includes('free') ? `🎁 ${f}` : f,
-    ),
+    features: SUBSCRIPTION_TIERS.starter.features,
     cta: 'Start 14-Day Trial',
     category: 'pro',
     enterprise: true,
@@ -152,9 +150,7 @@ const proTiers: PricingTier[] = [
     price: `$${SUBSCRIPTION_TIERS.growing.price}`,
     description: 'For college teams, mid-size productions, corporate groups',
     icon: <TrendingUp size={24} />,
-    features: SUBSCRIPTION_TIERS.growing.features.map(f =>
-      f.includes('Events') ? `🎉 ${f}` : f.includes('free') ? `🎁 ${f}` : f,
-    ),
+    features: SUBSCRIPTION_TIERS.growing.features,
     cta: 'Start 14-Day Trial',
     popular: true,
     category: 'pro',
@@ -170,9 +166,7 @@ const proTiers: PricingTier[] = [
     price: 'Custom Pricing',
     description: 'For professional leagues, major tours, Fortune 500',
     icon: <Shield size={24} />,
-    features: SUBSCRIPTION_TIERS.enterprise.features.map(f =>
-      f.includes('Events') ? `🎉 ${f}` : f.includes('free') ? `🎁 ${f}` : f,
-    ),
+    features: SUBSCRIPTION_TIERS.enterprise.features,
     cta: 'Contact Sales',
     category: 'pro',
     enterprise: true,
