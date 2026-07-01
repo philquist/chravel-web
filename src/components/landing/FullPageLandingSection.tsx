@@ -1,7 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { GoldAccentOverlay } from './GoldAccentOverlay';
-import type { ResponsiveBackground } from '@/assets/landing/backgrounds';
 
 interface FullPageLandingSectionProps {
   id: string;
@@ -17,19 +16,7 @@ interface FullPageLandingSectionProps {
     position: 'top' | 'bottom' | 'center';
     opacity?: number;
   };
-  goldOverlay?:
-    | 'hero'
-    | 'waves'
-    | 'triangles'
-    | 'diamonds'
-    | 'circles'
-    | 'mesh'
-    | 'aurora'
-    | 'footer'
-    | 'none';
-  backgroundImage?: string | ResponsiveBackground;
-  backgroundOverlayOpacity?: number; // 0-1, dark scrim over image for legibility
-  backgroundPosition?: string;
+  goldOverlay?: 'hero' | 'waves' | 'terraces' | 'diamonds' | 'circles' | 'mesh' | 'aurora' | 'none';
 }
 
 export const FullPageLandingSection: React.FC<FullPageLandingSectionProps> = ({
@@ -43,9 +30,6 @@ export const FullPageLandingSection: React.FC<FullPageLandingSectionProps> = ({
   gradientDirection = 'diagonal',
   accentGlow,
   goldOverlay = 'waves',
-  backgroundImage,
-  backgroundOverlayOpacity = 0.72,
-  backgroundPosition = 'center',
 }) => {
   // Build the gradient based on direction and colors
   const getGradientStyle = () => {
@@ -121,64 +105,13 @@ export const FullPageLandingSection: React.FC<FullPageLandingSectionProps> = ({
         background: getGradientStyle(),
       }}
     >
-      {/* Cinematic photo background (black & gold travel scenes).
-          We render an <img> with srcset so the browser picks the right resolution
-          per device DPR / viewport — prevents blurring 1920px sources on 4K/retina. */}
-      {backgroundImage && (
-        <>
-          {typeof backgroundImage === 'string' ? (
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                backgroundImage: `url(${backgroundImage})`,
-                backgroundSize: 'cover',
-                backgroundPosition,
-                backgroundRepeat: 'no-repeat',
-              }}
-              aria-hidden="true"
-            />
-          ) : (
-            <img
-              src={backgroundImage.src}
-              srcSet={backgroundImage.srcSet}
-              sizes={backgroundImage.sizes}
-              alt=""
-              aria-hidden="true"
-              decoding="async"
-              loading="eager"
-              fetchPriority="high"
-              className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
-              style={{ objectPosition: backgroundPosition }}
-              draggable={false}
-            />
-          )}
-          {/* Layered scrim: stronger top/bottom + radial vignette so white text
-              pops without flattening the imagery in the middle. */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `linear-gradient(180deg, rgba(0,0,0,${Math.min(1, backgroundOverlayOpacity + 0.15)}) 0%, rgba(0,0,0,${backgroundOverlayOpacity}) 40%, rgba(0,0,0,${backgroundOverlayOpacity}) 60%, rgba(0,0,0,${Math.min(1, backgroundOverlayOpacity + 0.2)}) 100%)`,
-            }}
-            aria-hidden="true"
-          />
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                'radial-gradient(ellipse 80% 60% at 50% 50%, transparent 0%, rgba(0,0,0,0.35) 100%)',
-            }}
-            aria-hidden="true"
-          />
-        </>
-      )}
-
       {/* Accent glow overlay */}
       {accentStyle && (
         <div className="absolute inset-0 pointer-events-none" style={{ background: accentStyle }} />
       )}
 
-      {/* Gold decorative overlay (suppressed when a photo background is set to keep it clean) */}
-      {goldOverlay !== 'none' && !backgroundImage && <GoldAccentOverlay variant={goldOverlay} />}
+      {/* Gold decorative overlay — original, generative black/gold pattern per section */}
+      {goldOverlay !== 'none' && <GoldAccentOverlay variant={goldOverlay} />}
 
       {/* Subtle noise texture overlay */}
       <div

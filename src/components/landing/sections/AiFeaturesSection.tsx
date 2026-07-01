@@ -11,12 +11,12 @@ export const AiFeaturesSection = () => {
       icon: <Wand2 className="text-accent" size={28} />,
       title: 'Context-Aware Concierge',
       description:
-        'Your full trip infocontext — itinerary, tasks, payments, places — added context for every answer. No extra AI app, no extra subscription.',
+        'Your full trip context — itinerary, tasks, payments, places — woven into every answer. No extra AI app, no extra subscription.',
     },
     {
       icon: <DollarSign className="text-primary" size={28} />,
       title: 'Payment Tracking',
-      description: 'Who owes what — no spreadsheets. Settle splits with one ask.',
+      description: 'Who owes what — no spreadsheets. Settle splits with a single request.',
     },
     {
       icon: <Bot className="text-accent" size={28} />,
@@ -85,8 +85,8 @@ export const AiFeaturesSection = () => {
           className="text-lg sm:text-xl md:text-2xl text-white/90 font-medium max-w-3xl mx-auto"
           style={{ textShadow: '0 2px 6px rgba(0,0,0,0.5)' }}
         >
-          Get answers with your trip's context: itinerary, budget, etc — not{'\n'}&nbsp;generic
-          advice.
+          Get answers with your trip's context — itinerary, budget, and{'\n'}&nbsp;more — not
+          generic advice.
         </p>
       </motion.div>
 

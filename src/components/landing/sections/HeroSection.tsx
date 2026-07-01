@@ -81,7 +81,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
           onClick={onSignUp}
           className="text-xs px-3 py-1 accent-fill-gold backdrop-blur-md font-semibold h-7"
         >
-          Login or Signup
+          Get Started
         </Button>
       </div>
 
@@ -220,7 +220,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
           className="mt-4 px-6 py-3 accent-fill-gold backdrop-blur-md rounded-xl text-base font-semibold animate-fade-in lg:hidden"
           style={{ animationDelay: '0.2s' }}
         >
-          Login or Signup
+          Get Started
         </Button>
       </div>
 

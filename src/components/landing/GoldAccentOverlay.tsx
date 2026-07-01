@@ -1,480 +1,580 @@
 import React from 'react';
 
 interface GoldAccentOverlayProps {
-  variant?: 'hero' | 'waves' | 'triangles' | 'diamonds' | 'circles' | 'mesh' | 'aurora' | 'footer';
+  variant?: 'hero' | 'waves' | 'terraces' | 'diamonds' | 'circles' | 'mesh' | 'aurora';
 }
 
+// Originally-authored decorative gold/black backdrops for the marketing landing.
+// Every variant shares one layering convention so the set reads as one system
+// rather than 7 unrelated shapes: a soft blurred "background" plane (ambient
+// light source), a midground plane carrying the main geometry (multi-stop
+// gradients for smooth falloff), and a crisp unblurred "foreground" hairline
+// plane that reads sharp against the soft glow behind it — that contrast is
+// what creates the depth cue without motion. No single stop exceeds 0.35
+// opacity and stacked planes stay under ~0.4 effective alpha against the
+// black section background, so marketing copy (white text) stays legible.
 export const GoldAccentOverlay: React.FC<GoldAccentOverlayProps> = ({ variant = 'waves' }) => {
-  // Hero - curved sweeps and glowing orbs (prominent)
+  // Namespaces every gradient/filter id to this instance so two overlays
+  // rendered on the same page (even with the same variant) never collide —
+  // colons stripped since some SVG url(#...) consumers mishandle them.
+  const uid = React.useId().replace(/:/g, '');
+
+  // Hero — golden-ratio arcs. Concentric circle strokes centered off-canvas
+  // upper-right at radii in golden-ratio proportion (r, 1.618r, 2.618r); the
+  // SVG viewport naturally clips them to arcs. Mostly negative space.
   if (variant === 'hero') {
     return (
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Top curved sweep - filled shape */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <svg
-          className="absolute top-0 left-0 w-full h-64 md:h-80"
-          viewBox="0 0 1440 250"
+          className="absolute inset-0 w-full h-full"
+          viewBox="0 0 1440 900"
           preserveAspectRatio="none"
           fill="none"
         >
           <defs>
-            <linearGradient id="heroGoldTop" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.6" />
-              <stop offset="50%" stopColor="#c49746" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0.1" />
-            </linearGradient>
+            <filter id={`${uid}-heroBgBlur`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="30" />
+            </filter>
+            <filter id={`${uid}-heroArcBlur`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="3" />
+            </filter>
+            <radialGradient id={`${uid}-heroGlow`} cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#c49746" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#c49746" stopOpacity="0" />
+            </radialGradient>
           </defs>
-          <path
-            d="M0,0 C360,150 720,100 1080,130 C1260,145 1380,80 1440,0 L1440,0 L0,0 Z"
-            fill="url(#heroGoldTop)"
+          {/* Background plane — ambient light source */}
+          <ellipse
+            cx="1250"
+            cy="140"
+            rx="260"
+            ry="200"
+            fill={`url(#${uid}-heroGlow)`}
+            opacity="0.08"
+            filter={`url(#${uid}-heroBgBlur)`}
+          />
+          {/* Midground plane — golden-ratio concentric arcs (r, 1.618r, 2.618r) */}
+          <g filter={`url(#${uid}-heroArcBlur)`}>
+            <circle cx="1520" cy="-60" r="360" stroke="#c49746" strokeWidth="2" opacity="0.22" />
+            <circle cx="1520" cy="-60" r="582" stroke="#c49746" strokeWidth="1.5" opacity="0.16" />
+            <circle cx="1520" cy="-60" r="942" stroke="#c49746" strokeWidth="1" opacity="0.1" />
+          </g>
+          {/* Foreground plane — crisp hairline tangents at golden-ratio-spaced points */}
+          <line
+            x1="1180"
+            y1="40"
+            x2="1300"
+            y2="110"
+            stroke="#c49746"
+            strokeWidth="1"
+            opacity="0.3"
+          />
+          <line
+            x1="1050"
+            y1="180"
+            x2="1160"
+            y2="230"
+            stroke="#c49746"
+            strokeWidth="1"
+            opacity="0.26"
           />
         </svg>
-        {/* Right side curved accent */}
-        <svg
-          className="absolute top-10 right-0 w-80 h-[500px] md:w-[450px] md:h-[600px]"
-          viewBox="0 0 350 600"
-          preserveAspectRatio="none"
-          fill="none"
-        >
-          <defs>
-            <linearGradient id="heroGoldRight" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.5" />
-              <stop offset="60%" stopColor="#c49746" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0.05" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M350,0 Q220,120 300,250 Q380,380 280,480 Q200,560 350,600 L350,0 Z"
-            fill="url(#heroGoldRight)"
-          />
-        </svg>
-        {/* Prominent glow orbs */}
-        <div
-          className="absolute top-16 left-1/4 w-80 h-80 rounded-full blur-2xl opacity-30"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
-        <div
-          className="absolute top-40 right-1/4 w-64 h-64 rounded-full blur-2xl opacity-25"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
-        <div
-          className="absolute top-20 right-10 w-48 h-48 rounded-full blur-xl opacity-35"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 65%)' }}
-        />
       </div>
     );
   }
 
-  // Waves - flowing horizontal waves with filled shapes
+  // Waves — layered sine strata. Three open stroke-only sine paths at
+  // different amplitude/period, stacked at different vertical offsets, plus
+  // one thin filled ribbon between two strata for depth. Deliberately avoids
+  // filled wave-belly "blob" shapes.
   if (variant === 'waves') {
     return (
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <svg
-          className="absolute top-1/4 left-0 w-full h-80 opacity-50"
-          viewBox="0 0 1440 300"
-          preserveAspectRatio="none"
-          fill="none"
-        >
-          <defs>
-            <linearGradient id="waveFill1" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.05" />
-              <stop offset="50%" stopColor="#c49746" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0.05" />
-            </linearGradient>
-            <linearGradient id="waveStroke1" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.1" />
-              <stop offset="50%" stopColor="#c49746" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0.1" />
-            </linearGradient>
-          </defs>
-          {/* Filled wave shape */}
-          <path
-            d="M0,150 Q360,80 720,150 T1440,150 L1440,220 Q1080,280 720,220 T0,220 Z"
-            fill="url(#waveFill1)"
-          />
-          {/* Top wave stroke */}
-          <path
-            d="M0,120 Q360,50 720,120 T1440,120"
-            stroke="url(#waveStroke1)"
-            strokeWidth="5"
-            fill="none"
-          />
-          {/* Middle wave stroke */}
-          <path
-            d="M0,160 Q360,100 720,160 T1440,160"
-            stroke="url(#waveStroke1)"
-            strokeWidth="4"
-            fill="none"
-            opacity="0.7"
-          />
-          {/* Bottom wave stroke */}
-          <path
-            d="M0,200 Q360,150 720,200 T1440,200"
-            stroke="url(#waveStroke1)"
-            strokeWidth="3"
-            fill="none"
-            opacity="0.5"
-          />
-        </svg>
-        {/* Glow orbs */}
-        <div
-          className="absolute bottom-20 left-10 w-64 h-64 rounded-full blur-2xl opacity-25"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
-        <div
-          className="absolute top-1/3 right-20 w-48 h-48 rounded-full blur-2xl opacity-20"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
-      </div>
-    );
-  }
-
-  // Triangles - bold geometric triangle patterns
-  if (variant === 'triangles') {
-    return (
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <svg
-          className="absolute top-0 right-0 w-full h-full opacity-45"
+          className="absolute inset-0 w-full h-full"
           viewBox="0 0 1440 900"
           preserveAspectRatio="none"
           fill="none"
         >
           <defs>
-            <linearGradient id="triGold1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0.1" />
-            </linearGradient>
-            <linearGradient id="triGold2" x1="100%" y1="100%" x2="0%" y2="0%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.5" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0.1" />
+            <filter id={`${uid}-wavesBgBlur`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="40" />
+            </filter>
+            <filter id={`${uid}-wavesMidBlur`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="4" />
+            </filter>
+            <linearGradient id={`${uid}-wavesRibbon`} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#c49746" stopOpacity="0" />
+              <stop offset="25%" stopColor="#c49746" stopOpacity="0.1" />
+              <stop offset="50%" stopColor="#c49746" stopOpacity="0.14" />
+              <stop offset="75%" stopColor="#c49746" stopOpacity="0.1" />
+              <stop offset="100%" stopColor="#c49746" stopOpacity="0" />
             </linearGradient>
           </defs>
-          {/* Large top-right triangle */}
-          <polygon points="1100,0 1440,0 1440,300" fill="url(#triGold1)" />
-          {/* Secondary top-right triangle */}
-          <polygon points="1000,0 1440,0 1440,180 1200,0" fill="url(#triGold1)" opacity="0.6" />
-          {/* Bottom-left triangles */}
-          <polygon points="0,600 0,900 300,900" fill="url(#triGold2)" />
-          <polygon points="0,700 0,900 180,900" fill="url(#triGold2)" opacity="0.7" />
-          {/* Accent triangles */}
-          <polygon points="100,100 180,180 100,180" fill="url(#triGold1)" opacity="0.4" />
-          <polygon points="1300,700 1380,780 1300,780" fill="url(#triGold2)" opacity="0.5" />
+          {/* Background plane */}
+          <ellipse
+            cx="200"
+            cy="650"
+            rx="340"
+            ry="200"
+            fill="#c49746"
+            opacity="0.07"
+            filter={`url(#${uid}-wavesBgBlur)`}
+          />
+          {/* Midground plane — 3 sine strata at different amplitude/period */}
+          <g filter={`url(#${uid}-wavesMidBlur)`}>
+            <path
+              d="M0,260 C120,220 240,300 360,260 C480,220 600,300 720,260 C840,220 960,300 1080,260 C1200,220 1320,300 1440,260"
+              stroke="#c49746"
+              strokeWidth="2"
+              opacity="0.18"
+            />
+            <path
+              d="M0,420 C180,455 360,385 540,420 C720,455 900,385 1080,420 C1260,455 1440,385 1440,420"
+              stroke="#c49746"
+              strokeWidth="1.5"
+              opacity="0.14"
+            />
+            <path
+              d="M0,560 C160,575 320,545 480,560 C640,575 800,545 960,560 C1120,575 1280,545 1440,560"
+              stroke="#c49746"
+              strokeWidth="1"
+              opacity="0.1"
+            />
+          </g>
+          {/* Ribbon fill between strata 1 and 2 */}
+          <path
+            d="M0,260 C120,220 240,300 360,260 C480,220 600,300 720,260 C840,220 960,300 1080,260 C1200,220 1320,300 1440,260 L1440,420 C1260,385 1080,455 900,420 C720,385 540,455 360,420 C180,385 0,455 0,420 Z"
+            fill={`url(#${uid}-wavesRibbon)`}
+          />
+          {/* Foreground plane — crisp hairline tracing the topmost crest */}
+          <path
+            d="M0,260 C120,220 240,300 360,260 C480,220 600,300 720,260 C840,220 960,300 1080,260 C1200,220 1320,300 1440,260"
+            stroke="#c49746"
+            strokeWidth="1"
+            opacity="0.28"
+          />
         </svg>
-        {/* Glow accents */}
-        <div
-          className="absolute top-20 right-40 w-56 h-56 rounded-full blur-2xl opacity-30"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
-        <div
-          className="absolute bottom-32 left-20 w-48 h-48 rounded-full blur-2xl opacity-25"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
       </div>
     );
   }
 
-  // Diamonds - larger scattered diamond shapes with glows
+  // Diamonds — faceted lattice. A sparse, irregular (non-grid) triangulated
+  // lattice from asymmetrically placed vertices; only a couple of facets are
+  // filled as "lit," the rest stays pure linework.
   if (variant === 'diamonds') {
     return (
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <svg
-          className="absolute inset-0 w-full h-full opacity-50"
+          className="absolute inset-0 w-full h-full"
           viewBox="0 0 1440 900"
           preserveAspectRatio="none"
           fill="none"
         >
           <defs>
-            <radialGradient id="diamondGlow1" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.7" />
-              <stop offset="60%" stopColor="#c49746" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0" />
-            </radialGradient>
-            <linearGradient id="diamondFill" x1="50%" y1="0%" x2="50%" y2="100%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0.3" />
+            <filter id={`${uid}-diamondsBgBlur`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="35" />
+            </filter>
+            <filter id={`${uid}-diamondsLineBlur`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2" />
+            </filter>
+            <linearGradient id={`${uid}-diamondsFacet1`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#c49746" stopOpacity="0.2" />
+              <stop offset="45%" stopColor="#c49746" stopOpacity="0.12" />
+              <stop offset="100%" stopColor="#c49746" stopOpacity="0.02" />
+            </linearGradient>
+            <linearGradient id={`${uid}-diamondsFacet2`} x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#c49746" stopOpacity="0.18" />
+              <stop offset="45%" stopColor="#c49746" stopOpacity="0.1" />
+              <stop offset="100%" stopColor="#c49746" stopOpacity="0.02" />
             </linearGradient>
           </defs>
-          {/* Large diamonds with glow halos */}
-          <circle cx="120" cy="220" r="80" fill="url(#diamondGlow1)" opacity="0.4" />
-          <polygon points="120,160 180,220 120,280 60,220" fill="url(#diamondFill)" />
-
-          <circle cx="1320" cy="150" r="100" fill="url(#diamondGlow1)" opacity="0.35" />
-          <polygon
-            points="1320,80 1400,150 1320,220 1240,150"
-            fill="url(#diamondFill)"
-            opacity="0.9"
+          {/* Background plane — glows at the two lit-facet vertices */}
+          <circle
+            cx="420"
+            cy="120"
+            r="150"
+            fill="#c49746"
+            opacity="0.08"
+            filter={`url(#${uid}-diamondsBgBlur)`}
           />
-
-          <circle cx="250" cy="680" r="90" fill="url(#diamondGlow1)" opacity="0.3" />
-          <polygon
-            points="250,610 330,680 250,750 170,680"
-            fill="url(#diamondFill)"
-            opacity="0.7"
+          <circle
+            cx="1150"
+            cy="220"
+            r="140"
+            fill="#c49746"
+            opacity="0.07"
+            filter={`url(#${uid}-diamondsBgBlur)`}
           />
-
-          <circle cx="1150" cy="550" r="70" fill="url(#diamondGlow1)" opacity="0.35" />
-          <polygon
-            points="1150,490 1210,550 1150,610 1090,550"
-            fill="url(#diamondFill)"
-            opacity="0.8"
-          />
-
-          {/* Small accent diamonds */}
-          <polygon points="700,80 740,120 700,160 660,120" fill="url(#diamondFill)" opacity="0.5" />
-          <polygon
-            points="900,750 930,780 900,810 870,780"
-            fill="url(#diamondFill)"
-            opacity="0.4"
-          />
+          {/* Midground plane — sparse irregular lattice linework */}
+          <g
+            stroke="#c49746"
+            strokeWidth="1"
+            opacity="0.16"
+            filter={`url(#${uid}-diamondsLineBlur)`}
+          >
+            <line x1="150" y1="200" x2="420" y2="120" />
+            <line x1="420" y1="120" x2="680" y2="340" />
+            <line x1="680" y1="340" x2="150" y2="200" />
+            <line x1="680" y1="340" x2="300" y2="560" />
+            <line x1="300" y1="560" x2="150" y2="200" />
+            <line x1="680" y1="340" x2="900" y2="480" />
+            <line x1="900" y1="480" x2="1150" y2="220" />
+            <line x1="1150" y1="220" x2="1300" y2="620" />
+            <line x1="900" y1="480" x2="1300" y2="620" />
+          </g>
+          {/* Lit facets */}
+          <polygon points="420,120 680,340 150,200" fill={`url(#${uid}-diamondsFacet1)`} />
+          <polygon points="900,480 1150,220 1300,620" fill={`url(#${uid}-diamondsFacet2)`} />
+          {/* Foreground plane — crisp accent points at the lit vertices */}
+          <circle cx="420" cy="120" r="3" fill="#c49746" opacity="0.32" />
+          <circle cx="1150" cy="220" r="3" fill="#c49746" opacity="0.3" />
         </svg>
-        {/* Additional glow orbs */}
-        <div
-          className="absolute top-32 left-1/4 w-56 h-56 rounded-full blur-2xl opacity-25"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
-        <div
-          className="absolute bottom-40 right-1/4 w-72 h-72 rounded-full blur-2xl opacity-20"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
       </div>
     );
   }
 
-  // Circles - floating bubble orbs with strong gradients
+  // Circles — orbital rings. Concentric ring strokes (annuli, not filled
+  // disks) around two shared focal centers; each ring's gradient fades around
+  // its own circumference for a "light traveling an orbit" read.
   if (variant === 'circles') {
     return (
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <svg
-          className="absolute inset-0 w-full h-full opacity-45"
+          className="absolute inset-0 w-full h-full"
           viewBox="0 0 1440 900"
           preserveAspectRatio="none"
           fill="none"
         >
           <defs>
-            <radialGradient id="bubbleGold1" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.6" />
-              <stop offset="60%" stopColor="#c49746" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="bubbleGold2" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.55" />
-              <stop offset="60%" stopColor="#c49746" stopOpacity="0.15" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="bubbleGold3" cx="30%" cy="30%" r="70%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.7" />
-              <stop offset="50%" stopColor="#c49746" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0" />
-            </radialGradient>
+            <filter id={`${uid}-circlesBgBlur`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="40" />
+            </filter>
+            <filter id={`${uid}-circlesRingBlur`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2" />
+            </filter>
+            <linearGradient
+              id={`${uid}-circlesOrbit1`}
+              gradientUnits="userSpaceOnUse"
+              x1="80"
+              y1="80"
+              x2="440"
+              y2="440"
+            >
+              <stop offset="0%" stopColor="#c49746" stopOpacity="0.05" />
+              <stop offset="35%" stopColor="#c49746" stopOpacity="0.28" />
+              <stop offset="65%" stopColor="#c49746" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#c49746" stopOpacity="0.05" />
+            </linearGradient>
+            <linearGradient
+              id={`${uid}-circlesOrbit2`}
+              gradientUnits="userSpaceOnUse"
+              x1="990"
+              y1="390"
+              x2="1410"
+              y2="810"
+            >
+              <stop offset="0%" stopColor="#c49746" stopOpacity="0.05" />
+              <stop offset="35%" stopColor="#c49746" stopOpacity="0.24" />
+              <stop offset="65%" stopColor="#c49746" stopOpacity="0.26" />
+              <stop offset="100%" stopColor="#c49746" stopOpacity="0.05" />
+            </linearGradient>
           </defs>
-          {/* Large floating circles */}
-          <circle cx="180" cy="180" r="120" fill="url(#bubbleGold1)" />
-          <circle cx="1280" cy="220" r="160" fill="url(#bubbleGold2)" />
-          <circle cx="220" cy="720" r="100" fill="url(#bubbleGold3)" />
-          <circle cx="1180" cy="650" r="140" fill="url(#bubbleGold1)" />
-          {/* Medium circles */}
-          <circle cx="720" cy="120" r="70" fill="url(#bubbleGold2)" opacity="0.7" />
-          <circle cx="600" cy="800" r="80" fill="url(#bubbleGold1)" opacity="0.6" />
-          {/* Small accent circles */}
-          <circle cx="400" cy="350" r="40" fill="url(#bubbleGold3)" opacity="0.5" />
-          <circle cx="1050" cy="400" r="50" fill="url(#bubbleGold2)" opacity="0.5" />
-          <circle cx="850" cy="500" r="35" fill="url(#bubbleGold1)" opacity="0.4" />
+          {/* Background plane — glow behind each focal center */}
+          <circle
+            cx="260"
+            cy="260"
+            r="180"
+            fill="#c49746"
+            opacity="0.08"
+            filter={`url(#${uid}-circlesBgBlur)`}
+          />
+          <circle
+            cx="1200"
+            cy="600"
+            r="200"
+            fill="#c49746"
+            opacity="0.07"
+            filter={`url(#${uid}-circlesBgBlur)`}
+          />
+          {/* Midground plane — orbital ring strokes */}
+          <g filter={`url(#${uid}-circlesRingBlur)`}>
+            <circle
+              cx="260"
+              cy="260"
+              r="60"
+              stroke={`url(#${uid}-circlesOrbit1)`}
+              strokeWidth="2"
+            />
+            <circle
+              cx="260"
+              cy="260"
+              r="100"
+              stroke={`url(#${uid}-circlesOrbit1)`}
+              strokeWidth="1.5"
+            />
+            <circle
+              cx="1200"
+              cy="600"
+              r="80"
+              stroke={`url(#${uid}-circlesOrbit2)`}
+              strokeWidth="2"
+            />
+            <circle
+              cx="1200"
+              cy="600"
+              r="130"
+              stroke={`url(#${uid}-circlesOrbit2)`}
+              strokeWidth="1.5"
+            />
+          </g>
+          {/* Foreground plane — crisp nucleus at each focal center */}
+          <circle cx="260" cy="260" r="4" fill="#c49746" opacity="0.32" />
+          <circle cx="1200" cy="600" r="4" fill="#c49746" opacity="0.3" />
         </svg>
-        {/* Background glow */}
-        <div
-          className="absolute top-1/2 left-16 w-80 h-80 rounded-full blur-2xl opacity-20"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
-        <div
-          className="absolute top-1/4 right-20 w-64 h-64 rounded-full blur-2xl opacity-25"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
       </div>
     );
   }
 
-  // Mesh - interconnected grid lines with intersection glows
+  // Mesh — radial ledger lines. Lines radiating from a couple of offset
+  // origin points at irregular angles/lengths (a compass/sextant-construction
+  // feel), with tick marks on the longer lines. Avoids the generic uniform
+  // grid / particle-network look.
   if (variant === 'mesh') {
     return (
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <svg
-          className="absolute inset-0 w-full h-full opacity-35"
+          className="absolute inset-0 w-full h-full"
           viewBox="0 0 1440 900"
           preserveAspectRatio="none"
           fill="none"
         >
           <defs>
-            <linearGradient id="meshLine1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.1" />
-              <stop offset="30%" stopColor="#c49746" stopOpacity="0.6" />
-              <stop offset="70%" stopColor="#c49746" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0.1" />
+            <filter id={`${uid}-meshBgBlur`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="35" />
+            </filter>
+            <linearGradient id={`${uid}-meshLine1`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#c49746" stopOpacity="0.22" />
+              <stop offset="55%" stopColor="#c49746" stopOpacity="0.1" />
+              <stop offset="100%" stopColor="#c49746" stopOpacity="0.02" />
             </linearGradient>
-            <linearGradient id="meshLine2" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.1" />
-              <stop offset="40%" stopColor="#c49746" stopOpacity="0.5" />
-              <stop offset="60%" stopColor="#c49746" stopOpacity="0.5" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0.1" />
+            <linearGradient id={`${uid}-meshLine2`} x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#c49746" stopOpacity="0.2" />
+              <stop offset="55%" stopColor="#c49746" stopOpacity="0.09" />
+              <stop offset="100%" stopColor="#c49746" stopOpacity="0.02" />
             </linearGradient>
-            <radialGradient id="meshGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0" />
-            </radialGradient>
           </defs>
-          {/* Diagonal grid lines */}
-          <line x1="0" y1="150" x2="1440" y2="450" stroke="url(#meshLine1)" strokeWidth="3" />
-          <line
-            x1="0"
-            y1="350"
-            x2="1440"
-            y2="650"
-            stroke="url(#meshLine1)"
-            strokeWidth="2.5"
-            opacity="0.7"
+          {/* Background plane — glow at each origin point only */}
+          <circle
+            cx="150"
+            cy="700"
+            r="120"
+            fill="#c49746"
+            opacity="0.08"
+            filter={`url(#${uid}-meshBgBlur)`}
           />
-          <line x1="0" y1="550" x2="1440" y2="250" stroke="url(#meshLine2)" strokeWidth="3" />
-          <line
-            x1="0"
-            y1="750"
-            x2="1440"
-            y2="450"
-            stroke="url(#meshLine2)"
-            strokeWidth="2.5"
-            opacity="0.7"
+          <circle
+            cx="1300"
+            cy="150"
+            r="110"
+            fill="#c49746"
+            opacity="0.07"
+            filter={`url(#${uid}-meshBgBlur)`}
           />
-          {/* Vertical accent lines */}
-          <line
-            x1="300"
-            y1="0"
-            x2="450"
-            y2="900"
-            stroke="url(#meshLine1)"
-            strokeWidth="2"
-            opacity="0.5"
-          />
-          <line
-            x1="1100"
-            y1="0"
-            x2="1250"
-            y2="900"
-            stroke="url(#meshLine2)"
-            strokeWidth="2"
-            opacity="0.5"
-          />
-          {/* Intersection glows */}
-          <circle cx="520" cy="350" r="30" fill="url(#meshGlow)" />
-          <circle cx="920" cy="450" r="25" fill="url(#meshGlow)" opacity="0.8" />
-          <circle cx="380" cy="550" r="20" fill="url(#meshGlow)" opacity="0.6" />
-          <circle cx="1060" cy="350" r="22" fill="url(#meshGlow)" opacity="0.7" />
+          {/* Midground plane — lines radiating from each origin at irregular angles/lengths */}
+          <g strokeWidth="1.25" opacity="0.9">
+            <line x1="150" y1="700" x2="500" y2="500" stroke={`url(#${uid}-meshLine1)`} />
+            <line
+              x1="150"
+              y1="700"
+              x2="650"
+              y2="760"
+              stroke={`url(#${uid}-meshLine1)`}
+              strokeWidth="1"
+            />
+            <line
+              x1="150"
+              y1="700"
+              x2="400"
+              y2="300"
+              stroke={`url(#${uid}-meshLine1)`}
+              strokeWidth="0.75"
+            />
+            <line x1="1300" y1="150" x2="950" y2="380" stroke={`url(#${uid}-meshLine2)`} />
+            <line
+              x1="1300"
+              y1="150"
+              x2="1100"
+              y2="600"
+              stroke={`url(#${uid}-meshLine2)`}
+              strokeWidth="1"
+            />
+            <line
+              x1="1300"
+              y1="150"
+              x2="1250"
+              y2="450"
+              stroke={`url(#${uid}-meshLine2)`}
+              strokeWidth="0.75"
+            />
+          </g>
+          {/* Foreground plane — crisp tick marks along the longer lines */}
+          <g stroke="#c49746" strokeWidth="1" opacity="0.24">
+            <line x1="310" y1="610" x2="330" y2="590" />
+            <line x1="410" y1="530" x2="430" y2="510" />
+            <line x1="1110" y1="290" x2="1130" y2="310" />
+            <line x1="1010" y1="360" x2="1030" y2="380" />
+          </g>
         </svg>
-        {/* Background glows */}
-        <div
-          className="absolute -top-20 right-1/4 w-96 h-96 rounded-full blur-2xl opacity-20"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
-        <div
-          className="absolute bottom-20 left-1/3 w-72 h-72 rounded-full blur-2xl opacity-18"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
       </div>
     );
   }
 
-  // Aurora - flowing aurora bands with thick strokes
+  // Aurora — deep parallax bands. Background: one wide soft band. Midground:
+  // two bands at unequal, non-parallel phase/amplitude. Foreground: crisp
+  // hairlines tracing only the crest of the midground bands.
   if (variant === 'aurora') {
     return (
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <svg
-          className="absolute inset-0 w-full h-full opacity-55"
+          className="absolute inset-0 w-full h-full"
           viewBox="0 0 1440 900"
           preserveAspectRatio="none"
           fill="none"
         >
           <defs>
-            <linearGradient id="auroraGold1" x1="0%" y1="50%" x2="100%" y2="50%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.05" />
-              <stop offset="25%" stopColor="#c49746" stopOpacity="0.5" />
-              <stop offset="50%" stopColor="#c49746" stopOpacity="0.6" />
-              <stop offset="75%" stopColor="#c49746" stopOpacity="0.5" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0.05" />
+            <filter id={`${uid}-auroraBgBlur`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="50" />
+            </filter>
+            <filter id={`${uid}-auroraMidBlur`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="8" />
+            </filter>
+            <linearGradient id={`${uid}-auroraBand1`} x1="0%" y1="50%" x2="100%" y2="50%">
+              <stop offset="0%" stopColor="#c49746" stopOpacity="0.03" />
+              <stop offset="25%" stopColor="#c49746" stopOpacity="0.16" />
+              <stop offset="50%" stopColor="#c49746" stopOpacity="0.2" />
+              <stop offset="75%" stopColor="#c49746" stopOpacity="0.14" />
+              <stop offset="100%" stopColor="#c49746" stopOpacity="0.03" />
             </linearGradient>
-            <linearGradient id="auroraGold2" x1="0%" y1="50%" x2="100%" y2="50%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.05" />
-              <stop offset="30%" stopColor="#c49746" stopOpacity="0.4" />
-              <stop offset="70%" stopColor="#c49746" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0.05" />
+            <linearGradient id={`${uid}-auroraBand2`} x1="0%" y1="50%" x2="100%" y2="50%">
+              <stop offset="0%" stopColor="#c49746" stopOpacity="0.02" />
+              <stop offset="30%" stopColor="#c49746" stopOpacity="0.12" />
+              <stop offset="60%" stopColor="#c49746" stopOpacity="0.14" />
+              <stop offset="85%" stopColor="#c49746" stopOpacity="0.1" />
+              <stop offset="100%" stopColor="#c49746" stopOpacity="0.02" />
             </linearGradient>
           </defs>
-          {/* Main aurora band */}
+          {/* Background plane */}
           <path
-            d="M0,280 Q300,180 600,300 Q900,420 1200,280 Q1350,200 1440,250"
-            stroke="url(#auroraGold1)"
-            strokeWidth="80"
-            fill="none"
+            d="M0,300 Q360,220 720,320 Q1080,420 1440,280"
+            stroke="#c49746"
+            strokeWidth="90"
+            opacity="0.07"
             strokeLinecap="round"
+            filter={`url(#${uid}-auroraBgBlur)`}
           />
-          {/* Secondary aurora band */}
+          {/* Midground plane — unequal, non-parallel phase/amplitude bands */}
+          <g filter={`url(#${uid}-auroraMidBlur)`}>
+            <path
+              d="M0,280 Q300,190 600,300 Q900,410 1200,270 Q1340,210 1440,250"
+              stroke={`url(#${uid}-auroraBand1)`}
+              strokeWidth="55"
+              strokeLinecap="round"
+            />
+            <path
+              d="M0,520 Q260,610 520,490 Q780,370 1040,510 Q1240,620 1440,540"
+              stroke={`url(#${uid}-auroraBand2)`}
+              strokeWidth="42"
+              strokeLinecap="round"
+            />
+          </g>
+          {/* Foreground plane — crisp crest hairlines */}
           <path
-            d="M0,520 Q250,620 500,480 Q750,340 1000,500 Q1200,620 1440,540"
-            stroke="url(#auroraGold2)"
-            strokeWidth="60"
-            fill="none"
-            opacity="0.7"
-            strokeLinecap="round"
+            d="M0,255 Q300,165 600,275 Q900,385 1200,245 Q1340,185 1440,225"
+            stroke="#c49746"
+            strokeWidth="1"
+            opacity="0.26"
           />
-          {/* Tertiary subtle band */}
           <path
-            d="M0,700 Q400,780 720,680 Q1000,580 1440,720"
-            stroke="url(#auroraGold1)"
-            strokeWidth="40"
-            fill="none"
-            opacity="0.4"
-            strokeLinecap="round"
+            d="M0,495 Q260,585 520,465 Q780,345 1040,485"
+            stroke="#c49746"
+            strokeWidth="1"
+            opacity="0.2"
           />
         </svg>
-        {/* Prominent glow orbs */}
-        <div
-          className="absolute top-1/4 right-16 w-96 h-96 rounded-full blur-2xl opacity-25"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
-        <div
-          className="absolute bottom-1/4 left-20 w-80 h-80 rounded-full blur-2xl opacity-20"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
       </div>
     );
   }
 
-  // Footer variant - bold bottom sweep
-  if (variant === 'footer') {
+  // Terraces — terraced horizon. Replaces the old "triangles" variant, which
+  // read too busy/geometric. Gently sloped, non-parallel bands weighted
+  // toward one side of the viewport — deliberately no sharp angles/polygons,
+  // which is what disambiguates it from the isometric-triangle trope.
+  if (variant === 'terraces') {
     return (
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <svg
-          className="absolute bottom-0 left-0 w-full h-48"
-          viewBox="0 0 1440 150"
+          className="absolute inset-0 w-full h-full"
+          viewBox="0 0 1440 900"
           preserveAspectRatio="none"
           fill="none"
         >
           <defs>
-            <linearGradient id="footerGold" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#c49746" stopOpacity="0.5" />
-              <stop offset="50%" stopColor="#c49746" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#c49746" stopOpacity="0.1" />
+            <filter id={`${uid}-terracesBgBlur`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="35" />
+            </filter>
+            <linearGradient id={`${uid}-terracesBand`} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#c49746" stopOpacity="0.02" />
+              <stop offset="50%" stopColor="#c49746" stopOpacity="0.08" />
+              <stop offset="100%" stopColor="#c49746" stopOpacity="0.02" />
             </linearGradient>
           </defs>
+          {/* Background plane — glow tucked at one terrace's edge */}
+          <ellipse
+            cx="200"
+            cy="700"
+            rx="220"
+            ry="140"
+            fill="#c49746"
+            opacity="0.08"
+            filter={`url(#${uid}-terracesBgBlur)`}
+          />
+          {/* Terrace band fill between the top two lines */}
           <path
-            d="M0,150 C360,60 720,100 1080,70 C1260,55 1380,90 1440,150 L1440,150 L0,150 Z"
-            fill="url(#footerGold)"
+            d="M0,600 L1440,560 L1440,680 L0,760 Z"
+            fill={`url(#${uid}-terracesBand)`}
+            opacity="0.5"
+          />
+          {/* Midground plane — gently sloped, non-parallel lines */}
+          <line
+            x1="0"
+            y1="760"
+            x2="1440"
+            y2="680"
+            stroke="#c49746"
+            strokeWidth="1.5"
+            opacity="0.16"
+          />
+          <line
+            x1="0"
+            y1="820"
+            x2="1440"
+            y2="760"
+            stroke="#c49746"
+            strokeWidth="1"
+            opacity="0.12"
+          />
+          {/* Foreground plane — crisp hairline on the topmost, uppermost terrace */}
+          <line
+            x1="0"
+            y1="600"
+            x2="1440"
+            y2="560"
+            stroke="#c49746"
+            strokeWidth="1"
+            opacity="0.26"
           />
         </svg>
-        {/* Glow accents */}
-        <div
-          className="absolute top-20 left-1/4 w-64 h-64 rounded-full blur-2xl opacity-20"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
-        <div
-          className="absolute top-10 right-1/3 w-48 h-48 rounded-full blur-2xl opacity-18"
-          style={{ background: 'radial-gradient(circle, #c49746 0%, transparent 60%)' }}
-        />
       </div>
     );
   }

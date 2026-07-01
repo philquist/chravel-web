@@ -22,7 +22,8 @@ export const ReplacesGrid = () => {
           className="text-base sm:text-lg md:text-xl text-white font-semibold mt-4"
           style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)' }}
         >
-          Tap below to see how ChravelApp brings scattered planning into streamlined flows.
+          Select any category below to see how ChravelApp brings scattered planning into one
+          streamlined flow.
         </p>
 
         {/* Placeholder for ChravelTabs screenshot */}
@@ -136,7 +137,7 @@ export const ReplacesGrid = () => {
           className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-bold"
           style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)' }}
         >
-          ChravelApp's 8 core tabs cover your&nbsp; most used processes.
+          ChravelApp's 8 core modules cover everything your trip needs.
         </p>
       </div>
     </section>

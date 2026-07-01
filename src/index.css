@@ -1878,7 +1878,7 @@
 /* ─────────────────────────────────────────────────────────────────────────
    MARKETING TYPOGRAPHY — editorial display serif for landing surfaces only.
    Scoped to [data-marketing] so the authenticated app shell is untouched.
-   Recipe: "Pure weight contrast" — DM Serif Display (single 400 weight) for
+   Recipe: "Pure weight contrast" — Fraunces (single 400 weight) for
    H1/H2, Inter for body/UI. Hierarchy via type-family contrast + tracking,
    not color tricks. Heading shadows are preserved by the inline styles on
    each section component.
@@ -1891,14 +1891,14 @@
 
 [data-marketing] h1,
 [data-marketing] h2 {
-  font-family: 'DM Serif Display', Georgia, Cambria, 'Times New Roman', serif !important;
+  font-family: 'Fraunces', Georgia, Cambria, 'Times New Roman', serif !important;
   font-weight: 400 !important;
   letter-spacing: -0.022em;
   line-height: 1.04;
   font-synthesis-weight: none;
 }
 
-/* DM Serif italic carries the emotional accents — let <em> inside marketing
+/* Fraunces italic carries the emotional accents — let <em> inside marketing
    headlines render as the real italic cut, not synthesized. */
 [data-marketing] h1 em,
 [data-marketing] h2 em {
