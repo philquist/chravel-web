@@ -21,6 +21,7 @@ import {
   isInstalledApp,
   isCapacitorNativeShell,
   isChravelNativeShell,
+  isChravelNativeIOS,
 } from '@/utils/platformDetection';
 import { authDebug } from '@/utils/authDebug';
 import { telemetry } from '@/telemetry/service';
@@ -29,11 +30,16 @@ import { logAuthEvent } from '@/utils/authTelemetry';
 import { buildSessionDerivedUser } from '@/lib/sessionDerivedUser';
 import { generateSafeUuid } from '@/utils/uuid';
 import { openInstalledAuthBrowser } from '@/utils/installedAuthBrowser';
-import { attemptNativeAppleSignIn } from '@/utils/nativeAppleSignIn';
+import { attemptNativeAppleSignIn, isLikelyUserCancellation } from '@/utils/nativeAppleSignIn';
 import { errorTracking } from '@/services/errorTracking';
 import { performanceService } from '@/services/performanceService';
 import type { AuthUser as User, UserProfile, AuthContextType } from './auth/types';
-import { createDemoUser, getOAuthReturnTo, withTimeout } from './auth/authHelpers';
+import {
+  createDemoUser,
+  getOAuthRedirectUrl,
+  getOAuthReturnTo,
+  withTimeout,
+} from './auth/authHelpers';
 import { captureAppleRefreshToken, captureAppleAuthorizationCode } from './auth/captureAppleToken';
 import { isFatalAuthRefreshError } from './auth/sessionRefreshPolicy';
 
@@ -846,14 +852,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     async (returnToOverride?: string): Promise<{ error?: string }> => {
       try {
         const installed = isInstalledApp();
-        // Installed shells (Capacitor / PWA) return to a Universal Link that the
-        // native wrapper intercepts and re-opens inside the WebView so Supabase
-        // detectSessionInUrl can complete the exchange. Web stays on same-origin.
+        // Installed shells (Capacitor / PWA) return to a callback the native wrapper
+        // hands back into the WebView so Supabase detectSessionInUrl can complete the
+        // exchange; the chravel-mobile shell uses the chravel:// custom scheme. Web
+        // stays on same-origin. See getOAuthRedirectUrl.
         const returnTo = getOAuthReturnTo(returnToOverride);
-        const returnToQuery = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';
-        const redirectUrl = installed
-          ? `https://chravel.app/auth-callback${returnToQuery}`
-          : `${window.location.origin}/auth${returnToQuery}`;
+        const redirectUrl = getOAuthRedirectUrl(returnTo);
 
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
@@ -906,18 +910,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signInWithApple = useCallback(
     async (returnToOverride?: string): Promise<{ error?: string }> => {
+      // On the iOS shell we MUST authenticate exclusively through the native Sign in with
+      // Apple sheet. The SFSafariViewController / PKCE fallback is the "Unable to exchange
+      // external code" dead end App Review rejected (Guideline 2.1(a)) — never reach it here.
+      const iosNative = isChravelNativeIOS();
       try {
         // Prefer native Sign in with Apple (id-token) when the chravel-mobile shell exposes
         // it — this authenticates without the SFSafariViewController / Universal-Link
         // round-trip that App Review flagged as not proceeding on iPad (Guideline 2.1(a)).
-        // Falls through to the web OAuth flow below whenever the bridge is absent or errors,
-        // so web and bridge-less builds keep their exact existing behavior.
         const native = await attemptNativeAppleSignIn(supabase.auth);
         if (native.handled) {
           if (native.error) {
             if (import.meta.env.DEV) {
               console.error('[Auth] Native Apple sign-in error:', native.error);
             }
+            logAuthEvent('login_failure', { method: 'apple', errorReason: native.error });
             if (native.error.includes('provider is not enabled')) {
               return { error: 'Apple sign-in is not configured. Please contact support.' };
             }
@@ -932,12 +939,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           return {};
         }
 
+        // The native bridge did not produce a session.
+        if (iosNative) {
+          // App Store 2.1(a): on iOS the native sheet is the ONLY path. Never fall through to
+          // browser OAuth/PKCE — that strands the user on the "exchange external code" page.
+          // Surface a retriable inline error (AuthModal stays put, no /auth navigation) and
+          // log the underlying cause so "c892"-type failures map to a reason.
+          const reason = native.unhandledReason ?? 'unknown';
+          if (import.meta.env.DEV) {
+            console.error(
+              '[Auth] iOS native Apple sign-in did not complete:',
+              reason,
+              native.cause,
+            );
+          }
+          logAuthEvent('login_failure', { method: 'apple', errorReason: `native_${reason}` });
+          // User cancellations are expected UX, not faults — keep them out of Sentry.
+          const cancellation = reason === 'bridge-threw' && isLikelyUserCancellation(native.cause);
+          if (!cancellation) {
+            errorTracking.captureException(
+              native.cause instanceof Error ? native.cause : new Error(`apple_native_${reason}`),
+              { context: 'auth.signInWithApple.native', additionalData: { reason } },
+            );
+          }
+          if (reason === 'bridge-missing') {
+            return {
+              error:
+                'Your Chravel app needs an update to sign in with Apple. Please update from the App Store, or sign in with email.',
+            };
+          }
+          return {
+            error: "Sign in with Apple didn't complete. Please try again, or sign in with email.",
+          };
+        }
+
+        // Non-iOS surfaces (web / Android / PWA): the existing web OAuth fallback is safe.
         const installed = isInstalledApp();
         const returnTo = getOAuthReturnTo(returnToOverride);
-        const returnToQuery = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';
-        const redirectUrl = installed
-          ? `https://chravel.app/auth-callback${returnToQuery}`
-          : `${window.location.origin}/auth${returnToQuery}`;
+        const redirectUrl = getOAuthRedirectUrl(returnTo);
 
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'apple',

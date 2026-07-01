@@ -129,10 +129,21 @@ const AuthCallbackPage: React.FC = () => {
           return;
         }
 
-        // 3. PKCE: exchange the authorization code for a session.
+        // 3. PKCE: exchange the authorization code for a session (awaited exactly once).
+        //    The code_verifier is read from the same supabase-js auth storage (localStorage)
+        //    that signInWithOAuth wrote at initiation — same singleton client, same storageKey.
         if (hasCode) {
           const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
           if (error && !hasHash) {
+            // Explicit cause logging: opaque GoTrue failures like "Unable to exchange external
+            // code" (and "c892"-type codes) otherwise reach App Review forensics as a bare
+            // message. Capture code/status/name so the failure maps to a root cause.
+            console.error('[AuthCallback] exchangeCodeForSession failed', {
+              message: error.message,
+              code: (error as { code?: string }).code,
+              status: (error as { status?: number }).status,
+              name: error.name,
+            });
             fail('pkce', error.message || 'Sign-in failed.', hints);
             return;
           }

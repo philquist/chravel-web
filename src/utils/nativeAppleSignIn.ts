@@ -42,6 +42,18 @@ export interface SupabaseIdTokenAuth {
   }): Promise<{ error: { message: string } | null }>;
 }
 
+/**
+ * Why the native bridge did NOT produce a session (only set when `handled` is false).
+ * Lets the iOS-native caller log a precise cause and refuse the browser fallback:
+ *   - `bridge-missing`        — the shell did not inject `signInWithApple` (older build).
+ *   - `bridge-threw`          — the native ASAuthorization sheet errored or was canceled.
+ *   - `incomplete-credential` — the sheet resolved without an identityToken / rawNonce.
+ */
+export type NativeAppleUnhandledReason =
+  | 'bridge-missing'
+  | 'bridge-threw'
+  | 'incomplete-credential';
+
 export interface NativeAppleSignInOutcome {
   /** True when the native bridge handled the attempt (a definitive success or error). */
   handled: boolean;
@@ -49,6 +61,21 @@ export interface NativeAppleSignInOutcome {
   error?: string;
   /** Apple authorization code (single-use) to forward for token-revocation capture. */
   authorizationCode?: string;
+  /** Set when `handled` is false — why the native path did not produce a session. */
+  unhandledReason?: NativeAppleUnhandledReason;
+  /** The underlying error thrown by the native sheet (only for `bridge-threw`), for logging. */
+  cause?: unknown;
+}
+
+/**
+ * Heuristic: did the native Apple sheet throw because the user dismissed/canceled it?
+ * `ASAuthorizationError.canceled` (code 1001) and the Expo bridge surface
+ * "canceled" / "cancelled" / "user canceled" in the message. Cancellations are
+ * expected UX, not faults — callers use this to keep them out of error reporting.
+ */
+export function isLikelyUserCancellation(cause: unknown): boolean {
+  const message = cause instanceof Error ? cause.message : typeof cause === 'string' ? cause : '';
+  return /cancel/i.test(message) || /\b1001\b/.test(message);
 }
 
 /** Returns the native Apple Sign In bridge function if the shell injected it, else null. */
@@ -62,30 +89,32 @@ export function getNativeAppleSignIn(): NativeAppleSignInFn | null {
 /**
  * Attempt native Apple sign-in via the chravel-mobile bridge + Supabase id-token exchange.
  *
- * Returns `{ handled: false }` when the bridge is unavailable, throws, or returns an
- * incomplete credential — the caller then falls back to the existing web OAuth flow. Never
- * throws.
+ * Returns `{ handled: true }` on a definitive outcome (a session or a provider error).
+ * Returns `{ handled: false, unhandledReason }` when the bridge is unavailable, throws, or
+ * returns an incomplete credential. On non-iOS surfaces the caller falls back to the web
+ * OAuth flow; on the iOS shell the caller MUST surface a retriable error instead of falling
+ * through to the browser PKCE path (App Store 2.1(a)). Never throws.
  */
 export async function attemptNativeAppleSignIn(
   auth: SupabaseIdTokenAuth,
 ): Promise<NativeAppleSignInOutcome> {
   const nativeSignIn = getNativeAppleSignIn();
-  if (!nativeSignIn) return { handled: false };
+  if (!nativeSignIn) return { handled: false, unhandledReason: 'bridge-missing' };
 
   let credential: NativeAppleCredential;
   try {
     credential = await nativeSignIn();
   } catch (err) {
-    // Bridge unavailable mid-flight or the native sheet errored/canceled — fall back to the
-    // web OAuth flow rather than stranding the user.
+    // The native sheet errored or was canceled. Surface the cause so the caller can log it;
+    // on non-iOS surfaces it falls back to web OAuth, on iOS it shows a retriable error.
     if (import.meta.env.DEV) {
-      console.warn('[Auth] Native Apple bridge threw; falling back to OAuth:', err);
+      console.warn('[Auth] Native Apple bridge threw:', err);
     }
-    return { handled: false };
+    return { handled: false, unhandledReason: 'bridge-threw', cause: err };
   }
 
   if (!credential?.identityToken || !credential.rawNonce) {
-    return { handled: false };
+    return { handled: false, unhandledReason: 'incomplete-credential' };
   }
 
   const { error } = await auth.signInWithIdToken({

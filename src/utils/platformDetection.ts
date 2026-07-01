@@ -31,6 +31,20 @@ export function isChravelNativeShell(): boolean {
   return false;
 }
 
+/**
+ * True when running inside the chravel-mobile **iOS** native WebView shell.
+ * The shell injects `window.ChravelNative.platform === 'ios'` (alongside
+ * `isNative === true`) before page load. Used to force the native Sign in with
+ * Apple sheet and FORBID the browser OAuth / PKCE fallback that App Review
+ * rejected on iPhone/iPad (Guideline 2.1(a) — "Unable to exchange external code").
+ * Bridge contract is documented in chravel-mobile/CLAUDE.md — do not rename.
+ */
+export function isChravelNativeIOS(): boolean {
+  if (typeof window === 'undefined') return false;
+  const native = (window as unknown as { ChravelNative?: { platform?: string } }).ChravelNative;
+  return native?.platform === 'ios';
+}
+
 /** True when running as an installed PWA in standalone display mode. */
 export function isStandalonePWA(): boolean {
   if (typeof window === 'undefined') return false;

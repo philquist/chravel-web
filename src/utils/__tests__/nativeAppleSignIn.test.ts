@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   attemptNativeAppleSignIn,
   getNativeAppleSignIn,
+  isLikelyUserCancellation,
   type SupabaseIdTokenAuth,
 } from '@/utils/nativeAppleSignIn';
 
@@ -37,23 +38,26 @@ describe('attemptNativeAppleSignIn', () => {
     expect(outcome).toEqual({ handled: true, authorizationCode: 'auth-code' });
   });
 
-  it('falls back (handled: false) and does not call signInWithIdToken when the bridge is absent', async () => {
+  it('reports bridge-missing (handled: false) and does not call signInWithIdToken when the bridge is absent', async () => {
     const signInWithIdToken = vi.fn();
 
     const outcome = await attemptNativeAppleSignIn({ signInWithIdToken } as SupabaseIdTokenAuth);
 
-    expect(outcome).toEqual({ handled: false });
+    expect(outcome).toEqual({ handled: false, unhandledReason: 'bridge-missing' });
     expect(signInWithIdToken).not.toHaveBeenCalled();
   });
 
-  it('falls back (handled: false) when the bridge throws (e.g. user canceled)', async () => {
+  it('reports bridge-threw with the underlying cause when the native sheet throws (e.g. user canceled)', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    setBridge(vi.fn().mockRejectedValue(new Error('user canceled')));
+    const cause = new Error('user canceled');
+    setBridge(vi.fn().mockRejectedValue(cause));
     const signInWithIdToken = vi.fn();
 
     const outcome = await attemptNativeAppleSignIn({ signInWithIdToken } as SupabaseIdTokenAuth);
 
-    expect(outcome).toEqual({ handled: false });
+    expect(outcome.handled).toBe(false);
+    expect(outcome.unhandledReason).toBe('bridge-threw');
+    expect(outcome.cause).toBe(cause);
     expect(signInWithIdToken).not.toHaveBeenCalled();
   });
 
@@ -68,14 +72,30 @@ describe('attemptNativeAppleSignIn', () => {
     expect(outcome).toEqual({ handled: true, error: 'provider is not enabled' });
   });
 
-  it('falls back when the native credential is incomplete', async () => {
+  it('reports incomplete-credential when the native credential is incomplete', async () => {
     setBridge(vi.fn().mockResolvedValue({ identityToken: '', rawNonce: '' }));
     const signInWithIdToken = vi.fn();
 
     const outcome = await attemptNativeAppleSignIn({ signInWithIdToken } as SupabaseIdTokenAuth);
 
-    expect(outcome).toEqual({ handled: false });
+    expect(outcome).toEqual({ handled: false, unhandledReason: 'incomplete-credential' });
     expect(signInWithIdToken).not.toHaveBeenCalled();
+  });
+});
+
+describe('isLikelyUserCancellation', () => {
+  it('matches canceled / cancelled / 1001 messages', () => {
+    expect(isLikelyUserCancellation(new Error('The user canceled the request.'))).toBe(true);
+    expect(isLikelyUserCancellation(new Error('Sign in was cancelled'))).toBe(true);
+    expect(
+      isLikelyUserCancellation('com.apple.AuthenticationServices.AuthorizationError error 1001'),
+    ).toBe(true);
+  });
+
+  it('does not match genuine errors or empty causes', () => {
+    expect(isLikelyUserCancellation(new Error('network offline'))).toBe(false);
+    expect(isLikelyUserCancellation(undefined)).toBe(false);
+    expect(isLikelyUserCancellation(null)).toBe(false);
   });
 });
 
