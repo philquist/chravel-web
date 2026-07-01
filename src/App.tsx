@@ -58,6 +58,7 @@ const InviteSlugRedirect = lazy(() => retryImport(() => import('./pages/InviteSl
 const ProfilePage = lazy(() => retryImport(() => import('./pages/ProfilePage')));
 const SettingsPage = lazy(() => retryImport(() => import('./pages/SettingsPage')));
 const ArchivePage = lazy(() => retryImport(() => import('./pages/ArchivePage')));
+const DevBillingPreview = lazy(() => retryImport(() => import('./pages/DevBillingPreview')));
 const AdminDashboard = lazy(() =>
   retryImport(() =>
     import('./pages/AdminDashboard').then(module => ({ default: module.AdminDashboard })),
@@ -716,6 +717,14 @@ const App = () => {
                             <ProtectedRoute>
                               <ArchivePage />
                             </ProtectedRoute>
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/dev/billing-preview"
+                        element={
+                          <LazyRoute>
+                            <DevBillingPreview />
                           </LazyRoute>
                         }
                       />
