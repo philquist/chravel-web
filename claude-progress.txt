@@ -99,3 +99,8 @@
 - Replaced single payment CTA generation with canonical per-method deep-link targets for Venmo, Cash App, PayPal, Zelle copy-first, and iOS-only Apple Cash while preserving manual mark-as-paid settlement.
 - Wired balance rows to recipient `user_payment_methods` handles via `availablePaymentMethods`, highlighting the preferred method but showing all saved recipient rails.
 - Added a Capacitor-aware payment opener that uses native App/Browser plugins when present and web fallback without adding dependencies; targeted deep-link tests, typecheck, lint:check, and build pass. Merge preflight still cannot fetch origin/main in this environment.
+
+2026-06-30 — App Store review root-cause routing
+- Classified the June 30 App Review rejection as a split fix: `Chravel-Inc/chravel-mobile` native shell owns the iPad Sign in with Apple bridge and App Store Connect/RevenueCat owns submitted IAP products, while `Chravel-Inc/chravel-web` owns the stable bridge contract and product ID references.
+- Added `docs/app-store-june-30-2026-remediation.md` with the product IDs, native bridge requirements, QA checklist, and App Review reply template.
+- Marked `BILLING_FLAGS.APPLE_IAP_ENABLED` true to align `Chravel-Inc/chravel-web`'s billing source of truth with the current iOS-native RevenueCat paywall behavior and added a regression test so future changes do not silently disable IAP for review builds.

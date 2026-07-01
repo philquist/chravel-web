@@ -16,7 +16,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { BILLING_PRODUCTS, TRIP_PASS_PRODUCTS } from '@/billing/config';
+import { BILLING_FLAGS, BILLING_PRODUCTS, TRIP_PASS_PRODUCTS } from '@/billing/config';
 import { CONSUMER_PLANS, PRO_PLANS, TRIP_PASS_PLANS, STRIPE_PRODUCTS } from '@/constants/stripe';
 import { REVENUECAT_PRICING, ENTITLEMENT_TO_TIER } from '@/constants/revenuecat';
 import { FREEMIUM_LIMITS } from '@/utils/featureTiers';
@@ -29,6 +29,12 @@ const dollarsToCents = (usd: number): number => Math.round(usd * 100);
 
 // Mirror of formatUsd in pricingDisplay (whole -> "$99", fractional -> "$9.99")
 const formatExpected = (n: number): string => (Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`);
+
+describe('iOS App Store billing guard', () => {
+  it('keeps Apple IAP enabled for iOS review builds', () => {
+    expect(BILLING_FLAGS.APPLE_IAP_ENABLED).toBe(true);
+  });
+});
 
 describe('pricing parity — constants/stripe.ts mirrors billing/config.ts', () => {
   it('consumer Explorer matches (product IDs, price IDs, amounts)', () => {
