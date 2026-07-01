@@ -222,13 +222,17 @@ export const UseCasesSection = () => {
                 </AnimatePresence>
 
                 {/* Expanded Content */}
-                <AnimatePresence>
+                <AnimatePresence initial={false}>
                   {isExpanded && (
                     <motion.div
+                      key="content"
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: 'easeInOut' }}
+                      transition={{
+                        height: { type: 'spring', stiffness: 220, damping: 28, mass: 0.9 },
+                        opacity: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+                      }}
                       className="overflow-hidden"
                     >
                       <div className="pt-3 space-y-3">
@@ -243,8 +247,11 @@ export const UseCasesSection = () => {
                         </div>
 
                         {/* Outcome Badge */}
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/20 text-primary rounded-full text-xs sm:text-sm font-semibold">
-                          <span className="text-primary">🟠</span>
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-primary/40 bg-primary/10 text-primary rounded-full text-xs sm:text-sm font-semibold tracking-wide">
+                          <span
+                            className="inline-block w-1.5 h-1.5 rounded-full bg-primary"
+                            aria-hidden="true"
+                          />
                           {scenario.badge}
                         </div>
 

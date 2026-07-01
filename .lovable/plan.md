@@ -1,58 +1,61 @@
-## What I got wrong
 
-Previous screenshots were composed images I built with Python/PIL — decorative "cards" on a black-and-gold canvas that are not from the actual app. They never opened the app, never went to Settings → Billing, and the text was tiny and unreadable. That's not what App Store review needs.
+## Goal
+Turn the marketing site from "vibe-coded" into an editorial luxury feel — coherent black + metallic gold, no emojis, premium typography, sharp backgrounds, and smooth interactions.
 
-You showed me exactly the right page: **Settings → Billing** (`ConsumerBillingSection`), showing "Frequent-Chraveler / Premium Features Active / $19.99/month", Billing Period toggle (Monthly / Annual), and Available Plans (Free, Explorer, Frequent Chraveler…).
+## 1. Typography — premium, non-default
+Current: Inter + DM Serif Display (default AI feel).
+Switch to:
+- **Headings:** `Canela` alternative → **PP Editorial New** (or fallback **Fraunces** with optical sizing 144, weight 300–500 — free, distinctive editorial serif with real luxury character).
+- **Body:** **Söhne** alternative → **General Sans** (free, geometric-humanist, feels like Stripe/Linear/Airbnb Cereal without being generic).
+- Load via `@fontsource-variable/fraunces` + `@fontsource-variable/general-sans` (self-hosted, no FOUT).
+- Update `tailwind.config.ts` `fontFamily.serif`/`sans` tokens and `index.css` `@font-face` block. Retire DM Serif Display + Fira Sans + SF Pro references from the marketing surface.
 
-## What I'll do instead
+## 2. Remove every emoji from marketing
+- `PricingSection.tsx` lines 140/156/174 — strip 🎉 and 🎁 wrappers; render clean text.
+- `UseCasesSection.tsx` "Built For" cards — replace 🏆/🎤/🏢/🎪 with thin-stroke lucide-react glyphs (`Trophy`, `Mic`, `Building2`, `Tent`) at ~24px, gold `#c49746`, 1.25px stroke. No colored emoji anywhere.
+- Sweep `HeroSection`, `AiFeaturesSection`, `ReplacesGrid`, `ProblemSolutionSection`, `FAQSection`, `FooterSection` for any remaining unicode emoji and replace with lucide glyphs or delete.
 
-### 1. Capture from the real running app via Playwright
-Drive the local dev server (`http://localhost:8080`) with headless Chromium at iPhone-native `1290×2796`:
-- Open the app.
-- Restore the managed Supabase session if `LOVABLE_BROWSER_AUTH_STATUS=injected`. If it's `signed_out`, stop and ask you to sign in to the preview once (as `ccamechi@gmail.com` per your screenshot) so I can inject the session — I will not invent credentials.
-- Open Settings → Personal Settings → **Billing** (the same panel in your screenshot).
-- Interact to reveal each product, then screenshot the visible viewport (not full-page, per the browser-use rules).
+## 3. Smooth "Built For" expand animation
+- Refactor the Built-For cards to use `framer-motion` `<AnimatePresence>` + `motion.div` with `layout` and `height: auto` transition (spring, stiffness 260, damping 30). Chevron rotates 180° on open. Content fades + slides 8px. One card open at a time (accordion behavior).
 
-### 2. Seven captures, each from the real Billing UI
+## 4. Consistent org coverage
+- Add/normalize copy so **fraternities, sororities, Greek life, alumni chapters** appear alongside Sports Teams / Touring Artists / Corporate / Event Organizers. Update the Built-For grid to include a "Greek Life & Chapters" card and align the marketing subtitle line ("Travel Concierges, Sports Teams, …") to include it consistently across Hero, UseCases summary, and Footer.
 
-| # | File | What's on screen |
-|---|---|---|
-| 1 | `iap-01-frequent-monthly.png` | Billing Period = **Monthly**, Frequent Chraveler card expanded showing `$19.99/month` + features + "Subscribe with Apple — Frequent Chraveler" CTA |
-| 2 | `iap-02-explorer-annual.png` | Billing Period = **Annual**, Explorer card expanded showing `$99/yr ($8.25/mo)` + CTA |
-| 3 | `iap-03-frequent-annual.png` | Billing Period = **Annual**, Frequent Chraveler card expanded showing `$199/yr ($16.58/mo)` + CTA |
-| 4 | `iap-04-pro-starter-monthly.png` | Organization Plans → **Starter Pro** expanded, `$49/month` + CTA |
-| 5 | `iap-05-pro-growth-monthly.png` | Organization Plans → **Growth Pro** expanded, `$99/month` + CTA |
-| 6 | `iap-06-trippass-explorer.png` | TripPassModal open, **Explorer Trip Pass** card visible with `$39.99` / 45 days / "Buy with Apple" or "Get Trip Pass" |
-| 7 | `iap-07-trippass-frequent.png` | TripPassModal open, **Frequent Chraveler Trip Pass** visible with `$74.99` / 90 days / CTA |
+## 5. Coherent luxury backgrounds (kill the grainy geometric overlays)
+Replace `GoldAccentOverlay` variants (waves/terraces/diamonds/circles/mesh/aurora) with a single **coherent system** used across all sections, varied only by intensity and focal position:
 
-For Pro (4, 5) I'll force the iOS-native CTA copy ("Subscribe with Apple — …") by setting the userAgent to iPhone before rendering, so the screenshot matches what an Apple reviewer sees in the app on iOS.
+- **Base:** pure `#000` with a very subtle 2% linear vignette.
+- **Metallic gold accent:** one large soft radial (blur 200px, opacity 8–14%) plus one thin (0.5px) engraved gold hairline that traces a slow curve per section — think Rolls-Royce brochure, not "AI gradient."
+- **Depth texture:** replace the SVG turbulence noise with a **high-resolution grain PNG (1920×1920, ~1.5% opacity)** so it stays crisp at any zoom instead of blurring.
+- Section variance = accent position (top-left, center-right, bottom, etc.) and hairline curvature only. Same palette, same texture, same feel throughout.
 
-For Trip Passes (6, 7) same iPhone UA so the button reads "Buy with Apple".
+## 6. Generate real luxury background art
+Use `premium` image model at 1920×1280 for 4 section hero backgrounds:
+- Stadium tunnel at golden hour (already exists — keep, upscale check)
+- Wedding aisle with candlelight
+- Team bus interior at night with gold ambient
+- **New:** editorial private terrace / boardroom for Corporate
+Sharp, cinematic, low-key lit, gold rim light. No text, no logos, subtle enough that overlay copy reads AA contrast. Save as WebP + JPG fallback in `src/assets/marketing/`.
 
-### 3. Pricing parity check (Settings ↔ marketing PricingSection)
-Both `ConsumerBillingSection` and `PricingSection` already read from a single source of truth (`src/billing/config.ts` → `CONSUMER_PRICE_DISPLAY` + `TRIP_PASS_DISPLAY` + `SUBSCRIPTION_TIERS`). I'll:
-- Diff the numbers rendered on `/` (marketing) against Settings → Billing.
-- Report any drift.
-- If numbers already agree (expected), no code change; if they drift, propose a single-line fix in the drifting component only. No refactors.
+## 7. Verification
+- `npm run typecheck && npm run lint && npm run build`
+- Playwright at 1440 desktop + 390 mobile: screenshot Hero, Built-For (collapsed + expanded), Pricing, Use Cases. Visual check: no emoji, fonts loaded, hairlines crisp, expand animation smooth.
 
-### 4. Quality gate before I deliver
-- Contact sheet of all 7 PNGs.
-- OCR each PNG; require the product name and the exact price string to appear in the extracted text.
-- Zoom-inspect at least one crop per screenshot to confirm the CTA button is readable.
-- Regenerate any that fail.
+## Files touched (est.)
+- `tailwind.config.ts`, `src/index.css`
+- `src/components/landing/GoldAccentOverlay.tsx` (rewrite)
+- `src/components/landing/FullPageLandingSection.tsx` (texture swap)
+- `src/components/landing/sections/{UseCasesSection,HeroSection,AiFeaturesSection,ProblemSolutionSection,FAQSection}.tsx`
+- `src/components/landing/FooterSection.tsx`
+- `src/components/conversion/PricingSection.tsx`
+- `src/components/landing/ReplacesGrid.tsx` (if any emoji)
+- `src/assets/marketing/*` (new images)
+- `package.json` (+ fontsource packages)
 
-### 5. Deliverables (versioned, won't overwrite the bad ones)
-- `/mnt/documents/iap-screenshots-v3/iap-01…iap-07.png`
-- `/mnt/documents/chravel-iap-screenshots-v3.zip`
-- Short QA note listing the exact text I verified on each screenshot
-- Updated `docs/agentic/app-store-connect-iap-review-screenshots.md` if filenames change (they won't unless capture forces it)
+## Out of scope
+App-internal (non-marketing) surfaces, billing logic, pricing values.
 
-## Definition of done
-
-- All 7 images are captured from the actual Settings → Billing UI (or the Trip Pass modal launched from it), matching the reference screenshot you sent.
-- Every image legibly shows product name, price/period, and the visible CTA.
-- Settings pricing verified to match the marketing PricingSection, with drift (if any) fixed.
-
-## What I need from you before I start
-
-One thing only: confirm the Supabase preview session for `ccamechi@gmail.com` is active in the Lovable preview (the app in the right pane). If it isn't, sign in once and tell me — I'll inject that session into Playwright and proceed. No credentials needed in chat.
+---
+Regression Risk: LOW
+Affected Paths: marketing landing only (no auth/RLS/payments/realtime)
+Rollback Strategy: revert the commit — no schema or backend changes.
