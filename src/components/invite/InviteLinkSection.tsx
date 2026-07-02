@@ -71,8 +71,8 @@ export const InviteLinkSection = ({
       await navigator.share({
         title: tripName ? `Join ${tripName}` : 'Trip Invitation',
         text: tripName
-          ? `You're invited to join "${tripName}" on Chravel!`
-          : "You're invited to join a trip on Chravel!",
+          ? `You're invited to join "${tripName}" on ChravelApp!`
+          : "You're invited to join a trip on ChravelApp!",
         url: inviteLink,
       });
     } catch (shareError) {

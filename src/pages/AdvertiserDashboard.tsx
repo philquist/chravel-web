@@ -48,7 +48,7 @@ export const AdvertiserDashboard = () => {
       advertiser_id: 'demo-advertiser-1',
       name: 'Uber - Premium Airport Rides',
       description:
-        'Flat $10 off airport rides for Chravel users. Choose from Uber Comfort or Uber Black for luxury travel.',
+        'Flat $10 off airport rides for ChravelApp users. Choose from Uber Comfort or Uber Black for luxury travel.',
       discount_details: '$10 off airport rides',
       images: [
         {
@@ -233,8 +233,8 @@ export const AdvertiserDashboard = () => {
         <div className="bg-gradient-to-r from-primary to-amber-500 text-primary-foreground py-2 px-4 text-center">
           <p className="text-sm font-medium">
             {isDemoMode
-              ? '🎭 Demo Mode Active - This is a preview of the Chravel Advertiser Hub'
-              : '👑 Super Admin Preview - Full access to Chravel Advertiser Hub'}
+              ? '🎭 Demo Mode Active - This is a preview of the ChravelApp Advertiser Hub'
+              : '👑 Super Admin Preview - Full access to ChravelApp Advertiser Hub'}
           </p>
         </div>
       )}
@@ -258,7 +258,7 @@ export const AdvertiserDashboard = () => {
                 onClick={() => navigate('/')}
                 className="border-white/10 text-gray-300 hover:bg-white/5 flex-1 tablet:flex-none text-xs tablet:text-sm"
               >
-                Back to Chravel
+                Back to ChravelApp
               </Button>
               {!isDemoMode && user && (
                 <Button

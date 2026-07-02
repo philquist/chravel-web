@@ -131,7 +131,7 @@ export interface EventData {
   // 🆕 Event feature toggles (organizer controls)
   chatEnabled?: boolean; // Default: true
   pollsEnabled?: boolean; // Default: true
-  conciergeEnabled?: boolean; // Default: false (Chravel+ only)
+  conciergeEnabled?: boolean; // Default: false (ChravelApp+ only)
   mediaUploadEnabled?: boolean; // Default: true
   mediaUploadPermissions?: 'everyone' | 'organizers' | 'cohosts'; // Default: 'everyone'
   pdfScheduleUrl?: string;

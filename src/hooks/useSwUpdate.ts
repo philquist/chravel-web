@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 export const useSwUpdate = (): void => {
   useEffect(() => {
     const handleUpdate = () => {
-      toast('A new version of Chravel is ready.', {
+      toast('A new version of ChravelApp is ready.', {
         description: 'Reload to get the latest updates.',
         duration: Infinity,
         action: {

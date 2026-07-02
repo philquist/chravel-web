@@ -137,7 +137,7 @@ export const DataExportSection: React.FC<DataExportSectionProps> = ({ className 
                 <AlertDialogHeader>
                   <AlertDialogTitle className="text-white">Export Your Data</AlertDialogTitle>
                   <AlertDialogDescription className="text-gray-400">
-                    This will create a JSON file containing all your personal data from Chravel. The
+                    This will create a JSON file containing all your personal data from ChravelApp. The
                     export includes:
                   </AlertDialogDescription>
                 </AlertDialogHeader>

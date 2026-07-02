@@ -71,7 +71,7 @@ export const createDemoUser = (demoUserId: string): AuthUser => ({
   firstName: 'Demo',
   lastName: 'User',
   avatar: '',
-  bio: 'Exploring Chravel in app preview mode.',
+  bio: 'Exploring ChravelApp in app preview mode.',
   isPro: false,
   showEmail: false,
   showPhone: false,

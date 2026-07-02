@@ -23,9 +23,9 @@ const HUB_FAQ = [
   },
 ];
 
-const HUB_TITLE = 'Chravel Use Cases | One App for Every Group Trip and Travel Team';
+const HUB_TITLE = 'ChravelApp Use Cases | One App for Every Group Trip and Travel Team';
 const HUB_DESCRIPTION =
-  'See how travel concierges, couples, sports teams, touring crews, and groups use Chravel to coordinate calendars, tasks, attachments, places, broadcasts, payments, and shared photos in one workspace.';
+  'See how travel concierges, couples, sports teams, touring crews, and groups use ChravelApp to coordinate calendars, tasks, attachments, places, broadcasts, payments, and shared photos in one workspace.';
 const HUB_H1 = 'One app for every group trip, event, and travel team';
 
 const buildJsonLd = () => [
@@ -73,7 +73,7 @@ export default function UseCasesHub() {
           <h1 className="text-4xl md:text-5xl font-bold leading-tight">{HUB_H1}</h1>
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
             Every group trip has too many people, too many details, and too many group chats.
-            Chravel pulls the itinerary, tasks, attachments, places, photos, payments, and updates
+            ChravelApp pulls the itinerary, tasks, attachments, places, photos, payments, and updates
             into one shared workspace — so nobody has to dig through texts, emails, screenshots, or
             old PDFs.
           </p>

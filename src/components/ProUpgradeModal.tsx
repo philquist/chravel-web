@@ -44,7 +44,7 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
           (tierKey as 'pro-starter' | 'pro-growth' | 'pro-enterprise') || 'pro-starter';
         const result = await purchaseProSubscription(proTier, 'monthly');
         if (result.success) {
-          toast.success('Chravel Pro activated!');
+          toast.success('ChravelApp Pro activated!');
           onClose();
         } else if (result.errorCode === 'CANCELLED') {
           // silent
@@ -110,7 +110,7 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
             </div>
             <div>
               <h2 className={`font-bold text-white ${isMobile ? 'text-xl' : 'text-3xl'}`}>
-                Upgrade to Chravel Pro
+                Upgrade to ChravelApp Pro
               </h2>
               <p className={`text-gray-400 ${isMobile ? 'text-sm' : ''}`}>
                 Enterprise software for professional trip management

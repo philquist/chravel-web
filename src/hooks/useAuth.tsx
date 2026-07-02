@@ -892,7 +892,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (result.strategy === 'native-shell-missing-bridge') {
             return {
               error:
-                'Your Chravel app needs an update to sign in with Google. Please update from the App Store and try again.',
+                'Your ChravelApp app needs an update to sign in with Google. Please update from the App Store and try again.',
             };
           }
         }
@@ -965,7 +965,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (reason === 'bridge-missing') {
             return {
               error:
-                'Your Chravel app needs an update to sign in with Apple. Please update from the App Store, or sign in with email.',
+                'Your ChravelApp app needs an update to sign in with Apple. Please update from the App Store, or sign in with email.',
             };
           }
           return {
@@ -1001,7 +1001,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (result.strategy === 'native-shell-missing-bridge') {
             return {
               error:
-                'Your Chravel app needs an update to sign in with Apple. Please update from the App Store and try again.',
+                'Your ChravelApp app needs an update to sign in with Apple. Please update from the App Store and try again.',
             };
           }
           // Belt-and-suspenders: if we're in a native shell but ended up on the
@@ -1014,7 +1014,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           ) {
             return {
               error:
-                'Your Chravel app needs an update to sign in with Apple. Please update from the App Store, or sign in with email.',
+                'Your ChravelApp app needs an update to sign in with Apple. Please update from the App Store, or sign in with email.',
             };
           }
         }

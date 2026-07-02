@@ -14,7 +14,7 @@ import {
 } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
-const PREVIEW_TEXT = "Hi, I'm your Chravel concierge. This is how I'll sound.";
+const PREVIEW_TEXT = "Hi, I'm your ChravelApp concierge. This is how I'll sound.";
 const TTS_URL = `${SUPABASE_PROJECT_URL}/functions/v1/concierge-voice-tts`;
 
 export const ConciergeVoicePicker: React.FC = () => {

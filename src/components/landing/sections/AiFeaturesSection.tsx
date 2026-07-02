@@ -21,7 +21,7 @@ export const AiFeaturesSection = () => {
     },
     {
       icon: <Bot className="text-accent" size={28} />,
-      title: 'Chravel Agent',
+      title: 'ChravelApp Agent',
       description:
         'Takes action with the group in the loop: polls, broadcasts, calendars, expenses, and tasks.',
     },

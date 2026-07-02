@@ -188,7 +188,7 @@ export const PlusUpsellModal = ({ isOpen, onClose }: PlusUpsellModalProps) => {
                   <li>• Everything in Explorer</li>
                   <li>• Unlimited AI queries</li>
                   <li>• Calendar sync & PDF export</li>
-                  <li>• 1 Chravel Pro trip/month</li>
+                  <li>• 1 ChravelApp Pro trip/month</li>
                   <li>• Role-based channels</li>
                   <li>• Early feature access</li>
                 </ul>

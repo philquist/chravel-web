@@ -54,7 +54,7 @@ export const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, 
 
     const finalConfirmed = window.confirm(
       'FINAL CONFIRMATION\n\n' +
-        'This will IMMEDIATELY and PERMANENTLY delete your Chravel account and all ' +
+        'This will IMMEDIATELY and PERMANENTLY delete your ChravelApp account and all ' +
         'associated data — profile, trips you own, messages, uploaded media, payment ' +
         'history, AI Concierge history, notifications, and preferences.\n\n' +
         'There is NO 30-day grace period. There is NO way to recover this account or ' +

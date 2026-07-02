@@ -362,7 +362,7 @@ export default function SeoDashboard() {
                   Formula: traffic_share = domain_estimated_organic_traffic / sum(selected_domains).
                 </p>
                 <p>
-                  Chravel modeled share:{' '}
+                  ChravelApp modeled share:{' '}
                   {trafficShare === null
                     ? 'Not enough data'
                     : `${(trafficShare * 100).toFixed(2)}%`}{' '}

@@ -353,7 +353,7 @@ export const AIConciergeChat = ({
             className="text-lg font-semibold text-white text-center truncate leading-tight"
             data-testid="ai-concierge-header"
           >
-            Concierge AI | Chravel Agent
+            Concierge AI | ChravelApp Agent
           </h3>
           {/* Row 2: Search | Upload — evenly spaced */}
           <div className="flex items-center justify-between mt-2">

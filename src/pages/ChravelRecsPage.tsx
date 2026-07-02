@@ -65,7 +65,7 @@ export const ChravelRecsPage = () => {
       <div className="p-4 sm:p-6 border-b border-border">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-2">
           <Compass size={32} className="text-primary shrink-0" />
-          <h1 className="text-2xl sm:text-3xl font-bold">Chravel Recs</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">ChravelApp Recs</h1>
           <Badge
             variant="outline"
             className="gap-1 border-gold-primary/40 bg-gold-primary/10 text-gold-primary text-xs font-medium"

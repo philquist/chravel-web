@@ -77,7 +77,7 @@ export const SubscriptionPaywall: React.FC<SubscriptionPaywallProps> = ({ onClos
 
       <div className="rounded-lg border p-3 text-sm text-muted-foreground flex items-center gap-2">
         <Smartphone className="w-4 h-4" aria-hidden="true" />
-        Open Chravel mobile app to manage subscriptions.
+        Open ChravelApp mobile app to manage subscriptions.
       </div>
     </Card>
   );

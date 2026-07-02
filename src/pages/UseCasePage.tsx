@@ -29,14 +29,14 @@ function UseCaseNotFound({ slug }: { slug: string }) {
     <main className="min-h-screen bg-background text-foreground">
       <SeoHead
         title="Use case not found | ChravelApp"
-        description="Browse how groups, teams, and travel pros use Chravel."
+        description="Browse how groups, teams, and travel pros use ChravelApp."
         path={pagePath(slug)}
         noindex
       />
       <section className="max-w-3xl mx-auto px-4 py-24 text-center space-y-6">
         <h1 className="text-3xl font-bold">This use case isn’t available yet</h1>
         <p className="text-lg text-muted-foreground">
-          It may be on the way. In the meantime, explore how others use Chravel.
+          It may be on the way. In the meantime, explore how others use ChravelApp.
         </p>
         <Link
           to={USE_CASES_PATH}
@@ -97,7 +97,7 @@ export default function UseCasePage() {
           ))}
         </div>
 
-        {/* Feature map: pain → Chravel solution */}
+        {/* Feature map: pain → ChravelApp solution */}
         <section className="space-y-6">
           <h2 className="text-2xl md:text-3xl font-bold">From scattered to coordinated</h2>
           <div className="grid gap-4 md:grid-cols-2">
@@ -178,7 +178,7 @@ export default function UseCasePage() {
 
         {/* Related use cases (cluster linking) */}
         <section className="space-y-4 border-t border-border pt-8">
-          <h2 className="text-xl font-semibold">More ways teams use Chravel</h2>
+          <h2 className="text-xl font-semibold">More ways teams use ChravelApp</h2>
           <ul className="flex flex-wrap gap-3 text-sm">
             {related.map(item => {
               const href = getUseCaseHref(item);

@@ -15,7 +15,7 @@ export const ForTeams = () => {
     {
       icon: <Users size={32} className="text-accent" />,
       title: 'Scale Team Coordination',
-      description: 'From 10 to 100+ team members, Chravel handles complex logistics seamlessly',
+      description: 'From 10 to 100+ team members, ChravelApp handles complex logistics seamlessly',
     },
     {
       icon: <BarChart3 size={32} className="text-primary" />,
@@ -78,7 +78,7 @@ export const ForTeams = () => {
           </h1>
 
           <p className="text-xl sm:text-2xl md:text-3xl text-foreground max-w-3xl mx-auto">
-            From touring artists to college athletics, Chravel Pro reduces operational costs and
+            From touring artists to college athletics, ChravelApp Pro reduces operational costs and
             eliminates coordination chaos for teams of 10 to 100+
           </p>
 
@@ -325,7 +325,7 @@ export const ForTeams = () => {
             Ready to Transform Your Team Coordination?
           </h2>
           <p className="text-xl text-foreground mb-8">
-            Schedule a demo to see how Chravel Pro can reduce your operational costs
+            Schedule a demo to see how ChravelApp Pro can reduce your operational costs
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Button

@@ -326,7 +326,7 @@ export const NativeSettings = ({
             <NativeToggleItem
               icon={<Shield size={18} />}
               label="Analytics"
-              sublabel="Help improve Chravel"
+              sublabel="Help improve ChravelApp"
               checked={analyticsEnabled}
               onChange={setAnalyticsEnabled}
             />
@@ -361,7 +361,7 @@ export const NativeSettings = ({
             />
             <NativeListItem
               icon={<Star size={18} />}
-              label="Rate Chravel"
+              label="Rate ChravelApp"
               sublabel={platform === 'ios' ? 'App Store' : 'Play Store'}
               showChevron
               onPress={() => handleNavigate('rate')}

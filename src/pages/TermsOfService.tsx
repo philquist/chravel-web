@@ -28,7 +28,7 @@ export default function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">1. Agreement to Terms</h2>
             <p className="text-foreground/90 mb-4">
-              By accessing or using Chravel ("Service"), you agree to be bound by these Terms of
+              By accessing or using ChravelApp ("Service"), you agree to be bound by these Terms of
               Service ("Terms"). If you do not agree to these Terms, please do not use the Service.
             </p>
           </section>
@@ -36,7 +36,7 @@ export default function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">2. Description of Service</h2>
             <p className="text-foreground/90 mb-4">
-              Chravel is a collaborative platform for planning and managing group trips, events, and
+              ChravelApp is a collaborative platform for planning and managing group trips, events, and
               activities. Our services include:
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2 text-foreground/90">
@@ -86,7 +86,7 @@ export default function TermsOfService() {
               <li>Violate any intellectual property rights</li>
             </ul>
             <p className="text-foreground/90 mb-4">
-              <strong>Zero tolerance for objectionable content and abusive users.</strong> Chravel
+              <strong>Zero tolerance for objectionable content and abusive users.</strong> ChravelApp
               has zero tolerance for objectionable content (including harassment, hate speech,
               sexual or exploitative material, threats, and impersonation) and for abusive behavior
               toward other users. You can report objectionable content or block an abusive user from
@@ -103,7 +103,7 @@ export default function TermsOfService() {
             <h2 className="text-2xl font-semibold mb-4">5. Content and Intellectual Property</h2>
             <h3 className="text-xl font-medium mb-3">5.1 Your Content</h3>
             <p className="text-foreground/90 mb-4">
-              You retain ownership of all content you post on Chravel. By posting content, you grant
+              You retain ownership of all content you post on ChravelApp. By posting content, you grant
               us a non-exclusive, worldwide, royalty-free license to use, store, and display your
               content solely to provide and improve the Service.
             </p>
@@ -111,7 +111,7 @@ export default function TermsOfService() {
             <h3 className="text-xl font-medium mb-3">5.2 Our Content</h3>
             <p className="text-foreground/90 mb-4">
               The Service, including all text, graphics, logos, icons, images, and software, is
-              owned by Chravel or its licensors and is protected by copyright, trademark, and other
+              owned by ChravelApp or its licensors and is protected by copyright, trademark, and other
               intellectual property laws.
             </p>
 
@@ -176,7 +176,7 @@ export default function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">10. Indemnification</h2>
             <p className="text-foreground/90 mb-4">
-              You agree to indemnify and hold harmless Chravel and its affiliates from any claims,
+              You agree to indemnify and hold harmless ChravelApp and its affiliates from any claims,
               damages, losses, and expenses (including legal fees) arising from your use of the
               Service or violation of these Terms.
             </p>
@@ -227,7 +227,7 @@ export default function TermsOfService() {
                 <strong>Email:</strong> support@chravelapp.com
               </li>
               <li>
-                <strong>Mail:</strong> Chravel Legal Department, 130 N Broadway STE 32415, Los
+                <strong>Mail:</strong> ChravelApp Legal Department, 130 N Broadway STE 32415, Los
                 Angeles, CA 90012
               </li>
             </ul>
@@ -237,7 +237,7 @@ export default function TermsOfService() {
             <h2 className="text-2xl font-semibold mb-4">16. Entire Agreement</h2>
             <p className="text-foreground/90 mb-4">
               These Terms, together with our Privacy Policy, constitute the entire agreement between
-              you and Chravel regarding the Service and supersede all prior agreements.
+              you and ChravelApp regarding the Service and supersede all prior agreements.
             </p>
           </section>
         </div>

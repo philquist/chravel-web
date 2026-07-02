@@ -61,7 +61,7 @@ export async function getBlockedUserProfiles(): Promise<BlockedUserProfile[]> {
     const p = profileById.get(id);
     return {
       id,
-      displayName: p?.resolved_display_name || p?.display_name || 'Chravel user',
+      displayName: p?.resolved_display_name || p?.display_name || 'ChravelApp user',
       avatarUrl: p?.avatar_url ?? null,
     };
   });

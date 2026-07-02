@@ -202,7 +202,7 @@ export const ConsumerPermissionsSection = () => {
       toast({
         title: 'Unable to open Settings',
         description:
-          'Open the Settings app on your device, find Chravel, and adjust permissions there.',
+          'Open the Settings app on your device, find ChravelApp, and adjust permissions there.',
       });
     }
   }, [toast]);
@@ -233,7 +233,7 @@ export const ConsumerPermissionsSection = () => {
           toast({
             title: 'Permission denied',
             description: isInstalledApp()
-              ? 'Enable this permission in your device Settings for Chravel.'
+              ? 'Enable this permission in your device Settings for ChravelApp.'
               : 'You can enable it in your browser or device settings.',
             variant: 'destructive',
             action: isInstalledApp() ? (
@@ -255,7 +255,7 @@ export const ConsumerPermissionsSection = () => {
         toast({
           title: 'Not enabled',
           description: isInstalledApp()
-            ? 'If you changed your mind, try again or enable it in Settings for Chravel.'
+            ? 'If you changed your mind, try again or enable it in Settings for ChravelApp.'
             : 'If you changed your mind, try again or enable it in your browser settings.',
           action: isInstalledApp() ? (
             <ToastAction
@@ -299,7 +299,7 @@ export const ConsumerPermissionsSection = () => {
       toast({
         title: 'Revoke in Settings',
         description:
-          'To turn off this permission, open your device Settings, choose Chravel, and toggle it off there.',
+          'To turn off this permission, open your device Settings, choose ChravelApp, and toggle it off there.',
         action: canOpenSettings ? (
           <ToastAction altText="Open Settings" onClick={() => void handleOpenSettings()}>
             Open Settings

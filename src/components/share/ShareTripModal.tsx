@@ -180,7 +180,7 @@ export const ShareTripModal = ({ isOpen, onClose, trip }: ShareTripModalProps) =
               <div className="absolute inset-0 h-24 md:h-32 bg-gradient-to-t from-black/40 dark:from-black/80 via-transparent to-transparent" />
             </div>
 
-            {/* Chravel Badge */}
+            {/* ChravelApp Badge */}
             <div className="absolute top-1.5 left-1.5 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded-full">
               <span className="text-white text-[10px] font-semibold">ChravelApp</span>
             </div>

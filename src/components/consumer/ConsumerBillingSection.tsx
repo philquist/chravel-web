@@ -125,7 +125,7 @@ export const ConsumerBillingSection = () => {
       const attempt = () => purchaseProSubscription(tier, 'monthly');
       const result = await attempt();
       handlePurchaseResult(result, {
-        successMessage: 'Chravel Pro activated!',
+        successMessage: 'ChravelApp Pro activated!',
         successDescription: 'Your Pro features are unlocking now.',
         onRetry: () => void handleUpgradeToProPlan(planKey),
         context: tier,
@@ -217,7 +217,7 @@ export const ConsumerBillingSection = () => {
         'Smart Import (Calendar, Agenda, Line-up from URL, paste, or file)',
         'Calendar sync (Google, Apple, Outlook)',
         'PDF trip export',
-        'Create 1 Chravel Pro trip per month (50-seat limit)',
+        'Create 1 ChravelApp Pro trip per month (50-seat limit)',
         'Role-based channels on Pro trips',
         'Custom trip categories & tagging',
         'Early feature access',

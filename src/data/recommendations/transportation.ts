@@ -30,7 +30,7 @@ export const transportationRecommendations: Recommendation[] = [
     tags: ['Airline', 'Miles Rewards', 'Premium Service'],
     isSponsored: true,
     sponsorBadge: 'Promoted',
-    promoText: '5,000 bonus miles for Chravel users!',
+    promoText: '5,000 bonus miles for ChravelApp users!',
     ctaButton: {
       text: 'Book Flight',
       action: 'book',
@@ -73,14 +73,14 @@ export const transportationRecommendations: Recommendation[] = [
     city: 'New York',
     coordinates: { lat: 40.7128, lng: -74.006 },
     description:
-      'Double SkyMiles on all domestic flights booked through Chravel. Premium seat selection included.',
+      'Double SkyMiles on all domestic flights booked through ChravelApp. Premium seat selection included.',
     rating: 4.8,
     priceLevel: 3,
     images: [deltaAirlines],
     tags: ['Airline', 'SkyMiles', 'Domestic Flights'],
     isSponsored: true,
     sponsorBadge: 'Promoted',
-    promoText: 'Double SkyMiles for Chravel users!',
+    promoText: 'Double SkyMiles for ChravelApp users!',
     ctaButton: {
       text: 'Earn Miles',
       action: 'book',
@@ -149,7 +149,7 @@ export const transportationRecommendations: Recommendation[] = [
     city: 'Miami',
     coordinates: { lat: 25.7617, lng: -80.1918 },
     description:
-      'Flat $10 off airport rides for Chravel users. Choose from Uber Black, Uber Comfort, or UberX.',
+      'Flat $10 off airport rides for ChravelApp users. Choose from Uber Black, Uber Comfort, or UberX.',
     rating: 4.5,
     priceLevel: 2,
     images: [uberBlack],
@@ -173,14 +173,14 @@ export const transportationRecommendations: Recommendation[] = [
     city: 'Multiple Cities',
     coordinates: { lat: 40.7128, lng: -74.006 },
     description:
-      'Safe, friendly rides when you need them. New user discount available for Chravel members.',
+      'Safe, friendly rides when you need them. New user discount available for ChravelApp members.',
     rating: 4.5,
     priceLevel: 2,
     images: [lyftCar],
     tags: ['Rideshare', 'City Travel', 'New User Offer'],
     isSponsored: true,
     sponsorBadge: 'Promoted',
-    promoText: 'New user discount for Chravel',
+    promoText: 'New user discount for ChravelApp',
     ctaButton: {
       text: 'Get Ride',
       action: 'book',
@@ -249,7 +249,7 @@ export const transportationRecommendations: Recommendation[] = [
     city: 'Miami',
     coordinates: { lat: 25.7617, lng: -80.1918 },
     description:
-      'Bundle flights, hotels, and car rentals for maximum savings. Exclusive Chravel member discounts available.',
+      'Bundle flights, hotels, and car rentals for maximum savings. Exclusive ChravelApp member discounts available.',
     rating: 4.2,
     priceLevel: 2,
     images: [orbitzPackages],

@@ -58,7 +58,7 @@ export const PhoneFrame = ({ activePill, glintPill, children }: PhoneFrameProps)
         </div>
       </div>
 
-      {/* Top pill bar (Chravel signature) */}
+      {/* Top pill bar (ChravelApp signature) */}
       <DemoPillBar active={activePill} glint={glintPill} />
 
       {/* Content */}

@@ -88,7 +88,7 @@ export const CampaignList = ({ campaigns, onRefresh }: CampaignListProps) => {
         <CardContent>
           <p className="text-muted-foreground mb-4">No campaigns yet</p>
           <p className="text-sm text-muted-foreground">
-            Create your first campaign to start advertising on Chravel
+            Create your first campaign to start advertising on ChravelApp
           </p>
         </CardContent>
       </Card>

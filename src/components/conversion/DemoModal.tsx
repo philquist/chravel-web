@@ -38,8 +38,8 @@ export const DemoModal = ({ isOpen, onClose, demoType = 'pro' }: DemoModalProps)
 
   const getDemoDescription = () => {
     return demoType === 'events'
-      ? 'See how Chravel Events can streamline your event management workflow'
-      : "Discover how Chravel Pro can transform your team's travel coordination";
+      ? 'See how ChravelApp Events can streamline your event management workflow'
+      : "Discover how ChravelApp Pro can transform your team's travel coordination";
   };
 
   const getUseCaseOptions = () => {

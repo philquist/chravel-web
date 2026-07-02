@@ -20,7 +20,7 @@ export const hotelRecommendations: Recommendation[] = [
     tags: ['Luxury', 'Beachfront', 'Spa', 'Pool'],
     isSponsored: true,
     sponsorBadge: 'Featured',
-    promoText: '10% off for Chravel users!',
+    promoText: '10% off for ChravelApp users!',
     ctaButton: {
       text: 'Book Now',
       action: 'book',
@@ -48,7 +48,7 @@ export const hotelRecommendations: Recommendation[] = [
     tags: ['Luxury', 'Beachfront', 'Spa', 'Contemporary'],
     isSponsored: true,
     sponsorBadge: 'Featured',
-    promoText: 'Free room upgrade for Chravel users!',
+    promoText: 'Free room upgrade for ChravelApp users!',
     ctaButton: {
       text: 'Book Now',
       action: 'book',

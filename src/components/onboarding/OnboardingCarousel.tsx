@@ -74,7 +74,7 @@ const screens: ScreenConfig[] = [
   },
   {
     component: ConciergeDemoScreen,
-    title: 'Your Chravel Agent.',
+    title: 'Your ChravelApp Agent.',
     subtitle: 'Ask anything — get restaurant picks, hotel recs, and trip ideas instantly.',
     pill: 'concierge',
     showInFrame: true,

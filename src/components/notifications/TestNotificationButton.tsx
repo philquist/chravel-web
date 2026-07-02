@@ -45,7 +45,7 @@ export const TestNotificationButton: React.FC<ButtonProps> = props => {
       }
 
       const registration = await navigator.serviceWorker.ready;
-      await registration.showNotification('Chravel', {
+      await registration.showNotification('ChravelApp', {
         body: 'Test notification — push is working. 🎉',
         icon: '/chravel-logo.png',
         badge: '/chravel-badge.png',

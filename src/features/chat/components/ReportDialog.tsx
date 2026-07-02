@@ -57,7 +57,7 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="text-white">Report Content</DialogTitle>
           <DialogDescription className="text-gray-400">
-            Help us keep Chravel safe. Select a reason for your report.
+            Help us keep ChravelApp safe. Select a reason for your report.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

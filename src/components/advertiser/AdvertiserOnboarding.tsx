@@ -41,7 +41,7 @@ export const AdvertiserOnboarding = ({ onComplete }: AdvertiserOnboardingProps) 
 
       if (advertiser) {
         toast({
-          title: 'Welcome to Chravel Ads!',
+          title: 'Welcome to ChravelApp Ads!',
           description: 'Your advertiser account has been created successfully',
         });
         onComplete(advertiser);
@@ -62,7 +62,7 @@ export const AdvertiserOnboarding = ({ onComplete }: AdvertiserOnboardingProps) 
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Welcome to Chravel Advertiser Hub</CardTitle>
+          <CardTitle className="text-2xl font-bold">Welcome to ChravelApp Advertiser Hub</CardTitle>
           <CardDescription>
             {isDemoMode
               ? 'Demo Mode: Fill out the form below to see how the advertiser hub works'

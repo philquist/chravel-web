@@ -49,7 +49,7 @@ export const AdvertiserSettingsPanel = ({
       id: 'demo-campaign-uber',
       advertiser_id: 'demo-advertiser-1',
       name: 'Uber - Premium Airport Rides',
-      description: 'Flat $10 off airport rides for Chravel users.',
+      description: 'Flat $10 off airport rides for ChravelApp users.',
       discount_details: '$10 off airport rides',
       images: [
         {
@@ -195,7 +195,7 @@ export const AdvertiserSettingsPanel = ({
               <div>
                 <h2 className="text-xl font-semibold text-white">Your Campaigns</h2>
                 <p className="text-sm text-gray-400 mt-1">
-                  {activeAdvertiser?.company_name || 'Create campaigns to advertise on Chravel'}
+                  {activeAdvertiser?.company_name || 'Create campaigns to advertise on ChravelApp'}
                 </p>
               </div>
               <Button

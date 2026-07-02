@@ -143,7 +143,7 @@ export const FooterSection = () => {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-border/60 flex flex-col tablet:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {currentYear} Chravel Inc. All rights reserved.
+            © {currentYear} ChravelApp Inc. All rights reserved.
           </p>
 
           {/* Social Links */}

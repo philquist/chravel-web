@@ -70,7 +70,7 @@ export const SurveyResultScreen = ({ chaosScore, onShowDemo }: SurveyResultScree
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.55 }}
       >
-        You&apos;re not bad at planning. Your tools are scattered. Chravel keeps the whole trip in
+        You&apos;re not bad at planning. Your tools are scattered. ChravelApp keeps the whole trip in
         one place.
       </motion.p>
 

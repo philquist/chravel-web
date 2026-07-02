@@ -57,7 +57,7 @@ function PostNotFound({ slug }: { slug: string }) {
     <main className="min-h-screen bg-background text-foreground">
       <SeoHead
         title="Article not found | ChravelApp"
-        description="Browse the Chravel blog for guides on group travel and coordination."
+        description="Browse the ChravelApp blog for guides on group travel and coordination."
         path={postPath(slug)}
         noindex
       />

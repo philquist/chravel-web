@@ -254,7 +254,7 @@ function hexToRgb(hex: string): [number, number, number] {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
     ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
-    : [196, 151, 70]; // Default Chravel gold (#c49746)
+    : [196, 151, 70]; // Default ChravelApp gold (#c49746)
 }
 
 function sanitizePdfText(value: string): string {
@@ -361,7 +361,7 @@ export async function generateClientPDF(
   // Header - Trip title in Chravel gold
   doc.setFontSize(24);
   doc.setFont('NotoSans', 'bold');
-  doc.setTextColor(196, 151, 70); // Chravel warm metallic gold
+  doc.setTextColor(196, 151, 70); // ChravelApp warm metallic gold
   doc.text(sanitizePdfText(data.tripTitle), margin, yPos);
   yPos += 30;
 
@@ -390,7 +390,7 @@ export async function generateClientPDF(
   }
 
   // Add a separator line in gold
-  doc.setDrawColor(196, 151, 70); // Chravel gold
+  doc.setDrawColor(196, 151, 70); // ChravelApp gold
   doc.setLineWidth(0.5);
   doc.line(margin, yPos, pageWidth - margin, yPos);
   yPos += 30;
@@ -403,7 +403,7 @@ export async function generateClientPDF(
     yPos = checkPageBreak(doc, yPos, 60);
     doc.setFontSize(14);
     doc.setFont('NotoSans', 'bold');
-    doc.setTextColor(83, 53, 23); // Chravel dark bronze for section headings
+    doc.setTextColor(83, 53, 23); // ChravelApp dark bronze for section headings
     doc.text(heading, margin, yPos);
     yPos += 20;
   };
@@ -1098,7 +1098,7 @@ export async function generateClientPDF(
 
   // Modest attribution: the trip name is the document header; branding is a
   // single small footer line so client-facing deliverables stay presentable.
-  const footerText = customization?.footerText || 'Made with Chravel';
+  const footerText = customization?.footerText || 'Made with ChravelApp';
   const runningHeader = sanitizePdfText(data.tripTitle);
 
   // PDF document metadata title = trip name (shown in browser tabs / readers)

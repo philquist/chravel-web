@@ -53,7 +53,7 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
       if (selectedPlan === 'travel-pro') {
         const result = await purchaseProSubscription('pro-starter', billingCycle);
         if (result.success) {
-          toast.success('Chravel Pro activated!');
+          toast.success('ChravelApp Pro activated!');
           onClose();
         } else if (result.errorCode === 'CANCELLED') {
           // silent
@@ -151,7 +151,7 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
               }`}
             >
               <Building size={18} />
-              Chravel Pro
+              ChravelApp Pro
             </button>
           </div>
         </div>
@@ -298,7 +298,7 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
                     </li>
                     <li className="flex items-start gap-2">
                       <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      Create 1 Chravel Pro trip per month (50-seat limit)
+                      Create 1 ChravelApp Pro trip per month (50-seat limit)
                     </li>
                     <li className="flex items-start gap-2">
                       <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
@@ -319,7 +319,7 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
               <div className="w-16 h-16 bg-gradient-to-r from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Building size={32} className="text-black" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Chravel Pro</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">ChravelApp Pro</h3>
               <p className="text-gray-300">Enterprise software for professional trip management</p>
             </div>
 

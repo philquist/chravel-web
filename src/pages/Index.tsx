@@ -1047,7 +1047,7 @@ const AuthIndex = () => {
           />
           <NativeTabBarSpacer />
 
-          {/* Trip type switcher (Instagram-style) - now includes Chravel Recs */}
+          {/* Trip type switcher (Instagram-style) - now includes ChravelApp Recs */}
           <NativeTripTypeSwitcher
             isOpen={showTripTypeSwitcher}
             onClose={() => setShowTripTypeSwitcher(false)}
@@ -1242,7 +1242,7 @@ const AuthIndex = () => {
         />
         <NativeTabBarSpacer />
 
-        {/* Trip type switcher (Instagram-style) - now includes Chravel Recs */}
+        {/* Trip type switcher (Instagram-style) - now includes ChravelApp Recs */}
         <NativeTripTypeSwitcher
           isOpen={showTripTypeSwitcher}
           onClose={() => setShowTripTypeSwitcher(false)}
@@ -1467,7 +1467,7 @@ const AuthIndex = () => {
       />
       <NativeTabBarSpacer />
 
-      {/* Trip type switcher (Instagram-style) - now includes Chravel Recs */}
+      {/* Trip type switcher (Instagram-style) - now includes ChravelApp Recs */}
       <NativeTripTypeSwitcher
         isOpen={showTripTypeSwitcher}
         onClose={() => setShowTripTypeSwitcher(false)}

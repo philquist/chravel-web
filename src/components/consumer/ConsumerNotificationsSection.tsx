@@ -190,9 +190,9 @@ export const ConsumerNotificationsSection = () => {
           }
           if (webPushRequiresHomeScreen) {
             toast({
-              title: 'Add Chravel to your Home Screen',
+              title: 'Add ChravelApp to your Home Screen',
               description:
-                'On iPhone, tap Share → Add to Home Screen, then open Chravel from there to enable push.',
+                'On iPhone, tap Share → Add to Home Screen, then open ChravelApp from there to enable push.',
             });
             return;
           }

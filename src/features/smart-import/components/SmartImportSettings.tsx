@@ -127,7 +127,7 @@ export const SmartImportSettings = () => {
             on any trip to scan your connected inboxes for matching reservations.
           </span>
           <span className="block">
-            Chravel uses AI to find and parse flights, hotels, dining, events, train tickets, and
+            ChravelApp uses AI to find and parse flights, hotels, dining, events, train tickets, and
             private charter confirmations. We only request read-only access — you can disconnect
             anytime.
           </span>
@@ -165,7 +165,7 @@ export const SmartImportSettings = () => {
                 <strong>Smart Import</strong> to scan your inbox for matching reservations.
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                Chravel's AI detects flights, hotels, dining, events, train tickets, private
+                ChravelApp's AI detects flights, hotels, dining, events, train tickets, private
                 charters, glamping bookings, and more. You can connect up to {MAX_ACCOUNTS}{' '}
                 accounts.
               </p>

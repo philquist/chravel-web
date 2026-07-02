@@ -500,7 +500,7 @@ const TripPreview = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent" />
 
-        {/* Chravel Logo/Branding */}
+        {/* ChravelApp Logo/Branding */}
         <div className="absolute top-4 left-4 z-10">
           <div className="bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full">
             <span className="text-gold-primary font-bold text-lg">ChravelApp</span>

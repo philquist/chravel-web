@@ -208,8 +208,8 @@ const JoinTrip = () => {
       'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&h=630&fit=crop';
 
     document.title = inviteData?.trip.name
-      ? `Join ${tripName} - Chravel`
-      : 'Plan Trips Better - Chravel';
+      ? `Join ${tripName} - ChravelApp`
+      : 'Plan Trips Better - ChravelApp';
 
     const updateMetaTag = (property: string, content: string) => {
       let meta = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
