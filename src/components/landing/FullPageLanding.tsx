@@ -23,6 +23,9 @@ const PricingLandingSection = lazy(() =>
     default: module.PricingLandingSection,
   })),
 );
+const JournalSection = lazy(() =>
+  import('./sections/JournalSection').then(module => ({ default: module.JournalSection })),
+);
 const FooterSection = lazy(() =>
   import('./FooterSection').then(module => ({ default: module.FooterSection })),
 );
@@ -83,6 +86,11 @@ const GRADIENTS = {
     colors: [DESIGN_TOKENS.pureBlack, DESIGN_TOKENS.richBlack] as [string, string],
     direction: 'vertical' as const,
     accentGlow: { color: DESIGN_TOKENS.goldAccentGlow, position: 'bottom' as const, opacity: 0.15 },
+  },
+  journal: {
+    colors: [DESIGN_TOKENS.richBlack, DESIGN_TOKENS.pureBlack] as [string, string],
+    direction: 'vertical' as const,
+    accentGlow: { color: DESIGN_TOKENS.goldSoftGlow, position: 'top' as const, opacity: 0.2 },
   },
 };
 
@@ -215,6 +223,19 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
         >
           <Suspense fallback={<SectionLoader />}>
             <FAQSection />
+          </Suspense>
+        </FullPageLandingSection>
+
+        {/* Section 8: Journal — blog preview + closing conversion band */}
+        <FullPageLandingSection
+          id="section-journal"
+          gradientColors={GRADIENTS.journal.colors}
+          gradientDirection={GRADIENTS.journal.direction}
+          accentGlow={GRADIENTS.journal.accentGlow}
+          goldOverlay="waves"
+        >
+          <Suspense fallback={<SectionLoader />}>
+            <JournalSection onSignUp={onSignUp} />
           </Suspense>
         </FullPageLandingSection>
 

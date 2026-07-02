@@ -8,29 +8,40 @@ const scrollToSection = (id: string) => {
   }
 };
 
+const FOOTER_LINK_CLASS =
+  'text-muted-foreground hover:text-primary transition-colors duration-200';
+
+const FOOTER_HEADING_CLASS =
+  'text-xs font-semibold uppercase tracking-[0.22em] text-[#feeaa5]/90';
+
 export const FooterSection = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full bg-background/95 backdrop-blur-sm border-t border-border">
+    <footer className="relative w-full bg-background/95 backdrop-blur-sm">
+      {/* Gold hairline — footer opens with the same rule language as the sections */}
+      <div
+        className="h-px w-full bg-gradient-to-r from-transparent via-[#c49746]/50 to-transparent"
+        aria-hidden="true"
+      />
       <div className="container mx-auto px-4 py-12 tablet:py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 tablet:grid-cols-4 gap-y-8 gap-x-4 tablet:gap-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 tablet:grid-cols-4 gap-y-10 gap-x-4 tablet:gap-12">
           {/* Company Info */}
           <div className="space-y-4 col-span-1 sm:col-span-2 tablet:col-span-1">
-            <div className="text-2xl font-bold text-gradient-gold">ChravelApp</div>
-            <p className="text-sm text-foreground max-w-xs">
+            <div className="font-display text-3xl text-gradient-gold">ChravelApp</div>
+            <p className="text-sm leading-relaxed text-muted-foreground max-w-xs">
               The AI-powered social storage platform for group plans, messages, and memories.
             </p>
           </div>
 
           {/* Product Links */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg text-foreground">Product</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className={FOOTER_HEADING_CLASS}>Product</h3>
+            <ul className="space-y-2.5 text-sm">
               <li>
                 <button
                   onClick={() => scrollToSection('section-features')}
-                  className="text-foreground hover:text-primary transition-colors text-left"
+                  className={`${FOOTER_LINK_CLASS} text-left`}
                 >
                   Features
                 </button>
@@ -38,7 +49,7 @@ export const FooterSection = () => {
               <li>
                 <button
                   onClick={() => scrollToSection('section-ai')}
-                  className="text-foreground hover:text-primary transition-colors text-left"
+                  className={`${FOOTER_LINK_CLASS} text-left`}
                 >
                   AI Features
                 </button>
@@ -46,31 +57,28 @@ export const FooterSection = () => {
               <li>
                 <button
                   onClick={() => scrollToSection('section-pricing')}
-                  className="text-foreground hover:text-primary transition-colors text-left"
+                  className={`${FOOTER_LINK_CLASS} text-left`}
                 >
                   Pricing
                 </button>
               </li>
               <li>
-                <Link
-                  to="/use-cases"
-                  className="text-foreground hover:text-primary transition-colors"
-                >
+                <Link to="/use-cases" className={FOOTER_LINK_CLASS}>
                   Use Cases
                 </Link>
               </li>
               <li>
-                <Link to="/blog" className="text-foreground hover:text-primary transition-colors">
+                <Link to="/blog" className={FOOTER_LINK_CLASS}>
                   Blog
                 </Link>
               </li>
               <li>
-                <Link to="/teams" className="text-foreground hover:text-primary transition-colors">
+                <Link to="/teams" className={FOOTER_LINK_CLASS}>
                   For Teams
                 </Link>
               </li>
               <li>
-                <Link to="/demo" className="text-foreground hover:text-primary transition-colors">
+                <Link to="/demo" className={FOOTER_LINK_CLASS}>
                   Demo
                 </Link>
               </li>
@@ -79,7 +87,7 @@ export const FooterSection = () => {
                   href="https://testflight.apple.com/join/S3DNbjNf"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-foreground hover:text-primary transition-colors"
+                  className={FOOTER_LINK_CLASS}
                 >
                   iOS Beta (TestFlight)
                 </a>
@@ -89,7 +97,7 @@ export const FooterSection = () => {
                   href="https://play.google.com/apps/testing/com.chravel.app"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-foreground hover:text-primary transition-colors"
+                  className={FOOTER_LINK_CLASS}
                 >
                   Android Beta (Play Store)
                 </a>
@@ -99,21 +107,15 @@ export const FooterSection = () => {
 
           {/* Company Links */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg text-foreground">Company</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className={FOOTER_HEADING_CLASS}>Company</h3>
+            <ul className="space-y-2.5 text-sm">
               <li>
-                <Link
-                  to="/support"
-                  className="text-foreground hover:text-primary transition-colors"
-                >
+                <Link to="/support" className={FOOTER_LINK_CLASS}>
                   Contact
                 </Link>
               </li>
               <li>
-                <a
-                  href="mailto:support@chravelapp.com"
-                  className="text-foreground hover:text-primary transition-colors"
-                >
+                <a href="mailto:support@chravelapp.com" className={FOOTER_LINK_CLASS}>
                   Support
                 </a>
               </li>
@@ -122,18 +124,15 @@ export const FooterSection = () => {
 
           {/* Legal Links */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg text-foreground">Legal</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className={FOOTER_HEADING_CLASS}>Legal</h3>
+            <ul className="space-y-2.5 text-sm">
               <li>
-                <Link
-                  to="/privacy"
-                  className="text-foreground hover:text-primary transition-colors"
-                >
+                <Link to="/privacy" className={FOOTER_LINK_CLASS}>
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/terms" className="text-foreground hover:text-primary transition-colors">
+                <Link to="/terms" className={FOOTER_LINK_CLASS}>
                   Terms of Service
                 </Link>
               </li>
@@ -142,18 +141,18 @@ export const FooterSection = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-border flex flex-col tablet:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-foreground">
+        <div className="mt-12 pt-8 border-t border-border/60 flex flex-col tablet:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-muted-foreground">
             © {currentYear} Chravel Inc. All rights reserved.
           </p>
 
-          {/* Social Links Placeholder */}
-          <div className="flex gap-4">
+          {/* Social Links */}
+          <div className="flex gap-5">
             <a
               href="https://twitter.com/chravelapp"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-foreground hover:text-primary transition-colors"
+              className={FOOTER_LINK_CLASS}
               aria-label="Twitter"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -164,7 +163,7 @@ export const FooterSection = () => {
               href="https://linkedin.com/company/chravelapp"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-foreground hover:text-primary transition-colors"
+              className={FOOTER_LINK_CLASS}
               aria-label="LinkedIn"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -175,7 +174,7 @@ export const FooterSection = () => {
               href="https://instagram.com/chravelapp"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-foreground hover:text-primary transition-colors"
+              className={FOOTER_LINK_CLASS}
               aria-label="Instagram"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

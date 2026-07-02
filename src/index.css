@@ -1966,3 +1966,11 @@
 [data-marketing] .no-text-shadow * {
   text-shadow: none;
 }
+
+/* Reduced motion: marketing entrance fades render instantly. Framer Motion
+   reveals are already gated per-component via useReducedMotion(). */
+@media (prefers-reduced-motion: reduce) {
+  [data-marketing] .animate-fade-in {
+    animation: none;
+  }
+}

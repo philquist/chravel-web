@@ -8,16 +8,16 @@ interface NavSection {
   label: string;
 }
 
+// Must match the `section-*` DOM ids rendered by FullPageLanding, in page order.
 const sections: NavSection[] = [
   { id: 'hero', label: 'Home' },
-  { id: 'features', label: 'Features' },
-  { id: 'how', label: 'How It Works' },
-  { id: 'ai', label: 'AI' },
-  { id: 'storage', label: 'Storage' },
-  { id: 'proof', label: 'Reviews' },
   { id: 'replaces', label: 'Compare' },
-  { id: 'faq', label: 'FAQ' },
+  { id: 'features', label: 'How It Works' },
+  { id: 'use-cases', label: 'Use Cases' },
+  { id: 'ai', label: 'AI' },
   { id: 'pricing', label: 'Pricing' },
+  { id: 'faq', label: 'FAQ' },
+  { id: 'journal', label: 'Journal' },
 ];
 
 interface StickyLandingNavProps {

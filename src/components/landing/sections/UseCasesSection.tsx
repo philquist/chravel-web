@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ChevronRight, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SectionHeader } from '../SectionHeader';
 
 interface Scenario {
   title: string;
@@ -116,6 +117,182 @@ const scenarios: Scenario[] = [
   },
 ];
 
+/** Per-destination CTA label so /use-cases cards never show blog-oriented copy. */
+const cardLinkLabel = (href: string) =>
+  href.startsWith('/blog') ? 'See the ChravelApp blog for more' : 'See how ChravelApp helps';
+
+interface ScenarioCardProps {
+  scenario: Scenario;
+  index: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+}
+
+/**
+ * Editorial use-case tile: issue-number index, serif title, before/after
+ * narrative with a gold "after" accent, and a per-card destination link.
+ * The featured (isHero) scenario spans the full row as a magazine lead story.
+ */
+const ScenarioCard: React.FC<ScenarioCardProps> = ({ scenario, index, isExpanded, onToggle }) => {
+  const reduceMotion = useReducedMotion();
+  const cardNumber = String(index + 1).padStart(2, '0');
+
+  return (
+    <motion.div
+      role="button"
+      tabIndex={0}
+      aria-expanded={isExpanded}
+      onClick={onToggle}
+      onKeyDown={e => {
+        // Toggle only when the card itself is focused, so activating an inner
+        // link (the CTA / hub links) doesn't also toggle the card.
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
+      initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.5, delay: Math.min(index % 3, 2) * 0.08, ease: [0.22, 1, 0.36, 1] }}
+      className={cn(
+        'group/card relative overflow-hidden rounded-2xl border bg-card/50 p-5 sm:p-6 backdrop-blur-sm cursor-pointer',
+        'transition-[border-color,box-shadow,transform,background-color] duration-300',
+        'hover:-translate-y-1 hover:shadow-[0_18px_44px_-18px_rgba(196,151,70,0.28)] motion-reduce:hover:translate-y-0',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
+        'max-w-md mx-auto tablet:max-w-none w-full',
+        isExpanded ? 'border-primary/50 bg-card/60' : 'hover:border-primary/40',
+        scenario.isHero
+          ? 'border-primary/40 shadow-lg shadow-primary/10 lg:col-span-3 tablet:col-span-2 lg:p-8'
+          : 'border-border',
+      )}
+    >
+      {/* Faint issue-number index — editorial signature */}
+      <span
+        className="pointer-events-none absolute -top-3 right-4 select-none font-display text-[64px] leading-none text-[#c49746]/[0.12] lg:text-[76px]"
+        aria-hidden="true"
+      >
+        {cardNumber}
+      </span>
+
+      {/* Gold top rule that brightens on hover/expand */}
+      <span
+        className={cn(
+          'absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c49746]/60 to-transparent transition-opacity duration-300',
+          isExpanded ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-70',
+        )}
+        aria-hidden="true"
+      />
+
+      {scenario.isHero && (
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+          Featured
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="mb-4 pr-10">
+        <h3
+          className={cn(
+            'font-display font-normal leading-snug break-words text-white',
+            scenario.isHero ? 'text-2xl tablet:text-3xl' : 'text-xl tablet:text-2xl',
+          )}
+        >
+          {scenario.title}
+        </h3>
+        <p className="mt-1 text-xs sm:text-sm text-muted-foreground break-words">
+          {scenario.subtitle}
+        </p>
+      </div>
+
+      {/* Before Section - Always Visible */}
+      <div className="mb-3">
+        <div className="mb-1.5 flex items-center gap-2">
+          <span className="h-px w-4 bg-rose-400/60" aria-hidden="true" />
+          <span className="text-[11px] sm:text-xs font-semibold text-rose-300/90 uppercase tracking-[0.18em]">
+            Before: Chaos
+          </span>
+        </div>
+        <p className="text-sm sm:text-base text-foreground/90 leading-relaxed break-words">
+          {scenario.before}
+        </p>
+      </div>
+
+      {/* Expand CTA - Only when collapsed */}
+      <AnimatePresence mode="wait">
+        {!isExpanded && (
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="mt-3 flex items-center gap-1 text-sm sm:text-base font-medium text-primary"
+          >
+            <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover/card:translate-x-0.5 motion-reduce:group-hover/card:translate-x-0" />
+            <span>{scenario.expandCTA}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Expanded Content */}
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            key="content"
+            initial={reduceMotion ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            transition={{
+              height: { type: 'spring', stiffness: 220, damping: 28, mass: 0.9 },
+              opacity: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+            }}
+            className="overflow-hidden"
+          >
+            <div className="pt-3 space-y-3">
+              {/* After Section — gold, the brand's "resolved" state */}
+              <div>
+                <div className="mb-1.5 flex items-center gap-2">
+                  <span className="h-px w-4 bg-[#c49746]" aria-hidden="true" />
+                  <span className="text-[11px] sm:text-xs font-semibold text-[#feeaa5] uppercase tracking-[0.18em]">
+                    After: Coordinated
+                  </span>
+                </div>
+                <p className="text-sm sm:text-base text-foreground leading-relaxed break-words">
+                  {scenario.after}
+                </p>
+              </div>
+
+              {/* Outcome Badge */}
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs sm:text-sm font-semibold tracking-wide text-primary">
+                <span
+                  className="inline-block h-1.5 w-1.5 rounded-full bg-primary"
+                  aria-hidden="true"
+                />
+                {scenario.badge}
+              </div>
+
+              {/* Link to the full use-case page or blog post (when one exists) */}
+              {scenario.href && (
+                <div>
+                  <Link
+                    to={scenario.href}
+                    onClick={e => e.stopPropagation()}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+                  >
+                    {cardLinkLabel(scenario.href)}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
 export const UseCasesSection = () => {
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
 
@@ -133,159 +310,37 @@ export const UseCasesSection = () => {
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-start pt-8 pb-12 tablet:pb-16 space-y-4 tablet:space-y-6">
-      <div className="container mx-auto px-4 relative z-10 flex flex-col items-center space-y-12">
-        {/* Headline - positioned higher to avoid towel overlap */}
-        <div className="text-center space-y-4 max-w-4xl">
-          <h2
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight"
-            style={{
-              textShadow:
-                '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4), 0 0 36px rgba(196,151,70,0.18)',
-            }}
-          >
-            Built for Every Journey
-          </h2>
-          <p
-            className="text-xl sm:text-2xl md:text-3xl text-white font-semibold max-w-3xl mx-auto"
-            style={{
-              textShadow: '0 2px 6px rgba(0,0,0,0.65), 0 4px 14px rgba(0,0,0,0.45)',
-            }}
-          >
-            Travel Concierges, Sports Teams, Touring Crews, Family Vacations, Corporate Travel,
-            Friend Groups, & Local Meetups — ChravelApp handles it all.
-          </p>
-        </div>
+      <div className="container mx-auto px-4 relative z-10 flex flex-col items-center space-y-10 tablet:space-y-12">
+        <SectionHeader
+          eyebrow="Made for Your Crew"
+          title={
+            <>
+              Built for <em>Every</em> Journey
+            </>
+          }
+          lede="Travel Concierges, Sports Teams, Touring Crews, Family Vacations, Corporate Travel, Friend Groups, & Local Meetups — ChravelApp handles it all."
+        />
 
-        {/* Scenarios Grid — single column on phones, 2-col on tablets (768px+), 3-col on desktop */}
-        <div className="grid grid-cols-1 tablet:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 tablet:gap-6 max-w-7xl w-full">
-          {scenarios.map((scenario, index) => {
-            const isExpanded = expandedCards.has(index);
-
-            return (
-              <div
-                key={index}
-                role="button"
-                tabIndex={0}
-                aria-expanded={isExpanded}
-                onClick={() => toggleCard(index)}
-                onKeyDown={e => {
-                  // Toggle only when the card itself is focused, so activating an inner
-                  // link (the CTA / hub links) doesn't also toggle the card.
-                  if (e.target !== e.currentTarget) return;
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    toggleCard(index);
-                  }
-                }}
-                className={cn(
-                  'bg-card/50 backdrop-blur-sm border rounded-2xl p-4 sm:p-5 tablet:p-6 transition-all duration-300 cursor-pointer max-w-md mx-auto tablet:max-w-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
-                  isExpanded ? 'border-primary/50 bg-card/60' : 'hover:border-primary/30',
-                  scenario.isHero
-                    ? 'border-primary/40 ring-2 ring-primary/20 shadow-lg shadow-primary/10'
-                    : 'border-border',
-                )}
-              >
-                {/* Header */}
-                <div className="mb-4">
-                  <h3 className="font-bold text-xl tablet:text-2xl leading-snug break-words">
-                    {scenario.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground break-words">
-                    {scenario.subtitle}
-                  </p>
-                </div>
-
-                {/* Before Section - Always Visible */}
-                <div className="mb-3">
-                  <div className="text-xs sm:text-sm font-bold text-red-400 mb-1 uppercase tracking-wide">
-                    Before: Chaos
-                  </div>
-                  <p className="text-sm sm:text-base tablet:text-lg text-foreground leading-relaxed break-words">
-                    {scenario.before}
-                  </p>
-                </div>
-
-                {/* Expand CTA - Only when collapsed */}
-                <AnimatePresence mode="wait">
-                  {!isExpanded && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="flex items-center gap-1 text-primary text-sm sm:text-base font-medium mt-3"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                      <span>{scenario.expandCTA}</span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Expanded Content */}
-                <AnimatePresence initial={false}>
-                  {isExpanded && (
-                    <motion.div
-                      key="content"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{
-                        height: { type: 'spring', stiffness: 220, damping: 28, mass: 0.9 },
-                        opacity: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
-                      }}
-                      className="overflow-hidden"
-                    >
-                      <div className="pt-3 space-y-3">
-                        {/* After Section */}
-                        <div>
-                          <div className="text-xs sm:text-sm font-bold text-green-400 mb-1 uppercase tracking-wide">
-                            After: Coordinated
-                          </div>
-                          <p className="text-sm sm:text-base tablet:text-lg text-foreground leading-relaxed break-words">
-                            {scenario.after}
-                          </p>
-                        </div>
-
-                        {/* Outcome Badge */}
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-primary/40 bg-primary/10 text-primary rounded-full text-xs sm:text-sm font-semibold tracking-wide">
-                          <span
-                            className="inline-block w-1.5 h-1.5 rounded-full bg-primary"
-                            aria-hidden="true"
-                          />
-                          {scenario.badge}
-                        </div>
-
-                        {/* Link to the full use-case page or blog post (when one exists) */}
-                        {scenario.href && (
-                          <div>
-                            <Link
-                              to={scenario.href}
-                              onClick={e => e.stopPropagation()}
-                              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
-                            >
-                              {scenario.href.startsWith('/blog')
-                                ? 'See the ChravelApp blog for more'
-                                : 'See the ChravelApp blog'}
-                              <ArrowRight className="w-4 h-4" />
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })}
+        {/* Scenarios Grid — featured lead story spans the row; tiles fill beneath */}
+        <div className="grid w-full max-w-7xl grid-cols-1 gap-4 sm:gap-5 tablet:grid-cols-2 tablet:gap-6 lg:grid-cols-3">
+          {scenarios.map((scenario, index) => (
+            <ScenarioCard
+              key={scenario.title}
+              scenario={scenario}
+              index={index}
+              isExpanded={expandedCards.has(index)}
+              onToggle={() => toggleCard(index)}
+            />
+          ))}
         </div>
 
         {/* Explore the full cluster */}
         <Link
           to="/use-cases"
-          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/40 bg-card/50 px-6 py-3 text-base font-semibold text-primary backdrop-blur-sm transition-colors hover:bg-primary/10"
+          className="group inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/40 bg-card/50 px-6 py-3 text-base font-semibold text-primary backdrop-blur-sm transition-colors hover:bg-primary/10"
         >
           Explore all use cases
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:group-hover:translate-x-0" />
         </Link>
       </div>
     </div>
