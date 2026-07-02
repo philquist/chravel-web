@@ -135,13 +135,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
               textShadow:
                 '0 2px 8px rgba(0,0,0,0.6), 0 4px 18px rgba(0,0,0,0.45), 0 0 44px rgba(196,151,70,0.28)',
             }}
-            aria-label="The Chat Travel App"
+            aria-label="The Group Chat Travel App"
           >
             <span aria-hidden="true">
               The&nbsp;Group&nbsp;Chat{' '}
-              <em>
-                <span className="text-gradient-gold">Ch</span>at
-              </em>{' '}
               <em>
                 T<span className="text-gradient-gold">ravel</span>
               </em>{' '}
