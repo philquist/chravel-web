@@ -330,7 +330,7 @@ export const UseCasesSection = () => {
               Built for <em>Every</em> Journey
             </>
           }
-          lede="Travel Concierges, Sports Teams, Touring Crews, Family Vacations, Corporate Travel, Friend Groups, & Local Meetups — ChravelApp handles it all."
+          lede="Travel Concierges, Sports Teams, Touring Crews, Family Vacations, Business Trips, Friend Adventures, & Local Meetups — ChravelApp handles it all."
         />
 
         {/* Scenarios Grid — featured lead story spans the row; tiles fill beneath */}
