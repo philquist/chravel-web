@@ -1,32 +1,24 @@
-## Hero Title Restructure
+## Merge "Start free" block into the "Why Upgrade?" card
 
-**File:** `src/components/landing/sections/HeroSection.tsx`
+**File:** `src/components/conversion/PricingSection.tsx` (lines ~438–481)
 
-### 1. Swap sizes — ChravelApp becomes the star
+### Changes
 
-**"ChravelApp" wordmark (lines 117–127):** upsize ~50%. Change from `text-xl sm:text-2xl md:text-3xl` to `text-3xl sm:text-4xl md:text-5xl lg:text-6xl`. Keeps the existing `text-gradient-gold` treatment.
+1. **Delete the standalone gold block** (lines 439–451) — the `accent-fill-gold` chip with the "Start free. Upgrade when you're ready for relief." headline and supporting copy.
 
-**"The Group Chat Travel App" headline (lines 131–141):** downsize ~25%. Change from `text-4xl sm:text-5xl md:text-6xl lg:text-7xl` to `text-3xl sm:text-4xl md:text-[2.75rem] lg:text-5xl`. Now the descriptor, not the hero.
+2. **Re-nest that copy inside the "Why Upgrade?" card** as a subheader below the `Why Upgrade?` h3:
+   - Keep the existing dark card container (`bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl`).
+   - `Why Upgrade?` stays as the h3 title.
+   - Directly under it, add a smaller subheader line: **"Start free. Upgrade when you're ready for relief."** — `text-base sm:text-lg tablet:text-xl font-semibold text-white`.
+   - Below that, a muted supporting line: **"Don't lose receipts, links, or the final plan. Free works forever—upgrade only when you need more."** — `text-sm sm:text-base text-white/70`.
+   - Add a thin gold divider (`h-px w-16 bg-gradient-to-r from-transparent via-[#c49746] to-transparent mx-auto my-4`) between the subheader block and the value-prop grid to preserve the site's editorial rhythm.
 
-### 2. Reveal the wordmark inside the tagline
+3. **Remove the outer wrapper's `text-center space-y-6`** on the header row so the deleted chip doesn't leave orphan spacing; keep the Why Upgrade card centered via its existing `mx-auto`.
 
-Restructure the h1 so users can *see* Chat + Travel + App → ChravelApp. Gold-gradient letters use the same `text-gradient-gold` class already on the wordmark above. Italicize Chat, Travel, and App (all three, so no single word stands out).
+### Result
 
-```
-The <em><span>C</span><span>h</span>at</em> <em><span>T</span><span>r</span><span>a</span><span>v</span><span>e</span><span>l</span></em> <em><span>App</span></em>
-```
+No more oversized gold rectangle. The messaging becomes an editorial intro *inside* the Why Upgrade card, in white on the dark surface — consistent with the rest of the marketing page. Overall vertical footprint shrinks by ~40%.
 
-- `C` and `H` of Chat → `text-gradient-gold`, rest of "at" stays white
-- `R A V E L` of Travel → `text-gradient-gold`, leading `T` stays white
-- Entire `App` → `text-gradient-gold`
-- All three words wrapped in `<em>` for consistent italics via Fraunces
+### Out of scope
 
-### 3. Preserve
-
-- `text-shadow`, animation delays, gold divider below, subtitle copy, CTAs, video block — untouched.
-- Accessibility: h1 text content still reads "The Chat Travel App" naturally; add `aria-label="The Chat Travel App"` on the h1 to keep screen readers clean since the visual is span-fragmented.
-
-### Verification
-
-- Visual check at 1440px + mobile: ChravelApp visibly dominant; tagline reads as descriptor; gold letters spell CH · RAVEL · APP.
-- `npm run typecheck && npm run build`.
+Pricing tiers, tabs, FAQ, Trip Pass content, and all other sections remain untouched.
