@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { executeRealtimeTool } from '../realtimeVoiceClient';
+import {
+  buildRealtimeSetupUrl,
+  DEFAULT_REALTIME_VOICE_MODEL,
+  executeRealtimeTool,
+  fetchRealtimeSessionConfig,
+} from '../realtimeVoiceClient';
 
 const { getSessionMock } = vi.hoisted(() => ({
   getSessionMock: vi.fn(),
@@ -90,5 +95,78 @@ describe('executeRealtimeTool', () => {
     await expect(executeRealtimeTool('trip-9', 'getTripInfo', {})).rejects.toThrow(
       'Not authenticated',
     );
+  });
+});
+
+describe('buildRealtimeSetupUrl', () => {
+  beforeEach(() => {
+    getSessionMock.mockResolvedValue({ data: { session: { access_token: 'jwt-123' } } });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  // The AI SDK POSTs to this URL (as `api.token`) with NO Authorization header, so the
+  // JWT must ride in the query string for mint-realtime-token to auth + rate-limit the user.
+  it('targets mint-realtime-token with jwt, model, and apikey query params', async () => {
+    const raw = await buildRealtimeSetupUrl();
+    const url = new URL(raw);
+    expect(url.origin + url.pathname).toBe(
+      'https://project.supabase.co/functions/v1/mint-realtime-token',
+    );
+    expect(url.searchParams.get('jwt')).toBe('jwt-123');
+    expect(url.searchParams.get('model')).toBe(DEFAULT_REALTIME_VOICE_MODEL);
+    // Supabase's function gateway (verify_jwt=false) still requires the anon apikey.
+    expect(url.searchParams.get('apikey')).toBe('anon-key');
+  });
+
+  it('honors an explicit model override', async () => {
+    const url = new URL(await buildRealtimeSetupUrl('openai/gpt-realtime-mini'));
+    expect(url.searchParams.get('model')).toBe('openai/gpt-realtime-mini');
+  });
+
+  it('throws when the user is not authenticated', async () => {
+    getSessionMock.mockResolvedValue({ data: { session: null } });
+    await expect(buildRealtimeSetupUrl()).rejects.toThrow('Not authenticated');
+  });
+});
+
+describe('fetchRealtimeSessionConfig', () => {
+  beforeEach(() => {
+    getSessionMock.mockResolvedValue({ data: { session: { access_token: 'jwt-123' } } });
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('loads the trip-aware instructions + chosen voice + tools', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        instructions: 'You are the concierge for Trip 9.',
+        voice: 'sage',
+        tools: [{ type: 'function', name: 'getTripInfo', parameters: {} }],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const config = await fetchRealtimeSessionConfig('trip-9');
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://project.supabase.co/functions/v1/realtime-voice-session');
+    expect(init.headers.Authorization).toBe('Bearer jwt-123');
+    expect(JSON.parse(init.body).tripId).toBe('trip-9');
+    // The voice selection made in settings flows straight into the session config.
+    expect(config.voice).toBe('sage');
+    expect(config.tools).toHaveLength(1);
+  });
+
+  it('surfaces a server error message', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: 'Trip access denied.' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchRealtimeSessionConfig('trip-9')).rejects.toThrow('Trip access denied.');
   });
 });

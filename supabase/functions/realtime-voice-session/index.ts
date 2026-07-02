@@ -7,10 +7,10 @@
  *   - voice:        the user's selected OpenAI voice (plan-gated)
  *   - tools:        the full concierge tool set in OpenAI realtime shape
  *
- * The ephemeral Gateway token is minted separately by the Vercel `/api/realtime-token`
- * function. This endpoint only composes context + tools, reusing the exact same
- * TripContextBuilder + assemblePrompt + tool registry as the text concierge, so the
- * voice path never drifts from the text path.
+ * The ephemeral Gateway token is minted separately by the Supabase `mint-realtime-token`
+ * function (the AI SDK's setup endpoint). This endpoint only composes context + tools,
+ * reusing the exact same TripContextBuilder + assemblePrompt + tool registry as the text
+ * concierge, so the voice path never drifts from the text path.
  *
  * Auth: user JWT (browser). RLS applies. Trip membership is verified.
  */

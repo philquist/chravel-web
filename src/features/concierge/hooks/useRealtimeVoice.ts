@@ -7,17 +7,28 @@
  * `execute-concierge-tool`, the same secured path the text concierge uses, so every
  * concierge tool (calendar, tasks, payments, …) keeps working unchanged.
  *
- * Lifecycle: start(tripId) → mic permission → mint token + load session config (in
- * parallel) → connect → capture audio. stop() / unmount tears everything down.
+ * SDK contract (verified against node_modules/ai): `api.token` is NOT a token — it is
+ * the URL the SDK POSTs to on connect() with `{ sessionConfig }` (and no auth header),
+ * expecting `{ token, url, tools }` back. That "setup endpoint" is our Supabase
+ * `mint-realtime-token` function, which mints a short-lived AI Gateway client secret
+ * (provider key stays server-side), returns the WS url, and ships the concierge tools.
+ * The user's chosen voice + trip-aware instructions come from `sessionConfig` (loaded
+ * from `realtime-voice-session`) and are applied via the `session-update` the SDK sends
+ * on socket open.
+ *
+ * Lifecycle: start(tripId) → mic permission → build setup URL + load session config (in
+ * parallel) → connect → capture audio. If the socket drops mid-session we transparently
+ * reconnect (re-mints via the same setup URL; the store is not recreated so the
+ * transcript survives). stop() / unmount tears everything down.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { experimental_useRealtime as useRealtime } from '@ai-sdk/react';
 import { gateway } from 'ai';
 import {
   DEFAULT_REALTIME_VOICE_MODEL,
+  buildRealtimeSetupUrl,
   executeRealtimeTool,
   fetchRealtimeSessionConfig,
-  fetchRealtimeToken,
   type RealtimeSessionConfigResponse,
 } from '../lib/realtimeVoiceClient';
 
@@ -65,37 +76,31 @@ function errorToMessage(err: unknown): string {
   return err instanceof Error ? err.message : 'Voice session error.';
 }
 
-// Re-mint the ephemeral token this long before it expires and reconnect, so a
-// conversation survives past the token's ~10-minute TTL. If the server doesn't
-// report an expiry, fall back to a conservative interval under the known TTL.
-const TOKEN_REFRESH_LEAD_MS = 60_000;
-const DEFAULT_SESSION_REFRESH_MS = 8 * 60 * 1000;
+// If the socket drops while the user still intends to talk, re-mint + reconnect a few
+// times with backoff before giving up. Bounded so a persistent failure can't loop.
+const MAX_RECONNECT_ATTEMPTS = 3;
+const RECONNECT_BACKOFF_MS = [1_000, 2_000, 4_000];
 
 export function useRealtimeVoice(): UseRealtimeVoiceResult {
-  const [token, setToken] = useState('');
+  // The SDK's `api.token` is the setup-endpoint URL it POSTs to on connect(); it mints
+  // a fresh client secret each call, so the same URL is reused for reconnects.
+  const [setupUrl, setSetupUrl] = useState('');
   const [sessionConfig, setSessionConfig] = useState<RealtimeSessionConfigResponse | null>(null);
   const [starting, setStarting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // Transcript turns carried over from before a token-refresh reconnect (the new
-  // realtime store starts empty), so the on-screen transcript doesn't wipe.
-  const [priorTurns, setPriorTurns] = useState<RealtimeTranscriptTurn[]>([]);
 
   const tripIdRef = useRef<string | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const pendingConnectRef = useRef(false);
   const startingRef = useRef(false);
 
-  // Token refresh / reconnect bookkeeping.
+  // Reconnect bookkeeping (transparent recovery from a dropped socket).
   const intendActiveRef = useRef(false);
-  const expiresAtRef = useRef<number | null>(null);
-  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const refreshingRef = useRef(false);
-  const refreshSessionRef = useRef<() => Promise<void>>(() => Promise.resolve());
-  const reconnectSeqRef = useRef(0);
-  const storeTurnsRef = useRef<RealtimeTranscriptTurn[]>([]);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // The realtime model object is pure on the client (getWebSocketConfig / parse /
-  // serialize); the ephemeral token carries auth. Create it once.
+  // serialize); the ephemeral client secret carries auth. Create it once.
   const model = useMemo(() => gateway.experimental_realtime(DEFAULT_REALTIME_VOICE_MODEL), []);
 
   const onToolCall = useCallback(
@@ -138,7 +143,7 @@ export function useRealtimeVoice(): UseRealtimeVoiceResult {
 
   const realtime = useRealtime({
     model,
-    api: { token },
+    api: { token: setupUrl },
     sessionConfig: realtimeSessionConfig,
     onToolCall,
     onError,
@@ -153,80 +158,35 @@ export function useRealtimeVoice(): UseRealtimeVoiceResult {
     streamRef.current = null;
   }, []);
 
-  const clearRefreshTimer = useCallback(() => {
-    if (refreshTimerRef.current) {
-      clearTimeout(refreshTimerRef.current);
-      refreshTimerRef.current = null;
+  const clearReconnectTimer = useCallback(() => {
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
     }
   }, []);
 
-  // Arm the next token refresh based on the current token's expiry.
-  const scheduleRefresh = useCallback(
-    (expiresAtSeconds?: number | null) => {
-      clearRefreshTimer();
-      const untilLead =
-        typeof expiresAtSeconds === 'number'
-          ? expiresAtSeconds * 1000 - Date.now() - TOKEN_REFRESH_LEAD_MS
-          : DEFAULT_SESSION_REFRESH_MS;
-      const delay = Math.max(untilLead, 5_000);
-      refreshTimerRef.current = setTimeout(() => {
-        void refreshSessionRef.current();
-      }, delay);
-    },
-    [clearRefreshTimer],
-  );
-
-  // Re-mint the token and reconnect, reusing the live mic stream, so the session
-  // outlives the ephemeral token. Recreating the store loses the model's in-session
-  // memory, but the user keeps talking and the transcript is carried over.
-  const refreshSession = useCallback(async () => {
-    if (!intendActiveRef.current || refreshingRef.current) return;
-    refreshingRef.current = true;
-    try {
-      const tokenResult = await fetchRealtimeToken();
-      if (!intendActiveRef.current) return; // stopped while minting
-      if (!tokenResult.token) throw new Error('Empty refresh token');
-      // Carry the transcript so far into priorTurns (new store starts empty). Namespace
-      // ids by reconnect count so React keys stay unique across store instances.
-      reconnectSeqRef.current += 1;
-      const seq = reconnectSeqRef.current;
-      const carried = storeTurnsRef.current.map(turn => ({ ...turn, id: `r${seq}:${turn.id}` }));
-      if (carried.length) setPriorTurns(prev => [...prev, ...carried]);
-      expiresAtRef.current = tokenResult.expiresAt ?? null;
-      pendingConnectRef.current = true;
-      // Clear any stale error as we reconnect; if this attempt fails, onError re-sets it.
-      setErrorMessage(null);
-      setToken(tokenResult.token); // store recreates → connect effect reconnects + re-attaches mic
-      scheduleRefresh(tokenResult.expiresAt);
-    } catch {
-      // Keep the current session up and retry soon so we still beat expiry.
-      if (intendActiveRef.current) {
-        clearRefreshTimer();
-        refreshTimerRef.current = setTimeout(() => {
-          void refreshSessionRef.current();
-        }, 15_000);
-      }
-    } finally {
-      refreshingRef.current = false;
+  // Open the socket on the current store, then attach the live mic. `connect()` catches
+  // its own errors (it calls onError + sets status 'error') and never throws, so we gate
+  // audio capture on the resulting status rather than a try/catch.
+  const openConnection = useCallback(async () => {
+    await realtimeRef.current.connect();
+    if (realtimeRef.current.status === 'error') return false;
+    if (streamRef.current) {
+      realtimeRef.current.startAudioCapture(streamRef.current);
     }
-  }, [scheduleRefresh, clearRefreshTimer]);
-  refreshSessionRef.current = refreshSession;
+    return true;
+  }, []);
 
-  // Connect once both the token and session config are in state.
+  // Connect once both the setup URL and session config are in state (start() sets the
+  // pending flag so this only fires for a genuine start, not incidental re-renders).
   useEffect(() => {
     if (!pendingConnectRef.current) return;
-    if (!token || !sessionConfig) return;
+    if (!setupUrl || !sessionConfig) return;
     pendingConnectRef.current = false;
     let cancelled = false;
     void (async () => {
       try {
-        await realtimeRef.current.connect();
-        if (cancelled) return;
-        if (streamRef.current) {
-          realtimeRef.current.startAudioCapture(streamRef.current);
-        }
-      } catch (err) {
-        if (!cancelled) setErrorMessage(errorToMessage(err));
+        await openConnection();
       } finally {
         if (!cancelled) {
           setStarting(false);
@@ -237,50 +197,66 @@ export function useRealtimeVoice(): UseRealtimeVoiceResult {
     return () => {
       cancelled = true;
     };
-  }, [token, sessionConfig]);
+  }, [setupUrl, sessionConfig, openConnection]);
+
+  // Transparent reconnect: if the socket closes while the user still intends to talk,
+  // re-mint via the same setup URL and reconnect (the store is not recreated, so the
+  // transcript survives). Bounded with backoff so a hard failure can't loop forever.
+  useEffect(() => {
+    if (realtime.status === 'connected') {
+      reconnectAttemptsRef.current = 0; // healthy again → reset the budget
+      return;
+    }
+    if (realtime.status !== 'disconnected') return; // 'connecting'/'error' handled elsewhere
+    if (!intendActiveRef.current) return; // user stopped, or never started
+    if (pendingConnectRef.current) return; // initial connect still in flight
+    if (reconnectTimerRef.current) return; // a reconnect is already scheduled
+    if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+      intendActiveRef.current = false;
+      setErrorMessage('Voice session disconnected. Tap the wave to start again.');
+      return;
+    }
+    const attempt = reconnectAttemptsRef.current;
+    reconnectAttemptsRef.current = attempt + 1;
+    const delay = RECONNECT_BACKOFF_MS[Math.min(attempt, RECONNECT_BACKOFF_MS.length - 1)];
+    reconnectTimerRef.current = setTimeout(() => {
+      reconnectTimerRef.current = null;
+      if (!intendActiveRef.current) return;
+      void openConnection();
+    }, delay);
+  }, [realtime.status, openConnection]);
 
   const start = useCallback(
     async (tripId: string) => {
       if (startingRef.current) return;
       const status = realtimeRef.current.status;
       if (status === 'connecting' || status === 'connected') return;
-      // After a prior failure the store sits in 'error' (not 'disconnected'); reset it
-      // so the user can retry without remounting.
-      if (status === 'error') {
-        try {
-          realtimeRef.current.disconnect();
-        } catch {
-          /* already torn down */
-        }
-      }
       startingRef.current = true;
       setStarting(true);
       setErrorMessage(null);
+      clearReconnectTimer();
+      reconnectAttemptsRef.current = 0;
       try {
-        // Mic first: prompts permission and satisfies the iOS user-gesture
-        // requirement for audio playback before we open the socket.
+        // Mic first: prompts permission and satisfies the iOS user-gesture requirement
+        // for audio playback before we open the socket.
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         streamRef.current = stream;
         tripIdRef.current = tripId;
-        const [tokenResult, config] = await Promise.all([
-          fetchRealtimeToken(),
+        // Setup URL (auth + model) and session config (voice + instructions + tools) are
+        // independent — fetch them together, then hand both to the store to trigger connect.
+        const [url, config] = await Promise.all([
+          buildRealtimeSetupUrl(),
           fetchRealtimeSessionConfig(tripId),
         ]);
-        // Guard against an empty token: otherwise the connect effect bails on its
-        // `!token` check and the mic stream would stay live with no session.
-        if (!tokenResult.token) {
+        if (!url) {
           throw new Error('Could not start the voice session. Please try again.');
         }
         intendActiveRef.current = true;
-        expiresAtRef.current = tokenResult.expiresAt ?? null;
-        setPriorTurns([]);
         pendingConnectRef.current = true;
-        setToken(tokenResult.token);
+        setSetupUrl(url);
         setSessionConfig(config);
-        scheduleRefresh(tokenResult.expiresAt);
       } catch (err) {
         intendActiveRef.current = false;
-        clearRefreshTimer();
         cleanupStream();
         tripIdRef.current = null;
         setErrorMessage(errorToMessage(err));
@@ -288,13 +264,13 @@ export function useRealtimeVoice(): UseRealtimeVoiceResult {
         startingRef.current = false;
       }
     },
-    [cleanupStream, scheduleRefresh, clearRefreshTimer],
+    [cleanupStream, clearReconnectTimer],
   );
 
   const stop = useCallback(() => {
     intendActiveRef.current = false;
-    clearRefreshTimer();
-    expiresAtRef.current = null;
+    clearReconnectTimer();
+    reconnectAttemptsRef.current = 0;
     try {
       realtimeRef.current.stopAudioCapture();
     } catch {
@@ -309,14 +285,13 @@ export function useRealtimeVoice(): UseRealtimeVoiceResult {
     pendingConnectRef.current = false;
     startingRef.current = false;
     setStarting(false);
-    setToken('');
+    setSetupUrl('');
     setSessionConfig(null);
-    setPriorTurns([]);
     // Clear the error too, or phase stays 'error' (errorMessage set) and the overlay
     // can never be dismissed after a failed start.
     setErrorMessage(null);
     tripIdRef.current = null;
-  }, [cleanupStream, clearRefreshTimer]);
+  }, [cleanupStream, clearReconnectTimer]);
 
   // Tear down on unmount so a stray socket/mic never outlives the screen.
   useEffect(() => stop, [stop]);
@@ -328,8 +303,7 @@ export function useRealtimeVoice(): UseRealtimeVoiceResult {
         return 'connecting';
       case 'connected':
         // A live/reconnected session always shows its real state — never latch to
-        // 'error' from a stale errorMessage (e.g. a transient WS blip that the token
-        // refresh already recovered from).
+        // 'error' from a stale errorMessage (e.g. a transient WS blip we recovered from).
         return realtime.isPlaying ? 'speaking' : 'listening';
       case 'error':
         return 'error';
@@ -337,12 +311,12 @@ export function useRealtimeVoice(): UseRealtimeVoiceResult {
         // 'disconnected': a failed start leaves the store disconnected but sets
         // errorMessage. Surface it as 'error' (keeps the overlay mounted to show the
         // reason) instead of 'idle' (which would unmount and swallow it — the
-        // "flash and vanish" bug).
+        // "flash and vanish" bug). A live reconnect is 'connecting'/'connected', not here.
         return errorMessage ? 'error' : 'idle';
     }
   }, [starting, errorMessage, realtime.status, realtime.isPlaying]);
 
-  const storeTurns: RealtimeTranscriptTurn[] = useMemo(() => {
+  const turns: RealtimeTranscriptTurn[] = useMemo(() => {
     return realtime.messages
       .filter(message => message.role === 'user' || message.role === 'assistant')
       .map(message => ({
@@ -352,14 +326,6 @@ export function useRealtimeVoice(): UseRealtimeVoiceResult {
       }))
       .filter(turn => turn.text.length > 0);
   }, [realtime.messages]);
-  // Snapshot for refreshSession to carry forward across a reconnect.
-  storeTurnsRef.current = storeTurns;
-
-  // Carried-over turns (pre-reconnect) followed by the current store's turns.
-  const turns: RealtimeTranscriptTurn[] = useMemo(
-    () => [...priorTurns, ...storeTurns],
-    [priorTurns, storeTurns],
-  );
 
   const latestUserText = useMemo(
     () => [...turns].reverse().find(turn => turn.role === 'user')?.text ?? '',

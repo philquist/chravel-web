@@ -3,10 +3,12 @@
  * the Vercel AI Gateway).
  *
  * Three server round-trips, all authenticated with the user's Supabase JWT:
- *  1. fetchRealtimeToken        → Supabase `mint-realtime-token` mints a short-lived
- *                                 AI Gateway client secret (provider key stays server-side).
+ *  1. buildRealtimeSetupUrl     → the URL AI SDK `useRealtime` POSTs to on connect(); the
+ *                                 Supabase `mint-realtime-token` function mints a short-lived
+ *                                 AI Gateway client secret (provider key stays server-side)
+ *                                 and returns the WS url + concierge tools.
  *  2. fetchRealtimeSessionConfig→ Supabase `realtime-voice-session` builds the
- *                                 trip-aware system prompt + the concierge tool set.
+ *                                 trip-aware system prompt + the user's chosen voice.
  *  3. executeRealtimeTool       → Supabase `execute-concierge-tool` runs a tool call
  *                                 the model emits (same secured path as the text concierge).
  *
@@ -36,13 +38,6 @@ export interface RealtimeToolDefinition {
   parameters: Record<string, unknown>;
 }
 
-export interface RealtimeTokenResponse {
-  token: string;
-  url: string;
-  expiresAt?: number;
-  model: string;
-}
-
 export interface RealtimeSessionConfigResponse {
   instructions: string;
   voice: string;
@@ -61,40 +56,24 @@ async function getAccessToken(): Promise<string> {
 }
 
 /**
- * Mint a short-lived realtime token from the `mint-realtime-token` Supabase Edge
- * Function. Lives on Lovable Cloud so preview + prod use the same code path —
- * the prior Vercel `/api/realtime-token` only existed on the chravel.app host
- * and returned the SPA `index.html` everywhere else (the "Unexpected token '<'"
- * symptom in the voice overlay).
+ * Build the URL AI SDK `useRealtime` uses as its `api.token` — the "setup endpoint"
+ * the SDK POSTs to on connect() (with `{sessionConfig}`, and crucially NO Authorization
+ * header). It returns `{token, url, tools}` from `mint-realtime-token`.
+ *
+ * Because the SDK sends no auth header, the caller's JWT is passed as a query param so
+ * the function can authenticate + rate-limit the user (HTTPS-encrypted, short-lived JWT).
+ * The `apikey` query param satisfies Supabase's function gateway (verify_jwt=false).
  */
-export async function fetchRealtimeToken(
+export async function buildRealtimeSetupUrl(
   model: RealtimeVoiceModelId = DEFAULT_REALTIME_VOICE_MODEL,
-): Promise<RealtimeTokenResponse> {
+): Promise<string> {
   const accessToken = await getAccessToken();
-  const resp = await fetch(`${SUPABASE_PROJECT_URL}/functions/v1/mint-realtime-token`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-      apikey: SUPABASE_PUBLIC_ANON_KEY,
-    },
-    body: JSON.stringify({ model }),
+  const params = new URLSearchParams({
+    jwt: accessToken,
+    model,
+    apikey: SUPABASE_PUBLIC_ANON_KEY,
   });
-  if (!resp.ok) {
-    // Surface the real status + body so the overlay shows the precise cause (e.g.
-    // 401 missing auth, 429 rate limit, 502 with the Gateway's own message).
-    const raw = await resp.text().catch(() => '');
-    let message = raw;
-    try {
-      const parsed = JSON.parse(raw) as { error?: string };
-      if (parsed?.error) message = parsed.error;
-    } catch {
-      /* non-JSON body — use the raw text */
-    }
-    const snippet = message ? `: ${message.slice(0, 200)}` : '';
-    throw new Error(`Voice token request failed (${resp.status})${snippet}`);
-  }
-  return (await resp.json()) as RealtimeTokenResponse;
+  return `${SUPABASE_PROJECT_URL}/functions/v1/mint-realtime-token?${params.toString()}`;
 }
 
 /** Fetch the trip-aware system prompt + tool set for the realtime session. */
