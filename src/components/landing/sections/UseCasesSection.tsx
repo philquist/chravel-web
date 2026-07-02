@@ -31,7 +31,7 @@ const scenarios: Scenario[] = [
     href: '/use-cases/travel-concierge-client-portal',
   },
   {
-    title: 'Families & Parents',
+    title: 'Families, Parents, & Shared Households\u00A0',
     subtitle: 'Family calendar · practices · pickups · photos · chores · team carpools',
     before:
       'Practices, pickups, forms, and “what’s for dinner?” scattered across two calendars, a fridge flyer, and a dozen group texts.',
