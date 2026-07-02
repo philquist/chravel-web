@@ -160,7 +160,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
 
         {/* Subtitle */}
         <p
-          className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 font-light max-w-2xl mx-auto mb-4 tablet:mb-5 animate-fade-in"
+          className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 font-display max-w-2xl mx-auto mb-4 tablet:mb-5 animate-fade-in"
           style={{
             animationDelay: '0.1s',
             textShadow: '0 2px 6px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)',
