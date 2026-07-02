@@ -463,3 +463,12 @@ When pricing cards advertise limits or role/channel access, assert those claims 
 
 ### AI quota copy must be changed in both client and edge limit maps
 Concierge query caps are duplicated across UI copy, client helpers, and Supabase edge usage policy; changing a free/paid quota requires grep-driven updates plus parity tests for `FEATURE_LIMITS`, `FREEMIUM_LIMITS`, and `CONCIERGE_TRIP_QUERY_LIMITS`.
+
+### Landing scroll reveals: use positive rootMargin + idle chunk prefetch, never negative-margin whileInView on full-viewport sections
+`whileInView` with negative viewport margins (`margin: '-40px'`) on the marketing landing left fast scrollers (PgDn / nav-dot jumps) staring at fully blank pre-reveal sections — on the black theme this reads as a full-screen gap between sections. Fix pattern: positive bottom rootMargin (`'0px 0px 25% 0px'`) so reveals start before entry, plus `requestIdleCallback` prefetch of all lazy section chunks in `FullPageLanding` so Suspense's `min-h-screen` SectionLoader never appears mid-scroll. *Evidence: July 2026 homepage redesign — video review flagged a viewport-height black gap at the features/use-cases seam; both fixes together eliminated it.*
+
+### [data-marketing] typography must be opt-in classes, not bare element/sibling selectors
+A bare `[data-marketing] h2 + p { font-weight: 300; margin: auto; max-width: 64ch }` rule leaked into every marketing-shell surface: pricing gold chips (bold black-on-gold subline dropped to weight 300) and blog articles (byline + first paragraph of each section restyled/centered). Marketing landing typography treatments should use opt-in classes (`.marketing-lede`, `.no-display-serif`, `.no-text-shadow`) because `MarketingApp` wraps /blog and /use-cases in the same `data-marketing` scope as the landing. *Evidence: July 2026 homepage redesign semantic review findings 1–2.*
+
+### computer-use mobile QA: confirm device emulation actually applied before trusting results
+A computer-use pass reported "hamburger menu missing at 390px" because DevTools device toolbar wasn't actually active — the screenshots were still 1440px desktop rendering. Before acting on mobile QA findings, verify the screenshot content is genuinely narrow/single-column (or have the agent confirm the Dimensions bar reads the target size). *Evidence: July 2026 homepage redesign QA — retest with confirmed iPhone 12 Pro emulation showed the `lg:hidden` hamburger working correctly.*
