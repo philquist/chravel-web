@@ -57,7 +57,7 @@ export const BLOG_POSTS: BlogPost[] = [
     title: 'ChravelApp for Fraternities and Sororities: Rush, Formals, and Chapter Operations',
     description:
       'How a fraternity or sorority chapter runs rush, formals, the social calendar, photos, tasks, and house votes in ChravelApp — separate from family and work chats.',
-    h1: 'ChravelApp for fraternities and sororities: run rush, formals, and chapter life in one app',
+    h1: 'ChravelApp for fraternities and sororities: Organize rush, formals, and chapter life in one app',
     excerpt:
       'Running a chapter takes more than one giant group chat. Here’s what rush, formals, the social calendar, member tasks, and house votes look like when a fraternity or sorority runs them in ChravelApp — in a space that stays private from everyday life.',
     datePublished: '2026-06-25',
