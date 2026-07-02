@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import { MotionConfig } from 'framer-motion';
 import { FullPageLandingSection } from './FullPageLandingSection';
 import { StickyLandingNav } from './StickyLandingNav';
 import { MobileLandingNav } from './MobileLandingNav';
@@ -121,7 +122,9 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
   }, []);
 
   return (
-    <>
+    // reducedMotion="user" disables framer transform animations landing-wide
+    // when prefers-reduced-motion is set (opacity fades remain).
+    <MotionConfig reducedMotion="user">
       {/* Sticky Navigation - desktop only */}
       <StickyLandingNav onSignUp={onSignUp} scrollRoot={landingScrollEl} />
 
@@ -246,6 +249,6 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           </Suspense>
         </div>
       </div>
-    </>
+    </MotionConfig>
   );
 };

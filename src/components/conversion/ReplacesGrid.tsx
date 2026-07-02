@@ -51,15 +51,17 @@ export const ReplacesGrid = () => {
                   </div>
                 </div>
                 <div className="flex flex-col w-full tablet:hidden text-center">
-                  {/* Feature Name - Large, bold, pure white with glow */}
-                  <h3
-                    className="text-2xl sm:text-3xl font-bold text-white mb-2"
+                  {/* Feature Name — span, not a heading: AccordionTrigger is a
+                      <button> already wrapped in Radix's <h3> header, so a
+                      nested heading here breaks the a11y heading structure. */}
+                  <span
+                    className="block text-2xl sm:text-3xl font-bold text-white mb-2"
                     style={{
                       textShadow: '0 0 10px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.6)',
                     }}
                   >
                     {category.title}
-                  </h3>
+                  </span>
 
                   {/* Optional quote - above description */}
                   {category.benefitQuote && (

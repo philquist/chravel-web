@@ -67,7 +67,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
       {lede && (
         <p
           className={cn(
-            'mt-4 max-w-2xl text-base sm:text-lg md:text-xl leading-relaxed text-white/85 font-light',
+            'marketing-lede mt-4 max-w-2xl text-base sm:text-lg md:text-xl leading-relaxed text-white/85 font-light',
             centered && 'mx-auto',
           )}
           style={{ textShadow: '0 2px 6px rgba(0,0,0,0.55)' }}

@@ -168,14 +168,15 @@ export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
               onClick={() => scrollToSection(section.id)}
               className={cn(
                 'group relative h-2 rounded-full transition-all duration-300',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 activeSection === section.id
                   ? 'w-8 bg-primary'
                   : 'w-2 bg-muted hover:bg-muted-foreground',
               )}
               aria-label={`Go to ${section.label}`}
             >
-              {/* Tooltip on hover */}
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs whitespace-nowrap bg-background/90 px-2 py-1 rounded pointer-events-none">
+              {/* Tooltip on hover / keyboard focus */}
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity text-xs whitespace-nowrap bg-background/90 px-2 py-1 rounded pointer-events-none">
                 {section.label}
               </span>
             </button>
