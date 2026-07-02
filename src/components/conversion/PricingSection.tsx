@@ -434,28 +434,25 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
 
   return (
     <div className="w-full space-y-16">
-      {/* Header with Value Prop - High contrast with background */}
-      <div className="text-center space-y-6">
-        {/* no-display-serif/no-text-shadow: black-on-gold chip needs bold sans,
-            not the [data-marketing] serif-400 + shadow treatment. */}
-        <div className="inline-block accent-fill-gold px-6 py-4 rounded-lg max-w-3xl mx-auto no-text-shadow">
-          <h2 className="no-display-serif text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-2">
-            Start free. Upgrade when you're ready for relief.
-          </h2>
-          <p className="text-sm sm:text-base md:text-lg text-black font-bold leading-relaxed break-words">
-            Don't lose receipts, links, or the final plan.{' '}
-            <span className="text-black/80 font-bold">
-              Free works forever—upgrade only when you need more.
-            </span>
-          </p>
-        </div>
-
+      {/* Header with Value Prop */}
+      <div className="text-center">
         {/* Why Upgrade Section */}
         {activeTab === 'consumer' && (
           <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-5 tablet:p-8 max-w-5xl mx-auto">
-            <h3 className="text-xl sm:text-2xl tablet:text-3xl font-bold text-foreground mb-4 tablet:mb-6">
+            <h3 className="text-xl sm:text-2xl tablet:text-3xl font-bold text-foreground mb-3">
               Why Upgrade?
             </h3>
+            <p className="text-base sm:text-lg tablet:text-xl font-semibold text-white">
+              Start free. Upgrade when you're ready for relief.
+            </p>
+            <p className="text-sm sm:text-base text-white/70 mt-1 max-w-2xl mx-auto">
+              Don't lose receipts, links, or the final plan. Free works forever—upgrade only when
+              you need more.
+            </p>
+            <div
+              className="mx-auto my-4 h-px w-16 bg-gradient-to-r from-transparent via-[#c49746] to-transparent"
+              aria-hidden="true"
+            />
             <div className="grid grid-cols-1 tablet:grid-cols-2 lg:grid-cols-3 gap-3 tablet:gap-4">
               {valuePropItems.map((item, index) => (
                 <div key={index} className="text-left">
@@ -479,6 +476,7 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
             </div>
           </div>
         )}
+
 
         {/* Category Tabs */}
         <div className="flex justify-center">
