@@ -6,20 +6,20 @@ import { USE_CASES, USE_CASES_PATH, USE_CASE_FEATURES, getUseCaseHref } from '@/
 
 const HUB_FAQ = [
   {
-    q: 'What is Chravel?',
-    a: 'Chravel is a group travel and coordination app that puts chat, calendar, tasks, attachments, places, broadcasts, payments, and shared media into one trip workspace.',
+    q: 'What is ChravelApp?',
+    a: 'ChravelApp is a group travel and coordination app that puts chat, calendar, tasks, attachments, places, broadcasts, payments, and shared media into one trip workspace.',
   },
   {
-    q: 'Who uses Chravel?',
+    q: 'Who uses ChravelApp?',
     a: 'Travel concierges and advisors, couples and wedding parties, sports teams, touring crews, and friends and families planning trips together.',
   },
   {
     q: 'Is there a free plan?',
-    a: 'Yes — Chravel is free for small groups, with paid tiers for larger trips, pro teams, and events.',
+    a: 'Yes — ChravelApp is free for small groups, with paid tiers for larger trips, pro teams, and events.',
   },
   {
     q: 'Does it work on iPhone, Android, and web?',
-    a: 'Yes — Chravel runs on the web and as an installable app on iOS and Android.',
+    a: 'Yes — ChravelApp runs on the web and as an installable app on iOS and Android.',
   },
 ];
 
