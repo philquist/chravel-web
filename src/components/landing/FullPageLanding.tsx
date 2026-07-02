@@ -102,6 +102,19 @@ interface FullPageLandingProps {
 // Loading fallback — neutral, no spinner/wordmark so the homepage never flashes a splash.
 const SectionLoader = () => <div className="min-h-screen bg-background" />;
 
+// Warm the lazy section chunks once the browser is idle so fast scrollers
+// never land on a full-viewport SectionLoader gap. Keeps first paint lean
+// (hero + how-it-works only) while the rest streams in the background.
+const prefetchLazySections = () => {
+  void import('./sections/ReplacesSection');
+  void import('./sections/UseCasesSection');
+  void import('./sections/AiFeaturesSection');
+  void import('./sections/PricingLandingSection');
+  void import('./sections/FAQSection');
+  void import('./sections/JournalSection');
+  void import('./FooterSection');
+};
+
 export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) => {
   // Landing scrolls this element, not `window`. StickyLandingNav must listen here
   // or `window.scrollY` stays 0 and the desktop nav stays permanently hidden.
@@ -119,6 +132,16 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
     return () => {
       if (wasLight) root.classList.add('light');
     };
+  }, []);
+
+  // Prefetch below-the-fold section chunks during idle time.
+  useEffect(() => {
+    if (typeof requestIdleCallback === 'function') {
+      const idleId = requestIdleCallback(prefetchLazySections, { timeout: 3000 });
+      return () => cancelIdleCallback(idleId);
+    }
+    const timeoutId = window.setTimeout(prefetchLazySections, 1500);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   return (
