@@ -115,7 +115,19 @@ const scenarios: Scenario[] = [
     badge: 'Lead the trip, not the group chat',
     href: '/use-cases/church-group-trip-coordination',
   },
+  {
+    title: 'Business Travel & Company Retreats',
+    subtitle: 'Coworkers · client meetings · offsites · company retreats · work dinners',
+    before:
+      'Work trips scattered across personal iMessage, forwarded confirmations, Slack DMs, and a Drive folder nobody remembers to open.',
+    expandCTA: 'ChravelApp helps work trips stay contained',
+    after:
+      'A private trip workspace with the meeting itinerary, decks, receipts, per-person tasks, shared and personal base camps, and dinner splits — kept out of your personal texts.',
+    badge: 'Aligned team · work chat out of personal texts',
+    href: '/use-cases/business-travel-coordination',
+  },
 ];
+
 
 /** Per-destination CTA label so /use-cases cards never show blog-oriented copy. */
 const cardLinkLabel = (href: string) =>
