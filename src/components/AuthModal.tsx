@@ -45,9 +45,28 @@ export const AuthModal = ({
   const [awaitingAuth, setAwaitingAuth] = useState(false);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const requestDismiss = () => {
+    if (awaitingAuth) return;
+    onClose();
+  };
+
   useEffect(() => {
     setIsPortalReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen || awaitingAuth) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, awaitingAuth, onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -364,7 +383,10 @@ export const AuthModal = ({
       data-testid="auth-modal-backdrop"
       data-marketing="true"
       className="fixed inset-0 z-[100] animate-fade-in"
-      role="presentation"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-heading"
+      onClick={requestDismiss}
     >
       {/* Full-viewport scrim: underlying routes (e.g. JoinTrip hero badge) must not read as a second logo */}
       <div
@@ -373,16 +395,23 @@ export const AuthModal = ({
         data-testid="auth-modal-scrim"
       />
       <div className="relative flex min-h-full w-full items-center justify-center p-4 sm:p-6 pointer-events-none">
-        <div data-testid="auth-modal-content" className="w-full max-w-md pointer-events-auto">
+        <div
+          data-testid="auth-modal-content"
+          className="w-full max-w-md pointer-events-auto"
+          onClick={event => event.stopPropagation()}
+        >
           <div className="bg-slate-950/95 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 sm:p-8 animate-scale-in max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] overflow-y-auto">
             <div className="flex flex-col items-center mb-2" data-testid="auth-modal-logo" />
 
             <div className="relative flex items-center justify-center mb-6 min-h-[2.5rem]">
-              <h2 className="text-3xl font-display font-normal tracking-tight text-white text-center px-10">
+              <h2
+                id="auth-modal-heading"
+                className="text-3xl font-display font-normal tracking-tight text-white text-center px-10"
+              >
                 {authHeading}
               </h2>
               <button
-                onClick={onClose}
+                onClick={requestDismiss}
                 className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg"
                 aria-label="Close"
                 type="button"

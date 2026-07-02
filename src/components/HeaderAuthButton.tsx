@@ -12,9 +12,16 @@ interface HeaderAuthButtonProps {
    * Useful for keeping app surfaces visually clean while still allowing auth via Settings.
    */
   showLoggedOut?: boolean;
+  /**
+   * When provided, opens the parent-owned auth surface instead of rendering a nested AuthModal.
+   */
+  onLoginClick?: () => void;
 }
 
-export const HeaderAuthButton = ({ showLoggedOut = true }: HeaderAuthButtonProps) => {
+export const HeaderAuthButton = ({
+  showLoggedOut = true,
+  onLoginClick,
+}: HeaderAuthButtonProps) => {
   const auth = useOptionalAuth();
   const user = auth?.user ?? null;
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -59,7 +66,7 @@ export const HeaderAuthButton = ({ showLoggedOut = true }: HeaderAuthButtonProps
   return (
     <>
       <Button
-        onClick={() => setShowAuthModal(true)}
+        onClick={() => (onLoginClick ? onLoginClick() : setShowAuthModal(true))}
         variant="outline"
         size="sm"
         className="flex items-center justify-center gap-1.5 transition-all duration-200 rounded-lg
@@ -69,7 +76,9 @@ export const HeaderAuthButton = ({ showLoggedOut = true }: HeaderAuthButtonProps
         <LogIn className="h-3.5 w-3.5" />
         <span className="text-[11px] font-semibold">Log In</span>
       </Button>
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      {!onLoginClick && (
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      )}
     </>
   );
 };

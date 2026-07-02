@@ -1509,7 +1509,10 @@ const UnauthIndex = ({
   return (
     <div className="min-h-screen min-h-mobile-screen bg-background" data-marketing="true">
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
-        <FullPageLanding onSignUp={() => setAuthMode('signup')} />
+        <FullPageLanding
+          onSignUp={() => setAuthMode('signup')}
+          onAuthRequired={() => setAuthMode('signin')}
+        />
         {authMode && (
           <Suspense fallback={null}>
             <AuthModal isOpen initialMode={authMode} onClose={() => setAuthMode(null)} />

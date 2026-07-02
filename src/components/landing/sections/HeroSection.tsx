@@ -244,8 +244,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
                     src={HERO_VIDEO_POSTER}
                     alt="ChravelApp trips dashboard preview"
                     className="w-full h-full object-cover object-bottom scale-[1.08] origin-bottom"
-                    fetchPriority="high"
                     decoding="async"
+                    {...({ fetchpriority: 'high' } as React.ImgHTMLAttributes<HTMLImageElement>)}
                   />
                 )}
                 {/* Subtle overlay to blend edges */}

@@ -18,7 +18,7 @@ function LandingScrollHarness() {
 
   return (
     <BrowserRouter>
-      <StickyLandingNav onSignUp={() => {}} scrollRoot={scrollRoot} />
+      <StickyLandingNav onAuthRequired={() => {}} scrollRoot={scrollRoot} />
       <div
         ref={setScrollRoot}
         data-testid="landing-scroll"

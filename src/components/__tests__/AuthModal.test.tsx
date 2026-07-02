@@ -83,7 +83,7 @@ describe('AuthModal', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByText('Welcome Back')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /chravelapp/i })).toBeInTheDocument();
       });
 
       // Click on "Forgot password?" link
@@ -106,7 +106,7 @@ describe('AuthModal', () => {
 
       // Wait for signin mode
       await waitFor(() => {
-        expect(screen.getByText('Welcome Back')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /chravelapp/i })).toBeInTheDocument();
       });
 
       // Switch to signup mode (mode switcher uses tab semantics)
@@ -128,7 +128,7 @@ describe('AuthModal', () => {
         wrapper: createTestWrapper(),
       });
 
-      expect(screen.queryByText('Welcome Back')).not.toBeInTheDocument();
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
     it('renders when isOpen is true', async () => {
@@ -137,7 +137,7 @@ describe('AuthModal', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByText('Welcome Back')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /chravelapp/i })).toBeInTheDocument();
       });
     });
 
@@ -174,17 +174,55 @@ describe('AuthModal', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByText('Welcome Back')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /chravelapp/i })).toBeInTheDocument();
       });
 
-      // Find the close button by its class (contains lucide-x icon)
-      const header = screen.getByRole('heading', { name: /welcome back/i }).parentElement;
-      const closeButton = header?.querySelector('button');
-      if (closeButton) {
-        fireEvent.click(closeButton);
-      }
+      const closeButton = screen.getByRole('button', { name: /close/i });
+      fireEvent.click(closeButton);
 
       expect(mockOnClose).toHaveBeenCalled();
+    });
+
+    it('calls onClose when Escape is pressed', async () => {
+      render(<AuthModal isOpen={true} onClose={mockOnClose} />, {
+        wrapper: createTestWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('auth-modal-backdrop')).toBeInTheDocument();
+      });
+
+      fireEvent.keyDown(document, { key: 'Escape' });
+
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+
+    it('calls onClose when the backdrop is clicked', async () => {
+      render(<AuthModal isOpen={true} onClose={mockOnClose} />, {
+        wrapper: createTestWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('auth-modal-backdrop')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTestId('auth-modal-backdrop'));
+
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+
+    it('does not call onClose when modal content is clicked', async () => {
+      render(<AuthModal isOpen={true} onClose={mockOnClose} />, {
+        wrapper: createTestWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('auth-modal-content')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTestId('auth-modal-content'));
+
+      expect(mockOnClose).not.toHaveBeenCalled();
     });
 
     it('shows Google and Apple OAuth options in browser context', async () => {

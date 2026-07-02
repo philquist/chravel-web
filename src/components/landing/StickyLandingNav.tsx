@@ -21,7 +21,7 @@ const sections: NavSection[] = [
 ];
 
 interface StickyLandingNavProps {
-  onSignUp: () => void;
+  onAuthRequired: () => void;
   /**
    * Scroll container for landing: pass the `overflow-y-auto` element so nav/progress work.
    * - `undefined`: listen on `window` (legacy / document scroll).
@@ -31,7 +31,7 @@ interface StickyLandingNavProps {
 }
 
 export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
-  onSignUp: _onSignUp,
+  onAuthRequired,
   scrollRoot,
 }) => {
   const [activeSection, setActiveSection] = useState('hero');
@@ -200,7 +200,9 @@ export const StickyLandingNav: React.FC<StickyLandingNavProps> = ({
         </div>
 
         {/* Right: Log In for non-authenticated users */}
-        <div className="flex items-center gap-2">{!user && <HeaderAuthButton />}</div>
+        <div className="flex items-center gap-2">
+          {!user && <HeaderAuthButton onLoginClick={onAuthRequired} />}
+        </div>
       </div>
     </nav>
   );

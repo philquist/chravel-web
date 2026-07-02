@@ -97,15 +97,30 @@ export default function MarketingApp() {
             <Routes>
               <Route
                 path="/"
-                element={<FullPageLanding onSignUp={() => setAuthMode('signup')} />}
+                element={
+                  <FullPageLanding
+                    onSignUp={() => setAuthMode('signup')}
+                    onAuthRequired={() => setAuthMode('signin')}
+                  />
+                }
               />
               <Route
                 path="/home"
-                element={<FullPageLanding onSignUp={() => setAuthMode('signup')} />}
+                element={
+                  <FullPageLanding
+                    onSignUp={() => setAuthMode('signup')}
+                    onAuthRequired={() => setAuthMode('signin')}
+                  />
+                }
               />
               <Route
                 path="/index"
-                element={<FullPageLanding onSignUp={() => setAuthMode('signup')} />}
+                element={
+                  <FullPageLanding
+                    onSignUp={() => setAuthMode('signup')}
+                    onAuthRequired={() => setAuthMode('signin')}
+                  />
+                }
               />
               <Route path="/blog" element={<BlogIndex />} />
               <Route path="/blog/:slug" element={<BlogPost />} />

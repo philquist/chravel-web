@@ -97,6 +97,8 @@ const GRADIENTS = {
 
 interface FullPageLandingProps {
   onSignUp: () => void;
+  /** Desktop sticky nav "Log In" — defaults to onSignUp when omitted. */
+  onAuthRequired?: () => void;
 }
 
 // Loading fallback — neutral, no spinner/wordmark so the homepage never flashes a splash.
@@ -115,7 +117,7 @@ const prefetchLazySections = () => {
   void import('./FooterSection');
 };
 
-export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) => {
+export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp, onAuthRequired }) => {
   // Landing scrolls this element, not `window`. StickyLandingNav must listen here
   // or `window.scrollY` stays 0 and the desktop nav stays permanently hidden.
   const [landingScrollEl, setLandingScrollEl] = useState<HTMLDivElement | null>(null);
@@ -149,7 +151,10 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
     // when prefers-reduced-motion is set (opacity fades remain).
     <MotionConfig reducedMotion="user">
       {/* Sticky Navigation - desktop only */}
-      <StickyLandingNav onSignUp={onSignUp} scrollRoot={landingScrollEl} />
+      <StickyLandingNav
+        onAuthRequired={onAuthRequired ?? onSignUp}
+        scrollRoot={landingScrollEl}
+      />
 
       {/* Mobile/tablet navigation - hamburger menu (desktop nav is hidden below lg) */}
       <MobileLandingNav onSignUp={onSignUp} />
