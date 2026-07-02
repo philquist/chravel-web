@@ -255,14 +255,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
           </div>
         </div>
 
-        {/* Mobile CTA - centered below preview */}
-        <Button
-          onClick={onSignUp}
-          className="mt-5 h-12 rounded-full px-8 accent-fill-gold backdrop-blur-md text-base font-semibold animate-fade-in lg:hidden"
-          style={{ animationDelay: '0.2s' }}
-        >
-          Get Started — It's Free
-        </Button>
       </div>
 
       {/* Bottom Section: proof strip — the six P's as an editorial index */}
