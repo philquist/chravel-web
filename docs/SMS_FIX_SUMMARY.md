@@ -1,7 +1,7 @@
 # SMS Test Fix — Root Cause Analysis & Resolution
 
 **Date:** 2026-02-16  
-**User:** ccamechi@gmail.com  
+**User:** a founder super-admin account  
 **Symptom:** "Send test SMS" fails with "Failed to send. Check your settings and try again."
 
 ---
@@ -14,7 +14,7 @@
 - **Fix:** Added `.lovable.dev` to `ALLOWED_ORIGINS`
 
 ### 2. **SMS entitlement — founder email not bypassed on server** (CRITICAL)
-- **Bug:** Client-side `SUPER_ADMIN_EMAILS` (ccamechi@gmail.com) makes `isSuperAdmin` true, so the "Send test SMS" button is visible. But the **server** `isSmsEntitled()` only checked `user_roles` and `user_entitlements`, not the email allowlist.
+- **Bug:** Client-side `SUPER_ADMIN_EMAILS` (a founder super-admin account) makes `isSuperAdmin` true, so the "Send test SMS" button is visible. But the **server** `isSmsEntitled()` only checked `user_roles` and `user_entitlements`, not the email allowlist.
 - **Impact:** Server returns 403 "Upgrade required for SMS notifications" even for the founder.
 - **Fix:** Added `SUPER_ADMIN_EMAILS` allowlist to `push-notifications` `isSmsEntitled()`. If `userEmail` is in the allowlist, return `true` before checking roles/entitlements. Pass `userEmail` from JWT into the handler.
 
@@ -61,7 +61,7 @@
 
 After deployment:
 1. Open the app on lovable.dev (or your domain).
-2. Sign in as ccamechi@gmail.com.
+2. Sign in as a founder super-admin account.
 3. Go to Settings → Notifications (Group tab).
 4. Ensure SMS is enabled and phone number is set.
 5. Click "Send test SMS".

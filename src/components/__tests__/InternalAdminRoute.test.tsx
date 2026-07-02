@@ -46,7 +46,7 @@ describe('InternalAdminRoute', () => {
 
   it('renders child for super admin users', () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { id: 'u1', email: 'ccamechi@gmail.com' },
+      user: { id: 'u1', email: 'admin@example.com' },
       isLoading: false,
     } as never);
     vi.mocked(useSuperAdmin).mockReturnValue({ isSuperAdmin: true });

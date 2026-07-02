@@ -554,4 +554,4 @@ Y Combinator asked to see how we build with AI. This is how. Not with one tool. 
 *Generated: February 6, 2026*
 *Repository: github.com/MeechYourGoals/ChravelApp*
 *Live Product: [www.chravel.app](https://www.chravel.app)*
-*Founder: Damechi "Meech" — ccamechi@gmail.com*
+*Founder: Damechi "Meech" — contact via support@chravel.app*
