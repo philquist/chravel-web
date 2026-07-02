@@ -166,7 +166,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             textShadow: '0 2px 6px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)',
           }}
         >
-          Built for group planning. Your most important info synced across web &amp; mobile.
+          Built for group plans. Your important info synced across web &amp; mobile.
         </p>
 
         {/* CTA group — primary conversion action + soft product-tour path */}
