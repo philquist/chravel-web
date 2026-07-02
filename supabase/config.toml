@@ -143,8 +143,6 @@ verify_jwt = true
 [functions.create-default-channels]
 verify_jwt = true
 
-[functions.create-openai-realtime-session]
-verify_jwt = false
 
 [functions.mint-realtime-token]
 verify_jwt = false
