@@ -138,7 +138,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             aria-label="The Chat Travel App"
           >
             <span aria-hidden="true">
-              The{' '}
+              The&nbsp;Group&nbsp;Chat{' '}
               <em>
                 <span className="text-gradient-gold">Ch</span>at
               </em>{' '}

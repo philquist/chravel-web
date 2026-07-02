@@ -136,7 +136,7 @@ export const ReplacesGrid = () => {
           className="font-display text-xl sm:text-2xl md:text-3xl italic leading-snug text-white"
           style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)' }}
         >
-          ChravelApp's 8 core modules cover everything your trip needs.
+          ChravelApp's 8 core tabs cover your trip needs.
         </p>
       </div>
     </section>
