@@ -42,9 +42,9 @@ const scenarios: Scenario[] = [
     href: '/use-cases/family-organization-app',
   },
   {
-    title: 'Touring Artists & Crews',
+    title: 'Touring Artists, Managers, & Crews',
     subtitle: 'Musicians · comedians · podcasts · managers · production',
-    before: 'Spreadsheets, endless texts, missed details. Overwhelmed managers, annoyed artists.',
+    before: 'Spreadsheets, endless texts, missed details. Overwhelmed tour managers, annoyed artists.',
     expandCTA: 'ChravelApp helps tours stay in sync',
     after:
       'Show days, rehearsal times, off days, crew channels, logistics, and payments — all in one place. Everyone aligned, every city.',
