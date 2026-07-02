@@ -721,7 +721,103 @@ export const USE_CASES: Array<UseCaseSummary | UseCaseDetail> = [
       secondaryTo: '/teams',
     },
   },
+  {
+    slug: 'business-travel-coordination',
+    status: 'published',
+    cardTitle: 'Business Travel & Company Retreats',
+    cardTagline:
+      'Coworkers on the same work trip get a private workspace for the itinerary, decks, receipts, tasks, and dinners — without leaking into personal group texts.',
+    cardCtaLabel: 'See ChravelApp for business travel',
+    seo: {
+      title: 'Business Travel & Company Retreat Coordination App | ChravelApp',
+      description:
+        'ChravelApp keeps business trips and company retreats organized — a private team workspace for the meeting itinerary, decks and receipts, per-person prep tasks, base camps, and dinner splits, without polluting personal texts.',
+    },
+    h1: 'The coordination app for business trips and company retreats',
+    intro:
+      'When coworkers travel together for client meetings, offsites, or a company retreat, the details usually end up in personal iMessage threads, forwarded emails, and Slack DMs. ChravelApp gives the team one private trip workspace instead — contained, organized, and separate from personal life.',
+    body: [
+      'Business travel is coordination-heavy: a shared itinerary, several presentations, client dinners, hotel confirmations, cabs to split, and a running list of who is doing what before each meeting. Most teams still glue it together with personal group texts, forwarded confirmation emails, Slack threads that scroll past, and a shared Drive folder nobody remembers to open. The result is a work trip that lives inside everyone’s personal messages — right next to their family chats and dinner plans.',
+      'ChravelApp gives the team a trip workspace that stays contained. Create a trip for the client visit, offsite, or company retreat, invite the coworkers going, and keep the entire conversation there — not in iMessage or WhatsApp. Chat, Broadcasts, Calendar, Tasks, Attachments, Base Camps, Explorer, Payments, and Media all live inside the trip, so the moment the trip is over, work does not keep bleeding into personal texts.',
+      'The meeting itinerary lives on the shared Calendar — client meetings, internal syncs, work dinners, flight blocks, and travel windows so nobody misses a slot. Attachments hold the pitch deck, the signed NDA, expense receipts, hotel confirmations, and any handouts, so the deck is not stuck in one person’s email. Assign Tasks per person: "Steve, finalize the deck by Wednesday", "Jennifer, confirm the 7pm reservation with the client", "Priya, print handouts before the airport". Everyone sees who owns what.',
+      'Base Camps solve one of the most annoying parts of a business trip. Pin the client office, conference venue, or offsite lodge as the shared Base Camp so everyone knows where to be. Each coworker can also set a personal Base Camp for their own hotel, since teammates often stay in different places on the same trip. Save the client’s office, the recommended dinner spot, and coffee near the venue in Explorer, and split the group cab or team dinner with Payments instead of chasing Venmo requests after you land.',
+      'Company retreats are the same idea at a bigger scale. Build the offsite agenda on the Calendar, upload the schedule and vendor contracts as Attachments, pin the retreat venue as the Base Camp, and turn on the shared Media album so every photo from the trip lands in one place instead of scattering across phones. Broadcasts push agenda changes or "meet in the lobby at 8" updates to the whole team without another Slack ping.',
+      'With ChravelApp Pro, admin-controlled seats and role-based access let ops leads, EAs, or people teams run business trips for a group with the right permissions. The pitch is simple: keep work travel organized, keep the team aligned, and keep work chats out of your personal messages.',
+    ],
+    featureMap: [
+      {
+        pain: 'Work trip details leaking into personal iMessage and WhatsApp',
+        solution: 'A private trip workspace with contained Chat and Broadcasts',
+      },
+      {
+        pain: 'Decks, contracts, and confirmations scattered across email and Drive',
+        solution: 'Attachments in one place on the trip',
+      },
+      {
+        pain: 'Meeting itinerary, work dinners, and flight blocks unclear',
+        solution: 'Shared Calendar',
+      },
+      {
+        pain: 'Team split across different hotels on the same trip',
+        solution: 'Shared Base Camp for the venue + personal Base Camp per person',
+      },
+      {
+        pain: 'Prep work falling through the cracks the night before',
+        solution: 'Per-person Tasks (deck, reservation, print outs, client follow-ups)',
+      },
+      {
+        pain: 'Chasing Venmo for the team dinner and shared cabs',
+        solution: 'Payments to split and settle without a spreadsheet',
+      },
+      {
+        pain: 'Retreat photos trapped across everyone’s phones',
+        solution: 'Shared Media album for the trip',
+      },
+    ],
+    workflow: {
+      heading: 'Set up a business trip or company retreat',
+      steps: [
+        'Create the trip, invite the coworkers going, and set the client office or retreat venue as the shared Base Camp.',
+        'Build the meeting and dinner schedule on the Calendar, and assign per-person prep Tasks (deck, reservations, handouts).',
+        'Upload decks, contracts, and confirmations as Attachments so the whole team has them offline.',
+        'Save client sites and dinner spots in Explorer, and use Payments to split cabs and team dinners.',
+        'Send trip updates via Broadcasts, and turn on the shared Media album for retreats and offsites.',
+      ],
+    },
+    faq: [
+      {
+        q: 'Does this keep work trips out of my personal iMessage or WhatsApp?',
+        a: 'Yes. All chat, updates, files, and tasks for the trip live inside the trip workspace, so work travel does not sit next to your family and friend threads on your phone.',
+      },
+      {
+        q: 'Can we track expense receipts and split team dinners or cabs?',
+        a: 'Yes. Upload receipts and confirmations as Attachments, and use Payments to split the team dinner, group cab, or any shared cost without chasing Venmo requests after the trip.',
+      },
+      {
+        q: 'Does it work for company retreats and offsites, not just client trips?',
+        a: 'Yes. The same workspace scales from a two-person client visit to a full-company retreat — agenda on the Calendar, venue as the Base Camp, decks and vendor contracts as Attachments, and a shared photo album for the whole team.',
+      },
+      {
+        q: 'Can more than one person manage the trip?',
+        a: 'Yes. ChravelApp Pro adds admin-controlled seats and role-based access, so ops leads, EAs, and people teams can run business trips with the right permissions across the company.',
+      },
+      {
+        q: 'Does it work on iPhone and Android?',
+        a: 'Yes — ChravelApp runs on the web and as an installable app on iOS and Android, so every coworker is covered regardless of device.',
+      },
+    ],
+    cta: {
+      heading: 'Keep work trips organized — and out of your personal texts',
+      subtext:
+        'Put the meeting itinerary, decks, receipts, per-person tasks, and dinner splits in one private workspace — then invite the coworkers going.',
+      primaryLabel: 'Create a trip',
+      primaryTo: '/auth',
+      secondaryLabel: 'ChravelApp for teams',
+      secondaryTo: '/teams',
+    },
+  },
 ];
+
 
 /** Cross-cutting features highlighted on the hub. Names match the real product surfaces. */
 export const USE_CASE_FEATURES: Array<{ name: string; description: string }> = [
