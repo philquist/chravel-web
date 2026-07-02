@@ -4,6 +4,7 @@ import { CalendarPlus, Share2, RefreshCw } from 'lucide-react';
 import createNewTrip from '@/assets/app-screenshots/create-trip-modal-v3.webp';
 import tripInviteCoachella from '@/assets/app-screenshots/trip-invite-coachella.webp';
 import oneHubChat from '@/assets/landing/one-hub-chat-cropped.webp';
+import { SectionHeader } from '../SectionHeader';
 
 export const ProblemSolutionSection = () => {
   const steps = [
@@ -49,26 +50,15 @@ export const ProblemSolutionSection = () => {
   return (
     <div className="container mx-auto px-4 py-8 tablet:py-16 flex flex-col items-center justify-start tablet:justify-center min-h-screen space-y-4 tablet:space-y-10">
       {/* Headline */}
-      <motion.div
-        className="text-center space-y-4 max-w-4xl"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-      >
-        <h2
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white"
-          style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.5)' }}
-        >
-          How It Works
-        </h2>
-        <p
-          className="text-lg sm:text-xl md:text-2xl font-semibold text-white/90"
-          style={{ textShadow: '2px 2px 6px rgba(0, 0, 0, 0.6)' }}
-        >
-          From Zero → Organized in under 60 seconds
-        </p>
-      </motion.div>
+      <SectionHeader
+        eyebrow="The System"
+        title={
+          <>
+            How It <em>Works</em>
+          </>
+        }
+        lede="From Zero → Organized in under 60 seconds"
+      />
 
       {/* Steps - Horizontal on desktop, vertical on mobile */}
       <div className="w-full max-w-6xl">
@@ -84,9 +74,15 @@ export const ProblemSolutionSection = () => {
             <React.Fragment key={step.number}>
               {/* Step Card */}
               <motion.div
-                className="flex-1 min-w-0 overflow-hidden bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-6 text-center hover:border-primary/50 transition-all duration-300 relative z-10"
+                className="group flex-1 min-w-0 overflow-hidden bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-6 text-center hover:border-primary/50 hover:-translate-y-1 hover:shadow-[0_18px_44px_-18px_rgba(196,151,70,0.28)] motion-reduce:hover:translate-y-0 transition-[border-color,box-shadow,transform] duration-300 relative z-10"
                 variants={itemVariants}
               >
+                {/* Gold top rule on hover */}
+                <span
+                  className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c49746]/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  aria-hidden="true"
+                />
+
                 {/* Number Badge */}
                 <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground font-bold text-xl flex items-center justify-center mx-auto mb-4">
                   {step.number}

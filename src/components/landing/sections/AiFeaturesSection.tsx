@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Wand2, Compass, Upload, ScrollText, DollarSign, Bot } from 'lucide-react';
 import aiConcierge from '@/assets/ai-concierge-screenshot.webp';
 import placesMaps from '@/assets/places-basecamps-screenshot.webp';
+import { SectionHeader } from '../SectionHeader';
 
 export const AiFeaturesSection = () => {
   // Group 1 - aligned with AI Concierge screenshot
@@ -67,28 +68,16 @@ export const AiFeaturesSection = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 tablet:py-0 flex flex-col items-center justify-start tablet:justify-center min-h-screen space-y-8 tablet:space-y-12">
-      {/* Headline - bold white text with shadow for contrast */}
-      <motion.div
-        className="text-center space-y-4 max-w-4xl"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-      >
-        <h2
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white"
-          style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)' }}
-        >
-          AI That Knows Your Trip
-        </h2>
-        <p
-          className="text-lg sm:text-xl md:text-2xl text-white/90 font-medium max-w-3xl mx-auto"
-          style={{ textShadow: '0 2px 6px rgba(0,0,0,0.5)' }}
-        >
-          Get answers with your trip's context — itinerary, budget, and{'\n'}&nbsp;more — not
-          generic advice.
-        </p>
-      </motion.div>
+      {/* Headline */}
+      <SectionHeader
+        eyebrow="Intelligent by Design"
+        title={
+          <>
+            AI That <em>Knows</em> Your Trip
+          </>
+        }
+        lede="Get answers with your trip's context — itinerary, budget, and more — not generic advice."
+      />
 
       {/* Split Layout: 2 Rows with Screenshot + 3 Pills each */}
       <div className="max-w-7xl w-full space-y-6 tablet:space-y-8">
@@ -123,7 +112,7 @@ export const AiFeaturesSection = () => {
               <motion.div
                 key={index}
                 variants={itemVariants}
-                className="bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-4 hover:border-accent/50 transition-all duration-300 group flex items-center"
+                className="group relative overflow-hidden bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-4 hover:border-accent/50 hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 transition-[border-color,box-shadow,transform] duration-300 flex items-center"
               >
                 <div className="flex items-center gap-4 w-full">
                   <div className="bg-accent/10 p-3 rounded-xl group-hover:bg-accent/20 transition-colors flex-shrink-0">
@@ -174,7 +163,7 @@ export const AiFeaturesSection = () => {
               <motion.div
                 key={index}
                 variants={itemVariants}
-                className="bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-4 hover:border-accent/50 transition-all duration-300 group flex items-center"
+                className="group relative overflow-hidden bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-4 hover:border-accent/50 hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 transition-[border-color,box-shadow,transform] duration-300 flex items-center"
               >
                 <div className="flex items-center gap-4 w-full">
                   <div className="bg-accent/10 p-3 rounded-xl group-hover:bg-accent/20 transition-colors flex-shrink-0">

@@ -6,29 +6,22 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { SectionHeader } from '@/components/landing/SectionHeader';
 
 export const ReplacesGrid = () => {
   return (
     <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 pt-8 sm:pt-6 pb-12 sm:pb-16">
-      {/* Header with FAQ-style bold typography */}
-      <div className="text-center mb-8 tablet:mb-12 space-y-4 max-w-4xl mx-auto px-2">
-        <h2
-          className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white"
-          style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)' }}
-        >
-          Why Juggle a Dozen Apps for One Trip?
-        </h2>
-        <p
-          className="text-base sm:text-lg md:text-xl text-white font-semibold mt-4"
-          style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)' }}
-        >
-          Select any category below to see how ChravelApp brings scattered planning into one
-          streamlined flow.
-        </p>
-
-        {/* Placeholder for ChravelTabs screenshot */}
-        <div className="mt-8 mb-4">{/* Screenshot of ChravelTabs will be inserted here */}</div>
-      </div>
+      {/* Header */}
+      <SectionHeader
+        eyebrow="One App, Not Twelve"
+        title={
+          <>
+            Why Juggle a <em>Dozen</em> Apps for One Trip?
+          </>
+        }
+        lede="Select any category below to see how ChravelApp brings scattered planning into one streamlined flow."
+        className="mb-8 tablet:mb-12 px-2"
+      />
 
       {/* Accordion */}
       <Accordion type="multiple" className="divide-y divide-white/10 border-y border-white/10">
@@ -58,15 +51,17 @@ export const ReplacesGrid = () => {
                   </div>
                 </div>
                 <div className="flex flex-col w-full tablet:hidden text-center">
-                  {/* Feature Name - Large, bold, pure white with glow */}
-                  <h3
-                    className="text-2xl sm:text-3xl font-bold text-white mb-2"
+                  {/* Feature Name — span, not a heading: AccordionTrigger is a
+                      <button> already wrapped in Radix's <h3> header, so a
+                      nested heading here breaks the a11y heading structure. */}
+                  <span
+                    className="block text-2xl sm:text-3xl font-bold text-white mb-2"
                     style={{
                       textShadow: '0 0 10px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.6)',
                     }}
                   >
                     {category.title}
-                  </h3>
+                  </span>
 
                   {/* Optional quote - above description */}
                   {category.benefitQuote && (
@@ -131,10 +126,14 @@ export const ReplacesGrid = () => {
         })}
       </Accordion>
 
-      {/* Bottom text */}
-      <div className="text-center mt-8 tablet:mt-12 max-w-4xl mx-auto px-2">
+      {/* Bottom pull-quote — editorial close for the section */}
+      <div className="text-center mt-10 tablet:mt-14 max-w-3xl mx-auto px-2">
+        <div
+          className="mx-auto mb-5 h-px w-16 bg-gradient-to-r from-transparent via-[#c49746] to-transparent"
+          aria-hidden="true"
+        />
         <p
-          className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-bold"
+          className="font-display text-xl sm:text-2xl md:text-3xl italic leading-snug text-white"
           style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)' }}
         >
           ChravelApp's 8 core modules cover everything your trip needs.

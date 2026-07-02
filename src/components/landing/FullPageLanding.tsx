@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import { MotionConfig } from 'framer-motion';
 import { FullPageLandingSection } from './FullPageLandingSection';
 import { StickyLandingNav } from './StickyLandingNav';
 import { MobileLandingNav } from './MobileLandingNav';
@@ -22,6 +23,9 @@ const PricingLandingSection = lazy(() =>
   import('./sections/PricingLandingSection').then(module => ({
     default: module.PricingLandingSection,
   })),
+);
+const JournalSection = lazy(() =>
+  import('./sections/JournalSection').then(module => ({ default: module.JournalSection })),
 );
 const FooterSection = lazy(() =>
   import('./FooterSection').then(module => ({ default: module.FooterSection })),
@@ -84,6 +88,11 @@ const GRADIENTS = {
     direction: 'vertical' as const,
     accentGlow: { color: DESIGN_TOKENS.goldAccentGlow, position: 'bottom' as const, opacity: 0.15 },
   },
+  journal: {
+    colors: [DESIGN_TOKENS.richBlack, DESIGN_TOKENS.pureBlack] as [string, string],
+    direction: 'vertical' as const,
+    accentGlow: { color: DESIGN_TOKENS.goldSoftGlow, position: 'top' as const, opacity: 0.2 },
+  },
 };
 
 interface FullPageLandingProps {
@@ -92,6 +101,19 @@ interface FullPageLandingProps {
 
 // Loading fallback — neutral, no spinner/wordmark so the homepage never flashes a splash.
 const SectionLoader = () => <div className="min-h-screen bg-background" />;
+
+// Warm the lazy section chunks once the browser is idle so fast scrollers
+// never land on a full-viewport SectionLoader gap. Keeps first paint lean
+// (hero + how-it-works only) while the rest streams in the background.
+const prefetchLazySections = () => {
+  void import('./sections/ReplacesSection');
+  void import('./sections/UseCasesSection');
+  void import('./sections/AiFeaturesSection');
+  void import('./sections/PricingLandingSection');
+  void import('./sections/FAQSection');
+  void import('./sections/JournalSection');
+  void import('./FooterSection');
+};
 
 export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) => {
   // Landing scrolls this element, not `window`. StickyLandingNav must listen here
@@ -112,8 +134,20 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
     };
   }, []);
 
+  // Prefetch below-the-fold section chunks during idle time.
+  useEffect(() => {
+    if (typeof requestIdleCallback === 'function') {
+      const idleId = requestIdleCallback(prefetchLazySections, { timeout: 3000 });
+      return () => cancelIdleCallback(idleId);
+    }
+    const timeoutId = window.setTimeout(prefetchLazySections, 1500);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   return (
-    <>
+    // reducedMotion="user" disables framer transform animations landing-wide
+    // when prefers-reduced-motion is set (opacity fades remain).
+    <MotionConfig reducedMotion="user">
       {/* Sticky Navigation - desktop only */}
       <StickyLandingNav onSignUp={onSignUp} scrollRoot={landingScrollEl} />
 
@@ -218,6 +252,19 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           </Suspense>
         </FullPageLandingSection>
 
+        {/* Section 8: Journal — blog preview + closing conversion band */}
+        <FullPageLandingSection
+          id="section-journal"
+          gradientColors={GRADIENTS.journal.colors}
+          gradientDirection={GRADIENTS.journal.direction}
+          accentGlow={GRADIENTS.journal.accentGlow}
+          goldOverlay="waves"
+        >
+          <Suspense fallback={<SectionLoader />}>
+            <JournalSection onSignUp={onSignUp} />
+          </Suspense>
+        </FullPageLandingSection>
+
         {/* Footer */}
         <div id="section-footer">
           <Suspense fallback={<SectionLoader />}>
@@ -225,6 +272,6 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp }) =>
           </Suspense>
         </div>
       </div>
-    </>
+    </MotionConfig>
   );
 };

@@ -811,9 +811,11 @@ const AuthIndex = () => {
       );
     }
 
-    // Browser — show marketing landing page (unchanged behavior)
+    // Browser — show marketing landing page (unchanged behavior).
+    // data-marketing scopes the editorial Fraunces typography (src/index.css)
+    // to this landing surface, matching the MarketingApp bootstrap path.
     return (
-      <div className="min-h-screen min-h-mobile-screen bg-background font-outfit">
+      <div className="min-h-screen min-h-mobile-screen bg-background" data-marketing="true">
         <Suspense fallback={<div className="min-h-screen bg-background" />}>
           <FullPageLanding onSignUp={() => setIsAuthModalOpen(true)} />
           <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
@@ -1502,8 +1504,10 @@ const UnauthIndex = ({
     return <Navigate to="/auth?mode=signin&returnTo=%2F" replace />;
   }
 
+  // data-marketing scopes the editorial Fraunces typography (src/index.css)
+  // to this landing surface, matching the MarketingApp bootstrap path.
   return (
-    <div className="min-h-screen min-h-mobile-screen bg-background font-outfit">
+    <div className="min-h-screen min-h-mobile-screen bg-background" data-marketing="true">
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
         <FullPageLanding onSignUp={() => setAuthMode('signup')} />
         {authMode && (

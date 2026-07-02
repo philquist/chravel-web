@@ -5,6 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { SectionHeader } from '../SectionHeader';
 
 const faqItems = [
   {
@@ -55,21 +56,16 @@ const faqItems = [
 export const FAQSection = () => {
   return (
     <div className="container mx-auto px-4 py-8 tablet:py-16 flex flex-col items-center justify-start tablet:justify-center min-h-0 tablet:min-h-screen space-y-8 tablet:space-y-12">
-      {/* Header with bold white text and shadow for contrast */}
-      <div className="text-center space-y-4 max-w-4xl">
-        <h2
-          className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white"
-          style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)' }}
-        >
-          Frequently Asked Questions
-        </h2>
-        <p
-          className="text-xl sm:text-2xl md:text-3xl text-white font-bold"
-          style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)' }}
-        >
-          Got questions? We've got answers.
-        </p>
-      </div>
+      {/* Header */}
+      <SectionHeader
+        eyebrow="Good to Know"
+        title={
+          <>
+            Frequently Asked <em>Questions</em>
+          </>
+        }
+        lede="Got questions? We've got answers."
+      />
 
       {/* FAQ Items */}
       <Accordion type="single" collapsible className="w-full max-w-3xl space-y-4">

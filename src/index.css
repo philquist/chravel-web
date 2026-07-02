@@ -1889,8 +1889,10 @@
   -webkit-font-smoothing: antialiased;
 }
 
-[data-marketing] h1,
-[data-marketing] h2 {
+/* .no-display-serif opts a heading out (e.g. sans headings inside gold chips
+   / conversion surfaces where serif 400 reads too light). */
+[data-marketing] h1:not(.no-display-serif),
+[data-marketing] h2:not(.no-display-serif) {
   font-family: 'Fraunces', Georgia, Cambria, 'Times New Roman', serif !important;
   font-weight: 400 !important;
   letter-spacing: -0.022em;
@@ -1907,14 +1909,13 @@
 }
 
 /* Ledes / subheads under marketing headings: lighter Inter at a generous
-   measure reads as editorial calm next to the serif headline. */
-[data-marketing] h1 + p,
-[data-marketing] h2 + p {
+   measure reads as editorial calm next to the serif headline. Opt-in via
+   .marketing-lede — the previous bare `h1 + p / h2 + p` sibling selector
+   also restyled pricing chips, blog bylines, and article body copy. */
+[data-marketing] .marketing-lede {
   font-weight: 300;
   letter-spacing: 0.005em;
   max-width: 64ch;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 /* H3 / card titles stay sans for utility, but with tighter tracking so the
@@ -1965,4 +1966,12 @@
 [data-marketing] .no-text-shadow,
 [data-marketing] .no-text-shadow * {
   text-shadow: none;
+}
+
+/* Reduced motion: marketing entrance fades render instantly. Framer Motion
+   reveals are already gated per-component via useReducedMotion(). */
+@media (prefers-reduced-motion: reduce) {
+  [data-marketing] .animate-fade-in {
+    animation: none;
+  }
 }

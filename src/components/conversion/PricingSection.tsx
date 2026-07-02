@@ -436,8 +436,10 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
     <div className="w-full space-y-16">
       {/* Header with Value Prop - High contrast with background */}
       <div className="text-center space-y-6">
-        <div className="inline-block accent-fill-gold px-6 py-4 rounded-lg max-w-3xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-2">
+        {/* no-display-serif/no-text-shadow: black-on-gold chip needs bold sans,
+            not the [data-marketing] serif-400 + shadow treatment. */}
+        <div className="inline-block accent-fill-gold px-6 py-4 rounded-lg max-w-3xl mx-auto no-text-shadow">
+          <h2 className="no-display-serif text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-2">
             Start free. Upgrade when you're ready for relief.
           </h2>
           <p className="text-sm sm:text-base md:text-lg text-black font-bold leading-relaxed break-words">
