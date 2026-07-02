@@ -104,3 +104,8 @@
 - Classified the June 30 App Review rejection as a split fix: `Chravel-Inc/chravel-mobile` native shell owns the iPad Sign in with Apple bridge and App Store Connect/RevenueCat owns submitted IAP products, while `Chravel-Inc/chravel-web` owns the stable bridge contract and product ID references.
 - Added `docs/app-store-june-30-2026-remediation.md` with the product IDs, native bridge requirements, QA checklist, and App Review reply template.
 - Marked `BILLING_FLAGS.APPLE_IAP_ENABLED` true to align `Chravel-Inc/chravel-web`'s billing source of truth with the current iOS-native RevenueCat paywall behavior and added a regression test so future changes do not silently disable IAP for review builds.
+
+2026-07-02 — Premium light-mode token repair
+- Replaced the previous gray light-mode foundation with warm-white semantic tokens, dark high-contrast primary CTAs, refined gold accents, warm sidebar/payment/chat surfaces, and PWA safe-area background parity.
+- Polished shared Card/Input/Radix Toast/Sonner primitives so borders, shadows, inputs, and toast surfaces read as native premium light-mode UI while preserving existing dark-mode tokens and theme persistence behavior.
+- Added a light-theme token regression test covering WCAG AA contrast pairings and warm bright surface requirements. Verification: targeted token test, typecheck, lint:check, and build pass; screenshot capture was attempted but Playwright browser installation remains blocked by CDN 403 in this environment.

@@ -160,7 +160,7 @@
     /* Light theme: match app shell so safe-area “gutters” are not near-black */
     html.light,
     html.light body {
-      background-color: hsl(0 0% 80%);
+      background-color: hsl(42 60% 98%);
     }
 
     #root {
@@ -449,67 +449,76 @@
   }
 
   .light {
-    /* Soft gray light palette (intentionally tighter, lower-contrast than white UIs) */
-    --background: 0 0% 80%;
-    --foreground: 0 0% 0%; /* Pure black text */
+    /* Premium light palette: warm-white foundation, crisp ink, restrained gold accents. */
+    --background: 42 60% 98%;
+    --foreground: 220 28% 9%;
 
-    --card: 0 0% 91%;
-    --card-foreground: 0 0% 0%; /* Black text on cards */
+    --card: 0 0% 100%;
+    --card-foreground: 220 28% 9%;
 
-    --popover: 0 0% 93%;
-    --popover-foreground: 0 0% 0%; /* Black text on popovers */
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 28% 9%;
 
-    --secondary: 0 0% 88%;
-    --secondary-foreground: 0 0% 10%;
+    --primary: 220 28% 9%;
+    --primary-foreground: 42 60% 98%;
 
-    --muted: 0 0% 86%;
-    --muted-foreground: 0 0% 40%;
+    --secondary: 42 42% 94%;
+    --secondary-foreground: 220 28% 12%;
 
-    --border: 0 0% 84%;
-    --input: 0 0% 94%; /* Inputs sit above card for separation */
+    --muted: 42 44% 95%;
+    --muted-foreground: 220 12% 34%;
 
-    /* Sidebar - Inverted */
-    --sidebar-background: 0 0% 82%;
-    --sidebar-foreground: 0 0% 10%;
-    --sidebar-primary: 37 55% 52%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 88%;
-    --sidebar-accent-foreground: 0 0% 10%;
-    --sidebar-border: 0 0% 83%;
+    --accent: 38 50% 48%;
+    --accent-foreground: 220 28% 9%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 42 26% 84%;
+    --input: 42 38% 96%; /* Inputs sit above warm app canvas with clear definition. */
+
+    /* Sidebar - premium light shell */
+    --sidebar-background: 42 46% 96%;
+    --sidebar-foreground: 220 28% 12%;
+    --sidebar-primary: 220 28% 9%;
+    --sidebar-primary-foreground: 42 60% 98%;
+    --sidebar-accent: 42 38% 92%;
+    --sidebar-accent-foreground: 220 28% 12%;
+    --sidebar-border: 42 26% 84%;
     --sidebar-ring: 37 55% 52%;
 
     /* Payment Colors - Inverted for Light Mode */
     --payment-primary: 37 55% 52%;
     --payment-primary-foreground: 0 0% 0%;
-    --payment-background: 0 0% 82%;
-    --payment-background-light: 0 0% 90%;
-    --payment-border: 0 0% 84%;
+    --payment-background: 42 46% 96%;
+    --payment-background-light: 42 60% 98%;
+    --payment-border: 42 26% 84%;
     --payment-text: 0 0% 10%;
 
     /* Slightly darker gold for focus ring visibility on light backgrounds */
     --ring: 37 55% 42%;
 
     /* Glass-slate tokens — light mode */
-    --glass-slate-bg: 0 0% 80%;
-    --glass-slate-card: 0 0% 91%;
-    --glass-slate-border: 0 0% 84%;
+    --glass-slate-bg: 42 60% 98%;
+    --glass-slate-card: 0 0% 100%;
+    --glass-slate-border: 42 26% 84%;
 
     /* Chat contrast tokens — light mode */
-    --chat-bubble-other: 0 0% 75%;
-    --chat-bubble-other-foreground: 0 0% 8%;
+    --chat-bubble-other: 42 36% 91%;
+    --chat-bubble-other-foreground: 220 28% 10%;
     --chat-meta: 0 0% 10% / 0.8;
 
-    /* Surface / ink scale — light mode (matches prior shim values) */
-    --surface-0: 0 0% 96%;
-    --surface-1: 0 0% 92%;
-    --surface-2: 0 0% 88%;
-    --surface-3: 0 0% 84%;
-    --surface-4: 0 0% 80%;
-    --overlay-strong: 0 0% 0% / 0.25;
-    --overlay-soft: 0 0% 0% / 0.1;
-    --ink-1: 0 0% 10%;
-    --ink-2: 0 0% 32%;
-    --ink-3: 0 0% 45%;
+    /* Surface / ink scale — light mode */
+    --surface-0: 42 60% 98%;
+    --surface-1: 0 0% 100%;
+    --surface-2: 42 44% 95%;
+    --surface-3: 42 34% 90%;
+    --surface-4: 42 24% 84%;
+    --overlay-strong: 220 28% 9% / 0.42;
+    --overlay-soft: 220 28% 9% / 0.12;
+    --ink-1: 220 28% 9%;
+    --ink-2: 220 14% 30%;
+    --ink-3: 220 10% 43%;
     --ink-on-accent: 0 0% 100%;
     --hairline-strong: 0 0% 0% / 0.15;
     --hairline-soft: 0 0% 0% / 0.08;
@@ -731,7 +740,7 @@
 /* ─── PWA standalone background ───────────────────────────── */
 @media (display-mode: standalone) {
   .light body {
-    background-color: hsl(var(--surface-4));
+    background-color: hsl(var(--background));
   }
 }
 

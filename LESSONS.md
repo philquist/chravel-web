@@ -463,3 +463,8 @@ When pricing cards advertise limits or role/channel access, assert those claims 
 
 ### AI quota copy must be changed in both client and edge limit maps
 Concierge query caps are duplicated across UI copy, client helpers, and Supabase edge usage policy; changing a free/paid quota requires grep-driven updates plus parity tests for `FEATURE_LIMITS`, `FREEMIUM_LIMITS`, and `CONCIERGE_TRIP_QUERY_LIMITS`.
+
+## Design System & Theme
+
+### Fix light-mode regressions at semantic tokens before screen-level patches
+When light mode feels muddy across many surfaces, repair `background/card/popover/surface/ink/input/border/ring` tokens and shared primitives first; one-off page colors multiply inconsistencies and miss PWA safe-area/toast/modal surfaces.
