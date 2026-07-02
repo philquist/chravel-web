@@ -119,26 +119,37 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
           style={{ animationDelay: '0.05s' }}
         >
           <div
-            className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight tracking-[0.02em] text-gradient-gold"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-[0.02em] text-gradient-gold"
             aria-hidden="true"
           >
             ChravelApp
           </div>
         </div>
 
-        {/* Pain-First Headline — primary H1 for the page.
-            <em> renders in the true Fraunces italic cut for the editorial accent. */}
+        {/* Descriptor tagline — reveals how Chat + Travel + App combine into ChravelApp.
+            Gold letters (CH, RAVEL, APP) spell the wordmark; italics via Fraunces. */}
         <div className="w-full flex items-center justify-center px-2 tablet:px-4 mb-3 tablet:mb-4">
           <h1
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.04] tracking-tight animate-fade-in text-center w-full"
+            className="text-3xl sm:text-4xl md:text-[2.75rem] lg:text-5xl font-bold text-white leading-[1.04] tracking-tight animate-fade-in text-center w-full"
             style={{
               textShadow:
                 '0 2px 8px rgba(0,0,0,0.6), 0 4px 18px rgba(0,0,0,0.45), 0 0 44px rgba(196,151,70,0.28)',
             }}
+            aria-label="The Chat Travel App"
           >
-            The Group Chat <em>Travel</em> App
+            <span aria-hidden="true">
+              The{' '}
+              <em>
+                <span className="text-gradient-gold">Ch</span>at
+              </em>{' '}
+              <em>
+                T<span className="text-gradient-gold">ravel</span>
+              </em>{' '}
+              <em className="text-gradient-gold">App</em>
+            </span>
           </h1>
         </div>
+
 
         {/* Gold divider — premium accent */}
         <div
