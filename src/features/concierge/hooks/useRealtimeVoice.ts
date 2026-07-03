@@ -29,6 +29,7 @@ import {
   buildRealtimeSetupUrl,
   executeRealtimeTool,
   fetchRealtimeSessionConfig,
+  preflightRealtimeSetup,
   type RealtimeSessionConfigResponse,
 } from '../lib/realtimeVoiceClient';
 
@@ -251,6 +252,13 @@ export function useRealtimeVoice(): UseRealtimeVoiceResult {
         if (!url) {
           throw new Error('Could not start the voice session. Please try again.');
         }
+        // Dry-run the setup endpoint now: the SDK swallows error bodies, so this is the
+        // only place a misconfiguration (gateway key, model, credits) surfaces legibly.
+        await preflightRealtimeSetup(url, {
+          instructions: config.instructions,
+          voice: config.voice,
+          tools: config.tools,
+        });
         intendActiveRef.current = true;
         pendingConnectRef.current = true;
         setSetupUrl(url);

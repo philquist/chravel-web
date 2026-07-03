@@ -40,6 +40,7 @@ import { useTripVariant } from '../contexts/TripVariantContext';
 import { useFeatureToggle } from '../hooks/useFeatureToggle';
 import { useSuperAdmin } from '../hooks/useSuperAdmin';
 import { usePrefetchTrip } from '../hooks/usePrefetchTrip';
+import { useViewportAnchoredHeight } from '../hooks/useViewportAnchoredHeight';
 import { CalendarSkeleton, PlacesSkeleton, ChatSkeleton } from './loading';
 import { TripPreferences as TripPreferencesType } from '../types/consumer';
 
@@ -77,6 +78,10 @@ export const TripTabs = ({
   const features = useFeatureToggle(tripData || {});
   const { isSuperAdmin } = useSuperAdmin();
   const { prefetchTab, prefetchAdjacentTabs, prefetchPriorityTabs } = usePrefetchTrip();
+  // Desktop: size the tab panel from its measured top edge so its bottom never
+  // passes the fold (the header above is variable-height; a hardcoded
+  // `calc(100vh-240px)` + min-h floor clipped the concierge composer).
+  const { ref: panelRef, height: panelHeight } = useViewportAnchoredHeight<HTMLDivElement>();
 
   // ⚡ PERFORMANCE: Track visited (mounted) tabs. Seeded with Tier 1 so chat,
   // calendar, and concierge are warm immediately. Tier 2 is added at idle.
@@ -349,7 +354,13 @@ export const TripTabs = ({
       </div>
 
       {/* ⚡ PERFORMANCE: Keep visited tabs mounted for instant switching */}
-      <div className="overflow-y-auto native-scroll pb-24 sm:pb-4 h-auto min-h-0 max-h-none md:h-[calc(100vh-240px)] md:max-h-[1000px] md:min-h-[600px]">
+      {/* Classes are the pre-measure fallback; the measured inline height replaces
+          them on desktop so the panel bottom always stays above the fold. */}
+      <div
+        ref={panelRef}
+        className="overflow-y-auto native-scroll pb-24 sm:pb-4 h-auto min-h-0 max-h-none md:h-[calc(100dvh-260px)] md:max-h-[1000px] md:min-h-[420px]"
+        style={panelHeight !== undefined ? { height: panelHeight, minHeight: 0 } : undefined}
+      >
         {tabs
           .filter(t => t.enabled !== false)
           .map(tab => {

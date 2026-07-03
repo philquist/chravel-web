@@ -4,6 +4,7 @@ import {
   DEFAULT_REALTIME_VOICE_MODEL,
   executeRealtimeTool,
   fetchRealtimeSessionConfig,
+  preflightRealtimeSetup,
 } from '../realtimeVoiceClient';
 
 const { getSessionMock } = vi.hoisted(() => ({
@@ -126,6 +127,61 @@ describe('buildRealtimeSetupUrl', () => {
   it('throws when the user is not authenticated', async () => {
     getSessionMock.mockResolvedValue({ data: { session: null } });
     await expect(buildRealtimeSetupUrl()).rejects.toThrow('Not authenticated');
+  });
+});
+
+describe('preflightRealtimeSetup', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('POSTs the same body shape the SDK sends and resolves on success', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, text: async () => '{"token":"t","url":"wss://x"}' });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const sessionConfig = { instructions: 'hi', voice: 'sage', tools: [] };
+    await expect(
+      preflightRealtimeSetup('https://project.supabase.co/functions/v1/mint?jwt=j', sessionConfig),
+    ).resolves.toBeUndefined();
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://project.supabase.co/functions/v1/mint?jwt=j');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual({ sessionConfig });
+  });
+
+  // The whole point of the preflight: the SDK swallows error bodies, so this must
+  // surface the server's own message (e.g. the Gateway's mint failure reason).
+  it('throws with the status and the server error text on failure', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      text: async () =>
+        JSON.stringify({
+          error: 'Gateway mint failed. openai/gpt-realtime-2 → 400: expiresIn cap',
+        }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(preflightRealtimeSetup('https://x/mint', {})).rejects.toThrow(
+      'Voice setup failed (502): Gateway mint failed. openai/gpt-realtime-2 → 400: expiresIn cap',
+    );
+  });
+
+  it('falls back to the raw body when the failure response is not JSON', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => '<!doctype html>not found',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(preflightRealtimeSetup('https://x/mint', {})).rejects.toThrow(
+      'Voice setup failed (404): <!doctype html>not found',
+    );
   });
 });
 

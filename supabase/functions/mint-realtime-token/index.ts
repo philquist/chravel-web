@@ -8,8 +8,16 @@
  *   1. Authenticates the user from the `?jwt=` query param (the SDK can't send the
  *      Authorization header) — or the Authorization header for direct/manual calls.
  *   2. Mints a short-lived Vercel AI Gateway realtime client secret via the exact
- *      contract the AI SDK uses (POST /v1/realtime/client-secrets, {model, expiresIn}).
- *   3. Constructs the WS url the SDK expects and returns the concierge tool set.
+ *      contract the AI SDK uses (POST /v1/realtime/client-secrets, {model}).
+ *   3. Constructs the WS url the SDK expects, and echoes back the tool definitions
+ *      from the request's sessionConfig (the SDK REPLACES sessionConfig.tools with
+ *      the setup response's tools, so omitting them here would wipe the tool set).
+ *
+ * Tools are echoed, not imported: `realtime-voice-session` (trip-access-checked) is
+ * the single source of truth that hands the client its tool list, and actual tool
+ * EXECUTION is enforced independently by `execute-concierge-tool` (capability tokens,
+ * RLS, rate limits) — the model's advertised tool list carries no privileges. Keeping
+ * this function registry-free avoids the 65KB toolRegistry import and its drift risk.
  *
  * Hosted on Supabase (Deno) so Lovable preview + prod share one code path — a Vercel
  * `/api/*` function only exists on the chravel.app host and gets deleted by Lovable.
@@ -19,7 +27,6 @@
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders } from '../_shared/cors.ts';
-import { getToolsForVoice } from '../_shared/concierge/toolRegistry.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -32,9 +39,10 @@ const ALLOWED_MODELS = new Set<string>([
 const DEFAULT_MODEL = 'openai/gpt-realtime-2';
 // If the account's plan can't mint the requested model, fall back to this one.
 const FALLBACK_MODEL = 'openai/gpt-realtime-mini';
-const TOKEN_TTL_SECONDS = 600;
 
-const MINT_RATE_LIMIT_MAX = 30;
+// The client mints twice per session start (UI preflight for a legible error, then the
+// SDK's own connect() fetch), plus once per reconnect — keep generous headroom.
+const MINT_RATE_LIMIT_MAX = 60;
 const MINT_RATE_LIMIT_WINDOW_SECONDS = 3600;
 
 // Exact contract used by @ai-sdk/gateway's mintRealtimeClientSecret / getWebSocketConfig.
@@ -49,13 +57,22 @@ interface RealtimeToolDefinition {
   parameters: Record<string, unknown>;
 }
 
-function realtimeTools(): RealtimeToolDefinition[] {
-  return getToolsForVoice().map(decl => ({
-    type: 'function',
-    name: decl.name,
-    description: decl.description,
-    parameters: decl.parameters as unknown as Record<string, unknown>,
-  }));
+/**
+ * Pull the tool definitions out of the sessionConfig the SDK posts to this endpoint,
+ * keeping only well-formed function tools (shape check, not a trust boundary — see
+ * the header comment).
+ */
+function toolsFromSessionConfig(body: unknown): RealtimeToolDefinition[] {
+  const sessionConfig = (body as { sessionConfig?: { tools?: unknown } } | null)?.sessionConfig;
+  const tools = Array.isArray(sessionConfig?.tools) ? sessionConfig.tools : [];
+  return tools.filter(
+    (tool): tool is RealtimeToolDefinition =>
+      !!tool &&
+      typeof tool === 'object' &&
+      (tool as { type?: unknown }).type === 'function' &&
+      typeof (tool as { name?: unknown }).name === 'string' &&
+      typeof (tool as { parameters?: unknown }).parameters === 'object',
+  );
 }
 
 /** WS url the SDK opens: wss://ai-gateway.vercel.sh/v4/ai/realtime-model?ai-model-id=<model> */
@@ -112,7 +129,12 @@ async function mintClientSecret(
       'ai-gateway-auth-method': 'api-key',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ model, expiresIn: TOKEN_TTL_SECONDS }),
+    // No expiresIn: the live gateway rejects values > 300 ("expiresIn: Too big:
+    // expected number to be <=300" — verified against production), and the AI SDK's
+    // own default flow omits it too. The gateway's default TTL is plenty: the client
+    // secret only needs to outlive the WebSocket handshake, and every (re)connect
+    // mints a fresh one via this endpoint.
+    body: JSON.stringify({ model }),
   });
   const raw = await resp.text();
   if (!resp.ok) {
@@ -168,6 +190,8 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  const requestBody: unknown = await req.json().catch(() => null);
+
   const requested = reqUrl.searchParams.get('model') || DEFAULT_MODEL;
   const primary = ALLOWED_MODELS.has(requested) ? requested : DEFAULT_MODEL;
   const candidates = primary === FALLBACK_MODEL ? [primary] : [primary, FALLBACK_MODEL];
@@ -190,7 +214,7 @@ Deno.serve(async (req: Request) => {
         {
           token: result.token,
           url: realtimeWsUrl(model),
-          tools: realtimeTools(),
+          tools: toolsFromSessionConfig(requestBody),
           expiresAt: result.expiresAt,
           model,
         },

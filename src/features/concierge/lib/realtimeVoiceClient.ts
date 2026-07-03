@@ -76,6 +76,38 @@ export async function buildRealtimeSetupUrl(
   return `${SUPABASE_PROJECT_URL}/functions/v1/mint-realtime-token?${params.toString()}`;
 }
 
+/**
+ * Preflight the setup endpoint before handing it to the SDK. The SDK swallows the
+ * response body on failure (it throws bare "Failed to fetch realtime setup: <status>"),
+ * so a misconfiguration would be illegible in the overlay. This sends the exact same
+ * POST the SDK sends; on failure it surfaces the server's own error text (e.g. the
+ * Gateway's reason: invalid key, model unavailable, insufficient credits).
+ * The minted token is discarded — it is single-use, short-lived, and the SDK mints
+ * its own on connect(); the mint endpoint's rate limit budgets for both calls.
+ */
+export async function preflightRealtimeSetup(
+  setupUrl: string,
+  sessionConfig: unknown,
+): Promise<void> {
+  const resp = await fetch(setupUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionConfig }),
+  });
+  if (!resp.ok) {
+    const raw = await resp.text().catch(() => '');
+    let message = raw;
+    try {
+      const parsed = JSON.parse(raw) as { error?: string };
+      if (parsed?.error) message = parsed.error;
+    } catch {
+      /* non-JSON body — use raw text */
+    }
+    const detail = message ? `: ${message.slice(0, 300)}` : '';
+    throw new Error(`Voice setup failed (${resp.status})${detail}`);
+  }
+}
+
 /** Fetch the trip-aware system prompt + tool set for the realtime session. */
 export async function fetchRealtimeSessionConfig(
   tripId: string,

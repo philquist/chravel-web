@@ -9,6 +9,7 @@ import { isReadOnlyTab, hasTabAccess } from './ProTabsConfig';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoMode } from '../../hooks/useDemoMode';
 import { useSuperAdmin } from '../../hooks/useSuperAdmin';
+import { useViewportAnchoredHeight } from '../../hooks/useViewportAnchoredHeight';
 
 // ⚡ PERFORMANCE: Lazy load all tab components for code splitting
 // This significantly reduces initial bundle size - tabs load on demand
@@ -92,6 +93,10 @@ export const ProTabContent = ({
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
   const { isSuperAdmin } = useSuperAdmin();
+  // Size the tab panel from its measured top edge so its bottom never passes the
+  // fold (the pro header above is variable-height; the hardcoded
+  // `calc(100vh-320px)` + min-h floor clipped the concierge composer).
+  const { ref: panelRef, height: panelHeight } = useViewportAnchoredHeight<HTMLDivElement>();
 
   const userRole = user?.proRole || 'staff';
   const userPermissions = user?.permissions || ['read'];
@@ -270,7 +275,13 @@ export const ProTabContent = ({
   };
 
   return (
-    <div className="h-[calc(100vh-320px)] max-h-[1000px] min-h-[500px] overflow-y-auto flex flex-col">
+    /* Classes are the pre-measure fallback; the measured inline height replaces
+       them on desktop so the panel bottom always stays above the fold. */
+    <div
+      ref={panelRef}
+      className="h-[calc(100dvh-320px)] max-h-[1000px] min-h-[420px] overflow-y-auto flex flex-col"
+      style={panelHeight !== undefined ? { height: panelHeight, minHeight: 0 } : undefined}
+    >
       {/* ⚡ PERFORMANCE: Suspense boundary with content-aware skeleton */}
       <Suspense fallback={getSkeletonForTab(activeTab)}>{renderTabContent()}</Suspense>
     </div>
