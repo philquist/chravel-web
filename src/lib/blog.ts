@@ -961,7 +961,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'Running a 50-city tour: how a tour manager stays sane with ChravelApp',
     excerpt:
       'Fifty cities, a dozen departments, and a fresh day sheet every morning. Here’s how a tour manager uses ChravelApp to keep the artist, crew, security, and content team aligned night after night.',
-    datePublished: '2026-01-21',
+    datePublished: '2026-02-21',
     author: BLOG_AUTHOR,
     tags: ['Music Touring', 'Tour Management'],
     sections: [
