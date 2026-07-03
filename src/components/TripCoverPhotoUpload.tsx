@@ -66,19 +66,20 @@ export const TripCoverPhotoUpload = ({
   const handleGenerateAi = useCallback(async () => {
     if (generateDisabled) return;
     const result = await generateAiCover();
-    if (result.ok) {
+    if (result.ok === true) {
       await onPhotoUploaded(result.publicUrl).catch(() => false);
       setUploadSuccess(true);
       setTimeout(() => setUploadSuccess(false), 2000);
       toast.success('AI cover photo generated!');
       return;
     }
-    if (result.code === 'upgrade_required') {
+    const failed = result;
+    if (failed.code === 'upgrade_required') {
       toast.error('Upgrade to Frequent Chraveler to generate cover photos.');
-    } else if (result.code === 'quota_exceeded') {
+    } else if (failed.code === 'quota_exceeded') {
       toast.error(`You've used all ${aiCap} AI covers this month.`);
     } else {
-      toast.error(result.error || 'Cover generation failed.');
+      toast.error(failed.error || 'Cover generation failed.');
     }
   }, [generateDisabled, generateAiCover, onPhotoUploaded, aiCap]);
 
