@@ -1,0 +1,1 @@
+GRANT SELECT (subscription_product_id) ON public.profiles TO authenticated;
