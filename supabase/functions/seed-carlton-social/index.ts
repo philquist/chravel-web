@@ -229,7 +229,7 @@ const TRIP_CONFIGS: Record<string, TripConfig> = {
       { a: -1, c: 'Best birthday ever. Café del Mar sunset was everything', d: 1 },
       { a: 2, c: 'The paella at Es Boldadó was incredible. That cliffside view 😍', d: 2 },
       { a: 6, c: "Last night was legendary. That's all I'll say 😂", d: 3 },
-      { a: 4, c: 'Happy birthday Carlton!! This trip was perfection ✨', d: 3 },
+      { a: 4, c: 'Happy birthday Carlton!! This trip was perfection', d: 3 },
     ],
     tasks: [
       { title: 'Reserve birthday dinner at Lio Ibiza', creator: -1, done: true },
@@ -377,7 +377,7 @@ const TRIP_CONFIGS: Record<string, TripConfig> = {
       { a: 0, c: 'Boat day was magical. We found a hidden cove near Praiano', d: 2 },
       { a: 2, c: 'La Sponda dinner was a fever dream. Those candles everywhere 🕯️', d: 4 },
       { a: 4, c: 'The Path of the Gods hike today — views were absolutely insane', d: 5 },
-      { a: -1, c: 'Italy never misses. This coast is pure magic ✨', d: 6 },
+      { a: -1, c: 'Italy never misses. This coast is pure magic', d: 6 },
     ],
     tasks: [
       { title: 'Book private boat charter for coast tour', creator: -1, done: true },

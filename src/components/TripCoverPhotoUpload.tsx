@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Camera, Check, Crop, Eye, Trash2, Sparkles } from 'lucide-react';
+import { Upload, Camera, Check, Crop, Eye, Trash2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useDemoMode } from '../hooks/useDemoMode';
 import { toast } from 'sonner';
@@ -293,10 +293,9 @@ export const TripCoverPhotoUpload = ({
                     <span className="text-sm font-medium">Generating…</span>
                   </>
                 ) : (
-                  <>
-                    <Sparkles size={16} />
-                    <span className="text-sm font-medium">Generate with AI</span>
-                  </>
+                <>
+                  <span className="text-sm font-medium">Generate with AI</span>
+                </>
                 )}
               </button>
             </div>
@@ -386,7 +385,6 @@ export const TripCoverPhotoUpload = ({
               </>
             ) : (
               <>
-                <Sparkles size={16} />
                 <span className="text-sm font-medium">
                   Generate with AI
                   {canGenerate && remainingThisMonth !== null

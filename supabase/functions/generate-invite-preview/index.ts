@@ -72,7 +72,7 @@ function generateInviteHTML(
     ? '🎪 Event Invitation'
     : isPro
       ? '🏢 Pro Trip Invitation'
-      : "✨ You're Invited!";
+      : "You're Invited!";
 
   const badgeTextColor = isEvent || isPro ? '#fff' : '#000';
   const datesColor = isEvent ? safeTheme : '#a855f7';
