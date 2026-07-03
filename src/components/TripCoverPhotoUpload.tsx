@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Camera, Check, Crop, Eye, Trash2 } from 'lucide-react';
+import { Upload, Camera, Check, Crop, Eye, Trash2, Sparkles } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useDemoMode } from '../hooks/useDemoMode';
 import { toast } from 'sonner';
 import { CoverPhotoCropModal } from './CoverPhotoCropModal';
 import { CoverPhotoFullscreenModal } from './CoverPhotoFullscreenModal';
 import { useCoverPhotoUpload } from '@/features/trips/hooks/useCoverPhotoUpload';
+import { useGenerateCoverPhoto } from '@/features/trips/hooks/useGenerateCoverPhoto';
 import { ImagePrepError, prepareImageForUpload } from '@/utils/imagePrep';
 import { isBlobOrDataUrl } from '@/utils/mediaUtils';
 
