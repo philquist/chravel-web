@@ -60,7 +60,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'ChravelApp for fraternities and sororities: Organize rush, formals, and chapter life in one app',
     excerpt:
       'Running a chapter takes more than one giant group chat. Here’s what rush, formals, the social calendar, member tasks, and house votes look like when a fraternity or sorority runs them in ChravelApp — in a space that stays private from everyday life.',
-    datePublished: '2026-06-25',
+    datePublished: '2026-09-25',
     author: BLOG_AUTHOR,
     tags: ['Greek Life', 'Students'],
     sections: [
@@ -491,7 +491,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'How to create a client trip portal without building a custom app',
     excerpt:
       'A polished client portal sounds like a six-figure software project. It isn’t. Here’s what a trip portal actually needs — and how to create one for your next client without writing a line of code.',
-    datePublished: '2026-06-20',
+    datePublished: '2026-07-07',
     author: BLOG_AUTHOR,
     tags: ['Travel Concierge', 'Client Experience'],
     sections: [
@@ -685,7 +685,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'ChravelApp as a family hub: keep kids, schedules, photos, and chores in one place',
     excerpt:
       'A family runs on logistics — practices, pickups, forms, chores, and “what’s for dinner?” Here’s how to turn the group-text chaos into one shared family hub, and how a whole team’s parents can run carpools from the same place.',
-    datePublished: '2026-06-22',
+    datePublished: '2026-08-18',
     author: BLOG_AUTHOR,
     tags: ['Families', 'Family Organization'],
     sections: [
