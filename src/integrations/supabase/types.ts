@@ -89,6 +89,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_cover_generations: {
+        Row: {
+          cost_estimate_cents: number | null
+          created_at: string
+          id: string
+          model: string
+          period_month: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          cost_estimate_cents?: number | null
+          created_at?: string
+          id?: string
+          model?: string
+          period_month?: string
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          cost_estimate_cents?: number | null
+          created_at?: string
+          id?: string
+          model?: string
+          period_month?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_queries: {
         Row: {
           created_at: string | null
@@ -5192,6 +5222,10 @@ export type Database = {
       }
       can_access_channel: {
         Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_edit_trip_cover: {
+        Args: { _trip_id: string; _user_id: string }
         Returns: boolean
       }
       cancel_account_deletion: { Args: never; Returns: Json }
