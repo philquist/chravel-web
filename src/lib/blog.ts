@@ -274,7 +274,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'The best way to share itineraries, files, receipts, and reservations with travel clients',
     excerpt:
       'Emailing a PDF and dropping files in a Drive folder isn’t sharing — it’s offloading. Here’s how to give travel clients itineraries, documents, receipts, and reservations they can actually find and trust.',
-    datePublished: '2026-01-20',
+    datePublished: '2025-12-20',
     author: BLOG_AUTHOR,
     tags: ['Travel Concierge', 'Client Experience'],
     sections: [
@@ -881,7 +881,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'How a group of parents ran their kids’ football season with ChravelApp',
     excerpt:
       'Carpools, snack duty, last-minute field changes, and a group text nobody can keep up with. Here’s how the parents of one youth football team ran the whole season from one shared ChravelApp hub.',
-    datePublished: '2026-02-18',
+    datePublished: '2026-01-18',
     author: BLOG_AUTHOR,
     tags: ['Families', 'Sports'],
     sections: [
@@ -1041,7 +1041,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'On the road with a comedian: running a club and theater tour in ChravelApp',
     excerpt:
       'A comedy tour is lean and relentless — a comic, an opener, a tour manager, and a merch person hitting a new club or theater every night. Here’s how a small touring party keeps it all straight in ChravelApp.',
-    datePublished: '2025-12-09',
+    datePublished: '2025-11-09',
     author: BLOG_AUTHOR,
     tags: ['Music Touring', 'Comedy'],
     sections: [
@@ -1120,7 +1120,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'How a major artist’s arena tour keeps a huge crew aligned with ChravelApp',
     excerpt:
       'An arena tour moves a small city every day — band, dancers, security, wardrobe, content, VIPs, and local crew. Here’s how a large touring operation stays aligned, city to city, in ChravelApp.',
-    datePublished: '2025-08-22',
+    datePublished: '2025-07-22',
     author: BLOG_AUTHOR,
     tags: ['Music Touring', 'Production'],
     sections: [
@@ -1200,7 +1200,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'How a club sports program runs on ChravelApp Pro',
     excerpt:
       'Multiple teams, dozens of coaches, and hundreds of families across a season. Here’s how a club sports program uses ChravelApp Pro — role-based access, seat management, and broadcasts — to run the whole organization.',
-    datePublished: '2025-07-08',
+    datePublished: '2025-06-03',
     author: BLOG_AUTHOR,
     tags: ['Sports', 'ChravelApp Pro'],
     sections: [
@@ -1280,7 +1280,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'How to run a multi-day conference without a paper agenda',
     excerpt:
       'A printed agenda is out of date the moment the first session moves rooms. Here’s how to run a multi-day, multi-track conference on a live agenda that attendees and staff actually trust.',
-    datePublished: '2025-11-12',
+    datePublished: '2025-10-12',
     author: BLOG_AUTHOR,
     tags: ['Events', 'Conferences'],
     sections: [
@@ -1373,7 +1373,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'How a college athletics department coordinates travel with ChravelApp Pro',
     excerpt:
       'Dozens of programs, hundreds of athletes, compliance rules, and nonstop road trips. Here’s how a college athletics department uses ChravelApp Pro to coordinate travel across the entire department.',
-    datePublished: '2025-10-14',
+    datePublished: '2025-09-14',
     author: BLOG_AUTHOR,
     tags: ['Sports', 'ChravelApp Pro'],
     sections: [
@@ -1453,7 +1453,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'How an AAU tournament operator runs events on ChravelApp Pro',
     excerpt:
       'Dozens of teams, hundreds of families, multiple gyms, and a bracket that shifts all weekend. Here’s how an AAU tournament operator uses ChravelApp Pro to keep an entire event organized.',
-    datePublished: '2025-09-16',
+    datePublished: '2025-08-16',
     author: BLOG_AUTHOR,
     tags: ['Sports', 'ChravelApp Pro'],
     sections: [
