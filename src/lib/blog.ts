@@ -155,7 +155,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'How travel concierge companies can deliver a better client experience after booking',
     excerpt:
       'The booking confirmation is where client expectations peak — and where most concierge teams fall back on scattered WhatsApp threads, PDFs, and Drive folders. Here is how to deliver a premium, organized experience after the client pays.',
-    datePublished: '2026-05-20',
+    datePublished: '2026-04-22',
     author: BLOG_AUTHOR,
     tags: ['Travel Concierge', 'Client Experience'],
     sections: [
@@ -274,7 +274,7 @@ export const BLOG_POSTS: BlogPost[] = [
     h1: 'The best way to share itineraries, files, receipts, and reservations with travel clients',
     excerpt:
       'Emailing a PDF and dropping files in a Drive folder isn’t sharing — it’s offloading. Here’s how to give travel clients itineraries, documents, receipts, and reservations they can actually find and trust.',
-    datePublished: '2026-04-19',
+    datePublished: '2026-01-20',
     author: BLOG_AUTHOR,
     tags: ['Travel Concierge', 'Client Experience'],
     sections: [
