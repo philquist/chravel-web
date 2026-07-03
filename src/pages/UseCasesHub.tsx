@@ -1,4 +1,7 @@
 import { Link } from 'react-router-dom';
+// Dual-routed page (MarketingApp AND the authenticated App shell) — the
+// marketing fonts + data-marketing scope must travel with the component.
+import '@/styles/marketingFonts';
 import { ArrowRight } from 'lucide-react';
 import { JsonLd, SeoHead } from '@/components/seo/SeoHead';
 import { SITE_URL, breadcrumbJsonLd, faqJsonLd, siteIdentityJsonLd } from '@/lib/seo';
@@ -52,7 +55,7 @@ const buildJsonLd = () => [
 
 export default function UseCasesHub() {
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main data-marketing="true" className="min-h-screen bg-background text-foreground">
       <SeoHead title={HUB_TITLE} description={HUB_DESCRIPTION} path={USE_CASES_PATH} />
       <JsonLd data={buildJsonLd()} />
 
@@ -73,9 +76,9 @@ export default function UseCasesHub() {
           <h1 className="text-4xl md:text-5xl font-bold leading-tight">{HUB_H1}</h1>
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
             Every group trip has too many people, too many details, and too many group chats.
-            ChravelApp pulls the itinerary, tasks, attachments, places, photos, payments, and updates
-            into one shared workspace — so nobody has to dig through texts, emails, screenshots, or
-            old PDFs.
+            ChravelApp pulls the itinerary, tasks, attachments, places, photos, payments, and
+            updates into one shared workspace — so nobody has to dig through texts, emails,
+            screenshots, or old PDFs.
           </p>
         </header>
 

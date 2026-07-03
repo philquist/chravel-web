@@ -1,4 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
+// Dual-routed page (MarketingApp AND the authenticated App shell) — the
+// marketing fonts + data-marketing scope must travel with the component.
+import '@/styles/marketingFonts';
 import { ArrowRight, Check } from 'lucide-react';
 import { JsonLd, SeoHead } from '@/components/seo/SeoHead';
 import { breadcrumbJsonLd, faqJsonLd, siteIdentityJsonLd } from '@/lib/seo';
@@ -26,7 +29,7 @@ const buildJsonLd = (uc: UseCaseDetail) => [
 /** Shown for unknown or not-yet-published slugs. Kept out of the index. */
 function UseCaseNotFound({ slug }: { slug: string }) {
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main data-marketing="true" className="min-h-screen bg-background text-foreground">
       <SeoHead
         title="Use case not found | ChravelApp"
         description="Browse how groups, teams, and travel pros use ChravelApp."
@@ -58,7 +61,7 @@ export default function UseCasePage() {
   const related = USE_CASES.filter(item => item.slug !== uc.slug);
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main data-marketing="true" className="min-h-screen bg-background text-foreground">
       <SeoHead title={uc.seo.title} description={uc.seo.description} path={pagePath(uc.slug)} />
       <JsonLd data={buildJsonLd(uc)} />
 

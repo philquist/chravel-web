@@ -44,8 +44,17 @@ export default {
         ],
         // Cinematic hero font stack
         mono: ['JetBrains Mono', 'SF Mono', 'Monaco', 'Courier New', 'monospace'],
-        // Editorial display serif for marketing surfaces (Fraunces)
-        display: ['"Fraunces"', 'Georgia', 'Cambria', '"Times New Roman"', 'serif'],
+        // Editorial display serif for marketing surfaces (Fraunces Variable
+        // carries the high-optical-size luxury cut; static Fraunces is the
+        // app-shell fallback)
+        display: [
+          '"Fraunces Variable"',
+          '"Fraunces"',
+          'Georgia',
+          'Cambria',
+          '"Times New Roman"',
+          'serif',
+        ],
       },
       fontSize: {
         // Modern, bold typography scale inspired by ClarityLab

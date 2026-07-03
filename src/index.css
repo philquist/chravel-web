@@ -1893,7 +1893,10 @@
    each section component.
    ───────────────────────────────────────────────────────────────────────── */
 [data-marketing] {
-  font-feature-settings: 'ss01', 'cv11', 'kern', 'liga';
+  /* Hanken Grotesk is the marketing body sans (Inter is the app-shell
+     fallback where the marketing fonts aren't loaded). */
+  font-family: 'Hanken Grotesk', 'Inter', system-ui, sans-serif;
+  font-feature-settings: 'kern', 'liga';
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
@@ -1902,8 +1905,15 @@
    / conversion surfaces where serif 400 reads too light). */
 [data-marketing] h1:not(.no-display-serif),
 [data-marketing] h2:not(.no-display-serif) {
-  font-family: 'Fraunces', Georgia, Cambria, 'Times New Roman', serif !important;
+  /* Fraunces Variable carries the high-optical-size (opsz) display cut —
+     the luxury look; static Fraunces 400 is the app-shell fallback. */
+  font-family:
+    'Fraunces Variable', 'Fraunces', Georgia, Cambria, 'Times New Roman', serif !important;
   font-weight: 400 !important;
+  font-optical-sizing: auto;
+  font-variation-settings:
+    'SOFT' 0,
+    'WONK' 0;
   letter-spacing: -0.022em;
   line-height: 1.04;
   font-synthesis-weight: none;

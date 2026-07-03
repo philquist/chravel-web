@@ -1,4 +1,7 @@
 import { Link } from 'react-router-dom';
+// Dual-routed page (MarketingApp AND the authenticated App shell) — the
+// marketing fonts + data-marketing scope must travel with the component.
+import '@/styles/marketingFonts';
 import { ArrowRight } from 'lucide-react';
 import { JsonLd, SeoHead } from '@/components/seo/SeoHead';
 import { SITE_NAME, SITE_URL, breadcrumbJsonLd, siteIdentityJsonLd } from '@/lib/seo';
@@ -34,7 +37,7 @@ export default function BlogIndex() {
   const posts = getSortedBlogPosts();
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main data-marketing="true" className="min-h-screen bg-background text-foreground">
       <SeoHead title={INDEX_TITLE} description={INDEX_DESCRIPTION} path={BLOG_PATH} />
       <JsonLd data={buildJsonLd(posts)} />
 

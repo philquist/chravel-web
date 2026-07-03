@@ -1,4 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
+// Dual-routed page (MarketingApp AND the authenticated App shell) — the
+// marketing fonts + data-marketing scope must travel with the component.
+import '@/styles/marketingFonts';
 import { ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { JsonLd, SeoHead } from '@/components/seo/SeoHead';
 import {
@@ -54,7 +57,7 @@ const buildJsonLd = (post: BlogPostType) => {
 /** Shown for unknown post slugs. Kept out of the index. */
 function PostNotFound({ slug }: { slug: string }) {
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main data-marketing="true" className="min-h-screen bg-background text-foreground">
       <SeoHead
         title="Article not found | ChravelApp"
         description="Browse the ChravelApp blog for guides on group travel and coordination."
@@ -85,7 +88,7 @@ export default function BlogPost() {
   const readingMinutes = estimateReadingMinutes(post);
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main data-marketing="true" className="min-h-screen bg-background text-foreground">
       <SeoHead {...seoConfig} />
       <JsonLd data={buildJsonLd(post)} />
 
