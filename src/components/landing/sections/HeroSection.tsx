@@ -139,12 +139,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
           >
             <span aria-hidden="true">
               The&nbsp;Group&nbsp;
-              <em className="text-gradient-gold">Ch</em>
-              at&nbsp;
-              <em>
-                T<span className="text-gradient-gold">ravel</span>
-              </em>{' '}
-              <em className="text-gradient-gold">App</em>
+              <span className="whitespace-nowrap">
+                <em className="text-gradient-gold">Ch</em>
+                at&nbsp;
+                <em>
+                  T<span className="text-gradient-gold">ravel</span>
+                </em>{' '}
+                <em className="text-gradient-gold">App</em>
+              </span>
             </span>
           </h1>
         </div>
