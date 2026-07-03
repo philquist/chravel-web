@@ -8,14 +8,8 @@ interface FullPageLandingSectionProps {
   minHeight?: string;
   children: React.ReactNode;
   className?: string;
-  backgroundStyle?: 'gradient' | 'solid';
   gradientColors?: [string, string, string?]; // Start, end, optional mid
   gradientDirection?: 'diagonal' | 'vertical' | 'radial';
-  accentGlow?: {
-    color: string;
-    position: 'top' | 'bottom' | 'center';
-    opacity?: number;
-  };
   goldOverlay?: 'hero' | 'waves' | 'terraces' | 'diamonds' | 'circles' | 'mesh' | 'aurora' | 'none';
 }
 
@@ -25,10 +19,8 @@ export const FullPageLandingSection: React.FC<FullPageLandingSectionProps> = ({
   minHeight = '100vh',
   children,
   className,
-  backgroundStyle: _backgroundStyle = 'gradient',
   gradientColors = ['#000000', '#0a0a0a'],
   gradientDirection = 'diagonal',
-  accentGlow,
   goldOverlay = 'waves',
 }) => {
   // Build the gradient based on direction and colors
@@ -53,40 +45,6 @@ export const FullPageLandingSection: React.FC<FullPageLandingSectionProps> = ({
       : `linear-gradient(135deg, ${start} 0%, ${end} 100%)`;
   };
 
-  // Build accent glow overlay with dramatic gold sweeps
-  const getAccentGlowStyle = () => {
-    if (!accentGlow) return null;
-
-    const { color, position, opacity = 0.15 } = accentGlow;
-    const hexOpacity = Math.round(opacity * 255)
-      .toString(16)
-      .padStart(2, '0');
-
-    // Create more dramatic curved gold gradients inspired by the reference
-    if (position === 'top') {
-      return `
-        radial-gradient(ellipse 120% 50% at 50% 0%, ${color}${hexOpacity} 0%, transparent 50%),
-        radial-gradient(ellipse 80% 30% at 20% 10%, rgba(196,151,70,0.08) 0%, transparent 40%),
-        radial-gradient(ellipse 60% 25% at 80% 5%, rgba(196,151,70,0.06) 0%, transparent 35%)
-      `;
-    }
-
-    if (position === 'bottom') {
-      return `
-        radial-gradient(ellipse 120% 50% at 50% 100%, ${color}${hexOpacity} 0%, transparent 50%),
-        radial-gradient(ellipse 80% 30% at 80% 90%, rgba(196,151,70,0.08) 0%, transparent 40%)
-      `;
-    }
-
-    // Center position - subtle ambient glow
-    return `
-      radial-gradient(ellipse 100% 60% at 50% 50%, ${color}${hexOpacity} 0%, transparent 55%),
-      radial-gradient(ellipse 60% 40% at 30% 40%, rgba(196,151,70,0.05) 0%, transparent 40%)
-    `;
-  };
-
-  const accentStyle = getAccentGlowStyle();
-
   return (
     <section
       id={id}
@@ -105,24 +63,11 @@ export const FullPageLandingSection: React.FC<FullPageLandingSectionProps> = ({
         background: getGradientStyle(),
       }}
     >
-      {/* Accent glow overlay */}
-      {accentStyle && (
-        <div className="absolute inset-0 pointer-events-none" style={{ background: accentStyle }} />
-      )}
-
-      {/* Gold decorative overlay — original, generative black/gold pattern per section */}
+      {/* Gold decorative overlay — crisp per-section black/gold line-work.
+          (The old film-grain layer is gone: at imperceptible opacity it only
+          cost a full-viewport mix-blend compositing pass per section, and
+          "crisp, not grainy" is the design goal.) */}
       {goldOverlay !== 'none' && <GoldAccentOverlay variant={goldOverlay} />}
-
-      {/* Fine film grain — extremely subtle, high-frequency, keeps blacks
-          from banding on OLED without the "grainy overlay" AI look. */}
-      <div
-        className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-[0.018]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.77 0 0 0 0 0.59 0 0 0 0 0.28 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundRepeat: 'repeat',
-          backgroundSize: '128px 128px',
-        }}
-      />
 
       {/* Content */}
       <div className="relative z-10 w-full">{children}</div>

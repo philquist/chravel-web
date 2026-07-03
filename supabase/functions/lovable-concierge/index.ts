@@ -657,19 +657,14 @@ serve(async req => {
      * incremented). Subsequent turns return false so the whole hands-free
      * call counts as one query. No session id → always increment.
      */
-    const shouldIncrementForSession = async (
-      uid: string,
-      tripScope: string,
-    ): Promise<boolean> => {
+    const shouldIncrementForSession = async (uid: string, tripScope: string): Promise<boolean> => {
       if (!conversationSessionId) return true;
       try {
-        const { error: insertErr } = await supabase
-          .from('concierge_conversation_sessions')
-          .insert({
-            user_id: uid,
-            trip_id: tripScope,
-            session_id: conversationSessionId,
-          });
+        const { error: insertErr } = await supabase.from('concierge_conversation_sessions').insert({
+          user_id: uid,
+          trip_id: tripScope,
+          session_id: conversationSessionId,
+        });
         if (!insertErr) return true; // first turn
         // Unique-violation = already recorded → skip increment
         const code = (insertErr as { code?: string })?.code;

@@ -34,9 +34,14 @@ export const ReplacesGrid = () => {
                 {/* Desktop/Tablet: 3-column grid (tablet 768px and up) */}
                 <div className="hidden tablet:grid grid-cols-[200px_1fr_40px] lg:grid-cols-[220px_1fr_40px] gap-4 items-center w-full">
                   <span
-                    className="text-xl lg:text-2xl font-bold text-white text-left"
+                    className="flex items-center gap-2.5 text-xl lg:text-2xl font-bold text-white text-left"
                     style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
                   >
+                    <category.icon
+                      className="h-5 w-5 shrink-0 text-gold-primary/80"
+                      strokeWidth={1.5}
+                      aria-hidden="true"
+                    />
                     {category.title}
                   </span>
                   <div className="text-left">
@@ -55,11 +60,16 @@ export const ReplacesGrid = () => {
                       <button> already wrapped in Radix's <h3> header, so a
                       nested heading here breaks the a11y heading structure. */}
                   <span
-                    className="block text-2xl sm:text-3xl font-bold text-white mb-2"
+                    className="mb-2 flex items-center justify-center gap-2.5 text-2xl sm:text-3xl font-bold text-white"
                     style={{
                       textShadow: '0 0 10px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.6)',
                     }}
                   >
+                    <category.icon
+                      className="h-6 w-6 shrink-0 text-gold-primary/80"
+                      strokeWidth={1.5}
+                      aria-hidden="true"
+                    />
                     {category.title}
                   </span>
 

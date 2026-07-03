@@ -1132,7 +1132,9 @@ export const TripChat = React.memo(
                     <div className="text-center space-y-3">
                       {getStreamApiKey() || chatError.message.includes('Timed out') ? (
                         <>
-                          <p className="text-sm text-muted-foreground">Something went wrong in Chat</p>
+                          <p className="text-sm text-muted-foreground">
+                            Something went wrong in Chat
+                          </p>
                           <p className="text-xs text-muted-foreground">{NON_CRITICAL_CHAT_NOTE}</p>
                           <button
                             onClick={() => {
@@ -1153,7 +1155,6 @@ export const TripChat = React.memo(
                       )}
                     </div>
                   </div>
-
                 ) : isLoading ? (
                   <div className="flex-1 overflow-y-auto p-4">
                     <MessageSkeleton />

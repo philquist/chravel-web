@@ -818,7 +818,6 @@ export const USE_CASES: Array<UseCaseSummary | UseCaseDetail> = [
   },
 ];
 
-
 /** Cross-cutting features highlighted on the hub. Names match the real product surfaces. */
 export const USE_CASE_FEATURES: Array<{ name: string; description: string }> = [
   {

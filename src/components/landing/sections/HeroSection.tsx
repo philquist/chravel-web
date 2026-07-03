@@ -151,7 +151,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
           </h1>
         </div>
 
-
         {/* Gold divider — premium accent */}
         <div
           className="mx-auto h-px w-24 sm:w-32 bg-gradient-to-r from-transparent via-[#c49746] to-transparent mb-3 tablet:mb-4 animate-fade-in"
@@ -266,11 +265,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
             </div>
           </div>
         </div>
-
       </div>
 
       {/* Bottom Section: proof strip — the six P's as an editorial index */}
-      <div className="flex-shrink-0 flex flex-col items-center animate-fade-in" style={{ animationDelay: '0.15s' }}>
+      <div
+        className="flex-shrink-0 flex flex-col items-center animate-fade-in"
+        style={{ animationDelay: '0.15s' }}
+      >
         <p className="sr-only">
           Plans, Photos, Places, Polls, PDFs, &amp; Payments — Privately Processed
         </p>
@@ -280,9 +281,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSignUp }) => {
         >
           {HERO_PROOF_ITEMS.map((item, index) => (
             <React.Fragment key={item}>
-              {index > 0 && (
-                <span className="inline-block h-1 w-1 rounded-full bg-[#c49746]/80" />
-              )}
+              {index > 0 && <span className="inline-block h-1 w-1 rounded-full bg-[#c49746]/80" />}
               <span
                 className="text-sm sm:text-base md:text-lg font-semibold tracking-wide text-white"
                 style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}

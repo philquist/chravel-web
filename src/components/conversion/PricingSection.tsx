@@ -477,7 +477,6 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
           </div>
         )}
 
-
         {/* Category Tabs */}
         <div className="flex justify-center">
           <div className="bg-card/50 rounded-lg p-1 flex gap-1 flex-wrap">
@@ -528,7 +527,10 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
               Annual
             </span>
             {billingCycle === 'annual' && (
-              <Badge variant="secondary" className="bg-green-500/20 text-green-400 text-xs">
+              <Badge
+                variant="secondary"
+                className="border border-gold-primary/40 bg-gold-primary/10 text-gold-light text-xs"
+              >
                 Save 17%
               </Badge>
             )}
@@ -560,7 +562,7 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
         {getCurrentTiers().map(tier => (
           <div key={tier.id}>
             <Card
-              className={`relative backdrop-blur-sm border transition-all hover:scale-105 hover:shadow-lg min-h-[480px] flex flex-col ${
+              className={`relative backdrop-blur-sm border transition-all motion-safe:hover:-translate-y-1 hover:shadow-gold-glow min-h-[480px] flex flex-col ${
                 tier.popular || tier.recommended
                   ? 'bg-card/80 border-gold-primary/50 shadow-lg ring-1 ring-gold-primary/20'
                   : tier.enterprise
@@ -641,7 +643,7 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
                   )}
 
                   {tier.savings && billingCycle === 'annual' && (
-                    <div className="text-sm text-green-400 font-medium break-words whitespace-normal text-center">
+                    <div className="text-sm text-gold-light font-medium break-words whitespace-normal text-center">
                       {tier.savings}
                     </div>
                   )}
@@ -662,7 +664,7 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
                 <ul className="space-y-2.5 tablet:space-y-3">
                   {tier.features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-2.5">
-                      <Check size={16} className="text-green-400 mt-0.5 flex-shrink-0" />
+                      <Check size={16} className="text-gold-primary mt-0.5 flex-shrink-0" />
                       <span className="text-base font-semibold text-foreground break-words">
                         {feature}
                       </span>

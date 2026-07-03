@@ -1,3 +1,15 @@
+import type { LucideIcon } from 'lucide-react';
+import {
+  BarChart3,
+  CalendarDays,
+  Camera,
+  CreditCard,
+  ListChecks,
+  MapPin,
+  MessageCircle,
+  Sparkles,
+} from 'lucide-react';
+
 export interface AppItem {
   name: string;
   androidInstalls?: string;
@@ -10,7 +22,7 @@ export interface Category {
   key: string;
   title: string;
   subtitle: string;
-  icon: string;
+  icon: LucideIcon;
   benefit: string;
   benefitQuote?: string;
   hero: AppItem[];
@@ -22,7 +34,7 @@ export const CATEGORIES: Category[] = [
     key: 'chat',
     title: 'Chat',
     subtitle: '',
-    icon: '💬',
+    icon: MessageCircle,
     benefit: 'A private group chat built specifically for your trip.',
     hero: [
       { name: 'WhatsApp' },
@@ -41,7 +53,7 @@ export const CATEGORIES: Category[] = [
     key: 'calendar',
     title: 'Calendar',
     subtitle: '',
-    icon: '📅',
+    icon: CalendarDays,
     benefit: 'One shared schedule — updated live for everyone.',
     hero: [
       { name: 'Google Calendar' },
@@ -59,7 +71,7 @@ export const CATEGORIES: Category[] = [
     key: 'concierge',
     title: 'Concierge',
     subtitle: '',
-    icon: '🤖',
+    icon: Sparkles,
     benefit: 'Your AI concierge — aware of your trip, preferences, and context.',
     hero: [
       { name: 'ChatGPT' },
@@ -78,7 +90,7 @@ export const CATEGORIES: Category[] = [
     key: 'media',
     title: 'Media',
     subtitle: '',
-    icon: '📸',
+    icon: Camera,
     benefit: 'Photos, videos, files, and confirmations — one hub for the whole group.',
     hero: [
       { name: 'Google Photos' },
@@ -97,7 +109,7 @@ export const CATEGORIES: Category[] = [
     key: 'payments',
     title: 'Payments',
     subtitle: '',
-    icon: '💳',
+    icon: CreditCard,
     benefit: 'See who paid, who owes, and how everyone prefers to settle.',
     hero: [
       { name: 'Venmo' },
@@ -116,7 +128,7 @@ export const CATEGORIES: Category[] = [
     key: 'places',
     title: 'Places',
     subtitle: '',
-    icon: '📍',
+    icon: MapPin,
     benefit: 'Links, reservations, and locations saved once — found instantly.',
     hero: [
       { name: 'Google Maps' },
@@ -140,7 +152,7 @@ export const CATEGORIES: Category[] = [
     key: 'polls',
     title: 'Polls',
     subtitle: '',
-    icon: '📊',
+    icon: BarChart3,
     benefit: 'Make group decisions without endless debates or scrolling for buried votes.',
     hero: [
       { name: 'Doodle' },
@@ -158,7 +170,7 @@ export const CATEGORIES: Category[] = [
     key: 'tasks',
     title: 'Tasks',
     subtitle: '',
-    icon: '✅',
+    icon: ListChecks,
     benefit: 'The group to-do list — reminders and accountability for everyone.',
     hero: [
       { name: 'Apple Reminders' },

@@ -400,7 +400,7 @@ export const AuthModal = ({
           className="w-full max-w-md pointer-events-auto"
           onClick={event => event.stopPropagation()}
         >
-          <div className="bg-slate-950/95 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 sm:p-8 animate-scale-in max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] overflow-y-auto">
+          <div className="dark-section bg-slate-950/95 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 sm:p-8 animate-scale-in max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] overflow-y-auto">
             <div className="flex flex-col items-center mb-2" data-testid="auth-modal-logo" />
 
             <div className="relative flex items-center justify-center mb-6 min-h-[2.5rem]">

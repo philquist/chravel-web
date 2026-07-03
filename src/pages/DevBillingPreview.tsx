@@ -14,10 +14,18 @@ export default function DevBillingPreview() {
   const showTripPass = params.get('trippass') === '1';
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 pb-24" data-testid="dev-billing-preview">
+    <div
+      className="min-h-screen bg-background text-foreground p-4 pb-24"
+      data-testid="dev-billing-preview"
+    >
       <h1 className="text-lg font-bold text-white mb-4">Billing</h1>
       <ConsumerBillingSection />
-      <TripPassModal open={showTripPass} onOpenChange={() => { /* no-op */ }} />
+      <TripPassModal
+        open={showTripPass}
+        onOpenChange={() => {
+          /* no-op */
+        }}
+      />
     </div>
   );
 }

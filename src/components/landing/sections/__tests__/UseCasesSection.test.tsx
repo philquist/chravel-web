@@ -33,7 +33,7 @@ describe('UseCasesSection (homepage)', () => {
 
   it('links the Fraternities/Sororities card to the new blog post when expanded', () => {
     renderSection();
-    fireEvent.click(screen.getByText('Fraternities/Sororities & Similar Organizations'));
+    fireEvent.click(screen.getByText('Fraternities, Sororities & Student Organizations'));
     const link = screen.getByRole('link', { name: /see the chravelapp blog for more/i });
     expect(link).toHaveAttribute('href', '/blog/fraternity-and-sorority-chapter-management-app');
   });

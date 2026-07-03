@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { MotionConfig } from 'framer-motion';
+import { useForceDarkTheme } from '@/hooks/useForceDarkTheme';
 import { FullPageLandingSection } from './FullPageLandingSection';
 import { StickyLandingNav } from './StickyLandingNav';
 import { MobileLandingNav } from './MobileLandingNav';
@@ -43,9 +44,6 @@ const DESIGN_TOKENS = {
   goldPrimary: '#c49746',
   goldLight: '#feeaa5',
   goldDark: '#533517',
-  goldGlow: 'rgba(232,175,72,0.25)',
-  goldSoftGlow: 'rgba(232,175,72,0.12)',
-  goldAccentGlow: 'rgba(196,151,70,0.15)',
 };
 
 const GRADIENTS = {
@@ -56,42 +54,34 @@ const GRADIENTS = {
       string,
     ],
     direction: 'vertical' as const,
-    accentGlow: { color: DESIGN_TOKENS.goldGlow, position: 'top' as const, opacity: 0.3 },
   },
   replaces: {
     colors: [DESIGN_TOKENS.richBlack, DESIGN_TOKENS.pureBlack] as [string, string],
     direction: 'diagonal' as const,
-    accentGlow: { color: DESIGN_TOKENS.goldSoftGlow, position: 'center' as const, opacity: 0.2 },
   },
   howItWorks: {
     colors: [DESIGN_TOKENS.pureBlack, DESIGN_TOKENS.darkCharcoal] as [string, string],
     direction: 'vertical' as const,
-    accentGlow: { color: DESIGN_TOKENS.goldGlow, position: 'bottom' as const, opacity: 0.18 },
   },
   useCases: {
     colors: [DESIGN_TOKENS.darkCharcoal, DESIGN_TOKENS.pureBlack] as [string, string],
     direction: 'diagonal' as const,
-    accentGlow: { color: DESIGN_TOKENS.goldAccentGlow, position: 'top' as const, opacity: 0.22 },
   },
   aiFeatures: {
     colors: [DESIGN_TOKENS.pureBlack, DESIGN_TOKENS.richBlack] as [string, string],
     direction: 'vertical' as const,
-    accentGlow: { color: DESIGN_TOKENS.goldGlow, position: 'center' as const, opacity: 0.2 },
   },
   pricing: {
     colors: [DESIGN_TOKENS.richBlack, DESIGN_TOKENS.darkCharcoal] as [string, string],
     direction: 'diagonal' as const,
-    accentGlow: { color: DESIGN_TOKENS.goldSoftGlow, position: 'top' as const, opacity: 0.25 },
   },
   faq: {
     colors: [DESIGN_TOKENS.pureBlack, DESIGN_TOKENS.richBlack] as [string, string],
     direction: 'vertical' as const,
-    accentGlow: { color: DESIGN_TOKENS.goldAccentGlow, position: 'bottom' as const, opacity: 0.15 },
   },
   journal: {
     colors: [DESIGN_TOKENS.richBlack, DESIGN_TOKENS.pureBlack] as [string, string],
     direction: 'vertical' as const,
-    accentGlow: { color: DESIGN_TOKENS.goldSoftGlow, position: 'top' as const, opacity: 0.2 },
   },
 };
 
@@ -125,16 +115,8 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp, onAu
     setLandingScrollEl(node);
   }, []);
 
-  // Marketing landing is dark-only. Force-remove the user's `light` theme class
-  // while mounted so global light-mode token remaps don't bleed into the page.
-  useEffect(() => {
-    const root = document.documentElement;
-    const wasLight = root.classList.contains('light');
-    if (wasLight) root.classList.remove('light');
-    return () => {
-      if (wasLight) root.classList.add('light');
-    };
-  }, []);
+  // Marketing landing is dark-only — shared with the other marketing routes.
+  useForceDarkTheme();
 
   // Prefetch below-the-fold section chunks during idle time.
   useEffect(() => {
@@ -151,10 +133,7 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp, onAu
     // when prefers-reduced-motion is set (opacity fades remain).
     <MotionConfig reducedMotion="user">
       {/* Sticky Navigation - desktop only */}
-      <StickyLandingNav
-        onAuthRequired={onAuthRequired ?? onSignUp}
-        scrollRoot={landingScrollEl}
-      />
+      <StickyLandingNav onAuthRequired={onAuthRequired ?? onSignUp} scrollRoot={landingScrollEl} />
 
       {/* Mobile/tablet navigation - hamburger menu (desktop nav is hidden below lg) */}
       <MobileLandingNav onSignUp={onSignUp} />
@@ -173,7 +152,6 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp, onAu
           id="section-hero"
           gradientColors={GRADIENTS.hero.colors}
           gradientDirection={GRADIENTS.hero.direction}
-          accentGlow={GRADIENTS.hero.accentGlow}
           minHeight="90vh"
           goldOverlay="hero"
         >
@@ -197,7 +175,6 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp, onAu
           id="section-features"
           gradientColors={GRADIENTS.howItWorks.colors}
           gradientDirection={GRADIENTS.howItWorks.direction}
-          accentGlow={GRADIENTS.howItWorks.accentGlow}
           goldOverlay="terraces"
         >
           <ProblemSolutionSection />
@@ -208,7 +185,6 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp, onAu
           id="section-use-cases"
           gradientColors={GRADIENTS.useCases.colors}
           gradientDirection={GRADIENTS.useCases.direction}
-          accentGlow={GRADIENTS.useCases.accentGlow}
           minHeight="120vh"
           goldOverlay="diamonds"
         >
@@ -222,7 +198,6 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp, onAu
           id="section-ai"
           gradientColors={GRADIENTS.aiFeatures.colors}
           gradientDirection={GRADIENTS.aiFeatures.direction}
-          accentGlow={GRADIENTS.aiFeatures.accentGlow}
           goldOverlay="circles"
         >
           <Suspense fallback={<SectionLoader />}>
@@ -235,7 +210,6 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp, onAu
           id="section-pricing"
           gradientColors={GRADIENTS.pricing.colors}
           gradientDirection={GRADIENTS.pricing.direction}
-          accentGlow={GRADIENTS.pricing.accentGlow}
           minHeight="110vh"
           goldOverlay="mesh"
         >
@@ -249,7 +223,6 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp, onAu
           id="section-faq"
           gradientColors={GRADIENTS.faq.colors}
           gradientDirection={GRADIENTS.faq.direction}
-          accentGlow={GRADIENTS.faq.accentGlow}
           goldOverlay="aurora"
         >
           <Suspense fallback={<SectionLoader />}>
@@ -262,7 +235,6 @@ export const FullPageLanding: React.FC<FullPageLandingProps> = ({ onSignUp, onAu
           id="section-journal"
           gradientColors={GRADIENTS.journal.colors}
           gradientDirection={GRADIENTS.journal.direction}
-          accentGlow={GRADIENTS.journal.accentGlow}
           goldOverlay="waves"
         >
           <Suspense fallback={<SectionLoader />}>

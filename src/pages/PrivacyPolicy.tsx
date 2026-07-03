@@ -28,9 +28,9 @@ export default function PrivacyPolicy() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
             <p className="text-foreground/90 mb-4">
-              Welcome to ChravelApp ("we," "our," or "us"). We respect your privacy and are committed
-              to protecting your personal data. This privacy policy explains how we collect, use,
-              disclose, and safeguard your information when you use our platform.
+              Welcome to ChravelApp ("we," "our," or "us"). We respect your privacy and are
+              committed to protecting your personal data. This privacy policy explains how we
+              collect, use, disclose, and safeguard your information when you use our platform.
             </p>
           </section>
 
@@ -76,10 +76,10 @@ export default function PrivacyPolicy() {
 
             <h3 className="text-xl font-medium mb-3">AI-Powered Features</h3>
             <p className="text-foreground/90 mb-4">
-              ChravelApp uses artificial intelligence to power several features in the app, including
-              the AI Concierge (text and voice), smart search, document and receipt parsing, trip
-              planning suggestions, and agenda extraction. These features are powered by Google's
-              Gemini AI models, accessed through Google's Generative Language API.
+              ChravelApp uses artificial intelligence to power several features in the app,
+              including the AI Concierge (text and voice), smart search, document and receipt
+              parsing, trip planning suggestions, and agenda extraction. These features are powered
+              by Google's Gemini AI models, accessed through Google's Generative Language API.
             </p>
 
             <h3 className="text-xl font-medium mb-3">Data Sent to AI Services</h3>
@@ -187,8 +187,8 @@ export default function PrivacyPolicy() {
               </li>
             </ul>
             <p className="text-foreground/90">
-              AI features are an integral part of the ChravelApp experience. While you can choose not
-              to use the AI Concierge or voice features, some AI processing (such as document
+              AI features are an integral part of the ChravelApp experience. While you can choose
+              not to use the AI Concierge or voice features, some AI processing (such as document
               parsing and smart search) is part of core functionality and cannot be individually
               disabled.
             </p>
@@ -319,8 +319,8 @@ export default function PrivacyPolicy() {
                 <strong>Email:</strong> support@chravelapp.com
               </li>
               <li>
-                <strong>Mail:</strong> ChravelApp Privacy Team, 130 N Broadway STE 32415, Los Angeles,
-                CA 90012
+                <strong>Mail:</strong> ChravelApp Privacy Team, 130 N Broadway STE 32415, Los
+                Angeles, CA 90012
               </li>
             </ul>
           </section>

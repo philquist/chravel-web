@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import '@/styles/marketingFonts';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { FullPageLanding } from '@/components/landing/FullPageLanding';
 import { AuthProvider, useOptionalAuth } from '@/hooks/useAuth';

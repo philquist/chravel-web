@@ -36,8 +36,8 @@ export default function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">2. Description of Service</h2>
             <p className="text-foreground/90 mb-4">
-              ChravelApp is a collaborative platform for planning and managing group trips, events, and
-              activities. Our services include:
+              ChravelApp is a collaborative platform for planning and managing group trips, events,
+              and activities. Our services include:
             </p>
             <ul className="list-disc pl-6 mb-4 space-y-2 text-foreground/90">
               <li>Group messaging and communication tools</li>
@@ -86,11 +86,11 @@ export default function TermsOfService() {
               <li>Violate any intellectual property rights</li>
             </ul>
             <p className="text-foreground/90 mb-4">
-              <strong>Zero tolerance for objectionable content and abusive users.</strong> ChravelApp
-              has zero tolerance for objectionable content (including harassment, hate speech,
-              sexual or exploitative material, threats, and impersonation) and for abusive behavior
-              toward other users. You can report objectionable content or block an abusive user from
-              any message, or contact{' '}
+              <strong>Zero tolerance for objectionable content and abusive users.</strong>{' '}
+              ChravelApp has zero tolerance for objectionable content (including harassment, hate
+              speech, sexual or exploitative material, threats, and impersonation) and for abusive
+              behavior toward other users. You can report objectionable content or block an abusive
+              user from any message, or contact{' '}
               <a href="mailto:safety@chravelapp.com" className="underline">
                 safety@chravelapp.com
               </a>
@@ -103,16 +103,16 @@ export default function TermsOfService() {
             <h2 className="text-2xl font-semibold mb-4">5. Content and Intellectual Property</h2>
             <h3 className="text-xl font-medium mb-3">5.1 Your Content</h3>
             <p className="text-foreground/90 mb-4">
-              You retain ownership of all content you post on ChravelApp. By posting content, you grant
-              us a non-exclusive, worldwide, royalty-free license to use, store, and display your
-              content solely to provide and improve the Service.
+              You retain ownership of all content you post on ChravelApp. By posting content, you
+              grant us a non-exclusive, worldwide, royalty-free license to use, store, and display
+              your content solely to provide and improve the Service.
             </p>
 
             <h3 className="text-xl font-medium mb-3">5.2 Our Content</h3>
             <p className="text-foreground/90 mb-4">
               The Service, including all text, graphics, logos, icons, images, and software, is
-              owned by ChravelApp or its licensors and is protected by copyright, trademark, and other
-              intellectual property laws.
+              owned by ChravelApp or its licensors and is protected by copyright, trademark, and
+              other intellectual property laws.
             </p>
 
             <h3 className="text-xl font-medium mb-3">5.3 Content Responsibility</h3>
@@ -176,9 +176,9 @@ export default function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">10. Indemnification</h2>
             <p className="text-foreground/90 mb-4">
-              You agree to indemnify and hold harmless ChravelApp and its affiliates from any claims,
-              damages, losses, and expenses (including legal fees) arising from your use of the
-              Service or violation of these Terms.
+              You agree to indemnify and hold harmless ChravelApp and its affiliates from any
+              claims, damages, losses, and expenses (including legal fees) arising from your use of
+              the Service or violation of these Terms.
             </p>
           </section>
 

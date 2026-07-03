@@ -3,12 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  BLOG_PATH,
-  estimateReadingMinutes,
-  formatBlogDate,
-  getSortedBlogPosts,
-} from '@/lib/blog';
+import { BLOG_PATH, estimateReadingMinutes, formatBlogDate, getSortedBlogPosts } from '@/lib/blog';
 import { SectionHeader } from '../SectionHeader';
 import { Button } from '../../ui/button';
 

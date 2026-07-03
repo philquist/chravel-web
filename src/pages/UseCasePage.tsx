@@ -1,7 +1,19 @@
 import { Link, useParams } from 'react-router-dom';
+// Dual-routed page (MarketingApp AND the authenticated App shell) — the
+// marketing fonts + data-marketing scope must travel with the component.
+import '@/styles/marketingFonts';
 import { ArrowRight, Check } from 'lucide-react';
 import { JsonLd, SeoHead } from '@/components/seo/SeoHead';
+import {
+  ArticleHeader,
+  ClosingFigure,
+  GoldRule,
+  SectionHeading,
+  readingTimeFor,
+} from '@/components/landing/Editorial';
+import { useForceDarkTheme } from '@/hooks/useForceDarkTheme';
 import { breadcrumbJsonLd, faqJsonLd, siteIdentityJsonLd } from '@/lib/seo';
+import { getUseCaseImage } from '@/lib/useCaseImages';
 import {
   USE_CASES,
   USE_CASES_PATH,
@@ -25,8 +37,9 @@ const buildJsonLd = (uc: UseCaseDetail) => [
 
 /** Shown for unknown or not-yet-published slugs. Kept out of the index. */
 function UseCaseNotFound({ slug }: { slug: string }) {
+  useForceDarkTheme();
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main data-marketing="true" className="min-h-screen bg-background text-foreground">
       <SeoHead
         title="Use case not found | ChravelApp"
         description="Browse how groups, teams, and travel pros use ChravelApp."
@@ -34,13 +47,13 @@ function UseCaseNotFound({ slug }: { slug: string }) {
         noindex
       />
       <section className="max-w-3xl mx-auto px-4 py-24 text-center space-y-6">
-        <h1 className="text-3xl font-bold">This use case isn’t available yet</h1>
-        <p className="text-lg text-muted-foreground">
+        <h1 className="text-3xl text-white">This use case isn’t available yet</h1>
+        <p className="text-lg text-white/60">
           It may be on the way. In the meantime, explore how others use ChravelApp.
         </p>
         <Link
           to={USE_CASES_PATH}
-          className="inline-flex min-h-11 items-center rounded-md bg-primary px-5 py-3 font-medium text-primary-foreground"
+          className="accent-fill-gold inline-flex min-h-11 items-center rounded-xl px-6 py-3 font-semibold"
         >
           Browse all use cases
         </Link>
@@ -50,48 +63,51 @@ function UseCaseNotFound({ slug }: { slug: string }) {
 }
 
 export default function UseCasePage() {
+  useForceDarkTheme();
   const { slug } = useParams<{ slug: string }>();
   const uc = getUseCaseDetail(slug);
 
   if (!uc) return <UseCaseNotFound slug={slug ?? ''} />;
 
   const related = USE_CASES.filter(item => item.slug !== uc.slug);
+  const image = getUseCaseImage(uc.slug);
+  const [lede, ...bodyRest] = uc.body;
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main data-marketing="true" className="relative min-h-screen bg-background text-foreground">
+      {/* Ambient masthead tint — ties the article surface to the homepage's
+          black/gold grammar without a full pattern overlay. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[420px]"
+        style={{
+          background:
+            'radial-gradient(110% 100% at 50% 0%, rgba(196,151,70,0.09) 0%, rgba(196,151,70,0.03) 45%, transparent 75%)',
+        }}
+        aria-hidden="true"
+      />
+
       <SeoHead title={uc.seo.title} description={uc.seo.description} path={pagePath(uc.slug)} />
       <JsonLd data={buildJsonLd(uc)} />
 
-      <article className="max-w-4xl mx-auto px-4 py-12 md:py-16 space-y-12">
-        {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="text-sm text-muted-foreground">
-          <ol className="flex flex-wrap items-center gap-2">
-            <li>
-              <Link to="/" className="hover:text-primary transition-colors">
-                Home
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li>
-              <Link to={USE_CASES_PATH} className="hover:text-primary transition-colors">
-                Use Cases
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li className="text-foreground">{uc.cardTitle}</li>
-          </ol>
-        </nav>
+      <article className="relative max-w-4xl mx-auto px-4 py-12 md:py-16 space-y-14">
+        <ArticleHeader
+          kicker="Use Case"
+          title={uc.h1}
+          dek={uc.intro}
+          byline="The ChravelApp Team"
+          readingTime={readingTimeFor([uc.intro, ...uc.body])}
+          breadcrumb={[
+            { label: 'Home', to: '/' },
+            { label: 'Use Cases', to: USE_CASES_PATH },
+            { label: uc.cardTitle },
+          ]}
+        />
 
-        {/* Header */}
-        <header className="space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold leading-tight">{uc.h1}</h1>
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">{uc.intro}</p>
-        </header>
-
-        {/* Article body */}
+        {/* Article body — lede paragraph runs larger, reporting style */}
         <div className="space-y-5">
-          {uc.body.map((paragraph, i) => (
-            <p key={i} className="text-base md:text-lg text-foreground leading-relaxed">
+          {lede && <p className="text-lg md:text-xl leading-relaxed text-white/85">{lede}</p>}
+          {bodyRest.map((paragraph, i) => (
+            <p key={i} className="text-base md:text-lg leading-relaxed text-white/75">
               {paragraph}
             </p>
           ))}
@@ -99,18 +115,21 @@ export default function UseCasePage() {
 
         {/* Feature map: pain → ChravelApp solution */}
         <section className="space-y-6">
-          <h2 className="text-2xl md:text-3xl font-bold">From scattered to coordinated</h2>
+          <SectionHeading index={1}>From scattered to coordinated</SectionHeading>
           <div className="grid gap-4 md:grid-cols-2">
             {uc.featureMap.map(row => (
               <div
                 key={row.pain}
-                className="bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-5 hover:border-primary/40 transition-colors"
+                className="rounded-2xl border border-white/10 border-l-2 border-l-gold-primary/60 bg-white/[0.03] p-5 transition-colors hover:border-l-gold-primary hover:bg-white/[0.05]"
               >
-                <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">
                   {row.pain}
                 </p>
-                <p className="mt-2 flex items-start gap-2 text-base md:text-lg font-semibold text-foreground">
-                  <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                <p className="mt-2 flex items-start gap-2 text-base md:text-lg font-medium text-white/90">
+                  <ArrowRight
+                    className="mt-1 h-4 w-4 shrink-0 text-gold-primary"
+                    aria-hidden="true"
+                  />
                   {row.solution}
                 </p>
               </div>
@@ -121,17 +140,17 @@ export default function UseCasePage() {
         {/* Workflow steps */}
         {uc.workflow && (
           <section className="space-y-6">
-            <h2 className="text-2xl md:text-3xl font-bold">{uc.workflow.heading}</h2>
+            <SectionHeading index={2}>{uc.workflow.heading}</SectionHeading>
             <ol className="space-y-4">
               {uc.workflow.steps.map((step, i) => (
-                <li key={i} className="flex items-start gap-3">
+                <li key={i} className="flex items-start gap-4">
                   <span
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary"
+                    className="font-display mt-0.5 text-lg italic tabular-nums text-gold-primary/80"
                     aria-hidden="true"
                   >
-                    {i + 1}
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                  <p className="text-base md:text-lg text-foreground leading-relaxed">{step}</p>
+                  <p className="text-base md:text-lg leading-relaxed text-white/80">{step}</p>
                 </li>
               ))}
             </ol>
@@ -140,27 +159,29 @@ export default function UseCasePage() {
 
         {/* FAQ */}
         <section className="space-y-6">
-          <h2 className="text-2xl md:text-3xl font-bold">Frequently asked questions</h2>
-          <div className="space-y-5">
+          <SectionHeading index={uc.workflow ? 3 : 2}>Frequently asked questions</SectionHeading>
+          <div className="divide-y divide-white/10 border-y border-white/10">
             {uc.faq.map(item => (
-              <div key={item.q}>
-                <h3 className="font-semibold text-foreground">{item.q}</h3>
-                <p className="mt-1 text-muted-foreground leading-relaxed">{item.a}</p>
+              <div key={item.q} className="py-5">
+                <h3 className="font-semibold text-white/90">{item.q}</h3>
+                <p className="mt-1.5 leading-relaxed text-white/60">{item.a}</p>
               </div>
             ))}
           </div>
         </section>
 
+        {/* Closing photograph — every story signs off on a real image */}
+        {image && <ClosingFigure src={image.src} alt={image.alt} caption={image.caption} />}
+
         {/* CTA */}
-        <section className="rounded-2xl border border-border bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 p-8 md:p-10 text-center space-y-4">
-          <h2 className="text-2xl md:text-3xl font-bold">{uc.cta.heading}</h2>
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-            {uc.cta.subtext}
-          </p>
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 md:p-10 text-center space-y-4">
+          <GoldRule className="mx-auto w-24" />
+          <h2 className="text-2xl md:text-3xl text-white">{uc.cta.heading}</h2>
+          <p className="mx-auto max-w-2xl text-base md:text-lg text-white/65">{uc.cta.subtext}</p>
           <div className="flex flex-wrap justify-center gap-3 pt-2">
             <Link
               to={uc.cta.primaryTo}
-              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="accent-fill-gold inline-flex min-h-11 items-center gap-2 rounded-xl px-6 py-3 font-semibold"
             >
               {uc.cta.primaryLabel}
               <Check className="h-4 w-4" aria-hidden="true" />
@@ -168,7 +189,7 @@ export default function UseCasePage() {
             {uc.cta.secondaryLabel && uc.cta.secondaryTo && (
               <Link
                 to={uc.cta.secondaryTo}
-                className="inline-flex min-h-11 items-center rounded-md border border-border px-6 py-3 font-medium text-foreground hover:border-primary/50 transition-colors"
+                className="inline-flex min-h-11 items-center rounded-xl border border-white/15 px-6 py-3 font-medium text-white/85 transition-colors hover:border-gold-primary/50 hover:text-gold-light"
               >
                 {uc.cta.secondaryLabel}
               </Link>
@@ -177,8 +198,8 @@ export default function UseCasePage() {
         </section>
 
         {/* Related use cases (cluster linking) */}
-        <section className="space-y-4 border-t border-border pt-8">
-          <h2 className="text-xl font-semibold">More ways teams use ChravelApp</h2>
+        <section className="space-y-4 border-t border-white/10 pt-8">
+          <h2 className="text-xl font-semibold text-white/90">More ways teams use ChravelApp</h2>
           <ul className="flex flex-wrap gap-3 text-sm">
             {related.map(item => {
               const href = getUseCaseHref(item);
@@ -187,12 +208,12 @@ export default function UseCasePage() {
                   {href ? (
                     <Link
                       to={href}
-                      className="inline-flex items-center rounded-full border border-border px-4 py-2 hover:border-primary/50 hover:text-primary transition-colors"
+                      className="inline-flex items-center rounded-full border border-white/15 px-4 py-2 text-white/75 transition-colors hover:border-gold-primary/50 hover:text-gold-light"
                     >
                       {item.cardTitle}
                     </Link>
                   ) : (
-                    <span className="inline-flex items-center rounded-full border border-border/60 px-4 py-2 text-muted-foreground">
+                    <span className="inline-flex items-center rounded-full border border-white/10 px-4 py-2 text-white/40">
                       {item.cardTitle} · soon
                     </span>
                   )}
@@ -202,7 +223,7 @@ export default function UseCasePage() {
             <li>
               <Link
                 to={USE_CASES_PATH}
-                className="inline-flex items-center rounded-full border border-border px-4 py-2 hover:border-primary/50 hover:text-primary transition-colors"
+                className="inline-flex items-center rounded-full border border-white/15 px-4 py-2 text-white/75 transition-colors hover:border-gold-primary/50 hover:text-gold-light"
               >
                 All use cases
               </Link>

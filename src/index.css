@@ -160,7 +160,7 @@
     /* Light theme: match app shell so safe-area “gutters” are not near-black */
     html.light,
     html.light body {
-      background-color: hsl(42 60% 98%);
+      background-color: hsl(42 55% 98%);
     }
 
     #root {
@@ -449,79 +449,94 @@
   }
 
   .light {
-    /* Premium light palette: warm-white foundation, crisp ink, restrained gold accents. */
-    --background: 42 60% 98%;
-    --foreground: 220 28% 9%;
+    /* Premium light palette — "ivory & ink".
+       One warm family end-to-end: ivory paper (hue 42), faintly warm
+       near-white cards, and warm espresso ink (hue 30) — never the old
+       cool navy (hue 220), which read as mismatched cold ink on warm
+       paper. Gold stays the brand accent: #c49746 fills with black text,
+       and a deepened gold (36 60% 34%) for text/icons that must pass AA
+       on cream. Elevation model: the page is ivory, cards float one step
+       BRIGHTER with borders doing the edge work; surfaces 2→4 step
+       progressively DEEPER for insets/inputs/hover (a single consistent
+       ladder — no more tan drift at the bottom). */
+    --background: 42 55% 98%;
+    --foreground: 30 16% 11%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 28% 9%;
+    --card: 44 60% 99%;
+    --card-foreground: 30 16% 11%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 28% 9%;
+    --popover: 44 60% 99%;
+    --popover-foreground: 30 16% 11%;
 
-    --primary: 220 28% 9%;
-    --primary-foreground: 42 60% 98%;
+    /* Gold is the brand primary in BOTH themes (black ink on gold fill,
+       per the accent design system) — light mode no longer demotes it. */
+    --primary: 37 55% 52%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 42 42% 94%;
-    --secondary-foreground: 220 28% 12%;
+    --secondary: 40 45% 94%;
+    --secondary-foreground: 30 16% 13%;
 
-    --muted: 42 44% 95%;
-    --muted-foreground: 220 12% 34%;
+    --muted: 40 45% 95%;
+    --muted-foreground: 30 10% 32%;
 
-    --accent: 38 50% 48%;
-    --accent-foreground: 220 28% 9%;
+    /* Deepened gold for text/icon accents — #c49746 itself is ~2.9:1 on
+       cream; this cut (~#8a6a2a) passes AA for UI text and icons. */
+    --accent: 36 60% 34%;
+    --accent-foreground: 42 55% 98%;
 
-    --destructive: 0 72% 45%;
+    --destructive: 0 72% 42%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 42 26% 84%;
-    --input: 42 38% 96%; /* Inputs sit above warm app canvas with clear definition. */
+    --border: 38 26% 81%;
+    --input: 42 40% 96%; /* Inputs sit above warm app canvas with clear definition. */
 
     /* Sidebar - premium light shell */
-    --sidebar-background: 42 46% 96%;
-    --sidebar-foreground: 220 28% 12%;
-    --sidebar-primary: 220 28% 9%;
-    --sidebar-primary-foreground: 42 60% 98%;
-    --sidebar-accent: 42 38% 92%;
-    --sidebar-accent-foreground: 220 28% 12%;
-    --sidebar-border: 42 26% 84%;
-    --sidebar-ring: 37 55% 52%;
+    --sidebar-background: 42 50% 96%;
+    --sidebar-foreground: 30 16% 13%;
+    --sidebar-primary: 30 16% 11%;
+    --sidebar-primary-foreground: 42 55% 98%;
+    --sidebar-accent: 40 40% 92%;
+    --sidebar-accent-foreground: 30 16% 13%;
+    --sidebar-border: 38 26% 81%;
+    --sidebar-ring: 36 60% 36%;
 
     /* Payment Colors - Inverted for Light Mode */
     --payment-primary: 37 55% 52%;
     --payment-primary-foreground: 0 0% 0%;
-    --payment-background: 42 46% 96%;
-    --payment-background-light: 42 60% 98%;
-    --payment-border: 42 26% 84%;
-    --payment-text: 0 0% 10%;
+    --payment-background: 42 50% 96%;
+    --payment-background-light: 42 55% 98%;
+    --payment-border: 38 26% 81%;
+    --payment-text: 30 16% 10%;
 
-    /* Slightly darker gold for focus ring visibility on light backgrounds */
-    --ring: 37 55% 42%;
+    /* Deepened gold focus ring for visibility on light backgrounds */
+    --ring: 36 60% 36%;
 
     /* Glass-slate tokens — light mode */
-    --glass-slate-bg: 42 60% 98%;
-    --glass-slate-card: 0 0% 100%;
-    --glass-slate-border: 42 26% 84%;
+    --glass-slate-bg: 42 55% 98%;
+    --glass-slate-card: 44 60% 99%;
+    --glass-slate-border: 38 26% 81%;
 
     /* Chat contrast tokens — light mode */
-    --chat-bubble-other: 42 36% 91%;
-    --chat-bubble-other-foreground: 220 28% 10%;
-    --chat-meta: 0 0% 10% / 0.8;
+    --chat-bubble-other: 40 40% 92%;
+    --chat-bubble-other-foreground: 30 16% 11%;
+    --chat-meta: 30 12% 14% / 0.8;
 
-    /* Surface / ink scale — light mode */
-    --surface-0: 42 60% 98%;
-    --surface-1: 0 0% 100%;
-    --surface-2: 42 44% 95%;
-    --surface-3: 42 34% 90%;
-    --surface-4: 42 24% 84%;
-    --overlay-strong: 220 28% 9% / 0.42;
-    --overlay-soft: 220 28% 9% / 0.12;
-    --ink-1: 220 28% 9%;
-    --ink-2: 220 14% 30%;
-    --ink-3: 220 10% 43%;
+    /* Surface / ink scale — light mode.
+       0 = ivory page · 1 = card (brighter, border-defined) ·
+       2→4 = progressively deeper warm insets (panels, inputs, hover). */
+    --surface-0: 42 55% 98%;
+    --surface-1: 44 60% 99%;
+    --surface-2: 42 48% 95.5%;
+    --surface-3: 40 40% 93%;
+    --surface-4: 38 32% 89%;
+    --overlay-strong: 30 20% 10% / 0.4;
+    --overlay-soft: 30 20% 10% / 0.12;
+    --ink-1: 30 16% 11%;
+    --ink-2: 30 10% 30%;
+    --ink-3: 28 8% 42%;
     --ink-on-accent: 0 0% 100%;
-    --hairline-strong: 0 0% 0% / 0.15;
-    --hairline-soft: 0 0% 0% / 0.08;
+    --hairline-strong: 30 30% 12% / 0.15;
+    --hairline-soft: 30 30% 12% / 0.08;
   }
 }
 
@@ -606,10 +621,17 @@
 .light .bg-slate-700,
 .light .bg-neutral-700,
 .light .bg-zinc-700,
-.light .bg-white\/5,
 .light .bg-black\/40,
 .light .bg-black\/70 {
   background-color: hsl(var(--surface-2));
+}
+
+/* Glass panels stay TRANSLUCENT in light mode — one coherent warm-tint
+   ladder (4.5% → 8% → 15% ink) instead of the old mix of opaque cream
+   (white/5) next to near-invisible fills (white/10). Backdrop-blur on
+   these panels keeps doing real work. */
+.light .bg-white\/5 {
+  background-color: hsl(30 30% 12% / 0.045);
 }
 
 .light .bg-gray-800\/50,
@@ -744,6 +766,32 @@
   }
 }
 
+/* --- Gold TEXT on ivory needs the deepened cut (--accent, ~4.8:1);
+   raw #c49746 text is ~2.9:1 there. Gold FILLS keep the true brand gold
+   with black ink, which passes on its own. --- */
+.light .text-primary,
+.light .hover\:text-primary:hover,
+.light .text-gold-primary {
+  color: hsl(var(--accent));
+}
+
+/* --- Gold glows (tuned for black; a 30-40% gold halo is invisible haze
+   on ivory). Light mode swaps them for a soft warm DROP shadow so gold
+   CTAs keep their lift. --- */
+.light .shadow-gold-glow,
+.light .shadow-primary-glow,
+.light .shadow-accent-glow,
+.light .accent-fill-gold {
+  box-shadow:
+    0 10px 24px -12px rgba(122, 87, 31, 0.45),
+    0 2px 6px rgba(122, 87, 31, 0.16);
+}
+.light .accent-fill-gold:hover {
+  box-shadow:
+    0 14px 30px -12px rgba(122, 87, 31, 0.5),
+    0 3px 8px rgba(122, 87, 31, 0.2);
+}
+
 /* --- Enterprise shadows (too heavy for light backgrounds) --- */
 .light .shadow-enterprise-lg {
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
@@ -844,8 +892,29 @@
 .light .dark-section .bg-white\/10 {
   background-color: rgba(255, 255, 255, 0.1);
 }
+.light .dark-section .bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+.light .dark-section .bg-white\/20 {
+  background-color: rgba(255, 255, 255, 0.2);
+}
 .light .dark-section .border-white\/10 {
   border-color: rgba(255, 255, 255, 0.1);
+}
+.light .dark-section .border-white\/20 {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.light .dark-section .hover\:text-white:hover {
+  color: white;
+}
+.light .dark-section .text-white\/60 {
+  color: rgba(255, 255, 255, 0.6);
+}
+.light .dark-section .hover\:bg-white\/10:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.light .dark-section .hover\:bg-white\/20:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 @layer base {
@@ -1893,7 +1962,10 @@
    each section component.
    ───────────────────────────────────────────────────────────────────────── */
 [data-marketing] {
-  font-feature-settings: 'ss01', 'cv11', 'kern', 'liga';
+  /* Hanken Grotesk is the marketing body sans (Inter is the app-shell
+     fallback where the marketing fonts aren't loaded). */
+  font-family: 'Hanken Grotesk', 'Inter', system-ui, sans-serif;
+  font-feature-settings: 'kern', 'liga';
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
@@ -1902,8 +1974,15 @@
    / conversion surfaces where serif 400 reads too light). */
 [data-marketing] h1:not(.no-display-serif),
 [data-marketing] h2:not(.no-display-serif) {
-  font-family: 'Fraunces', Georgia, Cambria, 'Times New Roman', serif !important;
+  /* Fraunces Variable carries the high-optical-size (opsz) display cut —
+     the luxury look; static Fraunces 400 is the app-shell fallback. */
+  font-family:
+    'Fraunces Variable', 'Fraunces', Georgia, Cambria, 'Times New Roman', serif !important;
   font-weight: 400 !important;
+  font-optical-sizing: auto;
+  font-variation-settings:
+    'SOFT' 0,
+    'WONK' 0;
   letter-spacing: -0.022em;
   line-height: 1.04;
   font-synthesis-weight: none;

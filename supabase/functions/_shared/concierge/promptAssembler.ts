@@ -337,7 +337,9 @@ export function assemblePrompt(options: PromptAssemblyOptions): string {
   } = options;
 
   const overrideSuffix =
-    replyLanguage && LANGUAGE_NAMES[replyLanguage] ? '\n' + replyLanguageOverrideLayer(replyLanguage) : '';
+    replyLanguage && LANGUAGE_NAMES[replyLanguage]
+      ? '\n' + replyLanguageOverrideLayer(replyLanguage)
+      : '';
 
   // Custom system prompt overrides everything (but still honor manual language pick).
   if (customSystemPrompt) return customSystemPrompt + overrideSuffix;

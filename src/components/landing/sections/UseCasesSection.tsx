@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence, LayoutGroup, useReducedMotion } from 'framer-motion';
 import { ChevronRight, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SectionHeader } from '../SectionHeader';
@@ -31,7 +31,7 @@ const scenarios: Scenario[] = [
     href: '/use-cases/travel-concierge-client-portal',
   },
   {
-    title: 'Families, Parents, & Shared Households\u00A0',
+    title: 'Families, Parents, & Shared Households',
     subtitle: 'Family calendar · practices · pickups · photos · chores · team carpools',
     before:
       'Practices, pickups, forms, and “what’s for dinner?” scattered across two calendars, a fridge flyer, and a dozen group texts.',
@@ -44,7 +44,8 @@ const scenarios: Scenario[] = [
   {
     title: 'Touring Artists, Managers, & Crews',
     subtitle: 'Musicians · comedians · podcasts · managers · production',
-    before: 'Spreadsheets, endless texts, missed details. Overwhelmed tour managers, annoyed artists.',
+    before:
+      'Spreadsheets, endless texts, missed details. Overwhelmed tour managers, annoyed artists.',
     expandCTA: 'ChravelApp helps tours stay in sync',
     after:
       'Show days, rehearsal times, off days, crew channels, logistics, and payments — all in one place. Everyone aligned, every city.',
@@ -62,8 +63,8 @@ const scenarios: Scenario[] = [
     href: '/use-cases/wedding-guest-coordination-app',
   },
   {
-    title: 'Fraternities/Sororities & Similar Organizations',
-    subtitle: 'Rush · Formals · retreats · philanthropy · chapter ops',
+    title: 'Fraternities, Sororities & Student Organizations',
+    subtitle: 'Rush · formals · retreats · philanthropy · chapter ops',
     before:
       'One giant group chat — endless scrollback, mixed events, sensitive moments living forever in one thread.',
     expandCTA: 'ChravelApp helps chapters stay private',
@@ -73,7 +74,7 @@ const scenarios: Scenario[] = [
     href: '/blog/fraternity-and-sorority-chapter-management-app',
   },
   {
-    title: 'Youth, Amateur, & Pro sports programs.',
+    title: 'Youth, Amateur & Pro Sports Programs',
     subtitle: 'Players · coaches · coordinators · operations staff',
     before: 'Staff juggling travel, practices, and logistics across too many tools.',
     expandCTA: 'ChravelApp helps programs stay aligned',
@@ -128,7 +129,6 @@ const scenarios: Scenario[] = [
   },
 ];
 
-
 /** Per-destination CTA label so /use-cases cards never show blog-oriented copy. */
 const cardLinkLabel = (href: string) =>
   href.startsWith('/blog') ? 'See the ChravelApp blog for more' : 'See how ChravelApp helps';
@@ -164,17 +164,26 @@ const ScenarioCard: React.FC<ScenarioCardProps> = ({ scenario, index, isExpanded
           onToggle();
         }
       }}
+      layout
       initial={reduceMotion ? false : { opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '0px 0px 25% 0px' }}
-      transition={{ duration: 0.5, delay: Math.min(index % 3, 2) * 0.08, ease: [0.22, 1, 0.36, 1] }}
+      transition={{
+        duration: 0.5,
+        delay: Math.min(index % 3, 2) * 0.08,
+        ease: [0.22, 1, 0.36, 1],
+        // Sibling cards glide (not jump) when a neighbor expands.
+        layout: reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 260, damping: 30 },
+      }}
       className={cn(
-        'group/card relative overflow-hidden rounded-2xl border bg-card/50 p-5 sm:p-6 backdrop-blur-sm cursor-pointer',
+        // Solid near-black instead of backdrop-blur: blur forces a full
+        // repaint on every frame of the layout spring and janks the glide.
+        'group/card relative overflow-hidden rounded-2xl border bg-[#0b0a08]/95 p-5 sm:p-6 cursor-pointer',
         'transition-[border-color,box-shadow,transform,background-color] duration-300',
         'hover:-translate-y-1 hover:shadow-[0_18px_44px_-18px_rgba(196,151,70,0.28)] motion-reduce:hover:translate-y-0',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
         'max-w-md mx-auto tablet:max-w-none w-full',
-        isExpanded ? 'border-primary/50 bg-card/60' : 'hover:border-primary/40',
+        isExpanded ? 'border-primary/50 bg-[#0e0d0a]/95' : 'hover:border-primary/40',
         scenario.isHero
           ? 'border-primary/40 shadow-lg shadow-primary/10 lg:col-span-3 tablet:col-span-2 lg:p-8'
           : 'border-border',
@@ -204,7 +213,7 @@ const ScenarioCard: React.FC<ScenarioCardProps> = ({ scenario, index, isExpanded
       )}
 
       {/* Header */}
-      <div className="mb-4 pr-10">
+      <motion.div layout="position" className="mb-4 pr-10">
         <h3
           className={cn(
             'font-display font-normal leading-snug break-words text-white',
@@ -216,10 +225,10 @@ const ScenarioCard: React.FC<ScenarioCardProps> = ({ scenario, index, isExpanded
         <p className="mt-1 text-xs sm:text-sm text-muted-foreground break-words">
           {scenario.subtitle}
         </p>
-      </div>
+      </motion.div>
 
       {/* Before Section - Always Visible */}
-      <div className="mb-3">
+      <motion.div layout="position" className="mb-3">
         <div className="mb-1.5 flex items-center gap-2">
           <span className="h-px w-4 bg-rose-400/60" aria-hidden="true" />
           <span className="text-[11px] sm:text-xs font-semibold text-rose-300/90 uppercase tracking-[0.18em]">
@@ -229,7 +238,7 @@ const ScenarioCard: React.FC<ScenarioCardProps> = ({ scenario, index, isExpanded
         <p className="text-sm sm:text-base text-foreground/90 leading-relaxed break-words">
           {scenario.before}
         </p>
-      </div>
+      </motion.div>
 
       {/* Expand CTA - Only when collapsed */}
       <AnimatePresence mode="wait">
@@ -334,17 +343,19 @@ export const UseCasesSection = () => {
         />
 
         {/* Scenarios Grid — featured lead story spans the row; tiles fill beneath */}
-        <div className="grid w-full max-w-7xl grid-cols-1 gap-4 sm:gap-5 tablet:grid-cols-2 tablet:gap-6 lg:grid-cols-3">
-          {scenarios.map((scenario, index) => (
-            <ScenarioCard
-              key={scenario.title}
-              scenario={scenario}
-              index={index}
-              isExpanded={expandedCards.has(index)}
-              onToggle={() => toggleCard(index)}
-            />
-          ))}
-        </div>
+        <LayoutGroup>
+          <div className="grid w-full max-w-7xl grid-cols-1 items-start gap-4 sm:gap-5 tablet:grid-cols-2 tablet:gap-6 lg:grid-cols-3">
+            {scenarios.map((scenario, index) => (
+              <ScenarioCard
+                key={scenario.title}
+                scenario={scenario}
+                index={index}
+                isExpanded={expandedCards.has(index)}
+                onToggle={() => toggleCard(index)}
+              />
+            ))}
+          </div>
+        </LayoutGroup>
 
         {/* Explore the full cluster */}
         <Link

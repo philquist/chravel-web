@@ -41,7 +41,10 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
     >
       <div
-        className={cn('mb-4 flex items-center gap-3', centered ? 'justify-center' : 'justify-start')}
+        className={cn(
+          'mb-4 flex items-center gap-3',
+          centered ? 'justify-center' : 'justify-start',
+        )}
         aria-hidden="true"
       >
         <span className="h-px w-8 sm:w-10 bg-gradient-to-r from-transparent to-[#c49746]" />

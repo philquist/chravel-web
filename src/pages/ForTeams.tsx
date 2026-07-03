@@ -1,10 +1,28 @@
 import React from 'react';
+import '@/styles/marketingFonts';
+import { useForceDarkTheme } from '@/hooks/useForceDarkTheme';
 import { Button } from '@/components/ui/button';
-import { Building, Users, Shield, Zap, BarChart3, Phone, Trophy, Mic2, Building2, Tent, GraduationCap } from 'lucide-react';
+import {
+  ArrowRight,
+  Building,
+  Check,
+  Users,
+  Shield,
+  Zap,
+  BarChart3,
+  Phone,
+  Trophy,
+  Mic2,
+  Building2,
+  Tent,
+  GraduationCap,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import channelsPro from '@/assets/app-screenshots/channels-pro.png';
 
 export const ForTeams = () => {
+  // Marketing surface — dark-only, matching the homepage.
+  useForceDarkTheme();
   const benefits = [
     {
       icon: <Shield size={32} className="text-primary" />,
@@ -73,7 +91,7 @@ export const ForTeams = () => {
             <span className="text-sm font-semibold text-primary">CHRAVEL PRO & EVENTS</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-foreground">
             Built for Teams That Move
           </h1>
 
@@ -91,7 +109,8 @@ export const ForTeams = () => {
               }
               className="text-lg px-8"
             >
-              Schedule a Demo →
+              Schedule a Demo
+              <ArrowRight size={18} className="ml-2" aria-hidden="true" />
             </Button>
             <Button
               size="lg"
@@ -109,7 +128,7 @@ export const ForTeams = () => {
       {/* Pro Features Screenshot */}
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-5xl mx-auto space-y-6">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl text-center text-foreground">
             Role-Based Channels for Team Collaboration
           </h2>
           <p className="text-xl text-center text-foreground max-w-3xl mx-auto">
@@ -128,7 +147,7 @@ export const ForTeams = () => {
       {/* Benefits Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-12 text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl text-center mb-12 text-foreground">
             Enterprise-Grade Coordination
           </h2>
 
@@ -156,7 +175,7 @@ export const ForTeams = () => {
       {/* Use Cases Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-12 text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl text-center mb-12 text-foreground">
             Built For
           </h2>
 
@@ -182,7 +201,7 @@ export const ForTeams = () => {
       {/* Pricing Tiers Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-4 text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl text-center mb-4 text-foreground">
             Choose Your Plan
           </h2>
           <p className="text-xl text-center text-foreground mb-12">
@@ -212,19 +231,39 @@ export const ForTeams = () => {
               </Button>
               <ul className="space-y-3 text-sm">
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>Advanced permissions</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>Team management dashboard</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>Basic integrations</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>Email support</span>
                 </li>
               </ul>
@@ -253,23 +292,48 @@ export const ForTeams = () => {
               </Button>
               <ul className="space-y-3 text-sm">
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>Everything in Starter</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>Multi-language support</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>Priority support</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>Advanced integrations</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>Analytics dashboard</span>
                 </li>
               </ul>
@@ -293,23 +357,48 @@ export const ForTeams = () => {
               </Button>
               <ul className="space-y-3 text-sm">
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>Everything in Growth</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>Custom integrations</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>Dedicated success manager</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>SLA guarantees</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-primary">✓</span>
+                  <Check
+                    size={16}
+                    strokeWidth={2}
+                    className="text-gold-primary mt-1 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>White-label options</span>
                 </li>
               </ul>
@@ -321,7 +410,7 @@ export const ForTeams = () => {
       {/* CTA Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 rounded-2xl p-8 md:p-12">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl text-foreground mb-4">
             Ready to Transform Your Team Coordination?
           </h2>
           <p className="text-xl text-foreground mb-8">

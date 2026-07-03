@@ -3,7 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 type HubEvent = '*' | 'INSERT' | 'UPDATE' | 'DELETE';
-type SubscriptionCallback = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => void;
+type SubscriptionCallback = (
+  payload: RealtimePostgresChangesPayload<Record<string, unknown>>,
+) => void;
 
 export interface TripRealtimeHub {
   subscribe: (table: string, event: HubEvent, callback: SubscriptionCallback) => () => void;

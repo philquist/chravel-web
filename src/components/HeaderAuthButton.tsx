@@ -18,10 +18,7 @@ interface HeaderAuthButtonProps {
   onLoginClick?: () => void;
 }
 
-export const HeaderAuthButton = ({
-  showLoggedOut = true,
-  onLoginClick,
-}: HeaderAuthButtonProps) => {
+export const HeaderAuthButton = ({ showLoggedOut = true, onLoginClick }: HeaderAuthButtonProps) => {
   const auth = useOptionalAuth();
   const user = auth?.user ?? null;
   const [showAuthModal, setShowAuthModal] = useState(false);

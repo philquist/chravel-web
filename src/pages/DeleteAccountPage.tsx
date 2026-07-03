@@ -16,8 +16,8 @@ export default function DeleteAccountPage() {
         <div className="prose prose-invert max-w-none">
           <h1 className="text-4xl font-bold mb-4">Delete Your Account</h1>
           <p className="text-muted-foreground mb-8">
-            We're sorry to see you go. Here's how to delete your ChravelApp account and what happens to
-            your data.
+            We're sorry to see you go. Here's how to delete your ChravelApp account and what happens
+            to your data.
           </p>
 
           <section className="mb-8">

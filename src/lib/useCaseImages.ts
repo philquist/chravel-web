@@ -1,0 +1,82 @@
+/**
+ * Closing photography for use-case articles — real photos from the existing
+ * brand asset library (src/assets/trip-covers), not AI-generated imagery.
+ * Each use-case page ends on one of these as an editorial closing figure;
+ * the hub reuses them as story-card art.
+ */
+import dubaiLuxury from '@/assets/trip-covers/dubai-birthday-luxury.webp';
+import baliWedding from '@/assets/trip-covers/bali-destination-wedding.webp';
+import cancunBeach from '@/assets/trip-covers/cancun-beach.webp';
+import disneyFamilyCruise from '@/assets/trip-covers/disney-family-cruise.webp';
+import coachellaFestival from '@/assets/trip-covers/coachella-festival.webp';
+import tokyoSkyline from '@/assets/trip-covers/tokyo-skyline.webp';
+import phoenixGolf from '@/assets/trip-covers/phoenix-golf-outing.webp';
+import yellowstoneGroup from '@/assets/trip-covers/yellowstone-hiking-group.webp';
+import aspenCorporate from '@/assets/trip-covers/aspen-corporate-ski.webp';
+import roseBowl from '@/assets/iu-rose-bowl-cover.jpg';
+
+export interface UseCaseImage {
+  src: string;
+  alt: string;
+  caption: string;
+}
+
+export const USE_CASE_IMAGES: Record<string, UseCaseImage> = {
+  'travel-concierge-client-portal': {
+    src: dubaiLuxury,
+    alt: 'A luxury client celebration on a city rooftop at dusk',
+    caption:
+      'A concierge-planned celebration — every reservation, transfer, and detail already waiting in the client’s portal.',
+  },
+  'wedding-guest-coordination-app': {
+    src: baliWedding,
+    alt: 'A destination wedding ceremony set up at golden hour',
+    caption:
+      'The weekend runs itself when every guest already knows where to be — and every photo lands in one shared album.',
+  },
+  'group-travel-planning-app': {
+    src: cancunBeach,
+    alt: 'Friends on a white-sand beach on a group trip',
+    caption: 'One trip workspace, zero “wait, where are we meeting?” texts.',
+  },
+  'family-organization-app': {
+    src: disneyFamilyCruise,
+    alt: 'A family vacation aboard a cruise ship',
+    caption: 'Every pickup, ticket, and dinner plan in the family hub — not on the fridge.',
+  },
+  'sports-team-travel-coordination': {
+    src: roseBowl,
+    alt: 'A packed college football stadium on game day',
+    caption: 'Game day works when travel day did — rosters, buses, and schedules in one place.',
+  },
+  'music-tour-coordination': {
+    src: coachellaFestival,
+    alt: 'An artist performing on a festival main stage at night',
+    caption:
+      'Fifty cities, one source of truth — the show hits its cues because the crew hit theirs.',
+  },
+  'conference-event-management-app': {
+    src: tokyoSkyline,
+    alt: 'A glowing city skyline at night, home to a major conference',
+    caption:
+      'A live agenda that survives the room swap — organizers, staff, and attendees in sync.',
+  },
+  'local-clubs-meetups': {
+    src: phoenixGolf,
+    alt: 'A golf group out on the course at sunrise',
+    caption: 'The regulars always know the tee time — no plane ticket required.',
+  },
+  'church-group-trip-coordination': {
+    src: yellowstoneGroup,
+    alt: 'A group hiking together through a national park',
+    caption: 'Lead the trip, not the group chat — rosters, forms, and families all covered.',
+  },
+  'business-travel-coordination': {
+    src: aspenCorporate,
+    alt: 'Colleagues on a company retreat in the mountains',
+    caption: 'The offsite, out of your personal texts — decks, receipts, and dinners contained.',
+  },
+};
+
+export const getUseCaseImage = (slug: string | undefined): UseCaseImage | undefined =>
+  slug ? USE_CASE_IMAGES[slug] : undefined;

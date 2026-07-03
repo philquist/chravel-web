@@ -53,6 +53,8 @@ describe('light theme semantic tokens', () => {
     expect(contrast(token('popover-foreground'), token('popover'))).toBeGreaterThanOrEqual(7);
     expect(contrast(token('primary-foreground'), token('primary'))).toBeGreaterThanOrEqual(7);
     expect(contrast(token('muted-foreground'), token('muted'))).toBeGreaterThanOrEqual(4.5);
+    // Deepened gold accent must be readable as text/icons on the ivory page.
+    expect(contrast(token('accent'), token('background'))).toBeGreaterThanOrEqual(4.5);
   });
 
   it('uses bright warm surfaces instead of gray light-mode foundations', () => {
@@ -60,5 +62,31 @@ describe('light theme semantic tokens', () => {
     expect(token('card').l).toBeGreaterThanOrEqual(0.99);
     expect(token('surface-0').s).toBeGreaterThan(0.4);
     expect(token('surface-0').l).toBeGreaterThanOrEqual(0.97);
+  });
+
+  it('keeps ink warm — no cool navy text on warm ivory paper', () => {
+    // Warm hue band (roughly red-orange→yellow). The old palette's hue-220
+    // navy ink is exactly what made light mode read as mismatched.
+    for (const name of ['foreground', 'ink-1', 'ink-2', 'ink-3', 'muted-foreground']) {
+      expect(token(name).h, `--${name} should be warm-hued`).toBeGreaterThanOrEqual(20);
+      expect(token(name).h, `--${name} should be warm-hued`).toBeLessThanOrEqual(50);
+    }
+  });
+
+  it('keeps the inset surface ladder monotonic (2 → 4 step deeper)', () => {
+    expect(token('surface-2').l).toBeGreaterThan(token('surface-3').l);
+    expect(token('surface-3').l).toBeGreaterThan(token('surface-4').l);
+    // Card floats above the page; borders do the edge work.
+    expect(token('surface-1').l).toBeGreaterThan(token('surface-0').l);
+    // The bottom of the ladder must stay bright — no tan/beige drift.
+    expect(token('surface-4').l).toBeGreaterThanOrEqual(0.87);
+  });
+
+  it('keeps gold as the brand primary in light mode (black ink on gold fill)', () => {
+    expect(token('primary').h).toBeGreaterThanOrEqual(30);
+    expect(token('primary').h).toBeLessThanOrEqual(45);
+    expect(token('primary').s).toBeGreaterThan(0.4);
+    // Contrast rule from the accent design system: black text on gold.
+    expect(token('primary-foreground').l).toBeLessThanOrEqual(0.1);
   });
 });

@@ -35,7 +35,6 @@ serve(async req => {
   const guard = verifyCronAuth(req, corsHeaders);
   if (!guard.authorized) return guard.response!;
 
-
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const now = new Date().toISOString();
   const results: Record<string, number | string> = { ran_at: now };

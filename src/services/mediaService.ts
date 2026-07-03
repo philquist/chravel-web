@@ -223,12 +223,7 @@ export async function uploadTripMedia(
         profile.data?.first_name ||
         profile.data?.email?.split('@')[0] ||
         'Someone';
-      void systemMessageService.createBatchedUploadMessage(
-        tripId,
-        userId,
-        displayName,
-        'file',
-      );
+      void systemMessageService.createBatchedUploadMessage(tripId, userId, displayName, 'file');
     } catch {
       // non-critical
     }

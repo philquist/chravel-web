@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Check, Globe, Crown, Clock } from 'lucide-react';
+import { Check, Globe, Crown, Clock, Ticket } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   detectNativeBillingPlatform,
@@ -121,7 +121,10 @@ export const TripPassModal: React.FC<TripPassModalProps> = ({ open, onOpenChange
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center">🎫 Trip Pass</DialogTitle>
+          <DialogTitle className="flex items-center justify-center gap-2 text-2xl font-bold text-center">
+            <Ticket size={22} className="text-gold-primary" aria-hidden="true" />
+            Trip Pass
+          </DialogTitle>
           <DialogDescription className="text-center text-base">
             Full premium features for one trip — planning through post-trip. No commitment. Keep
             your exports forever.

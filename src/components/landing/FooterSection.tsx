@@ -8,11 +8,9 @@ const scrollToSection = (id: string) => {
   }
 };
 
-const FOOTER_LINK_CLASS =
-  'text-muted-foreground hover:text-primary transition-colors duration-200';
+const FOOTER_LINK_CLASS = 'text-muted-foreground hover:text-primary transition-colors duration-200';
 
-const FOOTER_HEADING_CLASS =
-  'text-xs font-semibold uppercase tracking-[0.22em] text-[#feeaa5]/90';
+const FOOTER_HEADING_CLASS = 'text-xs font-semibold uppercase tracking-[0.22em] text-[#feeaa5]/90';
 
 export const FooterSection = () => {
   const currentYear = new Date().getFullYear();

@@ -17,7 +17,8 @@ const androidDir = path.join(root, 'android');
 const deprecatedPatterns = [
   {
     name: 'Window.setStatusBarColor / statusBarColor writes',
-    pattern: /(?:setStatusBarColor\s*\(|\.statusBarColor\s*=|StatusBar\.setBackgroundColor\s*\(|<StatusBar[^>]*backgroundColor=)/,
+    pattern:
+      /(?:setStatusBarColor\s*\(|\.statusBarColor\s*=|StatusBar\.setBackgroundColor\s*\(|<StatusBar[^>]*backgroundColor=)/,
     fix: 'Use edge-to-edge layout plus safe-area/window-insets handling; keep only icon style changes.',
   },
   {
@@ -27,17 +28,29 @@ const deprecatedPatterns = [
   },
   {
     name: 'Deprecated display cutout modes',
-    pattern: /(?:LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES|LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT|windowLayoutInDisplayCutoutMode\s*=\s*["'](?:shortEdges|default)["'])/,
+    pattern:
+      /(?:LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES|LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT|windowLayoutInDisplayCutoutMode\s*=\s*["'](?:shortEdges|default)["'])/,
     fix: 'Use Android 15-compatible cutout handling and verify content with cutout simulation.',
   },
   {
     name: 'Legacy system UI layout flags',
-    pattern: /(?:SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION|SYSTEM_UI_FLAG_LAYOUT_STABLE|ViewCompat\.setOnApplyWindowInsetsListener\s*\([^)]*null)/,
+    pattern:
+      /(?:SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION|SYSTEM_UI_FLAG_LAYOUT_STABLE|ViewCompat\.setOnApplyWindowInsetsListener\s*\([^)]*null)/,
     fix: 'Use AndroidX WindowCompat/enableEdgeToEdge and explicit inset listeners instead of legacy flags.',
   },
 ];
 
-const scanExtensions = new Set(['.kt', '.java', '.xml', '.gradle', '.kts', '.tsx', '.ts', '.jsx', '.js']);
+const scanExtensions = new Set([
+  '.kt',
+  '.java',
+  '.xml',
+  '.gradle',
+  '.kts',
+  '.tsx',
+  '.ts',
+  '.jsx',
+  '.js',
+]);
 const ignoredDirs = new Set(['.git', '.gradle', 'build', 'node_modules', 'dist']);
 
 function walk(dir, files = []) {
@@ -60,14 +73,19 @@ function lineNumberForOffset(contents, offset) {
 }
 
 if (!fs.existsSync(androidDir)) {
-  const message = 'No checked-in android/ project found. Android 15 edge-to-edge cannot be verified from this repo.';
+  const message =
+    'No checked-in android/ project found. Android 15 edge-to-edge cannot be verified from this repo.';
   if (requireNative) {
     console.error(`❌ ${message}`);
-    console.error('   Add/sync the Android native project used to build the Play Console AAB, then rerun this guard.');
+    console.error(
+      '   Add/sync the Android native project used to build the Play Console AAB, then rerun this guard.',
+    );
     process.exit(1);
   }
   console.warn(`⚠️ ${message}`);
-  console.warn('   Rerun with --require-native in Android release CI so missing native source blocks promotion.');
+  console.warn(
+    '   Rerun with --require-native in Android release CI so missing native source blocks promotion.',
+  );
   process.exit(0);
 }
 

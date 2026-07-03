@@ -55,11 +55,7 @@ serve(async req => {
 
     // Parse request body
     const body = await req.json();
-    const {
-      verification_method = 'password',
-      session_duration_minutes = 15,
-      password,
-    } = body;
+    const { verification_method = 'password', session_duration_minutes = 15, password } = body;
 
     // Only server-verifiable methods are allowed. 'biometric' is client-attested
     // and cannot be proven server-side, so it is rejected as a privileged method.
@@ -84,10 +80,10 @@ serve(async req => {
     // Server-side proof of the claimed method.
     if (verification_method === 'password') {
       if (!user.email || typeof password !== 'string' || password.length === 0) {
-        return new Response(
-          JSON.stringify({ error: 'Password is required to verify identity' }),
-          { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
-        );
+        return new Response(JSON.stringify({ error: 'Password is required to verify identity' }), {
+          status: 400,
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+        });
       }
       // Re-authenticate against Supabase Auth using an isolated client so the
       // caller's session is not mutated. A successful sign-in proves the password.
@@ -109,8 +105,7 @@ serve(async req => {
       // Require the caller's current JWT to be AAL2 (i.e. they completed an MFA
       // challenge via supabase.auth.mfa.verify() on the client).
       const aal =
-        (user as { aal?: string }).aal ??
-        (user.app_metadata as { aal?: string } | undefined)?.aal;
+        (user as { aal?: string }).aal ?? (user.app_metadata as { aal?: string } | undefined)?.aal;
       if (aal !== 'aal2') {
         return new Response(
           JSON.stringify({ error: 'MFA verification required (AAL2 session needed)' }),
@@ -118,7 +113,6 @@ serve(async req => {
         );
       }
     }
-
 
     // Extract IP address and user agent from request
     const ipAddress =

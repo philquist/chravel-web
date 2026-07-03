@@ -32,7 +32,6 @@ describe('useCases registry', () => {
       'conference-event-management-app',
       'business-travel-coordination',
     ]) {
-
       const uc = getUseCaseDetail(slug);
       expect(uc, `${slug} should resolve`).toBeDefined();
       expect(uc?.body.length).toBeGreaterThan(0);

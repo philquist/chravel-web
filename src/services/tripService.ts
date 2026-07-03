@@ -855,7 +855,12 @@ export const tripService = {
     creatorId: string | null;
   }> {
     const [{ data: rpcData, error: rpcError }, meta] = await Promise.all([
-      (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>)('list_trip_members', {
+      (
+        supabase.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: unknown; error: { message: string } | null }>
+      )('list_trip_members', {
         p_trip_id: tripId,
         p_search: options.search ?? null,
         p_limit: options.limit ?? 50,
