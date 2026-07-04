@@ -6,7 +6,7 @@
  */
 import conciergeAtlantisPoolside from '@/assets/trip-covers/concierge-atlantis-poolside.jpg';
 import baliWedding from '@/assets/trip-covers/bali-destination-wedding.webp';
-import disneyFamilyCruise from '@/assets/trip-covers/disney-family-cruise.webp';
+import groupCruiseDeckAerial from '@/assets/trip-covers/group-cruise-deck-aerial.jpg';
 import youthSoccerFamily from '@/assets/trip-covers/youth-soccer-family.jpg';
 import coachellaFestival from '@/assets/trip-covers/coachella-festival.webp';
 import conferenceBallroom from '@/assets/trip-covers/conference-ballroom-stage.jpg';
@@ -35,8 +35,8 @@ export const USE_CASE_IMAGES: Record<string, UseCaseImage> = {
       'The weekend runs itself when every guest already knows where to be — and every photo lands in one shared album.',
   },
   'group-travel-planning-app': {
-    src: disneyFamilyCruise,
-    alt: 'A group cruise ship sailing through turquoise Caribbean waters',
+    src: groupCruiseDeckAerial,
+    alt: 'Friends relaxing together on a cruise ship pool deck with the ship and ocean in the background',
     caption: 'One trip workspace, zero “wait, where are we meeting?” texts.',
   },
   'family-organization-app': {
