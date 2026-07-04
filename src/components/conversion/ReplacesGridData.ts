@@ -71,7 +71,7 @@ export const CATEGORIES: Category[] = [
     key: 'concierge',
     title: 'Concierge',
     subtitle: '',
-    icon: Sparkles,
+    icon: Headphones,
     benefit: 'Your AI concierge — aware of your trip, preferences, and context.',
     hero: [
       { name: 'ChatGPT' },
