@@ -13,7 +13,7 @@ import conferenceBallroom from '@/assets/trip-covers/conference-ballroom-stage.j
 import phoenixGolf from '@/assets/trip-covers/phoenix-golf-outing.webp';
 import faithCommunityBuild from '@/assets/trip-covers/faith-community-build.jpg';
 import aspenCorporate from '@/assets/trip-covers/aspen-corporate-ski.webp';
-import roseBowl from '@/assets/iu-rose-bowl-cover.jpg';
+import iuMemorialStadium from '@/assets/iu-memorial-stadium-cover.jpg';
 
 export interface UseCaseImage {
   src: string;
