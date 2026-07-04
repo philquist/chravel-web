@@ -4,7 +4,7 @@
  * Each use-case page ends on one of these as an editorial closing figure;
  * the hub reuses them as story-card art.
  */
-import dubaiLuxury from '@/assets/trip-covers/dubai-birthday-luxury.webp';
+import conciergeAtlantisPoolside from '@/assets/trip-covers/concierge-atlantis-poolside.jpg';
 import baliWedding from '@/assets/trip-covers/bali-destination-wedding.webp';
 import disneyFamilyCruise from '@/assets/trip-covers/disney-family-cruise.webp';
 import youthSoccerFamily from '@/assets/trip-covers/youth-soccer-family.jpg';
@@ -23,10 +23,10 @@ export interface UseCaseImage {
 
 export const USE_CASE_IMAGES: Record<string, UseCaseImage> = {
   'travel-concierge-client-portal': {
-    src: dubaiLuxury,
-    alt: 'A luxury client celebration on a city rooftop at dusk',
+    src: conciergeAtlantisPoolside,
+    alt: 'A pro athlete and his family relaxing by the Atlantis Bahamas pool, the dad wearing a ChravelApp jersey and bucket hat',
     caption:
-      'A concierge-planned celebration — every reservation, transfer, and detail already waiting in the client’s portal.',
+      'A concierge-planned family escape — every reservation, transfer, and detail already waiting in the client’s portal.',
   },
   'wedding-guest-coordination-app': {
     src: baliWedding,
