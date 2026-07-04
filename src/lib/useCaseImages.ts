@@ -6,12 +6,12 @@
  */
 import dubaiLuxury from '@/assets/trip-covers/dubai-birthday-luxury.webp';
 import baliWedding from '@/assets/trip-covers/bali-destination-wedding.webp';
-import cancunBeach from '@/assets/trip-covers/cancun-beach.webp';
 import disneyFamilyCruise from '@/assets/trip-covers/disney-family-cruise.webp';
+import youthSoccerFamily from '@/assets/trip-covers/youth-soccer-family.jpg';
 import coachellaFestival from '@/assets/trip-covers/coachella-festival.webp';
-import tokyoSkyline from '@/assets/trip-covers/tokyo-skyline.webp';
+import conferenceBallroom from '@/assets/trip-covers/conference-ballroom-stage.jpg';
 import phoenixGolf from '@/assets/trip-covers/phoenix-golf-outing.webp';
-import yellowstoneGroup from '@/assets/trip-covers/yellowstone-hiking-group.webp';
+import faithCommunityBuild from '@/assets/trip-covers/faith-community-build.jpg';
 import aspenCorporate from '@/assets/trip-covers/aspen-corporate-ski.webp';
 import roseBowl from '@/assets/iu-rose-bowl-cover.jpg';
 
@@ -35,14 +35,14 @@ export const USE_CASE_IMAGES: Record<string, UseCaseImage> = {
       'The weekend runs itself when every guest already knows where to be — and every photo lands in one shared album.',
   },
   'group-travel-planning-app': {
-    src: cancunBeach,
-    alt: 'Friends on a white-sand beach on a group trip',
+    src: disneyFamilyCruise,
+    alt: 'A group cruise ship sailing through turquoise Caribbean waters',
     caption: 'One trip workspace, zero “wait, where are we meeting?” texts.',
   },
   'family-organization-app': {
-    src: disneyFamilyCruise,
-    alt: 'A family vacation aboard a cruise ship',
-    caption: 'Every pickup, ticket, and dinner plan in the family hub — not on the fridge.',
+    src: youthSoccerFamily,
+    alt: 'Kids playing a youth soccer game with parents watching from the sidelines',
+    caption: 'Every practice, carpool, and game day in the family hub — not on the fridge.',
   },
   'sports-team-travel-coordination': {
     src: roseBowl,
@@ -56,8 +56,8 @@ export const USE_CASE_IMAGES: Record<string, UseCaseImage> = {
       'Fifty cities, one source of truth — the show hits its cues because the crew hit theirs.',
   },
   'conference-event-management-app': {
-    src: tokyoSkyline,
-    alt: 'A glowing city skyline at night, home to a major conference',
+    src: conferenceBallroom,
+    alt: 'A keynote speaker on stage in front of a massive audience in a Las Vegas conference ballroom',
     caption:
       'A live agenda that survives the room swap — organizers, staff, and attendees in sync.',
   },
@@ -67,9 +67,9 @@ export const USE_CASE_IMAGES: Record<string, UseCaseImage> = {
     caption: 'The regulars always know the tee time — no plane ticket required.',
   },
   'church-group-trip-coordination': {
-    src: yellowstoneGroup,
-    alt: 'A group hiking together through a national park',
-    caption: 'Lead the trip, not the group chat — rosters, forms, and families all covered.',
+    src: faithCommunityBuild,
+    alt: 'Volunteers in hard hats framing a house together on a community service build',
+    caption: 'Lead the mission, not the group chat — rosters, forms, and families all covered.',
   },
   'business-travel-coordination': {
     src: aspenCorporate,
