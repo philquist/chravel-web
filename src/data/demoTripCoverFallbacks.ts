@@ -8,7 +8,7 @@ import phoenixGolfCover from '@/assets/trip-covers/phoenix-golf-outing.webp';
 import tulumWellnessCover from '@/assets/trip-covers/tulum-yoga-wellness.webp';
 import napaWineCover from '@/assets/trip-covers/napa-wine-getaway.webp';
 import aspenCorporateSkiCover from '@/assets/trip-covers/aspen-corporate-ski.webp';
-import disneyCruiseCover from '@/assets/trip-covers/disney-family-cruise.webp';
+import disneyCruiseCover from '@/assets/trip-covers/group-cruise-deck-aerial.jpg';
 import yellowstoneHikingCover from '@/assets/trip-covers/yellowstone-hiking-group.webp';
 
 const DEMO_TRIP_COVER_FALLBACKS: Record<string, string> = {
