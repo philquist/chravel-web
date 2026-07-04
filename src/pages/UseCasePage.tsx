@@ -140,7 +140,7 @@ export default function UseCasePage() {
         {/* Workflow steps */}
         {uc.workflow && (
           <section className="space-y-6">
-            <SectionHeading index={2}>{uc.workflow.heading}</SectionHeading>
+            <SectionHeading index={0}>{uc.workflow.heading}</SectionHeading>
             <ol className="space-y-4">
               {uc.workflow.steps.map((step, i) => (
                 <li key={i} className="flex items-start gap-4">
@@ -159,7 +159,7 @@ export default function UseCasePage() {
 
         {/* FAQ */}
         <section className="space-y-6">
-          <SectionHeading index={uc.workflow ? 3 : 2}>Frequently asked questions</SectionHeading>
+          <SectionHeading index={uc.workflow ? 6 : 0}>Frequently asked questions</SectionHeading>
           <div className="divide-y divide-white/10 border-y border-white/10">
             {uc.faq.map(item => (
               <div key={item.q} className="py-5">
