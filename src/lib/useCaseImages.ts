@@ -35,14 +35,14 @@ export const USE_CASE_IMAGES: Record<string, UseCaseImage> = {
       'The weekend runs itself when every guest already knows where to be — and every photo lands in one shared album.',
   },
   'group-travel-planning-app': {
-    src: cancunBeach,
-    alt: 'Friends on a white-sand beach on a group trip',
+    src: disneyFamilyCruise,
+    alt: 'A group cruise ship sailing through turquoise Caribbean waters',
     caption: 'One trip workspace, zero “wait, where are we meeting?” texts.',
   },
   'family-organization-app': {
-    src: disneyFamilyCruise,
-    alt: 'A family vacation aboard a cruise ship',
-    caption: 'Every pickup, ticket, and dinner plan in the family hub — not on the fridge.',
+    src: youthSoccerFamily,
+    alt: 'Kids playing a youth soccer game with parents watching from the sidelines',
+    caption: 'Every practice, carpool, and game day in the family hub — not on the fridge.',
   },
   'sports-team-travel-coordination': {
     src: roseBowl,
