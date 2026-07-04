@@ -6,12 +6,12 @@
  */
 import dubaiLuxury from '@/assets/trip-covers/dubai-birthday-luxury.webp';
 import baliWedding from '@/assets/trip-covers/bali-destination-wedding.webp';
-import cancunBeach from '@/assets/trip-covers/cancun-beach.webp';
 import disneyFamilyCruise from '@/assets/trip-covers/disney-family-cruise.webp';
+import youthSoccerFamily from '@/assets/trip-covers/youth-soccer-family.jpg';
 import coachellaFestival from '@/assets/trip-covers/coachella-festival.webp';
-import tokyoSkyline from '@/assets/trip-covers/tokyo-skyline.webp';
+import conferenceBallroom from '@/assets/trip-covers/conference-ballroom-stage.jpg';
 import phoenixGolf from '@/assets/trip-covers/phoenix-golf-outing.webp';
-import yellowstoneGroup from '@/assets/trip-covers/yellowstone-hiking-group.webp';
+import faithCommunityBuild from '@/assets/trip-covers/faith-community-build.jpg';
 import aspenCorporate from '@/assets/trip-covers/aspen-corporate-ski.webp';
 import roseBowl from '@/assets/iu-rose-bowl-cover.jpg';
 
