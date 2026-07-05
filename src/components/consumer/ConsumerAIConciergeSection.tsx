@@ -3,7 +3,6 @@ import { Settings } from 'lucide-react';
 import { TripPreferences } from '../TripPreferences';
 import { TripPreferences as TripPreferencesType } from '../../types/consumer';
 import { useConsumerSubscription } from '../../hooks/useConsumerSubscription';
-import { hasPaidAccess } from '@/utils/paidAccess';
 import { useAuth } from '../../hooks/useAuth';
 import { userPreferencesService } from '../../services/userPreferencesService';
 import { toast } from 'sonner';
@@ -13,7 +12,7 @@ import { ConciergeLanguagePicker } from '@/features/concierge/components/Concier
 import { ConciergeConversationModeToggle } from '@/features/concierge/components/ConciergeConversationModeToggle';
 
 export const ConsumerAIConciergeSection = () => {
-  const { tier, subscription, isSuperAdmin } = useConsumerSubscription();
+  const { isPlus } = useConsumerSubscription();
   const { user } = useAuth();
   const { isDemoMode } = useDemoMode();
   const [preferences, setPreferences] = useState<TripPreferencesType | null>(null);
@@ -21,11 +20,9 @@ export const ConsumerAIConciergeSection = () => {
   // Grounding the Concierge in these preferences is a premium-only capability
   // (enforced server-side in lovable-concierge). Demo mode previews the premium
   // experience. Free users can still edit/save preferences — they simply unlock
-  // when the user upgrades. Use the canonical hasPaidAccess helper (active OR trialing
-  // paid plans + super admins) so this screen agrees with the server's grounding
-  // behavior — plain `isPlus` would wrongly show trialing users as non-premium.
-  const isPremium =
-    isDemoMode || hasPaidAccess({ tier, status: subscription?.status, isSuperAdmin });
+  // when the user upgrades. isPlus now honors the full access policy (active, trial,
+  // canceled-in-period, super admins), so this screen agrees with the server + chat.
+  const isPremium = isDemoMode || isPlus;
 
   useEffect(() => {
     if (isDemoMode) {
