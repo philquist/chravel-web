@@ -3916,8 +3916,10 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          left_at: string | null
           notifications_muted: boolean
           role: string
+          status: string
           trip_id: string
           updated_at: string
           user_id: string
@@ -3925,8 +3927,10 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          left_at?: string | null
           notifications_muted?: boolean
           role?: string
+          status?: string
           trip_id: string
           updated_at?: string
           user_id: string
@@ -3934,8 +3938,10 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          left_at?: string | null
           notifications_muted?: boolean
           role?: string
+          status?: string
           trip_id?: string
           updated_at?: string
           user_id?: string
@@ -5478,6 +5484,10 @@ export type Database = {
         }[]
       }
       increment_sms_counter: { Args: { p_user_id: string }; Returns: undefined }
+      is_active_trip_member: {
+        Args: { _trip_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_org_admin: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
@@ -5504,6 +5514,7 @@ export type Database = {
         Returns: boolean
       }
       is_user_sms_entitled: { Args: { p_user_id: string }; Returns: boolean }
+      leave_trip: { Args: { _trip_id: string }; Returns: Json }
       list_applied_migrations: {
         Args: never
         Returns: {
