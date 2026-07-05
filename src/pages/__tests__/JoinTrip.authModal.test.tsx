@@ -9,6 +9,7 @@ import JoinTrip from '../JoinTrip';
 const mockInvoke = vi.fn();
 const mockMaybeSingle = vi.fn();
 const mockSignInWithOAuth = vi.fn();
+const mockSignUp = vi.fn();
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
@@ -17,7 +18,7 @@ vi.mock('@/hooks/useAuth', () => ({
     signIn: vi.fn(),
     signInWithGoogle: (...args: unknown[]) => mockSignInWithOAuth('google', ...args),
     signInWithApple: (...args: unknown[]) => mockSignInWithOAuth('apple', ...args),
-    signUp: vi.fn().mockResolvedValue({}),
+    signUp: (...args: unknown[]) => mockSignUp(...args),
     resetPassword: vi.fn().mockResolvedValue({}),
   }),
 }));
@@ -87,6 +88,7 @@ describe('JoinTrip auth modal', () => {
     });
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
     mockSignInWithOAuth.mockResolvedValue({});
+    mockSignUp.mockResolvedValue({ success: 'Check your email' });
   });
 
   it('opens the canonical auth modal from invite CTAs and forwards invite returnTo to OAuth', async () => {
@@ -115,6 +117,43 @@ describe('JoinTrip auth modal', () => {
 
     await waitFor(() => {
       expect(mockSignInWithOAuth).toHaveBeenCalledWith('google', '/join/chravelhmbehnbu');
+    });
+  });
+
+  it('forwards invite returnTo to email signup so confirmation links preserve the invite', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/join/chravelhmbehnbu']}>
+        <Routes>
+          <Route path="/join/:token" element={<JoinTrip />} />
+        </Routes>
+      </MemoryRouter>,
+      { wrapper: createWrapper },
+    );
+
+    const signupButton = await screen.findByRole('button', { name: /continue to sign up/i });
+    await user.click(signupButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /create account/i })).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByPlaceholderText('John'), 'Ada');
+    await user.type(screen.getByPlaceholderText('Doe'), 'Lovelace');
+    await user.type(screen.getByPlaceholderText('your@email.com'), 'ada@example.com');
+    await user.type(screen.getByPlaceholderText('••••••••'), 'sup3r-secret!');
+
+    await user.click(screen.getByRole('button', { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(mockSignUp).toHaveBeenCalledWith(
+        'ada@example.com',
+        'sup3r-secret!',
+        'Ada',
+        'Lovelace',
+        '/join/chravelhmbehnbu',
+      );
     });
   });
 });

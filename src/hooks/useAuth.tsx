@@ -1076,12 +1076,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       password: string,
       firstName: string,
       lastName: string,
+      returnToOverride?: string,
     ): Promise<{ error?: string; success?: string }> => {
       try {
         setIsLoading(true);
 
-        // Preserve returnTo so email confirmation lands back in the right place
-        const signUpReturnTo = new URLSearchParams(window.location.search).get('returnTo');
+        // Preserve returnTo so email confirmation lands back in the right place.
+        // Callers on routes without a ?returnTo= query (e.g. /join/:token) pass it
+        // explicitly so the invite survives confirmation in a different browser.
+        const signUpReturnTo =
+          returnToOverride ?? new URLSearchParams(window.location.search).get('returnTo');
         const emailRedirectUrl = signUpReturnTo
           ? `${window.location.origin}/auth?returnTo=${encodeURIComponent(signUpReturnTo)}`
           : `${window.location.origin}/`;

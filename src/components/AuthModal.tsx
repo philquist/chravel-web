@@ -13,8 +13,10 @@ interface AuthModalProps {
    */
   initialMode?: 'signin' | 'signup';
   /**
-   * Optional post-auth destination for OAuth providers. Invite flows use this to
-   * return directly to the join route after Google/Apple complete the redirect.
+   * Optional post-auth destination. Invite flows use this to return directly to
+   * the join route after Google/Apple complete the redirect, and it also seeds
+   * the email-confirmation redirect for email signups started on routes (like
+   * /join/:token) that carry no ?returnTo= query.
    */
   oauthReturnTo?: string;
   onAuthSuccess?: () => void;
@@ -122,7 +124,7 @@ export const AuthModal = ({
       let result;
       if (mode === 'signup') {
         authEvents.signupStarted('email');
-        result = await signUp(email, password, firstName, lastName);
+        result = await signUp(email, password, firstName, lastName, oauthReturnTo);
       } else {
         authEvents.loginStarted('email');
         result = await signIn(email, password);

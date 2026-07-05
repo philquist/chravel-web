@@ -80,6 +80,7 @@ export interface AuthContextType {
     password: string,
     firstName: string,
     lastName: string,
+    returnToOverride?: string,
   ) => Promise<{ error?: string; success?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
