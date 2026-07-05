@@ -199,6 +199,12 @@ A UI-only kill switch leaves the service path callable.
 ### Keep OG proxy rewrites on share entry paths only
 Don't rewrite SPA destination paths — preview metadata leaks into the live app.
 
+### Scope idempotency/dedupe keys to the specific event row, not a broader identity
+A dedupe key on `trip_id:user_id` for join-request notifications silently swallowed every future notification once one request had ever been made — including the exact re-request a 24h rejection cooldown is designed to allow. Key on the request/event's own id instead; that still dedupes accidental repeat-insert attempts for the *same* event without blocking legitimate new ones. *Evidence: July 2026 invite flow audit, `supabase/functions/join-trip/index.ts` fanout_event_key.*
+
+### A proxy must forward the upstream's Cache-Control, not apply a blanket policy
+When a proxy edge function sets its own `Cache-Control` unconditionally, it can override an upstream's deliberate `no-store` on error/negative responses (expired/revoked/not-found), letting the CDN cache a stale negative result. Read `upstream.headers.get('cache-control')` and only fall back to a default when absent. *Evidence: July 2026 invite flow audit, `api/invite-preview.ts`.*
+
 ### OG/share proxy endpoints must fail over to HTML redirect pages when upstream returns JSON
 Crawlers expect HTML; a JSON 500 prevents Universal Link interception.
 

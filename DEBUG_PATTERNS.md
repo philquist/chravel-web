@@ -378,6 +378,18 @@ Known security anti-patterns discovered during audits. Reference this before int
 - **Fixed in:** April 2026 trip invite bootstrap hardening.
 - **Confidence:** high
 
+## Shared invite link (`/j/:code`) unfurled generically and hard-loading `/join/:code` looped forever
+- **Status:** fixed
+- **Subsystem:** invite link OG preview proxy (`api/invite-preview.ts`, `vercel.json` rewrites)
+- **Bug class:** missing rewrite + crawler/browser response conflation
+- **Symptom:** Links shared from the app (`buildInviteLink` emits `/j/{code}`) unfurled with the generic branded card in Slack/iMessage instead of per-trip metadata, because only `/join/:code` had a Vercel rewrite. Separately, a real browser hard-loading `/join/:code` never reached the SPA: the OG HTML's `<meta http-equiv="refresh">` target was the same rewritten URL, so it bounced through the rewrite forever.
+- **Root cause:** One handler served the same OG HTML (designed for crawlers, with an auto-refresh) to every user agent. Any URL shape that both (a) has an OG-preview rewrite and (b) meta-refreshes to a URL matching that same rewrite will loop for humans.
+- **Smallest safe fix:** Branch on User-Agent (`isLikelyHtmlCrawler`) in the proxy: crawlers get the proxied OG HTML, browsers get the SPA shell (`index.html`) fetched directly so React Router renders the real page at that URL. Add the missing `/j/:code` rewrite. Critically, the degraded fallback for the browser branch (SPA fetch fails/non-ok) must NOT fall through to the crawler HTML — that reintroduces the identical loop on a rarer path. Give it its own static, non-refreshing fallback.
+- **Regression risks:** `Vary: User-Agent` is required on every branch or the CDN can serve a cached OG response to a browser (or vice versa) — treat this as one response contract, not two independent code paths that happen to share a file.
+- **Related files:** `api/invite-preview.ts`, `vercel.json`, `unfurl/crawlerDetection.ts`, `src/__tests__/invite-preview-api.test.ts`
+- **Fixed in:** July 2026 invite flow audit.
+- **Confidence:** high
+
 ## 5. Stream ReadChannel Permission Denial for Existing Trip Members
 
 **Symptom:** Messages tab shows raw Stream error `GetOrCreateChannel failed ... ReadChannel` with retry loop.
