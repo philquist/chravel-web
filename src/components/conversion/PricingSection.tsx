@@ -209,7 +209,7 @@ const valuePropItems = [
   },
   {
     icon: <FileText size={20} />,
-    title: 'Professional PDF exports',
+    title: 'Professional PDF Recap exports',
     description: 'Share beautiful itineraries with one click',
   },
   {
