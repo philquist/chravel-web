@@ -23,7 +23,7 @@ vi.mock('@/hooks/useAuth', () => ({
 const channelOnMock = vi.fn();
 const channelSubscribeMock = vi.fn();
 const removeChannelMock = vi.fn();
-const channelMock = vi.fn(() => {
+const channelMock = vi.fn((_name: string) => {
   const channel = {
     on: (...args: unknown[]) => {
       channelOnMock(...args);
@@ -41,7 +41,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     rpc: (...args: unknown[]) => rpcMock(...args),
     from: (table: string) => fromMock(table),
-    channel: (...args: unknown[]) => channelMock(...args),
+    channel: (name: string) => channelMock(name),
     removeChannel: (...args: unknown[]) => removeChannelMock(...args),
   },
 }));
