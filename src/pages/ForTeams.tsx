@@ -329,7 +329,6 @@ export const ForTeams = () => {
                 </li>
               </ul>
 
-              </ul>
             </div>
 
             {/* Enterprise */}
