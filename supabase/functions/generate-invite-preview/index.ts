@@ -17,6 +17,30 @@ const logStep = (step: string, details?: unknown) => {
   console.log(`[generate-invite-preview] ${step}${detailsStr}`);
 };
 
+/**
+ * Generic card for invalid/expired/revoked invites. Deliberately contains zero
+ * trip fields — an unusable invite must not leak trip metadata to crawlers.
+ */
+function buildUnavailableInviteHtml(title: string, message: string): string {
+  const safeTitle = escapeHtml(title);
+  const safeMessage = escapeHtml(message);
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${safeTitle} | ChravelApp</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta property="og:title" content="${safeTitle} | ChravelApp">
+  <meta property="og:description" content="${safeMessage}">
+  <meta property="og:site_name" content="ChravelApp">
+</head>
+<body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #1a1a2e; color: white;">
+  <p>${safeMessage}</p>
+</body>
+</html>`;
+}
+
 function generateInviteHTML(
   trip: {
     title: string;
@@ -292,7 +316,7 @@ serve(async (req: Request): Promise<Response> => {
     // Look up the invite code
     const { data: invite, error: inviteError } = await supabase
       .from('trip_invites')
-      .select('trip_id, is_active, expires_at')
+      .select('trip_id, is_active, expires_at, max_uses, current_uses')
       .eq('code', inviteCode)
       .maybeSingle();
 
@@ -307,30 +331,45 @@ serve(async (req: Request): Promise<Response> => {
     if (!invite) {
       logStep('Invite not found', { code: inviteCode });
       // Return 404 with noindex so social platforms don't cache stale metadata
-      const notFoundHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Invite Not Found | ChravelApp</title>
-  <meta name="robots" content="noindex, nofollow">
-  <meta property="og:title" content="Invite Not Found | ChravelApp">
-  <meta property="og:description" content="This invite link is invalid or has expired.">
-  <meta property="og:site_name" content="ChravelApp">
-</head>
-<body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #1a1a2e; color: white;">
-  <p>This invite link is invalid or has expired.</p>
-</body>
-</html>`;
-      return new Response(notFoundHtml, {
-        status: 404,
-        headers: {
-          ...corsHeaders,
-          ...getOgSecurityHeaders(),
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
+      return new Response(
+        buildUnavailableInviteHtml(
+          'Invite Not Found',
+          'This invite link is invalid or has expired.',
+        ),
+        {
+          status: 404,
+          headers: {
+            ...corsHeaders,
+            ...getOgSecurityHeaders(),
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          },
         },
-      });
+      );
+    }
+
+    // Enforce invite validity BEFORE fetching any trip data. Mirrors the checks
+    // in join-trip so preview and join can never disagree, and so revoked or
+    // expired invites stop unfurling trip metadata.
+    const isExpired = !!invite.expires_at && new Date(invite.expires_at) < new Date();
+    const isExhausted = !!invite.max_uses && (invite.current_uses ?? 0) >= invite.max_uses;
+    if (!invite.is_active || isExpired || isExhausted) {
+      logStep('Invite not active', { isActive: invite.is_active, isExpired, isExhausted });
+      return new Response(
+        buildUnavailableInviteHtml(
+          'Invite No Longer Active',
+          'This invite link is no longer active. Ask the trip organizer for a new link.',
+        ),
+        {
+          status: 410,
+          headers: {
+            ...corsHeaders,
+            ...getOgSecurityHeaders(),
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          },
+        },
+      );
     }
 
     // Fetch trip details including trip_type and updated_at for proper badge display and cache busting
