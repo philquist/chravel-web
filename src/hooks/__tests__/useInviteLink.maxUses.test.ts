@@ -71,7 +71,6 @@ function renderInviteLink(maxUses: number | null | undefined) {
     useInviteLink({
       isOpen: true,
       tripName: 'Test Trip',
-      requireApproval: true,
       expireIn7Days: false,
       maxUses,
       tripId: VALID_TRIP_ID,

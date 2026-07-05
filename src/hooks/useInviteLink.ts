@@ -8,7 +8,6 @@ import { buildInviteLink } from '@/lib/unfurlConfig';
 interface UseInviteLinkProps {
   isOpen: boolean;
   tripName: string;
-  requireApproval: boolean;
   expireIn7Days: boolean;
   /** Maximum number of joins for the invite. null/undefined = unlimited. */
   maxUses?: number | null;
@@ -100,7 +99,6 @@ const generateUniqueCode = async (maxAttempts = 5): Promise<string> => {
 export const useInviteLink = ({
   isOpen,
   tripName,
-  requireApproval,
   expireIn7Days,
   maxUses,
   tripId,
@@ -119,7 +117,7 @@ export const useInviteLink = ({
       generateTripLink();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- generateTripLink closure deps already covered by dep array
-  }, [isOpen, requireApproval, expireIn7Days, maxUses, tripId, proTripId, isDemoMode]);
+  }, [isOpen, expireIn7Days, maxUses, tripId, proTripId, isDemoMode]);
 
   const createInviteInDatabase = async (
     tripIdValue: string,
@@ -422,7 +420,7 @@ export const useInviteLink = ({
     setError(null);
     await generateTripLink();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- generateTripLink uses stable state setters
-  }, [isOpen, requireApproval, expireIn7Days, maxUses, tripId, proTripId, isDemoMode]);
+  }, [isOpen, expireIn7Days, maxUses, tripId, proTripId, isDemoMode]);
 
   return {
     copied,

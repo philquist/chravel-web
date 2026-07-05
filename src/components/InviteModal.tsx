@@ -36,19 +36,10 @@ export function resolveMaxUses(preset: UsageLimitPreset, customValue: string): n
   return Number.parseInt(preset, 10);
 }
 
-export const InviteModal = ({
-  isOpen,
-  onClose,
-  tripName,
-  tripId,
-  proTripId,
-  tripType = 'consumer',
-}: InviteModalProps) => {
+export const InviteModal = ({ isOpen, onClose, tripName, tripId, proTripId }: InviteModalProps) => {
   const isMobile = useIsMobile();
-  // All trip types require approval (enforced on backend)
+  // All trip types require approval (enforced by the join-trip edge function).
   // Consumer trips: any member can approve. Pro/Event: creator/admins only.
-  // The share card / trip preview handles virality; the join boundary handles trust.
-  const [requireApproval, setRequireApproval] = React.useState(true);
   const [expireIn7Days, setExpireIn7Days] = React.useState(false);
   // Optional usage limit. Presets apply immediately; custom values are
   // committed on blur/Enter so each keystroke doesn't mint a new invite.
@@ -74,7 +65,6 @@ export const InviteModal = ({
   } = useInviteLink({
     isOpen,
     tripName,
-    requireApproval,
     expireIn7Days,
     maxUses,
     tripId,
@@ -160,11 +150,8 @@ export const InviteModal = ({
       />
 
       <InviteSettingsSection
-        requireApproval={requireApproval}
         expireIn7Days={expireIn7Days}
-        onRequireApprovalChange={setRequireApproval}
         onExpireIn7DaysChange={setExpireIn7Days}
-        tripType={tripType}
       />
 
       {usageLimitSection}
@@ -218,11 +205,8 @@ export const InviteModal = ({
             />
             <div className="border-t border-border/60" />
             <InviteSettingsSection
-              requireApproval={requireApproval}
               expireIn7Days={expireIn7Days}
-              onRequireApprovalChange={setRequireApproval}
               onExpireIn7DaysChange={setExpireIn7Days}
-              tripType={tripType}
             />
             {usageLimitSection}
             <InviteInstructions />
