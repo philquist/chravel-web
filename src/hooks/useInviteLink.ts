@@ -232,8 +232,6 @@ export const useInviteLink = ({
   const generateTripLink = async () => {
     setLoading(true);
     setError(null);
-    // Always use branded chravel.app URL for invite links
-    const _baseUrl = 'https://chravel.app';
     const actualTripId = proTripId || tripId;
 
     if (!actualTripId) {

@@ -122,7 +122,6 @@ services:
 |----------|---------|---------|
 | `create-trip` | Create new trips | API call |
 | `join-trip` | Handle join requests | API call |
-| `approve-join-request` | Process approvals | API call |
 | `lovable-concierge` | AI concierge | API call |
 | `google-maps-proxy` | Maps API proxy | API call |
 | `unified-messaging` | Message management | API call |

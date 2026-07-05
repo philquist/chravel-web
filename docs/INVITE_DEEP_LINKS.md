@@ -12,7 +12,7 @@ The invite system was **95% complete** with the following components already in 
 
 ### Existing Components
 - **Database Tables**: `trip_invites`, `trip_join_requests`, `trip_members` with proper schema
-- **Edge Functions**: `join-trip`, `get-invite-preview`, `approve-join-request`
+- **Edge Functions**: `join-trip`, `get-invite-preview`
 - **Database RPC Functions**: `approve_join_request()`, `reject_join_request()`
 - **RLS Policies**: Proper row-level security for all invite-related tables
 - **UI Components**: `JoinTrip` page, `InviteModal`, `CollaboratorsModal`, `PendingTripsSection`
@@ -215,16 +215,18 @@ CREATE TABLE trip_join_requests (
 
 **Returns**: Trip name, destination, dates, cover image, member count
 
-### approve-join-request
-**Location**: `supabase/functions/approve-join-request/index.ts`
+### approve_join_request (database RPC)
+**Location**: migration `20260216000000_increment_invite_uses_on_approval.sql`
 
-**Database RPC alternative**: `approve_join_request(_request_id uuid)`
+The only approval path. (A parallel `approve-join-request` edge function was
+removed - it never incremented invite use counts and had no callers.)
 
 **Logic**:
-1. Validates caller is trip creator or admin
+1. Validates caller is trip creator or admin (any member for consumer trips)
 2. Updates `trip_join_requests.status` to 'approved'
-3. Inserts user into `trip_members`
-4. Sends notification to user
+3. Inserts user into `trip_members` (idempotent via ON CONFLICT)
+4. Increments `trip_invites.current_uses`
+5. Sends notification to user
 
 ---
 

@@ -79,7 +79,7 @@ These are set as Supabase project secrets (`supabase secrets set KEY=value`).
 | `IOS_BUNDLE_ID` | `com.chravel.app` | `capacitor.config.ts:12` | Must match Apple Developer Portal |
 | `IOS_APP_NAME` | `Chravel` | `capacitor.config.ts:13` | Display name on iOS |
 | `APPLE_TEAM_ID` | (none) | `api/aasa.ts:25` | Apple App Site Association file |
-| `ANDROID_PACKAGE_NAME` | `com.chravel.app` | `api/assetlinks.ts:24` | Android deep links |
+| `ANDROID_PACKAGE_NAME` | `com.chravel.app` | `public/.well-known/assetlinks.json` | Android deep links (static file) |
 
 ---
 

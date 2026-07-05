@@ -17,9 +17,10 @@ services:
         sync: false
       - key: VITE_BUILD_ID
         value: $RENDER_GIT_COMMIT
-      # Branded unfurl base (served by chravel-unfurl below)
-      - key: VITE_TRIP_PREVIEW_BASE_URL
-        value: https://p.chravel.app/t
+      # NOTE: share/invite links must stay on chravel.app (src/lib/unfurlConfig.ts
+      # reads VITE_UNFURL_BASE_URL, default https://chravel.app). Do not point it
+      # at p.chravel.app - that host serves no /.well-known files, so universal
+      # links would break.
     headers:
       - path: /*
         name: Cache-Control

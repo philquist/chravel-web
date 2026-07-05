@@ -12,7 +12,6 @@ on:
           - all
           - create-trip
           - join-trip
-          - approve-join-request
           - dispatch-notification-deliveries
   push:
     branches:

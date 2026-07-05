@@ -123,7 +123,6 @@ Critical Edge Functions deployed to Supabase:
 |----------|---------|
 | `create-trip` | Create new trips with proper permissions |
 | `join-trip` | Handle trip join requests |
-| `approve-join-request` | Process admin approvals |
 | `lovable-concierge` | AI concierge with Google Maps grounding |
 | `google-maps-proxy` | Secure proxy for Google Maps API |
 | `unified-messaging` | Message management and real-time sync |
