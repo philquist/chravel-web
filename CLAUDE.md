@@ -109,6 +109,7 @@ Full rules, template, and carve-outs: `DEFERRAL_DISCIPLINE.md`.
 - Frontend: `useFeatureFlag` from `@/lib/featureFlags` (`boolean`, 60s cache).
 - Edge: `isFeatureEnabled` from `_shared/featureFlags.ts`.
 - New user-facing features should seed a kill-switch flag in their migration. Kill switches take effect within 60s (client cache TTL).
+- **Concierge premium preferences (invariant):** grounding the AI Concierge in a user's saved preferences (dietary/vibe/budget/accessibility/time) is **premium-only**, enforced server-side in `lovable-concierge` via `resolveUsagePlanForUser` → `isPaidUser` (and mirrored client-side by `useConciergeUsage().isFreeUser`). Preferences resolve **only** from the DB (`contextBuilder.resolveUserPreferences`, paid-gated) — never from client-supplied request-body preferences, which a free user could forge. Free/unauthenticated users get generic answers *by design* — do **not** "fix" this. Budget is injected as a dedicated **HARD BUDGET CONSTRAINT** prompt layer (`promptAssembler.budgetConstraintLayer`), not a soft filter. Kill switch: `concierge_premium_preferences` (seeded enabled).
 
 ## Google Maps Rules
 

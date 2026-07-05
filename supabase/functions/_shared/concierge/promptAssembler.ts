@@ -191,6 +191,9 @@ function preferencesLayer(tripContext: ComprehensiveTripContext): string {
   const prefs = tripContext.userPreferences;
   if (!prefs) return '';
 
+  // Soft preferences — filters/priorities the model should weigh. Budget is pulled
+  // out into a dedicated hard-constraint block (below) because a numeric budget is
+  // the preference the model most readily ignores.
   const prefLines: string[] = [];
   if (prefs.dietary?.length)
     prefLines.push(`DIETARY: ${prefs.dietary.map(sanitizeForPrompt).join(', ')}`);
@@ -201,25 +204,54 @@ function preferencesLayer(tripContext: ComprehensiveTripContext): string {
     prefLines.push(`BUSINESS: ${prefs.business.map(sanitizeForPrompt).join(', ')}`);
   if (prefs.entertainment?.length)
     prefLines.push(`ENTERTAINMENT: ${prefs.entertainment.map(sanitizeForPrompt).join(', ')}`);
-  if (prefs.budget) prefLines.push(`BUDGET: ${sanitizeForPrompt(prefs.budget)} (do not exceed)`);
   if (prefs.timePreference && prefs.timePreference !== 'flexible')
     prefLines.push(`SCHEDULE: ${sanitizeForPrompt(prefs.timePreference)}`);
   if (prefs.travelStyle) prefLines.push(`LIFESTYLE: ${sanitizeForPrompt(prefs.travelStyle)}`);
 
-  if (prefLines.length === 0) return '';
+  const sections: string[] = [];
 
-  const parts: string[] = [
-    '\n**USER PREFERENCES (APPLY AS FILTERS):**',
-    'When making recommendations:',
-    '- EXCLUDE options conflicting with dietary requirements',
-    '- PRIORITIZE options matching vibe/accessibility preferences',
-    '- RESPECT budget constraints (do not exceed max)',
-    '- Consider time preferences for scheduling',
-    '',
-    ...prefLines,
-  ];
+  if (prefLines.length > 0) {
+    sections.push(
+      [
+        '\n**USER PREFERENCES (APPLY AS FILTERS):**',
+        'When making recommendations:',
+        '- EXCLUDE options conflicting with dietary requirements',
+        '- PRIORITIZE options matching vibe/accessibility preferences',
+        '- Consider time preferences for scheduling',
+        '',
+        ...prefLines,
+      ].join('\n'),
+    );
+  }
 
-  return parts.join('\n');
+  const budgetBlock = budgetConstraintLayer(prefs.budget);
+  if (budgetBlock) sections.push(budgetBlock);
+
+  return sections.join('\n');
+}
+
+/**
+ * Hard budget constraint.
+ *
+ * A numeric budget is the preference the model is most likely to silently ignore
+ * (e.g. recommending a $900/night hotel on a $500/day budget). The concierge's
+ * search tools return no structured prices, so we can't filter results server-side;
+ * the most robust lever available is to frame the budget as a NON-NEGOTIABLE ceiling
+ * — separate from the soft filters above — and force the model to disclose the price
+ * of every recommendation so the constraint is auditable. Returns '' when unset.
+ */
+function budgetConstraintLayer(budget?: string): string {
+  if (!budget) return '';
+  const safeBudget = sanitizeForPrompt(budget);
+  return [
+    '\n**HARD BUDGET CONSTRAINT (NON-NEGOTIABLE — overrides any recommendation instinct):**',
+    `- The user's budget is ${safeBudget}. Treat the upper figure as a strict maximum.`,
+    '- Every priced recommendation (hotels, restaurants, activities, flights, tours) MUST be at or below this ceiling. A per-day budget applies per night for lodging and per day for activities.',
+    '- NEVER recommend an option priced above the ceiling, even if it is popular, highly rated, or conveniently located.',
+    '- State the approximate price next to EACH priced recommendation (e.g. "— ~$180/night") so it is visible that it fits.',
+    '- If a search tool returns options above the ceiling, DROP them from your answer instead of listing them.',
+    '- If nothing within budget exists, say so plainly and suggest the closest in-budget alternative — do NOT silently exceed the budget.',
+  ].join('\n');
 }
 
 function calendarSnippetLayer(tripContext: ComprehensiveTripContext): string {

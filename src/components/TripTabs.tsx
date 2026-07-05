@@ -42,7 +42,6 @@ import { useSuperAdmin } from '../hooks/useSuperAdmin';
 import { usePrefetchTrip } from '../hooks/usePrefetchTrip';
 import { useViewportAnchoredHeight } from '../hooks/useViewportAnchoredHeight';
 import { CalendarSkeleton, PlacesSkeleton, ChatSkeleton } from './loading';
-import { TripPreferences as TripPreferencesType } from '../types/consumer';
 
 interface TripTabsProps {
   activeTab: string;
@@ -50,7 +49,6 @@ interface TripTabsProps {
   tripId?: string;
   tripName?: string;
   basecamp?: { name: string; address: string };
-  tripPreferences?: TripPreferencesType;
   showPlaces?: boolean;
   showConcierge?: boolean;
   isDemoMode?: boolean;
@@ -66,7 +64,6 @@ export const TripTabs = ({
   tripId = '1',
   tripName,
   basecamp,
-  tripPreferences,
   showPlaces = false,
   showConcierge = false,
   isDemoMode = false,
@@ -269,12 +266,7 @@ export const TripTabs = ({
         case 'concierge':
           return (
             <FeatureErrorBoundary featureName="AI Concierge">
-              <AIConciergeChat
-                tripId={tripId}
-                basecamp={basecamp}
-                preferences={tripPreferences}
-                isDemoMode={isDemoMode}
-              />
+              <AIConciergeChat tripId={tripId} basecamp={basecamp} isDemoMode={isDemoMode} />
             </FeatureErrorBoundary>
           );
         default:
@@ -285,7 +277,7 @@ export const TripTabs = ({
           );
       }
     },
-    [tripId, tripName, basecamp, tripPreferences, isDemoMode],
+    [tripId, tripName, basecamp, isDemoMode],
   );
 
   // ⚡ PERFORMANCE: Prefetch tab data on hover

@@ -18,6 +18,7 @@ import { executeToolSecurely } from '../_shared/security/toolRouter.ts';
 import { sanitizeForPrompt } from '../_shared/promptBuilder.ts';
 import { incrementConciergeTripUsage } from '../_shared/conciergeUsage.ts';
 import { checkRateLimit } from '../_shared/security.ts';
+import { isFeatureEnabled } from '../_shared/featureFlags.ts';
 import {
   checkMonthlyTokenBudget,
   resolveUsagePlanForUser,
@@ -124,21 +125,11 @@ const LovableConciergeSchema = z.object({
     )
     .max(4, 'Maximum 4 attachments')
     .optional(),
-  // 🆕 Accept preferences from client as fallback
-  preferences: z
-    .object({
-      dietary: z.array(z.string()).optional(),
-      vibe: z.array(z.string()).optional(),
-      accessibility: z.array(z.string()).optional(),
-      business: z.array(z.string()).optional(),
-      entertainment: z.array(z.string()).optional(),
-      lifestyle: z.array(z.string()).optional(),
-      budgetMin: z.number().optional(),
-      budgetMax: z.number().optional(),
-      budgetUnit: z.enum(['experience', 'day', 'person', 'trip']).optional(),
-      timePreference: z.string().optional(),
-    })
-    .optional(),
+  // NOTE: Client-supplied preferences are intentionally NOT accepted here. Preference
+  // grounding is premium-only and resolves authoritatively server-side from the DB
+  // (TripContextBuilder, gated on isPaidUser); trusting client input would let a free
+  // user forge premium behavior. Any `preferences` key an older/cached client still
+  // sends is silently stripped by this (non-strict) schema.
   chatHistory: z
     .array(
       z.object({
@@ -780,10 +771,22 @@ serve(async req => {
 
     // Resolve usage plan first so we can gate preferences in buildContext.
     // Plan resolution is fast (~20-50 ms) and keeps all subsequent fetches clean.
-    const planResolution = await (!serverDemoMode && user
-      ? resolveUsagePlanForUser(supabase, user.id)
-      : Promise.resolve({ usagePlan: 'free' as const, tripQueryLimit: 3 }));
-    const isPaidUser = planResolution.usagePlan !== 'free';
+    // The premium-preferences kill switch is read in parallel (fail-open) so it adds
+    // no wall-clock latency; when disabled, no user gets preference grounding.
+    const [planResolution, premiumPreferencesEnabled] = await Promise.all([
+      !serverDemoMode && user
+        ? resolveUsagePlanForUser(supabase, user.id)
+        : Promise.resolve({ usagePlan: 'free' as const, tripQueryLimit: 3 }),
+      isFeatureEnabled('concierge_premium_preferences', true),
+    ]);
+    // Super admins are treated as paid everywhere else (client badge + useConciergeUsage
+    // maps them to frequent_chraveler), but resolveUsagePlanForUser doesn't know about
+    // them. Mirror that here so the client badge matches server grounding, admins can
+    // dogfood, and (below) they aren't capped at the free trip-query limit.
+    const isSuperAdminCaller = !serverDemoMode && isSuperAdminEmail(user?.email ?? null);
+    const isPaidUser = planResolution.usagePlan !== 'free' || isSuperAdminCaller;
+    // Preference grounding is premium-only AND kill-switchable at runtime.
+    const preferenceGroundingEnabled = isPaidUser && premiumPreferencesEnabled;
 
     // Fire remaining independent queries at once
     const [membershipResult, contextResult, ragResult, privacyResult, persistedHistory] =
@@ -809,8 +812,7 @@ serve(async req => {
               tripId,
               user?.id,
               authHeader,
-              isPaidUser,
-              validatedData.preferences,
+              preferenceGroundingEnabled,
               QUERY_CLASS_SLICES[queryClass],
             ).catch(error => {
               console.error('Failed to build comprehensive context:', error);
@@ -993,6 +995,14 @@ serve(async req => {
     usagePlan = planResolution.usagePlan;
     tripQueryLimit = planResolution.tripQueryLimit;
 
+    // Super admins (internal) bypass concierge usage limits — the client already treats
+    // them as frequent_chraveler (unlimited); mirror it so the edge limiter doesn't cap
+    // an admin at the free 3-asks/trip while the UI shows unlimited.
+    if (isSuperAdminCaller) {
+      usagePlan = 'frequent_chraveler';
+      tripQueryLimit = null;
+    }
+
     if (!serverDemoMode && user) {
       const tokenBudgetResult = await checkMonthlyTokenBudget(supabase, user.id, usagePlan);
       if (!tokenBudgetResult.allowed) {
@@ -1018,52 +1028,12 @@ serve(async req => {
     }
 
     // Assemble context
-    let comprehensiveContext = contextResult || tripContext;
+    const comprehensiveContext = contextResult || tripContext;
     if (comprehensiveContext) {
       console.log(
         '[Context] Built context with user preferences:',
         !!comprehensiveContext?.userPreferences,
       );
-    }
-
-    // Client-passed preferences fallback
-    if (validatedData.preferences) {
-      const clientPrefs = validatedData.preferences;
-      const hasClientPrefs =
-        clientPrefs.dietary?.length ||
-        clientPrefs.vibe?.length ||
-        clientPrefs.accessibility?.length ||
-        clientPrefs.business?.length ||
-        clientPrefs.entertainment?.length ||
-        clientPrefs.budgetMin !== undefined;
-
-      if (
-        hasClientPrefs &&
-        (!comprehensiveContext?.userPreferences ||
-          !comprehensiveContext.userPreferences.dietary?.length)
-      ) {
-        console.log('[Context] Using client-passed preferences as fallback');
-
-        const fallbackPrefs = {
-          dietary: clientPrefs.dietary || [],
-          vibe: clientPrefs.vibe || [],
-          accessibility: clientPrefs.accessibility || [],
-          business: clientPrefs.business || [],
-          entertainment: clientPrefs.entertainment || [],
-          budget:
-            clientPrefs.budgetMin !== undefined && clientPrefs.budgetMax !== undefined
-              ? `$${clientPrefs.budgetMin}-$${clientPrefs.budgetMax} ${clientPrefs.budgetUnit === 'day' ? 'per day' : clientPrefs.budgetUnit === 'person' ? 'per person' : clientPrefs.budgetUnit === 'trip' ? 'per trip' : 'per experience'}`
-              : undefined,
-          timePreference: clientPrefs.timePreference || 'flexible',
-          travelStyle: clientPrefs.lifestyle?.join(', ') || undefined,
-        };
-
-        if (!comprehensiveContext) {
-          comprehensiveContext = { userPreferences: fallbackPrefs };
-        } else {
-          comprehensiveContext.userPreferences = fallbackPrefs;
-        }
-      }
     }
 
     const ragContext = ragResult?.context || '';

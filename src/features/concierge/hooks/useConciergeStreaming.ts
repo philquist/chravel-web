@@ -9,7 +9,6 @@ import {
   type StreamBulkDeletePreviewEvent,
 } from '@/services/conciergeGateway';
 import type { HotelResult } from '@/features/chat/components/HotelResultCards';
-import type { TripPreferences } from '@/types/consumer';
 import { supabase } from '@/integrations/supabase/client';
 import { useConciergeLanguagePreference } from '@/features/concierge/hooks/useConciergeLanguagePreference';
 import { getConciergeInvalidationKeys, isConciergeWriteAction } from '@/lib/conciergeInvalidation';
@@ -53,7 +52,6 @@ interface Params {
   buildLimitReachedMessage: () => ChatMessage;
   basecamp?: { name?: string; address: string };
   globalBasecamp?: { name?: string; address: string };
-  effectivePreferences?: TripPreferences;
   attachedImages: File[];
   attachedDocuments: File[];
   attachmentIntent: AttachmentIntent;
@@ -83,7 +81,6 @@ export function useConciergeStreaming(params: Params) {
     buildLimitReachedMessage,
     basecamp,
     globalBasecamp,
-    effectivePreferences,
     attachedImages,
     attachedDocuments,
     attachmentIntent,
@@ -220,7 +217,6 @@ export function useConciergeStreaming(params: Params) {
       const requestBody = {
         message: currentInput,
         tripId,
-        preferences: effectivePreferences,
         ...(replyLanguage ? { replyLanguage } : {}),
         chatHistory,
         attachments,

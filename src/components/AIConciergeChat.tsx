@@ -8,7 +8,6 @@ import { ChatMessages } from '@/features/chat/components/ChatMessages';
 import { AiChatInput } from '@/features/chat/components/AiChatInput';
 import { useConciergeUsage } from '../hooks/useConciergeUsage';
 import { useAuth } from '@/hooks/useAuth';
-import { useAIConciergePreferences } from '../hooks/useAIConciergePreferences';
 import { toast } from 'sonner';
 import { CTA_BUTTON, CTA_ICON_SIZE } from '@/lib/ctaButtonStyles';
 import { useSaveToTripPlaces } from '@/hooks/useSaveToTripPlaces';
@@ -50,7 +49,6 @@ export type { ChatMessage } from '@/features/concierge/types';
 export const AIConciergeChat = ({
   tripId,
   basecamp,
-  preferences,
   isDemoMode = false,
   isActive = true,
   onTabChange,
@@ -58,7 +56,7 @@ export const AIConciergeChat = ({
   const { basecamp: globalBasecamp } = useBasecamp();
   const { user: authUser } = useAuth();
   const conciergeQueryClient = useQueryClient();
-  const { usage, getUsageStatus, refreshUsage, isLimitedPlan, userPlan } =
+  const { usage, getUsageStatus, refreshUsage, isLimitedPlan, userPlan, isFreeUser } =
     useConciergeUsage(tripId);
   // Free-tier "taste": 1 Smart Import per trip before the paywall fires.
   const { canUseFreeImport: canUseSmartImportTaste } = useSmartImportTaste(tripId);
@@ -70,8 +68,12 @@ export const AIConciergeChat = ({
     isConfirming: isConfirmingPendingAction,
     isRejecting: isRejectingPendingAction,
   } = usePendingActions(tripId);
-  const loadedPreferences = useAIConciergePreferences();
-  const effectivePreferences = preferences ?? loadedPreferences;
+  // Grounding the Concierge in saved preferences is a premium-only capability,
+  // enforced authoritatively server-side (lovable-concierge resolves preferences from
+  // the DB, gated on isPaidUser). The client no longer sends preferences at all; this
+  // flag only drives the "Preferences considered" badge. `isFreeUser` mirrors the
+  // server's isPaidUser (same entitlement resolution + super-admin awareness).
+  const isPremiumPreferencesUser = !isFreeUser;
 
   const handleNavigateToPlaces = useCallback(() => {
     if (onTabChange) onTabChange('places');
@@ -267,7 +269,6 @@ export const AIConciergeChat = ({
     buildLimitReachedMessage,
     basecamp,
     globalBasecamp,
-    effectivePreferences,
     attachedImages,
     attachedDocuments,
     attachmentIntent,
@@ -443,6 +444,13 @@ export const AIConciergeChat = ({
               <div className="mt-2 text-xs text-amber-400 bg-amber-500/10 rounded px-2.5 py-1 inline-block">
                 Group-aware — knows your trip, your members, and writes back to shared state.
               </div>
+              {isPremiumPreferencesUser && (
+                <div className="mt-2">
+                  <span className="inline-flex px-2.5 py-1 bg-gold-primary/10 text-gold-primary text-xs font-medium rounded-full border border-gold-primary/20">
+                    ✦ Preferences considered · Premium
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}

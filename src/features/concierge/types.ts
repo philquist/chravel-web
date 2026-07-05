@@ -1,4 +1,3 @@
-import type { TripPreferences } from '@/types/consumer';
 import type {
   ReservationDraft,
   SmartImportPreviewEvent,
@@ -9,7 +8,6 @@ import type { HotelResult } from '@/features/chat/components/HotelResultCards';
 export interface AIConciergeChatProps {
   tripId: string;
   basecamp?: { name?: string; address: string };
-  preferences?: TripPreferences;
   isDemoMode?: boolean;
   isActive?: boolean;
   onTabChange?: (tab: string) => void;

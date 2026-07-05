@@ -421,7 +421,7 @@ export const ALL_TOOL_DECLARATIONS: ToolDeclaration[] = [
   {
     name: 'searchHotels',
     description:
-      'Search for hotels/lodging near a location. Returns up to 5 results with ratings, amenities, and links.',
+      "Search for hotels/lodging near a location. Returns up to 5 results with ratings, amenities, a coarse price tier (details.price_label, $=inexpensive … $$$$=very expensive), and links. If the user has a HARD BUDGET CONSTRAINT, pass maxPriceLevel to keep results within budget, and state each result's price tier in your answer.",
     parameters: {
       type: 'object',
       properties: {
@@ -431,6 +431,11 @@ export const ALL_TOOL_DECLARATIONS: ToolDeclaration[] = [
         nearLng: { type: 'number', description: 'Longitude to search near' },
         checkIn: { type: 'string', description: 'Check-in date (YYYY-MM-DD), optional' },
         checkOut: { type: 'string', description: 'Check-out date (YYYY-MM-DD), optional' },
+        maxPriceLevel: {
+          type: 'number',
+          description:
+            "Coarse budget ceiling 1-4 (1=$ inexpensive, 2=$$ moderate, 3=$$$ expensive, 4=$$$$ very expensive). Derive from the user's budget when they have one (e.g. a low daily budget → 1-2). Filters out pricier lodging server-side. Omit if no budget.",
+        },
       },
       required: ['query'],
     },

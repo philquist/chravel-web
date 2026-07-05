@@ -21,6 +21,8 @@ import { getBearerToken } from '../_shared/authHeaders.ts';
 import { checkRateLimit } from '../_shared/security.ts';
 import { verifyConciergeTripAccess } from '../_shared/concierge/tripAccess.ts';
 import { resolveUsagePlanForUser } from '../_shared/concierge/usagePolicy.ts';
+import { isFeatureEnabled } from '../_shared/featureFlags.ts';
+import { isSuperAdminEmail } from '../_shared/superAdmins.ts';
 import { QUERY_CLASS_SLICES, TripContextBuilder } from '../_shared/contextBuilder.ts';
 import { assemblePrompt } from '../_shared/concierge/promptAssembler.ts';
 // getToolsForVoice lives in the tool registry (the single source of truth);
@@ -158,8 +160,15 @@ serve(async (req: Request) => {
       });
     }
 
-    const planResolution = await resolveUsagePlanForUser(supabase, userId);
-    const isPaidUser = planResolution.usagePlan !== 'free';
+    // Resolve plan + the premium-preferences kill switch in parallel (flag is
+    // fail-open so it adds no latency and never blocks a paid user's session).
+    const [planResolution, premiumPreferencesEnabled] = await Promise.all([
+      resolveUsagePlanForUser(supabase, userId),
+      isFeatureEnabled('concierge_premium_preferences', true),
+    ]);
+    const isPaidUser = planResolution.usagePlan !== 'free' || isSuperAdminEmail(user.email ?? null);
+    // Preference grounding is premium-only AND kill-switchable (mirrors lovable-concierge).
+    const preferenceGroundingEnabled = isPaidUser && premiumPreferencesEnabled;
 
     // Voice selection: paid users keep their saved voice; free users use the default.
     let voice = DEFAULT_VOICE;
@@ -181,8 +190,7 @@ serve(async (req: Request) => {
       tripId,
       userId,
       authHeader,
-      isPaidUser,
-      undefined,
+      preferenceGroundingEnabled,
       QUERY_CLASS_SLICES['trip_summary'],
     ).catch(error => {
       console.error('[realtime-voice-session] context build failed:', error);

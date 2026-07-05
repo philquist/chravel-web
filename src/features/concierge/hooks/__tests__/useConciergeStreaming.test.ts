@@ -49,7 +49,6 @@ function createBaseParams(overrides: Partial<Parameters<typeof useConciergeStrea
       content: 'limit',
       timestamp: new Date().toISOString(),
     })),
-    effectivePreferences: undefined,
     attachedImages: [],
     attachedDocuments: [],
     attachmentIntent: 'smart_import',

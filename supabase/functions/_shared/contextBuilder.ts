@@ -220,25 +220,21 @@ export class TripContextBuilder {
     userId?: string,
     authHeader?: string | null,
     isPaidUser = false,
-    clientPreferences?: Parameters<typeof TripContextBuilder.buildContext>[4],
     contextSlices?: ContextSlice[],
   ): Promise<ComprehensiveTripContext> {
-    // Include slices in cache key so partial and full context don't collide
+    // Include slices in cache key so partial and full context don't collide.
+    // isPaidUser gates whether userPreferences is baked into the context, so it MUST
+    // be part of the key — otherwise a grounded entry (e.g. from a paid voice session)
+    // could be served to a request that must be ungrounded (e.g. after the
+    // concierge_premium_preferences kill switch flips), and vice versa.
     const slicesKey = contextSlices ? contextSlices.slice().sort().join(',') : 'all';
-    const key = `${tripId}:${userId ?? 'anon'}:${slicesKey}`;
+    const key = `${tripId}:${userId ?? 'anon'}:${slicesKey}:${isPaidUser ? 'grounded' : 'plain'}`;
     const now = Date.now();
     const cached = contextCache.get(key);
     if (cached && cached.expiresAt > now) {
       return cached.ctx;
     }
-    const ctx = await this.buildContext(
-      tripId,
-      userId,
-      authHeader,
-      isPaidUser,
-      clientPreferences,
-      contextSlices,
-    );
+    const ctx = await this.buildContext(tripId, userId, authHeader, isPaidUser, contextSlices);
     contextCache.set(key, { ctx, expiresAt: now + CONTEXT_CACHE_TTL_MS });
     return ctx;
   }
@@ -256,28 +252,15 @@ export class TripContextBuilder {
    * after all data arrives, typically adding ~10-20 ms instead of ~50-100 ms.
    *
    * @param isPaidUser  When true, user preferences are fetched and included.
-   *                    Pass false (default) for free-tier users.
-   * @param clientPreferences  When provided and has content, skips DB fetch for
-   *                           preferences (saves ~20-50ms). Client loads once and
-   *                           passes on every request.
+   *                    Pass false (default) for free-tier users. Preference
+   *                    grounding is a premium-only capability, so this flag is the
+   *                    sole authority — client-supplied preferences are never trusted.
    */
   static async buildContext(
     tripId: string,
     userId?: string,
     authHeader?: string | null,
     isPaidUser = false,
-    clientPreferences?: {
-      dietary?: string[];
-      vibe?: string[];
-      accessibility?: string[];
-      business?: string[];
-      entertainment?: string[];
-      lifestyle?: string[];
-      budgetMin?: number;
-      budgetMax?: number;
-      budgetUnit?: string;
-      timePreference?: string;
-    },
     contextSlices?: ContextSlice[],
   ): Promise<ComprehensiveTripContext> {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -336,10 +319,10 @@ export class TripContextBuilder {
         need('teams')
           ? this.fetchRawTeamsAndChannels(supabase, tripId)
           : Promise.resolve(emptyTeams),
-        // Preferences: use client-provided when available (saves DB round-trip),
-        // else fetch for paid users
+        // Preferences: premium-only grounding — fetched from DB for paid users,
+        // undefined for everyone else. Client-supplied preferences are not trusted.
         need('preferences')
-          ? this.resolveUserPreferences(supabase, userId, isPaidUser, clientPreferences)
+          ? this.resolveUserPreferences(supabase, userId, isPaidUser)
           : Promise.resolve(undefined),
       ]);
 
@@ -451,59 +434,23 @@ export class TripContextBuilder {
   }
 
   // ────────────────────────────────────────────────────────────────────────────
-  // Resolve user preferences: client-provided (fast) or DB fetch
+  // Resolve user preferences (premium-only grounding).
+  //
+  // Grounding the concierge in saved preferences is a paid capability. The gate is
+  // the server-verified isPaidUser flag — NEVER client-supplied preferences, which a
+  // free user could forge in the request body to obtain premium behavior. Free /
+  // unauthenticated users, and paid users with no saved preferences, get undefined
+  // (no grounding — same generic behavior as if no preferences were ever set).
   // ────────────────────────────────────────────────────────────────────────────
 
   private static async resolveUserPreferences(
     supabase: any,
     userId: string | undefined,
     isPaidUser: boolean,
-    clientPreferences?: {
-      dietary?: string[];
-      vibe?: string[];
-      accessibility?: string[];
-      business?: string[];
-      entertainment?: string[];
-      lifestyle?: string[];
-      budgetMin?: number;
-      budgetMax?: number;
-      budgetUnit?: string;
-      timePreference?: string;
-    },
   ): Promise<UserPreferences | undefined> {
-    const hasClientPrefs =
-      (clientPreferences?.dietary?.length ?? 0) > 0 ||
-      (clientPreferences?.vibe?.length ?? 0) > 0 ||
-      (clientPreferences?.accessibility?.length ?? 0) > 0 ||
-      (clientPreferences?.business?.length ?? 0) > 0 ||
-      (clientPreferences?.entertainment?.length ?? 0) > 0 ||
-      (clientPreferences?.lifestyle?.length ?? 0) > 0 ||
-      clientPreferences?.budgetMin !== undefined ||
-      clientPreferences?.budgetMax !== undefined;
-
-    if (hasClientPrefs && clientPreferences) {
-      const unit = clientPreferences.budgetUnit || 'experience';
-      const budget =
-        clientPreferences.budgetMin !== undefined && clientPreferences.budgetMax !== undefined
-          ? `$${clientPreferences.budgetMin}-$${clientPreferences.budgetMax} ${unit === 'day' ? 'per day' : unit === 'person' ? 'per person' : unit === 'trip' ? 'per trip' : 'per experience'}`
-          : undefined;
-
-      return {
-        dietary: clientPreferences.dietary || [],
-        vibe: clientPreferences.vibe || [],
-        budget,
-        accessibility: clientPreferences.accessibility || [],
-        timePreference: clientPreferences.timePreference || 'flexible',
-        travelStyle: clientPreferences.lifestyle?.join(', '),
-        business: clientPreferences.business || [],
-        entertainment: clientPreferences.entertainment || [],
-      };
-    }
-
     if (isPaidUser && userId) {
       return this.fetchUserPreferences(supabase, userId);
     }
-
     return undefined;
   }
 
@@ -885,10 +832,7 @@ export class TripContextBuilder {
       return {
         dietary: prefs.dietary || [],
         vibe: prefs.vibe || [],
-        budget:
-          prefs.budgetMin !== undefined && prefs.budgetMax !== undefined
-            ? `$${prefs.budgetMin}-$${prefs.budgetMax} ${prefs.budgetUnit === 'day' ? 'per day' : prefs.budgetUnit === 'person' ? 'per person' : prefs.budgetUnit === 'trip' ? 'per trip' : 'per experience'}`
-            : undefined,
+        budget: this.formatBudget(prefs.budgetMin, prefs.budgetMax, prefs.budgetUnit),
         accessibility: prefs.accessibility || [],
         timePreference: prefs.timePreference || 'flexible',
         travelStyle: prefs.lifestyle?.join(', ') || undefined,
@@ -899,5 +843,37 @@ export class TripContextBuilder {
       console.error('Error fetching user preferences:', error);
       return undefined;
     }
+  }
+
+  /**
+   * Format a saved budget range into a compact ceiling string for the prompt,
+   * e.g. "$500 per day", "$300–$500 per day", "up to $500 per day".
+   * Mirrors the "Active AI Filters" display in ConsumerAIConciergeSection so the
+   * user sees the same wording the model is grounded on. Returns undefined when no
+   * meaningful budget is set.
+   */
+  private static formatBudget(
+    budgetMin?: number,
+    budgetMax?: number,
+    budgetUnit?: string,
+  ): string | undefined {
+    const unitLabel =
+      budgetUnit === 'day'
+        ? 'per day'
+        : budgetUnit === 'person'
+          ? 'per person'
+          : budgetUnit === 'trip'
+            ? 'per trip'
+            : 'per experience';
+    const hasMin = typeof budgetMin === 'number' && budgetMin > 0;
+    const hasMax = typeof budgetMax === 'number' && budgetMax > 0;
+    if (hasMin && hasMax) {
+      return budgetMin === budgetMax
+        ? `$${budgetMax} ${unitLabel}`
+        : `$${budgetMin}–$${budgetMax} ${unitLabel}`;
+    }
+    if (hasMax) return `up to $${budgetMax} ${unitLabel}`;
+    if (hasMin) return `from $${budgetMin} ${unitLabel}`;
+    return undefined;
   }
 }

@@ -1,4 +1,4 @@
-import { pickPrimaryEntitlement } from '../entitlementSelection.ts';
+import { resolveEffectiveEntitlement } from '../entitlementSelection.ts';
 
 export type UsagePlan = 'free' | 'explorer' | 'frequent_chraveler';
 
@@ -54,15 +54,10 @@ export const getTripQueryLimitForUsagePlan = (plan: UsagePlan): number | null =>
 export const getMonthlyTokenBudgetForUsagePlan = (plan: UsagePlan): number | null =>
   MONTHLY_TOKEN_BUDGETS[plan] ?? null;
 
+// Legacy profiles-fallback status check (profiles has no period column). The primary
+// user_entitlements path uses the canonical hasEffectiveAccess predicate instead.
 const isActiveEntitlementStatus = (status: string | null | undefined): boolean =>
   status === 'active' || status === 'trialing';
-
-const hasActiveEntitlementPeriod = (periodEnd: string | null | undefined): boolean => {
-  if (!periodEnd) return true;
-  const parsed = Date.parse(periodEnd);
-  if (Number.isNaN(parsed)) return true;
-  return parsed > Date.now();
-};
 
 export const mapRawPlanToUsagePlan = (plan: string | null | undefined): UsagePlan => {
   if (!plan || plan === 'free' || plan === 'consumer') return 'free';
@@ -86,18 +81,20 @@ export async function resolveUsagePlanForUser(
     .in('purchase_type', ['subscription', 'pass'])
     .order('updated_at', { ascending: false });
 
-  const entitlementData = pickPrimaryEntitlement(entitlementRows || []);
-
   if (entitlementError) {
     console.error('[UsagePolicy] Failed to read user_entitlements:', entitlementError);
   }
 
-  if (
-    entitlementData &&
-    isActiveEntitlementStatus(entitlementData.status) &&
-    hasActiveEntitlementPeriod(entitlementData.current_period_end)
-  ) {
-    const usagePlan = mapRawPlanToUsagePlan(entitlementData.plan);
+  // Use the canonical hasEffectiveAccess predicate (via resolveEffectiveEntitlement) so
+  // the edge concierge matches the entitlement selectors and the client: active, trialing,
+  // past_due (dunning grace), and canceled-with-a-future-period all keep access until the
+  // paid period actually ends. Previously the row was re-judged with a stricter local
+  // check that dropped past_due / canceled-in-period, silently downgrading paying users to
+  // the free 3-asks/trip cap while the rest of the app still showed them as subscribed.
+  const effectiveEntitlement = resolveEffectiveEntitlement(entitlementRows || []);
+
+  if (effectiveEntitlement && effectiveEntitlement.has_access) {
+    const usagePlan = mapRawPlanToUsagePlan(effectiveEntitlement.plan);
     return {
       usagePlan,
       tripQueryLimit: getTripQueryLimitForUsagePlan(usagePlan),

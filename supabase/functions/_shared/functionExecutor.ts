@@ -445,6 +445,31 @@ async function _executeImpl(
         return { error: 'Google Maps API key not configured' };
       }
 
+      // Google Places (New) returns a COARSE, local-market-relative price tier enum —
+      // not a nightly rate. We surface it so the model can disclose the tier and honor
+      // the HARD BUDGET CONSTRAINT, and (opt-in) filter by it. It is NOT dollar-accurate.
+      const PRICE_LEVEL_ORDER = [
+        'PRICE_LEVEL_FREE',
+        'PRICE_LEVEL_INEXPENSIVE',
+        'PRICE_LEVEL_MODERATE',
+        'PRICE_LEVEL_EXPENSIVE',
+        'PRICE_LEVEL_VERY_EXPENSIVE',
+      ];
+      const priceLevelToTier = (level: string | null | undefined): number | null => {
+        const idx = level ? PRICE_LEVEL_ORDER.indexOf(level) : -1;
+        return idx >= 0 ? idx : null;
+      };
+      // Optional coarse budget ceiling (1=$ … 4=$$$$). When the model supplies it from
+      // the user's budget, constrain the search server-side (and drop over-tier results
+      // post-fetch). Results with no price tier are KEPT — Google omits it for many
+      // lodgings, and dropping them would hide valid in-budget options.
+      const maxTier =
+        args.maxPriceLevel != null && Number.isFinite(Number(args.maxPriceLevel))
+          ? Math.min(4, Math.max(1, Math.round(Number(args.maxPriceLevel))))
+          : null;
+      const allowedPriceLevels =
+        maxTier != null ? PRICE_LEVEL_ORDER.slice(0, maxTier + 1) : undefined;
+
       // Enrich query to target lodging
       const hotelQuery =
         query && String(query).toLowerCase().includes('hotel')
@@ -480,6 +505,8 @@ async function _executeImpl(
                 ? { circle: { center: { latitude: finalLat, longitude: finalLng }, radius: 10000 } }
                 : undefined,
             maxResultCount: 5,
+            // Server-side coarse budget filter (only when a ceiling was supplied).
+            ...(allowedPriceLevels ? { priceLevels: allowedPriceLevels } : {}),
           }),
           signal: AbortSignal.timeout(8_000),
         }),
@@ -492,51 +519,68 @@ async function _executeImpl(
       }
 
       const placesData = await placesResponse.json();
-      const hotels = (placesData.places || []).map((p: any) => {
-        // Extract amenities from place types
-        const amenityMap: Record<string, string> = {
-          swimming_pool: 'Pool',
-          fitness_center: 'Fitness',
-          spa: 'Spa',
-          restaurant: 'Restaurant',
-          bar: 'Bar',
-          parking: 'Parking',
-          free_parking: 'Free Parking',
-          wifi: 'WiFi',
-        };
-        const amenities = (p.types || [])
-          .filter((t: string) => amenityMap[t])
-          .map((t: string) => amenityMap[t])
-          .slice(0, 4);
+      const hotels = (placesData.places || [])
+        .map((p: any) => {
+          // Extract amenities from place types
+          const amenityMap: Record<string, string> = {
+            swimming_pool: 'Pool',
+            fitness_center: 'Fitness',
+            spa: 'Spa',
+            restaurant: 'Restaurant',
+            bar: 'Bar',
+            parking: 'Parking',
+            free_parking: 'Free Parking',
+            wifi: 'WiFi',
+          };
+          const amenities = (p.types || [])
+            .filter((t: string) => amenityMap[t])
+            .map((t: string) => amenityMap[t])
+            .slice(0, 4);
 
-        return {
-          id: p.id || null,
-          provider: 'Google Maps',
-          title: p.displayName?.text || 'Unknown Hotel',
-          subtitle: p.formattedAddress || null,
-          badges: amenities.length > 0 ? amenities : undefined,
-          price: null, // Google Places doesn't return hotel pricing
-          dates:
-            checkIn || checkOut ? { check_in: checkIn || null, check_out: checkOut || null } : null,
-          location: {
-            city: null,
-            region: null,
-            country: null,
-          },
-          details: {
-            rating: p.rating || null,
-            reviews_count: p.userRatingCount || null,
-            refundable: null,
-            amenities,
-          },
-          deep_links: {
-            primary: p.googleMapsUri || null,
-            secondary: p.websiteUri || null,
-          },
-        };
-      });
+          // Coarse price tier (0-4) + $-symbol label. Google returns no nightly rate.
+          const priceTier = priceLevelToTier(p.priceLevel);
+          const priceLabel = priceTier && priceTier > 0 ? '$'.repeat(priceTier) : null;
 
-      return { success: true, hotels };
+          return {
+            id: p.id || null,
+            provider: 'Google Maps',
+            title: p.displayName?.text || 'Unknown Hotel',
+            subtitle: p.formattedAddress || null,
+            badges: amenities.length > 0 ? amenities : undefined,
+            price: null, // Google Places returns no nightly rate — only the coarse tier below.
+            dates:
+              checkIn || checkOut
+                ? { check_in: checkIn || null, check_out: checkOut || null }
+                : null,
+            location: {
+              city: null,
+              region: null,
+              country: null,
+            },
+            details: {
+              rating: p.rating || null,
+              reviews_count: p.userRatingCount || null,
+              refundable: null,
+              amenities,
+              // Coarse, local-market-relative price tier ($ = inexpensive … $$$$ = very
+              // expensive). Disclose this next to the recommendation to honor the budget.
+              price_tier: priceTier,
+              price_label: priceLabel,
+            },
+            deep_links: {
+              primary: p.googleMapsUri || null,
+              secondary: p.websiteUri || null,
+            },
+          };
+        })
+        // Post-fetch safety net for the coarse budget ceiling. Keep hotels with an
+        // unknown tier (null) — Google omits it for many lodgings.
+        .filter(
+          (h: any) =>
+            maxTier == null || h.details.price_tier == null || h.details.price_tier <= maxTier,
+        );
+
+      return { success: true, hotels, budgetTierCeiling: maxTier };
     }
 
     case 'getHotelDetails': {
