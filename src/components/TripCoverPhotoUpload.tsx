@@ -52,16 +52,23 @@ export const TripCoverPhotoUpload = ({
 
   const canGenerate = !!user && !isDemoMode && isFrequentChraveler;
   const outOfQuota = canGenerate && remainingThisMonth !== null && remainingThisMonth <= 0;
-  const generateDisabled = !user || isDemoMode || !isFrequentChraveler || outOfQuota || isGenerating || isUploading || isDeleting;
+  const generateDisabled =
+    !user ||
+    isDemoMode ||
+    !isFrequentChraveler ||
+    outOfQuota ||
+    isGenerating ||
+    isUploading ||
+    isDeleting;
   const generateTitle = !user
     ? 'Sign in to generate cover photos'
     : isDemoMode
-    ? 'AI cover generation is disabled in demo mode'
-    : !isFrequentChraveler
-    ? 'Upgrade to Frequent Chraveler to generate AI cover photos'
-    : outOfQuota
-    ? `You've used all ${aiCap} AI covers this month`
-    : `Generate an AI cover photo (${remainingThisMonth ?? aiCap} of ${aiCap} left this month)`;
+      ? 'AI cover generation is disabled in demo mode'
+      : !isFrequentChraveler
+        ? 'Upgrade to Frequent Chraveler to generate AI cover photos'
+        : outOfQuota
+          ? `You've used all ${aiCap} AI covers this month`
+          : `Generate an AI cover photo (${remainingThisMonth ?? aiCap} of ${aiCap} left this month)`;
 
   const handleGenerateAi = useCallback(async () => {
     if (generateDisabled) return;
@@ -293,9 +300,9 @@ export const TripCoverPhotoUpload = ({
                     <span className="text-sm font-medium">Generating…</span>
                   </>
                 ) : (
-                <>
-                  <span className="text-sm font-medium">Generate with AI</span>
-                </>
+                  <>
+                    <span className="text-sm font-medium">Generate with AI</span>
+                  </>
                 )}
               </button>
             </div>
@@ -390,8 +397,8 @@ export const TripCoverPhotoUpload = ({
                   {canGenerate && remainingThisMonth !== null
                     ? ` · ${remainingThisMonth}/${aiCap} left`
                     : !isFrequentChraveler
-                    ? ' · Frequent Chraveler'
-                    : ''}
+                      ? ' · Frequent Chraveler'
+                      : ''}
                 </span>
               </>
             )}

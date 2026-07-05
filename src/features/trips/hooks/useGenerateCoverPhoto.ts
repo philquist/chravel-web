@@ -3,10 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
-import {
-  invalidateTripCoverQueries,
-  updateTripCoverCache,
-} from '@/lib/tripCoverInvalidation';
+import { invalidateTripCoverQueries, updateTripCoverCache } from '@/lib/tripCoverInvalidation';
 
 export const AI_COVER_MONTHLY_CAP = 10;
 
@@ -68,8 +65,7 @@ export function useGenerateCoverPhoto(tripId: string | undefined | null) {
         body: { tripId },
       });
       if (error) {
-        const message =
-          (error as { message?: string })?.message || 'Cover generation failed';
+        const message = (error as { message?: string })?.message || 'Cover generation failed';
         return { ok: false, error: message };
       }
       if (!data?.publicUrl) {

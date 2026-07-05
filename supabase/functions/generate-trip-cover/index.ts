@@ -31,11 +31,7 @@ interface GatewayImageResponse {
   error?: { message?: string; code?: string };
 }
 
-function json(
-  body: Record<string, unknown>,
-  status: number,
-  corsHeaders: Record<string, string>,
-) {
+function json(body: Record<string, unknown>, status: number, corsHeaders: Record<string, string>) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -61,7 +57,7 @@ async function isSuperAdmin(
   return !!data;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async req => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405, corsHeaders);
@@ -122,13 +118,13 @@ Deno.serve(async (req) => {
       .in('purchase_type', ['subscription', 'pass'])
       .order('updated_at', { ascending: false });
 
-    const activePlans = (entitlements || []).filter((row) => {
+    const activePlans = (entitlements || []).filter(row => {
       const okStatus = row.status === 'active' || row.status === 'trialing';
       if (!okStatus) return false;
       if (!row.current_period_end) return true;
       return new Date(row.current_period_end).getTime() >= Date.now();
     });
-    const isFC = activePlans.some((row) => row.plan === 'frequent-chraveler');
+    const isFC = activePlans.some(row => row.plan === 'frequent-chraveler');
     if (!isFC) {
       return json(
         {
@@ -173,10 +169,7 @@ Deno.serve(async (req) => {
   const title = (trip.title as string) || 'a trip';
   const destination = (trip.destination as string) || '';
   const category = (trip.category as string) || '';
-  const contextBits = [
-    destination && `in ${destination}`,
-    category && `— ${category}`,
-  ]
+  const contextBits = [destination && `in ${destination}`, category && `— ${category}`]
     .filter(Boolean)
     .join(' ');
   const prompt =
@@ -222,13 +215,11 @@ Deno.serve(async (req) => {
 
   const bytes = base64ToUint8Array(b64);
   const filePath = `${tripId}/cover-ai-${Date.now()}-${crypto.randomUUID()}.png`;
-  const { error: uploadErr } = await admin.storage
-    .from('trip-covers')
-    .upload(filePath, bytes, {
-      cacheControl: '3600',
-      upsert: true,
-      contentType: 'image/png',
-    });
+  const { error: uploadErr } = await admin.storage.from('trip-covers').upload(filePath, bytes, {
+    cacheControl: '3600',
+    upsert: true,
+    contentType: 'image/png',
+  });
   if (uploadErr) return json({ error: `Upload failed: ${uploadErr.message}` }, 500, corsHeaders);
 
   const { data: pub } = admin.storage.from('trip-covers').getPublicUrl(filePath);
@@ -239,7 +230,10 @@ Deno.serve(async (req) => {
     .update({ cover_image_url: publicUrl })
     .eq('id', tripId);
   if (updateErr) {
-    await admin.storage.from('trip-covers').remove([filePath]).catch(() => null);
+    await admin.storage
+      .from('trip-covers')
+      .remove([filePath])
+      .catch(() => null);
     return json({ error: `Failed to attach cover: ${updateErr.message}` }, 500, corsHeaders);
   }
 

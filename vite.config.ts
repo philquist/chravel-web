@@ -4,7 +4,6 @@ import path from 'path';
 import { componentTagger } from 'lovable-tagger';
 import { mcpPlugin } from '@lovable.dev/mcp-js/stacks/supabase/vite';
 
-
 // Generate build version timestamp
 const buildVersion = Date.now().toString(36);
 

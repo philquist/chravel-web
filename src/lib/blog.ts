@@ -1365,7 +1365,10 @@ export const BLOG_POSTS: BlogPost[] = [
     ],
     related: [
       { label: 'ChravelApp for group trips', to: '/group-travel-planning-app' },
-      { label: 'ChravelApp for events and packaged trips', to: '/use-cases/conference-event-management-app' },
+      {
+        label: 'ChravelApp for events and packaged trips',
+        to: '/use-cases/conference-event-management-app',
+      },
       { label: 'All ChravelApp use cases', to: '/use-cases' },
     ],
     cta: {
