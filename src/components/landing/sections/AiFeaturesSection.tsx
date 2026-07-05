@@ -12,7 +12,7 @@ export const AiFeaturesSection = () => {
       icon: <Wand2 className="text-accent" size={28} />,
       title: 'Context-Aware Concierge',
       description:
-        'Your full trip context — itinerary, tasks, payments, places — woven into every answer. No extra AI app, no extra subscription.',
+        'Your full trip context — itinerary, tasks, payments, places — woven into every answer. (For paid plans)',
     },
     {
       icon: <DollarSign className="text-primary" size={28} />,
