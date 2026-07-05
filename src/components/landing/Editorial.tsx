@@ -103,10 +103,10 @@ export const SectionHeading: React.FC<{ index?: number; children: React.ReactNod
   <h2 className="flex items-baseline gap-3 text-2xl md:text-3xl text-white">
     {typeof index === 'number' && (
       <span
-        className="font-display text-base md:text-lg italic text-gold-primary/80 tabular-nums"
+        className="font-display text-base md:text-lg italic text-gold-primary/80 tabular-nums whitespace-pre"
         aria-hidden="true"
       >
-        <br />
+        {"\n"}
       </span>
     )}
     <span>{children}</span>
