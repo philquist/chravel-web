@@ -111,7 +111,7 @@ export const LineupImportModal: React.FC<LineupImportModalProps> = ({
       const result = await parseLineupFile(file, tripId);
       processParseResult(result);
     },
-    [processParseResult],
+    [processParseResult, tripId],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useSmartImportDropzone({
