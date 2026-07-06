@@ -70,6 +70,8 @@ export const RolesView = ({
   const [showRequestsDialog, setShowRequestsDialog] = useState(false);
   const [showRoleManagerDialog, setShowRoleManagerDialog] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'orgchart'>('grid');
+  const [showCoordinatorDialog, setShowCoordinatorDialog] = useState(false);
+  const coordinatorRoleEnabled = useFeatureFlag('pro_coordinator_role', false);
 
   // Fetch role assignments and admins to display role pills per member
   const { assignments } = useRoleAssignments({ tripId: tripId || '', enabled: !!tripId });
