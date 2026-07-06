@@ -150,9 +150,16 @@ export const useTripAdmins = ({ tripId, enabled = true }: UseTripAdminsProps) =>
   const [isProcessing, setIsProcessing] = useState(false);
 
   const promoteToAdmin = useCallback(
-    async (targetUserId: string) => {
+    async (
+      targetUserId: string,
+      options: { scope?: 'full' | 'coordinator' } = {},
+    ) => {
+      const scope = options.scope ?? 'full';
+      const successLabel =
+        scope === 'coordinator' ? '✅ User added as coordinator' : '✅ User promoted to admin';
+
       if (isDemoMode) {
-        toast.success('✅ User promoted to admin');
+        toast.success(successLabel);
         return { success: true, message: 'User promoted' };
       }
 
@@ -161,14 +168,16 @@ export const useTripAdmins = ({ tripId, enabled = true }: UseTripAdminsProps) =>
         const { data, error } = await supabase.rpc('promote_to_admin' as const, {
           _trip_id: tripId,
           _target_user_id: targetUserId,
-        });
+          // intentional: extended 3rd arg not yet in generated Supabase types
+          _scope: scope,
+        } as unknown as { _trip_id: string; _target_user_id: string });
 
         if (error) throw error;
 
         const result = data as { success: boolean; message: string };
         if (!result.success) throw new Error(result.message);
 
-        toast.success('✅ User promoted to admin');
+        toast.success(successLabel);
         await queryClient.invalidateQueries({ queryKey: tripKeys.tripAdmins(tripId) });
         return result;
       } finally {
@@ -177,6 +186,38 @@ export const useTripAdmins = ({ tripId, enabled = true }: UseTripAdminsProps) =>
     },
     [tripId, isDemoMode, queryClient],
   );
+
+  const setAdminScope = useCallback(
+    async (targetUserId: string, scope: 'full' | 'coordinator') => {
+      if (isDemoMode) {
+        toast.success(`Scope updated to ${scope}`);
+        return { success: true };
+      }
+
+      setIsProcessing(true);
+      try {
+        // intentional: set_admin_scope RPC not yet in generated Supabase types
+        const { data, error } = await (supabase as any).rpc('set_admin_scope', {
+          _trip_id: tripId,
+          _target_user_id: targetUserId,
+          _scope: scope,
+        });
+
+        if (error) throw error;
+
+        const result = data as { success: boolean; message?: string };
+        if (!result.success) throw new Error(result.message ?? 'Failed to update scope');
+
+        toast.success(`Scope updated to ${scope}`);
+        await queryClient.invalidateQueries({ queryKey: tripKeys.tripAdmins(tripId) });
+        return result;
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [tripId, isDemoMode, queryClient],
+  );
+
 
   const demoteFromAdmin = useCallback(
     async (targetUserId: string) => {
