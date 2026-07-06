@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/react';
 import { AIConciergeChat } from '../AIConciergeChat';
 import { conciergeCacheService } from '../../services/conciergeCacheService';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -134,6 +134,25 @@ vi.mock('../../contexts/BasecampContext', () => ({
   }),
 }));
 
+vi.mock('@/features/concierge/hooks/useRealtimeVoice', () => ({
+  useRealtimeVoice: () => ({
+    phase: 'idle',
+    isActive: false,
+    isCapturing: false,
+    isPlaying: false,
+    errorMessage: null,
+    turns: [],
+    latestUserText: '',
+    latestAssistantText: '',
+    start: vi.fn(),
+    stop: vi.fn(),
+  }),
+}));
+
+vi.mock('@/hooks/useUniversalSearch', () => ({
+  useUniversalSearch: () => ({ results: [], isLoading: false }),
+}));
+
 describe('AIConciergeChat', () => {
   let queryClient: QueryClient;
 
@@ -169,20 +188,30 @@ describe('AIConciergeChat', () => {
   };
 
   describe('Header Simplification', () => {
-    it('always renders the dictation microphone button in the input area', async () => {
+    it('renders the Concierge controls in one mobile-safe header row', async () => {
       renderWithProviders(<AIConciergeChat tripId="test-trip" />);
 
-      // The microphone button has been moved to the input area, so it should not appear in the header
-      await waitFor(() => {
-        expect(screen.getByLabelText(/tap to dictate/i)).toBeInTheDocument();
-      });
+      expect(screen.getByLabelText(/search trip/i)).toBeInTheDocument();
+      expect(screen.getByTestId('ai-concierge-header')).toHaveTextContent(
+        'Concierge | Chravel Agent',
+      );
+      expect(screen.queryByText(/Concierge AI/i)).not.toBeInTheDocument();
+      expect(screen.getByLabelText(/attach files to concierge/i)).toBeInTheDocument();
     });
 
-    it('does not render the live voice CTA when duplex live voice is disabled (default)', () => {
+    it('opens trip search from the header search button', () => {
       renderWithProviders(<AIConciergeChat tripId="test-trip" />);
-      expect(
-        screen.queryByRole('switch', { name: /start live voice session/i }),
-      ).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByLabelText(/search trip/i));
+
+      expect(screen.getByPlaceholderText(/search across trip/i)).toBeInTheDocument();
+    });
+
+    it('renders the full realtime voice CTA as the composer left control by default', () => {
+      renderWithProviders(<AIConciergeChat tripId="test-trip" />);
+
+      expect(screen.getByRole('button', { name: /start voice conversation/i })).toBeInTheDocument();
+      expect(screen.getByLabelText(/dictate a message/i)).toBeInTheDocument();
     });
 
     it('removes legacy status pills from header', () => {

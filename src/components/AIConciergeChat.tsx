@@ -286,7 +286,7 @@ export const AIConciergeChat = ({
   const conversationModeEffective = conversationModeFlag && conversationModeUserPref && !isDemoMode;
   // Bidirectional realtime voice — when enabled it becomes the primary left-of-input
   // control, superseding the turn-based conversation mic. (In-box mic stays dictation.)
-  const realtimeVoiceEnabled = useFeatureFlag('concierge_realtime_voice', false) && !isDemoMode;
+  const realtimeVoiceEnabled = useFeatureFlag('concierge_realtime_voice', true) && !isDemoMode;
 
   const buildSpeechForMessage = useCallback((msg: ChatMessage) => {
     if (msg.type !== 'assistant' || !msg.content) return '';
@@ -347,32 +347,31 @@ export const AIConciergeChat = ({
         ref={chatWindowRef}
         className="relative rounded-2xl border border-white/10 bg-black/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden flex flex-col flex-1"
       >
-        {/* Header — title row + controls row */}
+        {/* Header — single-row trip controls */}
         <div className="border-b border-white/10 bg-black/30 px-3 py-2 flex-shrink-0">
-          {/* Row 1: Title */}
-          <h3
-            className="text-lg font-semibold text-white text-center truncate leading-tight"
-            data-testid="ai-concierge-header"
-          >
-            Concierge AI | ChravelApp Agent
-          </h3>
-          {/* Row 2: Search | Upload — evenly spaced */}
-          <div className="flex items-center justify-between mt-2">
+          <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2">
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
               className={CTA_BUTTON}
-              aria-label="Search concierge"
+              aria-label="Search trip"
+              title="Search trip"
             >
               <Search size={CTA_ICON_SIZE} className="text-white" />
             </button>
+            <h3
+              className="min-w-0 truncate text-center text-base font-semibold leading-tight text-white sm:text-lg"
+              data-testid="ai-concierge-header"
+            >
+              Concierge | Chravel Agent
+            </h3>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               data-testid="header-upload-btn"
               className={CTA_BUTTON}
-              aria-label="Attach images"
-              title="Attach images"
+              aria-label="Attach files to Concierge"
+              title="Attach files to Concierge"
             >
               <ImagePlus size={CTA_ICON_SIZE} className="text-white" />
             </button>
@@ -616,6 +615,7 @@ export const AIConciergeChat = ({
                 // Primary left control: full bidirectional realtime voice.
                 <RealtimeVoiceButton
                   tripId={tripId}
+                  disabled={usage?.isLimitReached ?? false}
                   containerRef={chatWindowRef}
                   // Stop the turn-based hands-free mic before opening a realtime session
                   // so the two never contend for the microphone.

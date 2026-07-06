@@ -109,3 +109,8 @@
 - Replaced the previous gray light-mode foundation with warm-white semantic tokens, dark high-contrast primary CTAs, refined gold accents, warm sidebar/payment/chat surfaces, and PWA safe-area background parity.
 - Polished shared Card/Input/Radix Toast/Sonner primitives so borders, shadows, inputs, and toast surfaces read as native premium light-mode UI while preserving existing dark-mode tokens and theme persistence behavior.
 - Added a light-theme token regression test covering WCAG AA contrast pairings and warm bright surface requirements. Verification: targeted token test, typecheck, lint:check, and build pass; screenshot capture was attempted but Playwright browser installation remains blocked by CDN 403 in this environment.
+
+2026-07-06 — Mobile Concierge controls repair
+- Repaired the Concierge panel controls locally: collapsed the two-line header into a single 44px-control row, retitled it to "Concierge | Chravel Agent", and made the header search/upload affordances explicit trip search + Concierge attachment controls.
+- Promoted the existing bidirectional realtime voice path to the default composer-left waveform control (still kill-switchable by the feature flag) and preserved the dictation mic inside the input as a secondary text-entry affordance.
+- Verification: typecheck, lint:check, and build pass; targeted AIConciergeChat vitest remains blocked by the known suite hang after startup in this environment.

@@ -476,3 +476,6 @@ A bare `[data-marketing] h2 + p { font-weight: 300; margin: auto; max-width: 64c
 
 ### computer-use mobile QA: confirm device emulation actually applied before trusting results
 A computer-use pass reported "hamburger menu missing at 390px" because DevTools device toolbar wasn't actually active — the screenshots were still 1440px desktop rendering. Before acting on mobile QA findings, verify the screenshot content is genuinely narrow/single-column (or have the agent confirm the Dimensions bar reads the target size). *Evidence: July 2026 homepage redesign QA — retest with confirmed iPhone 12 Pro emulation showed the `lg:hidden` hamburger working correctly.*
+
+### Kill-switch defaults must match product-critical shipped controls
+If a visible primary control is meant to work by default, do not gate its mounted handler behind a `false` feature-flag fallback; use the flag only as a remote kill switch so missing flag rows do not turn production UI into a no-op.

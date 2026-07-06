@@ -19,6 +19,8 @@ interface RealtimeVoiceButtonProps {
   onSessionStart?: () => void;
   /** Confine the voice overlay to this element (the chat window) instead of the viewport. */
   containerRef?: RefObject<HTMLElement | null>;
+  /** Block starting a new voice session while preserving visible affordance. */
+  disabled?: boolean;
 }
 
 export function RealtimeVoiceButton({
@@ -26,15 +28,16 @@ export function RealtimeVoiceButton({
   className,
   onSessionStart,
   containerRef,
+  disabled = false,
 }: RealtimeVoiceButtonProps) {
-  const enabled = useFeatureFlag('concierge_realtime_voice', false);
+  const enabled = useFeatureFlag('concierge_realtime_voice', true);
   const voice = useRealtimeVoice();
 
   const handleStart = useCallback(() => {
-    if (!tripId) return;
+    if (!tripId || disabled) return;
     onSessionStart?.();
     void voice.start(tripId);
-  }, [tripId, onSessionStart, voice]);
+  }, [tripId, disabled, onSessionStart, voice]);
 
   if (!enabled) return null;
 
@@ -43,7 +46,7 @@ export function RealtimeVoiceButton({
       <button
         type="button"
         onClick={handleStart}
-        disabled={voice.isActive}
+        disabled={voice.isActive || disabled}
         aria-label="Start voice conversation"
         title="Talk to your concierge"
         className={cn(CTA_BUTTON, className)}
