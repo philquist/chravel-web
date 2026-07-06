@@ -97,9 +97,13 @@ export const RolesView = ({
     return map;
   }, [assignments]);
 
-  // Create a set of admin user IDs
+  // Create a set of full-admin user IDs and a separate set for coordinator-scope admins,
+  // so the roster can render distinct pills.
   const adminUserIds = useMemo(() => {
-    return new Set(admins.map(admin => admin.user_id));
+    return new Set(admins.filter(a => a.admin_scope === 'full').map(a => a.user_id));
+  }, [admins]);
+  const coordinatorUserIds = useMemo(() => {
+    return new Set(admins.filter(a => a.admin_scope === 'coordinator').map(a => a.user_id));
   }, [admins]);
 
   // Super admins are never in read-only mode
