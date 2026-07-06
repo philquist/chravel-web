@@ -21,6 +21,16 @@ const conciergeHistoryState = vi.hoisted(() => ({
   error: null as unknown,
 }));
 
+const conciergeSearchState = vi.hoisted(() => ({
+  results: [] as unknown[],
+  isLoading: false,
+}));
+
+const realtimeVoiceMock = vi.hoisted(() => ({
+  start: vi.fn(),
+  stop: vi.fn(),
+}));
+
 // Mock dependencies
 vi.mock('../../integrations/supabase/client', () => ({
   SUPABASE_PROJECT_URL: 'https://test.supabase.co',
@@ -144,13 +154,18 @@ vi.mock('@/features/concierge/hooks/useRealtimeVoice', () => ({
     turns: [],
     latestUserText: '',
     latestAssistantText: '',
-    start: vi.fn(),
-    stop: vi.fn(),
+    start: realtimeVoiceMock.start,
+    stop: realtimeVoiceMock.stop,
   }),
 }));
 
 vi.mock('@/hooks/useUniversalSearch', () => ({
-  useUniversalSearch: () => ({ results: [], isLoading: false }),
+  useUniversalSearch: () => conciergeSearchState,
+}));
+
+vi.mock('@/lib/featureFlags', () => ({
+  useFeatureFlag: () => true,
+  useFeatureFlagStatus: () => ({ enabled: true, isPending: false }),
 }));
 
 describe('AIConciergeChat', () => {
@@ -162,6 +177,10 @@ describe('AIConciergeChat', () => {
     conciergeHistoryState.data = [];
     conciergeHistoryState.isLoading = false;
     conciergeHistoryState.error = null;
+    conciergeSearchState.results = [];
+    conciergeSearchState.isLoading = false;
+    realtimeVoiceMock.start.mockClear();
+    realtimeVoiceMock.stop.mockClear();
     queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -207,11 +226,52 @@ describe('AIConciergeChat', () => {
       expect(screen.getByPlaceholderText(/search across trip/i)).toBeInTheDocument();
     });
 
+    it('navigates to the selected search result tab', () => {
+      const onTabChange = vi.fn();
+      conciergeSearchState.results = [
+        {
+          id: 'task-1',
+          contentType: 'task',
+          tripId: 'test-trip',
+          tripName: 'Trip',
+          title: 'Pack sunscreen',
+          snippet: 'Beach day task',
+          matchScore: 0.9,
+          deepLink: '/trip/test-trip#task-task-1',
+        },
+      ];
+
+      renderWithProviders(<AIConciergeChat tripId="test-trip" onTabChange={onTabChange} />);
+
+      fireEvent.click(screen.getByLabelText(/search trip/i));
+      fireEvent.click(screen.getByText(/Pack sunscreen/i));
+
+      expect(onTabChange).toHaveBeenCalledWith('tasks');
+    });
+
+    it('stages files selected from the header upload button', () => {
+      renderWithProviders(<AIConciergeChat tripId="test-trip" />);
+
+      const file = new File(['reservation'], 'hotel.pdf', { type: 'application/pdf' });
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [file] } });
+
+      expect(screen.getByText('hotel.pdf')).toBeInTheDocument();
+    });
+
     it('renders the full realtime voice CTA as the composer left control by default', () => {
       renderWithProviders(<AIConciergeChat tripId="test-trip" />);
 
       expect(screen.getByRole('button', { name: /start voice conversation/i })).toBeInTheDocument();
       expect(screen.getByLabelText(/dictate a message/i)).toBeInTheDocument();
+    });
+
+    it('starts the realtime voice session from the waveform button', () => {
+      renderWithProviders(<AIConciergeChat tripId="test-trip" />);
+
+      fireEvent.click(screen.getByRole('button', { name: /start voice conversation/i }));
+
+      expect(realtimeVoiceMock.start).toHaveBeenCalledWith('test-trip');
     });
 
     it('removes legacy status pills from header', () => {

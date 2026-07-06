@@ -6,7 +6,6 @@
  */
 import { type RefObject, useCallback } from 'react';
 import { AudioLines } from 'lucide-react';
-import { useFeatureFlag } from '@/lib/featureFlags';
 import { cn } from '@/lib/utils';
 import { CTA_BUTTON, CTA_ICON_SIZE } from '@/lib/ctaButtonStyles';
 import { useRealtimeVoice } from '@/features/concierge/hooks/useRealtimeVoice';
@@ -30,7 +29,6 @@ export function RealtimeVoiceButton({
   containerRef,
   disabled = false,
 }: RealtimeVoiceButtonProps) {
-  const enabled = useFeatureFlag('concierge_realtime_voice', true);
   const voice = useRealtimeVoice();
 
   const handleStart = useCallback(() => {
@@ -38,8 +36,6 @@ export function RealtimeVoiceButton({
     onSessionStart?.();
     void voice.start(tripId);
   }, [tripId, disabled, onSessionStart, voice]);
-
-  if (!enabled) return null;
 
   return (
     <>

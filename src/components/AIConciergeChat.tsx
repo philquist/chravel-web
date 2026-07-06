@@ -35,14 +35,67 @@ import { useConciergeConversationMode } from '@/features/concierge/hooks/useConc
 import { ConciergeConversationMic } from '@/features/concierge/components/ConciergeConversationMic';
 import { RealtimeVoiceButton } from '@/features/concierge/components/RealtimeVoiceButton';
 import { useConversationModePreference } from '@/features/concierge/hooks/useConversationModePreference';
-import { useFeatureFlag } from '@/lib/featureFlags';
+import { useFeatureFlag, useFeatureFlagStatus } from '@/lib/featureFlags';
 
 import type { ChatMessage } from '@/features/concierge/types';
+import type { UniversalSearchResult } from '@/services/universalSearchService';
 
 // Lazy: only loads when an upgrade moment actually fires (limit hit / chip tap).
 const PlusUpsellModal = lazy(() =>
   import('./PlusUpsellModal').then(m => ({ default: m.PlusUpsellModal })),
 );
+
+const SEARCH_FOCUS_EVENT = 'chravel:trip-search-focus';
+
+function getSearchResultTab(result: UniversalSearchResult): string {
+  const metadataTab = result.metadata?.tab;
+  if (typeof metadataTab === 'string' && metadataTab.trim()) return metadataTab;
+  switch (result.contentType) {
+    case 'messages':
+      return 'chat';
+    case 'calendar':
+      return 'calendar';
+    case 'task':
+      return 'tasks';
+    case 'poll':
+      return 'polls';
+    case 'payment':
+      return 'payments';
+    case 'place':
+    case 'link':
+      return 'places';
+    case 'media':
+    case 'artifact':
+      return 'media';
+    case 'concierge':
+      return 'concierge';
+    default:
+      return 'chat';
+  }
+}
+
+function dispatchSearchFocus(result: UniversalSearchResult) {
+  const anchor =
+    typeof result.metadata?.anchor === 'string' ? result.metadata.anchor : result.deepLink.split('#')[1];
+  if (anchor) window.history.replaceState(window.history.state, '', `#${anchor}`);
+  window.dispatchEvent(new CustomEvent(SEARCH_FOCUS_EVENT, { detail: result }));
+  const candidateIds = [anchor, `msg-${result.id}`, result.id]
+    .filter((value): value is string => typeof value === 'string' && value.length > 0)
+    .flatMap(value => [value, value.replace(/^chat-message-/, ''), value.replace(/^concierge-message-/, '')]);
+  const focus = (attempt = 0) => {
+    const target = candidateIds
+      .map(value => document.getElementById(value) ?? document.querySelector(`[data-message-id="${value}"]`))
+      .find((el): el is HTMLElement => el instanceof HTMLElement);
+    if (!target && attempt < 8) {
+      window.setTimeout(() => focus(attempt + 1), 160);
+      return;
+    }
+    target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target?.classList.add('ring-2', 'ring-gold-primary/60');
+    window.setTimeout(() => target?.classList.remove('ring-2', 'ring-gold-primary/60'), 1800);
+  };
+  window.setTimeout(() => focus(), 180);
+}
 
 export type { ChatMessage } from '@/features/concierge/types';
 
@@ -130,6 +183,47 @@ export const AIConciergeChat = ({
     fileInputRef,
     clearAttachments,
   } = useConciergeAttachments();
+
+  const handleFilesSelected = useCallback(
+    (files: File[]) => {
+      if (!UPLOAD_ENABLED || files.length === 0) return;
+
+      const images: File[] = [];
+      const documents: File[] = [];
+      const rejected: string[] = [];
+
+      files.forEach(file => {
+        const lowerName = file.name.toLowerCase();
+        const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif)$/.test(lowerName);
+        const isDocument =
+          ALLOWED_DOCUMENT_TYPES.has(file.type) || /\.(pdf|ics|csv|xlsx?|xls)$/.test(lowerName);
+
+        if (isImage) {
+          if (file.size > _MAX_IMAGE_SIZE_BYTES) rejected.push(file.name);
+          else images.push(file);
+          return;
+        }
+        if (isDocument) {
+          if (file.size > _MAX_DOCUMENT_SIZE_BYTES) rejected.push(file.name);
+          else documents.push(file);
+          return;
+        }
+        rejected.push(file.name);
+      });
+
+      if (images.length > 0) setAttachedImages(prev => [...prev, ...images].slice(0, 4));
+      if (documents.length > 0) setAttachedDocuments(prev => [...prev, ...documents].slice(0, 4));
+      if (rejected.length > 0) {
+        toast.error('Some files could not be attached', {
+          description: rejected.slice(0, 3).join(', '),
+        });
+      }
+      if (images.length > 4 || documents.length > 4) {
+        toast.info('Attachment limit is 4 images and 4 files per Concierge message.');
+      }
+    },
+    [setAttachedDocuments, setAttachedImages],
+  );
 
   const {
     smartImportStates,
@@ -286,7 +380,9 @@ export const AIConciergeChat = ({
   const conversationModeEffective = conversationModeFlag && conversationModeUserPref && !isDemoMode;
   // Bidirectional realtime voice — when enabled it becomes the primary left-of-input
   // control, superseding the turn-based conversation mic. (In-box mic stays dictation.)
-  const realtimeVoiceEnabled = useFeatureFlag('concierge_realtime_voice', true) && !isDemoMode;
+  const { enabled: realtimeVoiceFlagEnabled, isPending: realtimeVoiceFlagPending } =
+    useFeatureFlagStatus('concierge_realtime_voice', true);
+  const realtimeVoiceEnabled = realtimeVoiceFlagEnabled && !isDemoMode;
 
   const buildSpeechForMessage = useCallback((msg: ChatMessage) => {
     if (msg.type !== 'assistant' || !msg.content) return '';
@@ -383,12 +479,13 @@ export const AIConciergeChat = ({
           open={searchOpen}
           onOpenChange={setSearchOpen}
           tripId={tripId}
-          onNavigate={(tab, id) => {
+          onNavigate={result => {
+            const tab = getSearchResultTab(result);
             if (tab === 'concierge' || tab === 'ai-chat') {
-              const el = document.getElementById(`msg-${id}`);
-              el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              dispatchSearchFocus(result);
             } else if (onTabChange) {
               onTabChange(tab);
+              window.setTimeout(() => dispatchSearchFocus(result), 120);
             }
           }}
         />
@@ -401,16 +498,7 @@ export const AIConciergeChat = ({
           multiple
           className="hidden"
           onChange={e => {
-            const files = Array.from(e.target.files || []);
-            const images = files.filter(f => f.type.startsWith('image/'));
-            const docs = files.filter(
-              f =>
-                ALLOWED_DOCUMENT_TYPES.has(f.type) ||
-                f.name.endsWith('.ics') ||
-                f.name.endsWith('.csv'),
-            );
-            if (images.length > 0) setAttachedImages(prev => [...prev, ...images].slice(0, 4));
-            if (docs.length > 0) setAttachedDocuments(prev => [...prev, ...docs].slice(0, 4));
+            handleFilesSelected(Array.from(e.target.files || []));
             if (fileInputRef.current) fileInputRef.current.value = '';
           }}
         />
@@ -587,7 +675,7 @@ export const AIConciergeChat = ({
             attachedImages={UPLOAD_ENABLED ? attachedImages : []}
             onImageAttach={
               UPLOAD_ENABLED
-                ? (files: File[]) => setAttachedImages(prev => [...prev, ...files].slice(0, 4))
+                ? (files: File[]) => handleFilesSelected(files)
                 : undefined
             }
             onRemoveImage={
@@ -598,8 +686,16 @@ export const AIConciergeChat = ({
             attachedDocuments={UPLOAD_ENABLED ? attachedDocuments : []}
             onDocumentAttach={
               UPLOAD_ENABLED
-                ? (files: File[]) => setAttachedDocuments(prev => [...prev, ...files].slice(0, 4))
+                ? (files: File[]) => handleFilesSelected(files)
                 : undefined
+            }
+            onRejectedFiles={(files: File[]) =>
+              toast.error('Some files could not be attached', {
+                description: files
+                  .slice(0, 3)
+                  .map(file => file.name)
+                  .join(', '),
+              })
             }
             onRemoveDocument={
               UPLOAD_ENABLED
@@ -611,7 +707,7 @@ export const AIConciergeChat = ({
             onConvoToggle={handleConvoToggle}
             isVoiceEligible={true}
             leftAccessory={
-              realtimeVoiceEnabled ? (
+              realtimeVoiceFlagPending ? undefined : realtimeVoiceEnabled ? (
                 // Primary left control: full bidirectional realtime voice.
                 <RealtimeVoiceButton
                   tripId={tripId}

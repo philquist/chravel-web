@@ -30,6 +30,8 @@ interface AiChatInputProps {
   onQuickAction?: (action: string) => void;
   /** Callback when user drops or selects document files (PDF, ICS, CSV) */
   onDocumentAttach?: (files: File[]) => void;
+  /** Callback when user drops or pastes unsupported files */
+  onRejectedFiles?: (files: File[]) => void;
   /** Currently attached document files */
   attachedDocuments?: File[];
   /** Remove an attached document by index */
@@ -61,6 +63,7 @@ export const AiChatInput = ({
   showImageAttach: _showImageAttach = false,
   onQuickAction,
   onDocumentAttach,
+  onRejectedFiles,
   attachedDocuments = [],
   onRemoveDocument,
   acceptedFileTypes,
@@ -85,24 +88,29 @@ export const AiChatInput = ({
     (files: File[]) => {
       const images: File[] = [];
       const documents: File[] = [];
+      const rejected: File[] = [];
       for (const file of files) {
-        if (file.type.startsWith('image/')) {
+        const lowerName = file.name.toLowerCase();
+        if (file.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif)$/.test(lowerName)) {
           images.push(file);
         } else if (
           acceptedFileTypes?.has(file.type) ||
-          file.name.endsWith('.pdf') ||
-          file.name.endsWith('.ics') ||
-          file.name.endsWith('.csv') ||
-          file.name.endsWith('.xlsx') ||
-          file.name.endsWith('.xls')
+          lowerName.endsWith('.pdf') ||
+          lowerName.endsWith('.ics') ||
+          lowerName.endsWith('.csv') ||
+          lowerName.endsWith('.xlsx') ||
+          lowerName.endsWith('.xls')
         ) {
           documents.push(file);
+        } else {
+          rejected.push(file);
         }
       }
       if (images.length > 0) _onImageAttach?.(images);
       if (documents.length > 0) onDocumentAttach?.(documents);
+      if (rejected.length > 0) onRejectedFiles?.(rejected);
     },
-    [_onImageAttach, onDocumentAttach, acceptedFileTypes],
+    [_onImageAttach, onDocumentAttach, onRejectedFiles, acceptedFileTypes],
   );
 
   // ── Drag-and-drop handlers ────────────────────────────────────────────

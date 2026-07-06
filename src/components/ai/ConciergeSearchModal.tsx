@@ -23,7 +23,7 @@ interface ConciergeSearchModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tripId: string;
-  onNavigate: (tab: string, id?: string) => void;
+  onNavigate: (result: UniversalSearchResult) => void;
 }
 
 export const ConciergeSearchModal = ({
@@ -36,7 +36,7 @@ export const ConciergeSearchModal = ({
   const [expandedCategories, setExpandedCategories] = useState<Set<ContentType>>(new Set());
 
   const contentTypes: ContentType[] = useMemo(
-    () => ['concierge', 'calendar', 'task', 'poll', 'payment', 'place', 'link', 'media'],
+    () => ['messages', 'concierge', 'calendar', 'task', 'poll', 'payment', 'place', 'link', 'media'],
     [],
   );
 
@@ -61,6 +61,9 @@ export const ConciergeSearchModal = ({
     switch (result.contentType) {
       case 'concierge':
         tab = 'concierge';
+        break;
+      case 'messages':
+        tab = 'chat';
         break;
       case 'calendar':
         tab = 'calendar';
@@ -87,7 +90,7 @@ export const ConciergeSearchModal = ({
         tab = 'chat';
     }
 
-    onNavigate(tab, result.id);
+    onNavigate({ ...result, metadata: { ...(result.metadata ?? {}), tab } });
     onOpenChange(false);
   };
 
@@ -125,6 +128,8 @@ export const ConciergeSearchModal = ({
     switch (type) {
       case 'concierge':
         return <Wand2 size={14} className="text-emerald-400" />;
+      case 'messages':
+        return <Search size={14} className="text-sky-400" />;
       case 'calendar':
         return <Calendar size={14} className="text-blue-400" />;
       case 'task':
@@ -148,6 +153,8 @@ export const ConciergeSearchModal = ({
     switch (type) {
       case 'concierge':
         return 'Concierge';
+      case 'messages':
+        return 'Chat Messages';
       case 'calendar':
         return 'Calendar';
       case 'task':
@@ -168,6 +175,7 @@ export const ConciergeSearchModal = ({
   };
 
   const categoryOrder: ContentType[] = [
+    'messages',
     'concierge',
     'calendar',
     'task',
