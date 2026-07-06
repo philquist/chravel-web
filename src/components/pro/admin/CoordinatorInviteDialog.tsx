@@ -127,48 +127,84 @@ export const CoordinatorInviteDialog: React.FC<CoordinatorInviteDialogProps> = (
           </span>
         </div>
 
+        {/* Can / Can't panel — mirrors the concierge blog article */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg border border-emerald-400/20 bg-emerald-500/[0.05] p-2.5">
+            <div className="text-[11px] font-medium text-emerald-300 mb-1">Can manage</div>
+            <ul className="text-[11px] text-gray-300 space-y-0.5 leading-snug">
+              <li>· Calendar</li>
+              <li>· Tasks</li>
+              <li>· Places & links</li>
+              <li>· Files & broadcasts</li>
+            </ul>
+          </div>
+          <div className="rounded-lg border border-red-400/20 bg-red-500/[0.04] p-2.5">
+            <div className="text-[11px] font-medium text-red-300 mb-1">Cannot see</div>
+            <ul className="text-[11px] text-gray-300 space-y-0.5 leading-snug">
+              <li>· Private chat</li>
+              <li>· AI Concierge</li>
+              <li>· Private media</li>
+              <li>· Private channels</li>
+            </ul>
+          </div>
+        </div>
+
         {coordinators.length > 0 && (
           <div className="space-y-2">
             <div className="text-xs uppercase tracking-wide text-gray-400">
               Current coordinators
             </div>
             <div className="space-y-1.5">
-              {coordinators.map(c => (
-                <div
-                  key={c.user_id}
-                  className="flex items-center justify-between gap-2 rounded-md bg-white/5 border border-white/10 p-2"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm text-white truncate">
-                      {c.profile?.display_name ?? c.user_id}
+              {coordinators.map(c => {
+                const rosterEntry = rosterByUserId.get(c.user_id);
+                const displayName =
+                  c.profile?.display_name || rosterEntry?.name || `${c.user_id.slice(0, 8)}…`;
+                const avatar = c.profile?.avatar_url || rosterEntry?.avatar;
+                return (
+                  <div
+                    key={c.user_id}
+                    className="flex items-center gap-2 rounded-md bg-white/5 border border-white/10 p-2"
+                  >
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={avatar} alt={displayName} />
+                      <AvatarFallback className="text-xs">
+                        {getInitials(displayName)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm text-white truncate">{displayName}</div>
+                      <Badge
+                        variant="outline"
+                        className="mt-0.5 text-[10px] border-amber-400/40 text-amber-300"
+                      >
+                        Coordinator
+                      </Badge>
                     </div>
-                    <Badge variant="outline" className="mt-0.5 text-[10px] border-amber-400/40 text-amber-300">
-                      Coordinator
-                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={isProcessing && busyId === c.user_id}
+                      onClick={() => handleUpgradeToFull(c.user_id)}
+                      className="text-xs h-8 text-white hover:text-amber-300"
+                    >
+                      Make full admin
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={isProcessing && busyId === c.user_id}
+                      onClick={() => handleRevoke(c.user_id)}
+                      className="text-xs h-8 text-red-300 hover:text-red-200"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={isProcessing && busyId === c.user_id}
-                    onClick={() => handleUpgradeToFull(c.user_id)}
-                    className="text-xs h-8 text-white hover:text-amber-300"
-                  >
-                    Make full admin
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={isProcessing && busyId === c.user_id}
-                    onClick={() => handleRevoke(c.user_id)}
-                    className="text-xs h-8 text-red-300 hover:text-red-200"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
+
 
         <div className="space-y-2">
           <div className="text-xs uppercase tracking-wide text-gray-400">Add from roster</div>
