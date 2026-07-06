@@ -223,13 +223,24 @@ async function parseExcelLineup(file: File): Promise<LineupParseResult> {
 
 // ─── AI Parser (PDF / Image) ─────────────────────────────────────────────────
 
-async function parseLineupFileAI(file: File): Promise<LineupParseResult> {
+async function parseLineupFileAI(file: File, tripId?: string): Promise<LineupParseResult> {
   const sourceFormat: LineupSourceFormat = file.type === 'application/pdf' ? 'pdf' : 'image';
   let filePath: string | null = null;
 
   try {
     const fileExt = file.name.split('.').pop() ?? 'bin';
-    filePath = `lineup-imports/${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
+    const { data: authData } = await supabase.auth.getUser();
+    const uploaderId = authData?.user?.id;
+    if (!uploaderId || !tripId) {
+      return {
+        names: [],
+        errors: ['You must be signed in with a trip context to import lineup files.'],
+        isValid: false,
+        sourceFormat,
+      };
+    }
+    // Storage RLS: `${tripId}/${auth.uid()}/...`.
+    filePath = `${tripId}/${uploaderId}/lineup-imports/${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from('trip-media')
