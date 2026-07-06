@@ -1,99 +1,47 @@
-# Coordinator Access for Pro Trips + Copy + Billing Story
+# Overhaul: `/blog/how-to-create-client-trip-portal-without-custom-app`
 
-Three-part release, one branch: (A) ship the generic **Coordinator Access** permission model on Pro Trips, (B) rewrite the travel-concierge + wedding use-case articles and hub copy around it, (C) publish the billing model that answers "who pays for Pro" for concierge companies, couples, and organizations.
+Rewrite this single blog entry in `src/lib/blog.ts` (lines 487–588) into a much longer, concrete, SEO-focused article aimed at travel concierge companies. No route, schema, or component changes — pure content edit inside the existing `BlogPost` object.
 
-Same universal Pro layout for every use case — no concierge-only shell, no new tabs.
+## Goals
+- Make it obvious that ChravelApp (Pro Trip + new **Coordinator** role) is a better home hub than a white-label build or a hand-rolled Notion/Drive/WhatsApp stack.
+- Prove it with one detailed, platform-agnostic worked example (a concierge running a high-end multi-city family vacation).
+- Reinforce the coordinator ↔ client **privacy boundary** we just shipped (coordinators manage logistics; client chats/photos/AI stay private).
+- Rank for: *travel concierge client portal*, *white label travel app alternative*, *multi-city itinerary tool for concierges*, *travel concierge software without custom app*.
 
----
+## Content structure (new sections replacing the current 6)
 
-## Part A — Coordinator Access (permissions)
+1. **Intro** — reframe: "You don't need a white-label app. You need a shared trip workspace your client already knows how to use." Name the audience (independent concierges, luxury travel agencies, family office assistants, DMCs).
+2. **What a real client portal has to do** — expand existing bullets; add multi-city base camps, per-item cost transparency, pre-trip tasks with due dates, document vault, live updates without a resend.
+3. **Why white-labeling is the wrong bet in 2026** — build cost, maintenance, app-store review cycles, security/compliance surface, and the fact that clients won't install a one-off app per agency. Cite the alternative: one app they keep for every trip in their life.
+4. **A worked example: the Rossi family, 12 days across Rome → Florence → Positano** — the centerpiece. Walk through, in numbered beats, exactly what the concierge does inside ChravelApp:
+   - Create the Pro Trip, invite the family as members, invite themselves as **Coordinator** (logistics-only scope).
+   - Load **three base camps** with dates: Hotel de Russie (Rome, Jun 3–6), Portrait Firenze (Jun 6–9), Le Sirenuse (Jun 9–15) — note how the active base camp auto-switches by date and drives distances in Places.
+   - Drop confirmations into the file vault: flights, hotel vouchers, Uffizi timed tickets, Frecciarossa train PDFs, driver contacts, restaurant confirmations.
+   - Build the calendar: Da Enzo dinner, Galleria Borghese entry, private Vespa tour, Teatro dell'Opera, Amalfi boat day — each event with location, time, dress code, and the linked confirmation file.
+   - Pin **Places**: restaurants, museums, the tailor in Florence, the private beach club — with the concierge's notes.
+   - Assign **pre-trip tasks** with due dates: "Renew passports (expires <6 mo from return)", "Pick up Frecciarossa paper tickets at Termini window 12", "Confirm dietary restrictions", "Download offline maps".
+   - Post one welcome **Broadcast** — everyone gets it, nothing lost in a group chat.
+5. **Payments & cost transparency without becoming a processor** — how the concierge uses the Payments tab to line-item what was booked on the client's behalf ("Vespa tour — €480", "Boat day w/ captain — €1,850", "Opera box — €620"), so the family sees the ledger upfront instead of getting a surprise invoice. Note that ChravelApp tracks; the concierge still bills through their normal channel.
+6. **The privacy boundary that makes concierges look professional** — the Coordinator role we just shipped: coordinator can manage calendar, places, tasks, files, base camps, and broadcasts, but **cannot** read the family's private group chat, private AI Concierge sessions, or private media. Cross-link to the use case page.
+7. **Running a book of clients** — one workspace per family, repeatable template, handoff between planners, no per-client "portal" to maintain.
+8. **When a white-label still makes sense** — keep the honest note; large agencies with unique workflows, later, not first.
+9. **Stand up your first client portal today** — the existing checklist, expanded with base camps and payments.
 
-**Design (no new tables).** Extend `trip_admins.permissions` JSONB with `admin_scope: 'full' | 'coordinator'` plus capability flags. Every existing admin is backfilled to `full` — zero behavior change for current trips.
+## FAQ additions
+Keep existing four, add:
+- "Can I manage the trip without seeing my clients' private conversations?" → coordinator scope.
+- "What about multi-city or multi-country trips?" → base camps by date.
+- "Can clients see what each booked item cost?" → Payments tab line items.
+- "Can I template this for every new family?" → duplicate Pro Trip pattern.
 
-**Server-side (one migration).**
-- Backfill `admin_scope='full'` on all `trip_admins.permissions` (idempotent `jsonb_set`, `create_missing=true`).
-- Extend default JSON with: `can_manage_shared_calendar`, `can_manage_shared_tasks`, `can_manage_shared_places`, `can_manage_shared_files`, `can_manage_shared_links`, `can_invite_members`. Full = all true; coordinator template = all true except `can_invite_members=false` and no admin-bypass reads.
-- New SECURITY DEFINER helpers: `is_full_trip_admin(_user, _trip)`, `is_trip_coordinator(_user, _trip)`, `has_coordinator_capability(_user, _trip, _cap)`.
-- Update `get_trip_admin_permissions` → return `admin_scope` + capability flags.
-- Update `get_trip_mutation_permissions` + `can_manage_trip_content` so coordinators keep logistics write on `trip_events`, `trip_tasks`, `trip_places`, `trip_links`, `trip_polls` but never gain `admin`.
-- Extend `promote_to_admin(_trip, _target, _scope default 'full')` (backward compatible) + new `set_admin_scope` RPC.
-- **Rewrite every admin-bypass read** that uses a bare `EXISTS trip_admins` to use `is_full_trip_admin`. Grep-audited targets: private `channel_members` / `channel_messages` policies (esp. `20251210000000_fix_role_channels.sql`, `20260113100000_fix_role_channel_sync.sql`), `trip_files` private-visibility, `trip_chat_messages` admin-read, `event_qa_questions`, `join-trip` / `approve-join-request` / `stream-moderation-action` edge functions, `export-user-data` / trip-recap. Logistics-write policies keep coordinator access.
-- Verify `ai_queries` + `concierge_conversation_sessions` are strictly `user_id = auth.uid()` (no admin bypass); remove any that exist.
+## Related links
+Keep the three existing; add `/use-cases/wedding-guest-coordination-app` (planner parallel) and `/blog/why-whatsapp-google-drive-not-enough-luxury-travel-planning`.
 
-**Client (no new layout).**
-- `useProTripAdmin`: expose `adminScope`, `isFullAdmin`, `isCoordinator`, capability booleans.
-- `useTripAdmins.promoteToAdmin(userId, { scope })` + new `setAdminScope`.
-- Regenerate `config/permission-matrix.json` → add `pro_coordinator` role (logistics write, no delete on polls, no admin, no basecamp admin) → run `scripts/generate-permission-matrix.mjs` and `check-permission-matrix-drift.mjs`.
-- **UI touch-points only** (no new pages): in the Team tab promote dialog and the invite-member dialog, add a "Coordinator" option next to "Full admin" with helper text: *"Coordinator lets a planner, assistant, travel concierge, or outside organizer manage shared logistics — calendar, places, tasks, files, links — without seeing private chats, AI Concierge activity, or private media."* Show a "Coordinator" pill on roster rows where `admin_scope='coordinator'`.
+## CTA
+Sharpen: primary "Create your first client portal" → `/auth`; secondary "See the concierge use case" → `/use-cases/travel-concierge-client-portal`.
 
-**Tests.** Vitest + SQL policy tests (12): full-admin regression; coordinator write on events/tasks/places/links; coordinator blocked on private channel `SELECT`; blocked on other users' `ai_queries`; blocked on private `trip_files`; export excludes private surfaces; invite gated by capability; `promote_to_admin` default keeps `full`; trips without coordinator behave identically (snapshot); `useMutationPermissions` returns correct booleans for `pro_coordinator`; matrix drift check passes.
+## Files touched
+- `src/lib/blog.ts` — replace the single `BlogPost` object at lines 487–588 (description, excerpt, sections, faq, related, cta). No other files.
 
-**Files to change.** New migration under `supabase/migrations/`; `config/permission-matrix.json` + generated TS/SQL; `src/hooks/useProTripAdmin.ts`, `useTripAdmins.ts`, `useMutationPermissions.ts`; existing promote/invite dialogs under `src/features/pro/**` and Team tab; `scripts/verify_auth.ts` extended.
-
----
-
-## Part B — Use-case copy rewrite
-
-All copy lives in `src/lib/useCases.ts` (single source, already SEO-wired via `UseCasePage.tsx` + `UseCasesHub.tsx`). No new routes.
-
-**B1. `travel-concierge-client-portal`** — rewrite around the Coordinator Access promise. Add a dedicated **"What your clients see vs. what you see"** section with a two-column comparison:
-
-| Client (Full member) | You (Coordinator) |
-|---|---|
-| Private chat with their family / party | ❌ Not visible |
-| Their personal photos & camera-roll uploads | ❌ Not visible |
-| Their AI Concierge questions & answers | ❌ Not visible |
-| Shared calendar, itinerary, base camps, tasks, places, links, shared docs | ✅ You manage these |
-
-Add a "Privacy guarantee" callout (enforced by RLS at the database, not just UI). Add a "How you set it up" 3-step block: create the Pro Trip → invite the client as Full Member → invite yourself/your team as Coordinator. Update FAQ with: "Can you read our chats?" "Can you see our photos?" "Who owns the trip if we leave you?"
-
-**B2. `wedding-guest-coordination-app`** — reposition weddings as a **Pro Trip** use case (not a Consumer trip). New copy explains channel-per-audience: bride's family, groom's family, wedding party, caterers/vendors, full guest list, planner-only. Coordinator access is the wedding-planner story: the planner runs logistics without living inside the couple's private family chats. Update FAQ: "Can our planner see our family chat?" → No, unless invited.
-
-**B3. `UseCasesHub.tsx` intro + FAQ** — expand the "who is this for" answer to explicitly name travel concierges, wedding planners, tour managers, sports coordinators, corporate assistants, family-office staff. Add a hub FAQ: *"Can an outside organizer help run our trip without seeing our private conversations?"* → Yes, Coordinator Access.
-
-**B4. Consistency sweep.** Update `UseCasesSection.tsx` card blurbs for weddings + concierge to match. No changes to other slugs.
-
----
-
-## Part C — Billing model ("who pays for Pro?")
-
-**Decision to publish (both can pay, no double-charging on the same trip):**
-
-1. **Concierge / planner company pays** → they buy `pro-growth` (or `pro-enterprise` for >5 seats) and get **Pro Trip creation + Coordinator seats**. Each trip they run counts as one Pro Trip against their seat pool. Clients invited as Full Members do **not** need a paid account to participate in that trip (mirrors today's Pro Trip guest model). This is the default sell for concierges, wedding planners, tour managers, sports orgs, corporate assistants.
-2. **Client / couple / organization pays** → they buy `pro-growth` themselves because they want channels + roles for their own weekend/tour/retreat, and they invite outside help (planner, family assistant, tour vendor) as **Coordinator** — coordinators don't need their own paid seat when joining a paid trip.
-3. **Both pay** → totally supported. A frequent traveler can hold a personal `frequent-chraveler` subscription for their own trips, and separately be invited as a Full Member into a Pro Trip their concierge runs. Independent billing entities, no conflict.
-
-**Rule:** billing follows *who created the Pro Trip*. Every Pro Trip must be owned by one paid Pro account (individual or organization). Coordinators and guests inherit access for that trip only.
-
-**New Enterprise line: "Pro for Concierge & Planners."** Same `pro-enterprise` SKU, positioned as: multi-client concierge pricing (per-coordinator-seat + volume Pro Trips), white-glove onboarding, contract terms. Contact-sales only — no new Stripe product this pass.
-
-**Implementation for Part C.**
-- No new Stripe products/prices this release. Reuse `pro-starter`, `pro-growth`, `pro-enterprise`.
-- Update `src/components/conversion/PricingSection.tsx` Pro tier copy: bullet "Invite coordinators (planners, concierges, assistants) — they don't need a seat." Bullet "Bring clients or guests in as full members at no extra cost per trip."
-- Add a "Who pays?" table to the concierge + wedding use-case articles (rendered inline from `useCases.ts`).
-- New `/for-teams` block (edit `src/pages/ForTeams.tsx`) surfacing the three billing paths above with CTAs: **"Buy Pro" / "Talk to sales" / "Bring your planner in as a coordinator."**
-- Business rule audit only (no schema): confirm existing seat/entitlement counting in `src/billing/entitlements.ts` treats coordinators as non-billable seats. If today it counts every `trip_admins` row as a paid seat, add a check that skips `admin_scope='coordinator'`. Small, surgical.
-
----
-
-## Sequencing & risk
-
-Land in this order behind the existing feature-flag pattern:
-1. Migration + regenerated types + matrix — merge, monitor RLS.
-2. Client hooks + Team tab UI — behind no flag; additive only.
-3. Copy + pricing surfaces — pure content, ship anytime after (1).
-4. Entitlement seat-count tweak — last, with billing regression tests.
-
-**Highest risk:** the RLS admin-bypass rewrite. Mitigation: full enumeration via `rg "EXISTS.*trip_admins"`, replace with `is_full_trip_admin`, run `scripts/verify_auth.ts` extended for coordinator scenarios against staging before deploy.
-
-## Non-goals
-
-New layout, concierge dashboard, white-label, booking, supplier CRM, new Stripe SKUs, per-seat metered billing, channel seed templates, new category. Wedding-website replacement is explicitly *not* the pitch.
-
-## Definition of done
-
-- Coordinator can be invited/promoted from Team tab; roster shows the pill.
-- SQL tests prove coordinator cannot read private channels/messages/AI/private media/export.
-- `travel-concierge-client-portal`, `wedding-guest-coordination-app`, and Use-Cases Hub copy live with the privacy comparison table + "Who pays?" answer.
-- `PricingSection` and `ForTeams` reflect the three billing paths.
-- `npm run lint && npm run typecheck && npm run build` + full vitest green.
+## Out of scope
+No route changes, no new components, no image assets, no sitemap edits (slug unchanged), no schema/RLS work.

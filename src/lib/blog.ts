@@ -487,82 +487,144 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: 'how-to-create-client-trip-portal-without-custom-app',
     title: 'How to Create a Client Trip Portal Without Building a Custom App',
     description:
-      'You don’t need a custom app or a white-label build to give travel clients a premium trip portal. Here’s how to stand one up today — and what a portal actually needs to deliver.',
+      'Travel concierges don’t need a white-label app to give clients a premium trip portal. Here’s how to run a multi-city, multi-base-camp luxury trip in ChravelApp — with the privacy boundary that keeps client chats and photos private.',
     h1: 'How to create a client trip portal without building a custom app',
     excerpt:
-      'A polished client portal sounds like a six-figure software project. It isn’t. Here’s what a trip portal actually needs — and how to create one for your next client without writing a line of code.',
+      'A polished client portal sounds like a six-figure software project. It isn’t. Here’s exactly how a concierge runs a multi-city luxury trip in ChravelApp — base camps, tickets, tasks, and per-line costs — without touching a single line of code or a white-label vendor.',
     datePublished: '2026-07-07',
+    dateModified: '2026-07-07',
     author: BLOG_AUTHOR,
-    tags: ['Travel Concierge', 'Client Experience'],
+    tags: ['Travel Concierge', 'Client Experience', 'Luxury Travel'],
     sections: [
       {
         paragraphs: [
-          'Ask a travel concierge what would make their post-booking experience feel more premium and many will say the same thing: “a client portal.” Then they picture what that takes — a developer, a design budget, months of build time, ongoing maintenance — and the idea dies on the spot.',
-          'It does not have to. You can give clients a genuine trip portal today, without commissioning a custom app or paying for a white-label platform. The trick is to be clear about what a portal actually needs to do, and then use a tool that already does it.',
+          'Every travel concierge eventually hits the same wall. The bookings are done, the itinerary is beautiful, and now it has to live somewhere the client will actually open. A PDF gets buried in email. A shared Drive folder feels like homework. WhatsApp turns the trip into 400 unsearchable messages. So the pitch comes in: pay a vendor $40k–$150k for a white-label “client app,” or hire a developer and rebuild calendars, file storage, notifications, and access control from scratch.',
+          'You don’t need any of that. You need one shared trip workspace your clients already know how to use — the same app they use for their own family trips, their kid’s tournament weekends, and their friend group’s ski trip. That’s ChravelApp. This is the playbook for running a real, premium client portal in it, without writing code or paying a white-label bill.',
         ],
       },
       {
-        heading: 'What a client trip portal actually needs',
+        heading: 'What a real client trip portal has to do',
         paragraphs: [
-          'Strip away the branding fantasy and a useful client portal comes down to a short list:',
+          'Strip away the branding fantasy and a useful client portal is a short, uncompromising list:',
         ],
         list: [
-          'One place that holds the whole trip — itinerary, documents, locations, and to-dos.',
-          'A live itinerary, not a PDF that goes stale the moment a reservation moves.',
-          'Documents and receipts the client can pull up on the spot.',
-          'A way to push an update once and have everyone see it.',
-          'Access from any phone or browser, with no setup friction for the client.',
+          'One organized home for the whole trip — itinerary, documents, locations, tasks, and costs.',
+          'A live calendar that updates once, everywhere — not a PDF that goes stale the moment a reservation moves.',
+          'A file vault the client can pull up on the spot: flight PDFs, hotel vouchers, timed-entry tickets, driver contacts.',
+          'Multiple base camps for multi-city or multi-country trips, with the active one auto-switching by date.',
+          'Pre-trip tasks with due dates — passports, visas, in-person pickups, dietary confirmations.',
+          'Per-item cost transparency, so the client sees what each booking runs before they land.',
+          'A broadcast channel to push one clean update everyone reads.',
+          'Runs on any phone or browser with no proprietary install and no per-agency login for the client to remember.',
         ],
       },
       {
-        heading: 'Why a custom build is the wrong first move',
+        heading: 'Why white-labeling is the wrong first move in 2026',
         paragraphs: [
-          'Building your own portal means paying for development, waiting months, and then owning the maintenance, security, and support forever. You would be rebuilding calendars, file storage, notifications, and access control that already exist — and doing it as a side project to your actual business, which is planning travel. For all but the largest agencies, a custom build is cost and risk in exchange for a feature set you can get off the shelf.',
+          'A white-label “client app” looks premium in the sales deck. In practice it is a permanent liability. Someone still has to maintain it, patch it, ship it through Apple and Google review cycles every time iOS updates, absorb the security and compliance surface, and convince every client to install a one-off app they will never open again after the trip ends.',
+          'Your clients don’t want another app per concierge. They want one travel app they keep on their home screen for every trip in their life — yours included. The concierges who win the next decade are the ones who meet clients on shared infrastructure, not the ones who sink six figures into rebuilding calendars.',
         ],
       },
       {
-        heading: 'Create the portal from a trip workspace instead',
+        heading: 'A worked example: the Rossi family, 12 days across Rome → Florence → Positano',
         paragraphs: [
-          'Instead of building software, assemble the portal out of a trip. Create one trip per client, put the itinerary on the calendar, attach confirmations and receipts, pin the hotel and meeting points as base camps, save recommendations as places, and add any pre-trip tasks. Then invite the client. They open one organized space that already feels planned — which is exactly what a portal is supposed to feel like — and you did it in minutes, not months.',
+          'Here is exactly what a concierge does inside ChravelApp for a real high-end multi-city trip. It is platform-agnostic — you could be a five-person luxury agency, a family office assistant, an independent travel designer, or one person planning your parents’ anniversary. The workflow is the same.',
+        ],
+        list: [
+          '1. Create the Pro Trip. Title it “Rossi Family — Italy, June 2026.” Invite the four Rossis as trip members. Invite yourself (or your team) as a Coordinator — a logistics-only role that can build the trip but cannot read the family’s private chats, AI Concierge sessions, or private photos.',
+          '2. Load the three base camps, each with its own dates. Hotel de Russie in Rome (Jun 3–6), Portrait Firenze in Florence (Jun 6–9), Le Sirenuse in Positano (Jun 9–15). Every place, distance, and “nearby” recommendation is now anchored to whichever hotel is active on that day — the app switches automatically as the trip moves south.',
+          '3. Drop confirmations into the file vault. Business-class flight receipts, three hotel vouchers, Uffizi timed-entry tickets, Frecciarossa train PDFs, the driver’s WhatsApp card, the boat captain’s contact sheet, restaurant confirmation emails. When the family lands in Rome and the driver isn’t at arrivals, the mother opens the trip on her phone and has the confirmation and phone number in two taps.',
+          '4. Build the calendar. Dinner at Da Enzo al 29 (Rome, Jun 3, 8:30pm, jacket suggested). Galleria Borghese entry (Jun 4, 11:00am — link the timed ticket). Private Vespa tour of Rome (Jun 5). Opera box at Teatro dell’Opera (Jun 5, 9:00pm, black tie). Uffizi (Florence, Jun 7). Fitting at the tailor (Florence, Jun 8, 10:00am). Private boat day on the Amalfi coast (Positano, Jun 11). Each event has the location, the time, dress code, and the linked confirmation file — the family never has to hunt.',
+          '5. Pin the Places. Every restaurant, museum, viewpoint, tailor, gelato spot, and private beach club goes on the map with your notes: “Ask for Marco. Corner table under the arbor. Cash preferred.” Because base camps are loaded, the app already shows the family how far each spot is from tonight’s hotel.',
+          '6. Assign pre-trip tasks with due dates. “Confirm all four passports are valid at least 6 months past Jun 15 — due May 3.” “Pick up paper Frecciarossa tickets at Termini window 12 on arrival — due Jun 3.” “Confirm dietary restrictions for the private chef in Positano — due May 20.” “Download offline maps for Amalfi.” The family checks them off; you see the status without asking.',
+          '7. Post one welcome Broadcast. “Everything is loaded. Open the calendar to see the trip day by day. Files tab has every ticket and voucher. Message me here if anything needs to change.” One message, four confirmed reads, no group-text scroll.',
+        ],
+      },
+      {
+        heading: 'Multi-city, multi-country, multi-base-camp trips',
+        paragraphs: [
+          'This is where hand-rolled solutions and most white-labels quietly fail. A twelve-day trip across three cities is not one location — it is three, each with its own hotel address, its own “nearby” list, its own drivers, and its own check-in window. In ChravelApp you preload every base camp with its dates once, and the app treats whichever one is active today as the anchor. Distances in Places, directions in the calendar, and the concierge’s recommendations all recalculate against the right hotel automatically.',
+          'For a private jet or yacht itinerary hopping four countries in ten days, the same pattern holds. Load each stop as a base camp with dates, and the family sees a trip that quietly reorients itself as they move, instead of a static PDF that stops being useful the moment they land in the second city.',
+        ],
+      },
+      {
+        heading: 'Payments and cost transparency, without becoming a processor',
+        paragraphs: [
+          'One of the fastest ways a premium trip loses its shine is the surprise invoice. The family had a wonderful time, then a spreadsheet arrives two weeks later and suddenly the Vespa tour, the opera box, and the boat day are line items they don’t remember approving.',
+          'The concierge fix inside ChravelApp is the Payments tab. Every experience booked on the client’s behalf gets a line item as you book it: “Private Vespa tour — €480,” “Opera box, Teatro dell’Opera — €620,” “Amalfi boat day with captain — €1,850,” “Michelin dinner deposit — €400.” The family sees the running ledger inside the trip, in the same place they check the calendar and files. When the invoice lands, nothing on it is a surprise.',
+          'You are not becoming a payment processor — you still bill through whatever you already use. ChravelApp is the transparent ledger the client sees; you keep your existing finance stack.',
+        ],
+      },
+      {
+        heading: 'The privacy boundary that makes concierges look professional',
+        paragraphs: [
+          'The concern every serious concierge raises, correctly, is privacy. If you invite yourself into the family’s trip, are you reading their private conversations? Their photos? Their side chats with each other?',
+          'No. ChravelApp’s Coordinator role is scoped for exactly this. As a Coordinator you can manage the calendar, files, places, tasks, base camps, and broadcasts — everything you need to run the trip end to end. You cannot see the family’s private group chat, their private AI Concierge sessions, or their private media. The client sees a beautifully organized trip; you never see a message not addressed to you. That boundary is what turns “I built you a shared folder” into “I set up your trip in the app you already use.”',
         ],
         link: {
-          label: 'See how ChravelApp works as a travel concierge client portal',
+          label: 'See the concierge Coordinator role in the full use case',
           to: '/use-cases/travel-concierge-client-portal',
         },
       },
       {
-        heading: 'Stand up your first client portal in minutes',
-        list: [
-          'Create a trip for the client or family.',
-          'Add the itinerary to the calendar — or import it from confirmation emails and PDFs.',
-          'Attach receipts, vouchers, and reservations.',
-          'Pin the hotel and meeting points, and save your recommendations.',
-          'Assign any pre-trip tasks, then invite the client and send one welcome broadcast.',
+        heading: 'Running a book of clients, not a one-off portal',
+        paragraphs: [
+          'A concierge with twenty active families does not want twenty portals to maintain. In ChravelApp each client is a Pro Trip — a self-contained workspace with its own members, base camps, calendar, files, and ledger. Handing a client between planners on your team is a permissions change, not a migration. Repeatable trip templates mean the next family retreat starts 60% pre-populated. Nothing to host. Nothing to patch. Nothing to explain to the client’s IT person.',
         ],
       },
       {
-        heading: 'When does a custom build make sense?',
+        heading: 'When does a custom build actually make sense?',
         paragraphs: [
-          'Eventually, a large agency with very specific workflows and the budget to maintain software might want something bespoke or white-labeled. But that is a later optimization, not a starting point. The fastest way to look more premium today is to stop sending folders and start sharing a trip — and you can do that for your very next client.',
+          'Eventually, the largest agencies with highly specific back-office workflows and the budget to maintain software may want something bespoke. That is a later optimization, not a starting point — and by then you will know exactly which pieces you actually need, because you will have run hundreds of trips on shared infrastructure first. Until then, the fastest way to look and operate more premium is to stop sending folders and start sharing a trip.',
+        ],
+      },
+      {
+        heading: 'Stand up your first client portal today',
+        list: [
+          'Create a Pro Trip for the client or family and invite them as members.',
+          'Invite yourself (and your team) as a Coordinator — logistics-only, not chat or photos.',
+          'Load every hotel or villa as a base camp with its own date range.',
+          'Drop every confirmation, voucher, and ticket into the file vault.',
+          'Build the calendar day by day — link each event to its confirmation and location.',
+          'Pin your Places recommendations with concierge notes.',
+          'Assign pre-trip tasks with due dates for passports, in-person pickups, and dietary confirmations.',
+          'Line-item costs in Payments so the client sees the ledger upfront.',
+          'Send one welcome Broadcast and hand the client a portal, not a folder.',
         ],
       },
     ],
     faq: [
       {
         q: 'Isn’t a “portal” supposed to be branded with my company?',
-        a: 'Clients care far more about whether the trip is organized and current than about a custom logo. You can deliver a premium, branded-feeling experience without a white-label build; bespoke branding can come later if you ever need it.',
+        a: 'Clients care far more about whether the trip is organized, current, and easy to open on their phone than about a custom logo on the app icon. A shared trip workspace delivers a premium, branded-feeling experience — your notes, your recommendations, your standard of organization — without a white-label build. Bespoke branding can come later if you ever genuinely need it.',
       },
       {
-        q: 'How long does it take to set up?',
-        a: 'Minutes per client. You create a trip, preload the details (or import them), and invite the client — no development or onboarding project required.',
+        q: 'How long does it take to set one up?',
+        a: 'Minutes per client for a straightforward trip. For a full multi-city luxury itinerary like the Rossi example, an hour of concierge time replaces what used to be a folder, a PDF, a group chat, and three follow-up emails.',
+      },
+      {
+        q: 'Can I manage the trip without seeing my clients’ private conversations?',
+        a: 'Yes. The Coordinator role lets you run the calendar, files, places, tasks, base camps, and broadcasts, but explicitly cannot read the family’s private group chat, private AI Concierge sessions, or private media. That privacy boundary is enforced at the database, not just in the UI.',
+      },
+      {
+        q: 'What about multi-city or multi-country trips?',
+        a: 'Load each stop as a base camp with its own start and end dates. The app auto-switches the active base camp as the trip progresses, so distances in Places, directions in the calendar, and nearby recommendations all recalculate against the right hotel automatically.',
+      },
+      {
+        q: 'Can clients see what each booked experience cost?',
+        a: 'Yes. The Payments tab is a per-line ledger inside the trip — you add each experience with its price as you book it, and the family sees the running total in the same app they use for the calendar. You still bill through whatever finance stack you already use; ChravelApp is the transparent ledger, not a payment processor.',
+      },
+      {
+        q: 'Can I template this for every new family?',
+        a: 'Yes. Duplicate a well-built Pro Trip as a template — recurring places, standard pre-trip tasks, your welcome broadcast — and the next client’s trip starts most of the way done.',
       },
       {
         q: 'What does the client have to install?',
-        a: 'Nothing mandatory. It runs on the web and as an installable app on iOS and Android, so clients can open their trip from a link on any device.',
+        a: 'Nothing mandatory. It runs on the web and installs as a first-class app on iOS and Android, so clients can open their trip from a link on any device without an agency-specific login.',
       },
       {
         q: 'Can my team run portals for many clients at once?',
-        a: 'Yes. With role-based access, multiple planners can each run client trips with the right permissions, using the same repeatable structure.',
+        a: 'Yes. Multiple planners can each run client trips with role-based access, and handing a trip between planners is a permission change, not a migration.',
       },
     ],
     related: [
@@ -574,18 +636,24 @@ export const BLOG_POSTS: BlogPost[] = [
         label: 'How to share itineraries, files, and receipts with clients',
         to: '/blog/how-to-share-itineraries-files-receipts-with-travel-clients',
       },
+      {
+        label: 'Why WhatsApp and Google Drive aren’t enough for luxury travel',
+        to: '/blog/why-whatsapp-google-drive-not-enough-luxury-travel-planning',
+      },
+      { label: 'Wedding guest coordination in ChravelApp', to: '/use-cases/wedding-guest-coordination-app' },
       { label: 'All ChravelApp use cases', to: '/use-cases' },
     ],
     cta: {
       heading: 'Give your next client a portal, not a folder',
       subtext:
-        'Create a client-ready trip in minutes — no custom app, no white-label build — and invite the client into one organized space.',
-      primaryLabel: 'Create a client trip',
+        'Create a client-ready trip in minutes — multi-city base camps, ticket vault, calendar, tasks, per-line costs, and a privacy boundary that keeps client chats private. No custom app. No white-label bill.',
+      primaryLabel: 'Create your first client portal',
       primaryTo: '/auth',
-      secondaryLabel: 'See ChravelApp for travel concierge',
+      secondaryLabel: 'See ChravelApp for travel concierges',
       secondaryTo: '/use-cases/travel-concierge-client-portal',
     },
   },
+
   {
     slug: 'collect-wedding-guest-photos-iphone-android',
     title: 'The Best Way to Collect Wedding Guest Photos from iPhone and Android',
