@@ -79,12 +79,22 @@ function dispatchSearchFocus(result: UniversalSearchResult) {
     typeof result.metadata?.anchor === 'string' ? result.metadata.anchor : result.deepLink.split('#')[1];
   if (anchor) window.history.replaceState(window.history.state, '', `#${anchor}`);
   window.dispatchEvent(new CustomEvent(SEARCH_FOCUS_EVENT, { detail: result }));
-  window.setTimeout(() => {
-    const target = anchor ? document.getElementById(anchor) : null;
+  const candidateIds = [anchor, `msg-${result.id}`, result.id]
+    .filter((value): value is string => typeof value === 'string' && value.length > 0)
+    .flatMap(value => [value, value.replace(/^chat-message-/, ''), value.replace(/^concierge-message-/, '')]);
+  const focus = (attempt = 0) => {
+    const target = candidateIds
+      .map(value => document.getElementById(value) ?? document.querySelector(`[data-message-id="${value}"]`))
+      .find((el): el is HTMLElement => el instanceof HTMLElement);
+    if (!target && attempt < 8) {
+      window.setTimeout(() => focus(attempt + 1), 160);
+      return;
+    }
     target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     target?.classList.add('ring-2', 'ring-gold-primary/60');
     window.setTimeout(() => target?.classList.remove('ring-2', 'ring-gold-primary/60'), 1800);
-  }, 180);
+  };
+  window.setTimeout(() => focus(), 180);
 }
 
 export type { ChatMessage } from '@/features/concierge/types';
@@ -208,7 +218,7 @@ export const AIConciergeChat = ({
           description: rejected.slice(0, 3).join(', '),
         });
       }
-      if (files.length > images.length + documents.length + rejected.length || images.length > 4 || documents.length > 4) {
+      if (images.length > 4 || documents.length > 4) {
         toast.info('Attachment limit is 4 images and 4 files per Concierge message.');
       }
     },
