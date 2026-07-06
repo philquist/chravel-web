@@ -364,7 +364,7 @@ function getAgendaFileFormat(file: File): AgendaSourceFormat {
 }
 
 /** Main file router: ICS, CSV, Excel, PDF, Image */
-export async function parseAgendaFile(file: File): Promise<AgendaParseResult> {
+export async function parseAgendaFile(file: File, tripId?: string): Promise<AgendaParseResult> {
   const format = getAgendaFileFormat(file);
   switch (format) {
     case 'ics':
@@ -375,7 +375,7 @@ export async function parseAgendaFile(file: File): Promise<AgendaParseResult> {
       return parseExcelAgenda(file);
     case 'pdf':
     case 'image':
-      return parseAgendaFileAI(file);
+      return parseAgendaFileAI(file, tripId);
     default:
       return {
         sessions: [],
