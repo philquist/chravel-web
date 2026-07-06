@@ -42,8 +42,10 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
   const [savingLink, setSavingLink] = useState(false);
   const [selectValue, setSelectValue] = useState<string>('');
   const [orgMembers, setOrgMembers] = useState<OrgMemberRow[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
   const [showCreateOrg, setShowCreateOrg] = useState(false);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
+
 
   // Load current trip↔org link
   useEffect(() => {
