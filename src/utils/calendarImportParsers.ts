@@ -469,27 +469,15 @@ export async function parseWithAI(file: File, tripId?: string): Promise<SmartPar
 
       fileUrl = uploadData.downloadUrl as string;
     } else {
-      const fileExt = file.name.split('.').pop() ?? 'bin';
-      filePath = `calendar-imports/${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('trip-media')
-        .upload(filePath, file, {
-          contentType: file.type,
-          upsert: false,
-        });
-
-      if (uploadError) {
-        return {
-          events: [],
-          errors: [`Failed to upload file: ${uploadError.message}`],
-          isValid: false,
-          sourceFormat,
-        };
-      }
-
-      const { data: urlData } = supabase.storage.from('trip-media').getPublicUrl(filePath);
-      fileUrl = urlData.publicUrl;
+      // Without a tripId we can't satisfy the storage RLS policy
+      // (`${tripId}/${auth.uid()}/...`). Fail clearly instead of hitting a
+      // permission-denied error deep in the pipeline.
+      return {
+        events: [],
+        errors: ['A trip context is required to import calendar files.'],
+        isValid: false,
+        sourceFormat,
+      };
     }
 
     const { data, error } = await supabase.functions.invoke('enhanced-ai-parser', {

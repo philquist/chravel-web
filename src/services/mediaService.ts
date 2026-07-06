@@ -173,7 +173,8 @@ export async function uploadTripMedia(
   }
 
   const fileExt = file.name.split('.').pop();
-  const storagePath = `${tripId}/${crypto.randomUUID()}.${fileExt}`;
+  // Storage RLS requires `${tripId}/${auth.uid()}/...` as the object key.
+  const storagePath = `${tripId}/${userId}/${crypto.randomUUID()}.${fileExt}`;
 
   // ---- Upload to Supabase Storage ----
   const { error: uploadError } = await supabase.storage

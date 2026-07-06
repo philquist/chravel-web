@@ -264,13 +264,24 @@ async function parseExcelAgenda(file: File): Promise<AgendaParseResult> {
 
 // ─── AI File Parser (PDF / Image) ─────────────────────────────────────────────
 
-async function parseAgendaFileAI(file: File): Promise<AgendaParseResult> {
+async function parseAgendaFileAI(file: File, tripId?: string): Promise<AgendaParseResult> {
   const sourceFormat: AgendaSourceFormat = file.type === 'application/pdf' ? 'pdf' : 'image';
   let filePath: string | null = null;
 
   try {
     const fileExt = file.name.split('.').pop() ?? 'bin';
-    filePath = `agenda-imports/${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
+    const { data: authData } = await supabase.auth.getUser();
+    const uploaderId = authData?.user?.id;
+    if (!uploaderId || !tripId) {
+      return {
+        sessions: [],
+        errors: ['You must be signed in with a trip context to import agenda files.'],
+        isValid: false,
+        sourceFormat,
+      };
+    }
+    // Storage RLS: `${tripId}/${auth.uid()}/...` — tripId acts as event_id/trip_id in trip_members.
+    filePath = `${tripId}/${uploaderId}/agenda-imports/${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from('trip-media')
@@ -353,7 +364,7 @@ function getAgendaFileFormat(file: File): AgendaSourceFormat {
 }
 
 /** Main file router: ICS, CSV, Excel, PDF, Image */
-export async function parseAgendaFile(file: File): Promise<AgendaParseResult> {
+export async function parseAgendaFile(file: File, tripId?: string): Promise<AgendaParseResult> {
   const format = getAgendaFileFormat(file);
   switch (format) {
     case 'ics':
@@ -364,7 +375,7 @@ export async function parseAgendaFile(file: File): Promise<AgendaParseResult> {
       return parseExcelAgenda(file);
     case 'pdf':
     case 'image':
-      return parseAgendaFileAI(file);
+      return parseAgendaFileAI(file, tripId);
     default:
       return {
         sessions: [],

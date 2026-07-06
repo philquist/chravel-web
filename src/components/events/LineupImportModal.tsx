@@ -108,10 +108,10 @@ export const LineupImportModal: React.FC<LineupImportModalProps> = ({
     async (file: File) => {
       setParsingSource('file');
       setState('parsing');
-      const result = await parseLineupFile(file);
+      const result = await parseLineupFile(file, tripId);
       processParseResult(result);
     },
-    [processParseResult],
+    [processParseResult, tripId],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useSmartImportDropzone({

@@ -97,7 +97,7 @@ function getFormatLabel(format: AgendaParseResult['sourceFormat']): string {
 export const AgendaImportModal: React.FC<AgendaImportModalProps> = ({
   isOpen,
   onClose,
-  eventId: _eventId,
+  eventId,
   existingSessions = [],
   onImportSessions,
   onBulkImportSessions,
@@ -138,10 +138,10 @@ export const AgendaImportModal: React.FC<AgendaImportModalProps> = ({
     async (file: File) => {
       setParsingSource('file');
       setState('parsing');
-      const result = await parseAgendaFile(file);
+      const result = await parseAgendaFile(file, eventId);
       processParseResult(result);
     },
-    [processParseResult],
+    [processParseResult, eventId],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useSmartImportDropzone({

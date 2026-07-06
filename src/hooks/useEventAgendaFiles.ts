@@ -13,6 +13,11 @@ function getPrefix(eventId: string): string {
   return `${eventId}/agenda-files`;
 }
 
+function getUploadPrefix(eventId: string, userId: string): string {
+  // Storage RLS requires `${eventId}/${auth.uid()}/...` on INSERT.
+  return `${eventId}/${userId}/agenda-files`;
+}
+
 /**
  * Parse the original filename from the storage key format:
  *   {uuid}--{encodeURIComponent(originalName)}
@@ -50,57 +55,63 @@ export function useEventAgendaFiles({ eventId, enabled = true }: UseEventAgendaF
     setIsLoading(true);
     setLoadError(null);
 
-    const prefix = getPrefix(eventId);
-    let data: any[] | null = null;
-    let error: any = null;
+    // New upload paths are `${eventId}/${userId}/agenda-files/*` to satisfy
+    // storage RLS. We also list the legacy `${eventId}/agenda-files/*` path
+    // so pre-migration files remain visible.
+    const legacyPrefix = getPrefix(eventId);
+    type ListedFile = { name: string; path: string; row: any };
+    const listed: ListedFile[] = [];
 
-    try {
-      const result = await withTimeout(
-        supabase.storage
-          .from('trip-media')
-          .list(prefix, { sortBy: { column: 'created_at', order: 'asc' } }),
-        5000,
-        'Agenda files request timed out',
-      );
-      data = result.data;
-      error = result.error;
-    } catch {
-      // Timeout or network error — treat as empty
-      setFiles([]);
-      setIsLoading(false);
-      return;
+    const safeList = async (path: string) => {
+      try {
+        const res = await withTimeout(
+          supabase.storage
+            .from('trip-media')
+            .list(path, { sortBy: { column: 'created_at', order: 'asc' } }),
+          5000,
+          'Agenda files request timed out',
+        );
+        return res.data ?? [];
+      } catch {
+        return [];
+      }
+    };
+
+    // Enumerate per-user subfolders under the event.
+    const eventRoot = await safeList(eventId);
+    const userFolders = eventRoot.filter(
+      f => f.name !== '.emptyFolderPlaceholder' && f.name !== 'agenda-files' && f.id === null,
+    );
+    for (const uf of userFolders) {
+      const userPrefix = getUploadPrefix(eventId, uf.name);
+      const rows = await safeList(userPrefix);
+      for (const r of rows) {
+        if (r.name === '.emptyFolderPlaceholder') continue;
+        listed.push({ name: r.name, path: `${userPrefix}/${r.name}`, row: r });
+      }
     }
 
-    if (error) {
-      // For new events, storage folder may not exist — treat as empty instead of error
-      setFiles([]);
-      setIsLoading(false);
-      return;
+    // Legacy pre-RLS layout.
+    const legacyRows = await safeList(legacyPrefix);
+    for (const r of legacyRows) {
+      if (r.name === '.emptyFolderPlaceholder') continue;
+      listed.push({ name: r.name, path: `${legacyPrefix}/${r.name}`, row: r });
     }
 
-    if (!data) {
-      setIsLoading(false);
-      return;
-    }
-
-    const mapped: AgendaFile[] = data
-      .filter(f => f.name !== '.emptyFolderPlaceholder')
-      .map(f => {
-        const storagePath = `${prefix}/${f.name}`;
-        const { data: urlData } = supabase.storage.from('trip-media').getPublicUrl(storagePath);
-
-        return {
-          id: f.id ?? f.name,
-          name: parseOriginalName(f.name),
-          storagePath,
-          publicUrl: urlData.publicUrl,
-          mimeType:
-            ((f.metadata as Record<string, unknown>)?.mimetype as string) ??
-            'application/octet-stream',
-          size: ((f.metadata as Record<string, unknown>)?.size as number) ?? 0,
-          createdAt: f.created_at ?? '',
-        };
-      });
+    const mapped: AgendaFile[] = listed.map(({ name, path, row }) => {
+      const { data: urlData } = supabase.storage.from('trip-media').getPublicUrl(path);
+      return {
+        id: row.id ?? path,
+        name: parseOriginalName(name),
+        storagePath: path,
+        publicUrl: urlData.publicUrl,
+        mimeType:
+          ((row.metadata as Record<string, unknown>)?.mimetype as string) ??
+          'application/octet-stream',
+        size: ((row.metadata as Record<string, unknown>)?.size as number) ?? 0,
+        createdAt: row.created_at ?? '',
+      };
+    });
 
     setFiles(mapped);
     setIsLoading(false);
@@ -141,7 +152,14 @@ export function useEventAgendaFiles({ eventId, enabled = true }: UseEventAgendaF
 
       setIsUploading(true);
 
-      const prefix = getPrefix(eventId);
+      const { data: authData } = await supabase.auth.getUser();
+      const uploaderId = authData?.user?.id;
+      if (!uploaderId) {
+        setUploadError('You must be signed in to upload files.');
+        setIsUploading(false);
+        return false;
+      }
+      const prefix = getUploadPrefix(eventId, uploaderId);
       let hadError = false;
 
       for (const file of newFiles) {
