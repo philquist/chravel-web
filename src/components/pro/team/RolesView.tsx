@@ -456,11 +456,13 @@ export const RolesView = ({
                           <span
                             key={`${pill.name}-${index}`}
                             role="status"
-                            aria-label={`Role: ${pill.name}${pill.isAdmin ? ' (admin)' : ''}`}
+                            aria-label={`Role: ${pill.name}${pill.isAdmin ? ' (admin)' : pill.isCoordinator ? ' (coordinator)' : ''}`}
                             className={`${
                               pill.isAdmin
                                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                : getRoleColorClass(pill.name, category)
+                                : pill.isCoordinator
+                                  ? 'bg-amber-400/10 text-amber-200 border border-amber-400/40'
+                                  : getRoleColorClass(pill.name, category)
                             } px-1.5 py-0.5 rounded text-xs font-medium`}
                           >
                             {pill.name}
