@@ -135,7 +135,8 @@ const proTiers: PricingTier[] = [
     id: 'starter-pro',
     name: SUBSCRIPTION_TIERS.starter.name,
     price: `$${SUBSCRIPTION_TIERS.starter.price}`,
-    description: 'Perfect for small touring acts, AAU teams, local clubs',
+    description:
+      'Small touring acts, AAU teams, wedding planners, and boutique concierges. Invite coordinators & clients at no extra seat cost.',
     icon: <Building size={24} />,
     features: [...SUBSCRIPTION_TIERS.starter.features],
     cta: 'Start 14-Day Trial',
@@ -149,7 +150,8 @@ const proTiers: PricingTier[] = [
     id: 'growth-pro',
     name: SUBSCRIPTION_TIERS.growing.name,
     price: `$${SUBSCRIPTION_TIERS.growing.price}`,
-    description: 'For college teams, mid-size productions, corporate groups',
+    description:
+      'College teams, mid-size productions, corporate groups, and multi-client concierge companies. Full role-based channels + Coordinator Access.',
     icon: <TrendingUp size={24} />,
     features: [...SUBSCRIPTION_TIERS.growing.features],
     cta: 'Start 14-Day Trial',
@@ -165,7 +167,8 @@ const proTiers: PricingTier[] = [
     id: 'enterprise',
     name: SUBSCRIPTION_TIERS.enterprise.name,
     price: 'Custom Pricing',
-    description: 'For professional leagues, major tours, Fortune 500',
+    description:
+      'Pro leagues, major tours, luxury travel concierge networks, Fortune 500. Volume Pro Trips, dedicated onboarding, contract terms.',
     icon: <Shield size={24} />,
     features: [...SUBSCRIPTION_TIERS.enterprise.features],
     cta: 'Contact Sales',
@@ -175,6 +178,7 @@ const proTiers: PricingTier[] = [
       (window.location.href = 'mailto:billing@chravelapp.com?subject=Enterprise%20Inquiry'),
   },
 ];
+
 
 const valuePropItems = [
   {
