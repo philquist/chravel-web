@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Building2, ShieldCheck, UserPlus, X, Loader2, Plus, Info, Check } from 'lucide-react';
+import { Building2, ShieldCheck, UserPlus, X, Loader2, Plus, Check, Users } from 'lucide-react';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
@@ -41,8 +42,10 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
   const [savingLink, setSavingLink] = useState(false);
   const [selectValue, setSelectValue] = useState<string>('');
   const [orgMembers, setOrgMembers] = useState<OrgMemberRow[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
   const [showCreateOrg, setShowCreateOrg] = useState(false);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
+
 
   // Load current trip↔org link
   useEffect(() => {
@@ -70,16 +73,20 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
     let cancelled = false;
     if (!linkedOrgId) {
       setOrgMembers([]);
+      setMembersLoading(false);
       return;
     }
+    setMembersLoading(true);
     (async () => {
       const { data: members } = await supabase
         .from('organization_members')
         .select('user_id, role')
         .eq('organization_id', linkedOrgId)
         .eq('status', 'active');
-      if (cancelled || !members?.length) {
+      if (cancelled) return;
+      if (!members?.length) {
         setOrgMembers([]);
+        setMembersLoading(false);
         return;
       }
       const userIds = members.map(m => m.user_id);
@@ -98,6 +105,7 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
         setOrgMembers(
           members.map(m => ({ user_id: m.user_id, role: m.role, profile: map.get(m.user_id) })),
         );
+        setMembersLoading(false);
       }
     })();
     return () => {
@@ -105,17 +113,24 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
     };
   }, [linkedOrgId]);
 
+
   const adminByUserId = useMemo(() => {
     const m = new Map<string, (typeof admins)[number]>();
     admins.forEach(a => m.set(a.user_id, a));
     return m;
   }, [admins]);
 
+  const coordinatorCount = useMemo(
+    () => admins.filter(a => a.admin_scope === 'coordinator').length,
+    [admins],
+  );
+
   const isCurrentUserOrgMember = useMemo(
     () => !!user && orgMembers.some(m => m.user_id === user.id),
     [orgMembers, user],
   );
   const currentUserAdmin = user ? adminByUserId.get(user.id) : undefined;
+
 
   const handleLinkOrg = async () => {
     if (!selectValue || selectValue === linkedOrgId) return;
@@ -276,27 +291,35 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
       </div>
 
       {/* Coordinators */}
-      <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 space-y-4">
-        <div className="flex items-start gap-3">
-          <ShieldCheck className="w-5 h-5 text-amber-300 mt-0.5 shrink-0" />
-          <div className="min-w-0">
-            <h4 className="text-base font-semibold text-white">Coordinators from your team</h4>
-            <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-              Coordinators can manage the calendar, tasks, places, files, and links.{' '}
-              <span className="text-amber-200">
-                They cannot see private family chat, AI Concierge, or private media.
-              </span>{' '}
-              The boundary is enforced at the database level.
-            </p>
+      <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 space-y-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0">
+            <ShieldCheck className="w-5 h-5 text-amber-300 mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <h4 className="text-base font-semibold text-white">Coordinators from your team</h4>
+              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                Coordinators run logistics — calendar, tasks, places, files, links.{' '}
+                <span className="text-amber-200">
+                  They never see private family chat, AI Concierge, or private media.
+                </span>{' '}
+                Enforced at the database level.
+              </p>
+            </div>
           </div>
+          <Badge
+            variant="outline"
+            className="border-amber-400/40 text-amber-200 text-[10px] tracking-wide uppercase shrink-0"
+          >
+            {coordinatorCount} active
+          </Badge>
         </div>
 
         {/* Self-downgrade for concierge owners */}
         {user && isCurrentUserOrgMember && (
-          <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.06] p-3 flex items-start justify-between gap-3">
+          <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.06] p-3.5 flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="text-sm text-white font-medium">Assign yourself as Coordinator</div>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
                 Downgrade your own access on this trip so you can help with logistics without
                 seeing private family conversations.
               </p>
@@ -314,7 +337,10 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
               {busyUserId === user.id ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : currentUserAdmin?.admin_scope === 'coordinator' ? (
-                'You are a Coordinator'
+                <>
+                  <Check className="w-3.5 h-3.5 mr-1" />
+                  You're a Coordinator
+                </>
               ) : (
                 'Assign me'
               )}
@@ -323,13 +349,45 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
         )}
 
         {!linkedOrgId ? (
-          <div className="rounded-lg border border-white/10 bg-black/30 p-4 text-sm text-gray-400 flex items-start gap-2">
-            <Info className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-            Attach an organization to grant Coordinator access to your teammates.
+          <div className="rounded-xl border border-dashed border-white/15 bg-black/30 p-5 flex flex-col items-center text-center gap-2">
+            <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+              <Users className="w-4.5 h-4.5 text-gray-400" />
+            </div>
+            <div className="text-sm text-white font-medium">Attach an organization first</div>
+            <p className="text-xs text-gray-400 max-w-xs">
+              Once linked, your teammates appear here and can be promoted to Coordinator in one
+              click.
+            </p>
+          </div>
+        ) : membersLoading ? (
+          <div className="space-y-2">
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className="flex items-center gap-3 p-2.5 rounded-lg bg-black/25 border border-white/[0.06]"
+              >
+                <div className="w-9 h-9 rounded-full bg-white/5 animate-pulse" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 w-32 rounded bg-white/5 animate-pulse" />
+                  <div className="h-2.5 w-20 rounded bg-white/5 animate-pulse" />
+                </div>
+                <div className="h-7 w-28 rounded bg-white/5 animate-pulse" />
+              </div>
+            ))}
           </div>
         ) : orgMembers.length === 0 ? (
-          <p className="text-sm text-gray-400">No teammates found in this organization.</p>
+          <div className="rounded-xl border border-dashed border-white/15 bg-black/30 p-5 flex flex-col items-center text-center gap-2">
+            <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+              <Users className="w-4.5 h-4.5 text-gray-400" />
+            </div>
+            <div className="text-sm text-white font-medium">No teammates yet</div>
+            <p className="text-xs text-gray-400 max-w-xs">
+              Invite teammates to your organization to assign them Coordinator access on client
+              trips.
+            </p>
+          </div>
         ) : (
+
           <div className="space-y-1.5">
             {orgMembers.map(m => {
               const existing = adminByUserId.get(m.user_id);
