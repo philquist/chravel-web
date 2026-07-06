@@ -135,7 +135,8 @@ const proTiers: PricingTier[] = [
     id: 'starter-pro',
     name: SUBSCRIPTION_TIERS.starter.name,
     price: `$${SUBSCRIPTION_TIERS.starter.price}`,
-    description: 'Perfect for small touring acts, AAU teams, local clubs',
+    description:
+      'Small touring acts, AAU teams, wedding planners, and boutique concierges. Invite coordinators & clients at no extra seat cost.',
     icon: <Building size={24} />,
     features: [...SUBSCRIPTION_TIERS.starter.features],
     cta: 'Start 14-Day Trial',
@@ -149,7 +150,8 @@ const proTiers: PricingTier[] = [
     id: 'growth-pro',
     name: SUBSCRIPTION_TIERS.growing.name,
     price: `$${SUBSCRIPTION_TIERS.growing.price}`,
-    description: 'For college teams, mid-size productions, corporate groups',
+    description:
+      'College teams, mid-size productions, corporate groups, and multi-client concierge companies. Full role-based channels + Coordinator Access.',
     icon: <TrendingUp size={24} />,
     features: [...SUBSCRIPTION_TIERS.growing.features],
     cta: 'Start 14-Day Trial',
@@ -165,7 +167,8 @@ const proTiers: PricingTier[] = [
     id: 'enterprise',
     name: SUBSCRIPTION_TIERS.enterprise.name,
     price: 'Custom Pricing',
-    description: 'For professional leagues, major tours, Fortune 500',
+    description:
+      'Pro leagues, major tours, luxury travel concierge networks, Fortune 500. Volume Pro Trips, dedicated onboarding, contract terms.',
     icon: <Shield size={24} />,
     features: [...SUBSCRIPTION_TIERS.enterprise.features],
     cta: 'Contact Sales',
@@ -175,6 +178,7 @@ const proTiers: PricingTier[] = [
       (window.location.href = 'mailto:billing@chravelapp.com?subject=Enterprise%20Inquiry'),
   },
 ];
+
 
 const valuePropItems = [
   {
@@ -246,10 +250,16 @@ const _faqItems = [
       'All data is encrypted in transit and at rest. Row-level security ensures you only see trips you belong to. High Privacy mode adds end-to-end encryption for messages. Your trips are private unless you choose to share them.',
   },
   {
+    question: 'Who pays for Pro — the concierge / planner or the client?',
+    answer:
+      'Either — or both. (1) A concierge company, wedding planner, tour manager, or corporate assistant can hold the Pro plan; every client trip they run uses their Pro Trip and Coordinator seats, and clients invited as Full Members join for free. (2) A couple, organization, or family office can hold Pro themselves for their own weekend/tour/retreat and invite outside help as **Coordinators** at no extra seat cost. (3) Both can pay independently — a frequent traveler’s personal subscription and their concierge’s Pro plan don’t conflict. Billing follows whoever created the Pro Trip.',
+  },
+  {
     question: 'Do all trip members need to pay?',
     answer:
-      'No! Only the trip creator or organization admin pays. All invited members join for free. For ChravelApp Pro, the admin pays and can assign seats to team members — ideal for organizations, sports teams, and tour management.',
+      'No. Only the trip creator or organization admin pays. Invited members join for free, and Coordinators (outside planners, concierges, assistants) don’t need their own paid seat when they help run a Pro Trip.',
   },
+
   {
     question: "What's included with the free Pro Trip and events?",
     answer:

@@ -22,11 +22,11 @@ const scenarios: Scenario[] = [
     title: 'Travel Concierge & Advisors',
     subtitle: 'Luxury planners · travel advisors · client trips · families',
     before:
-      'After the client pays, the trip still arrives as scattered WhatsApp messages, PDFs, Google Drive links, and email chains.',
-    expandCTA: 'ChravelApp helps you deliver a premium client experience',
+      'After the client pays, the trip still arrives as scattered WhatsApp messages, PDFs, Google Drive links, and email chains — and your planners either see everything or nothing.',
+    expandCTA: 'Deliver a premium client experience with Coordinator Access',
     after:
-      'Preload the itinerary, attachments, reservations, base camps, and tasks, then invite the client to one polished portal that already feels planned.',
-    badge: 'Look more premium · fewer client questions',
+      'Run every client trip as a Pro Trip. Preload the itinerary, attachments, base camps, and tasks, then invite your team as **Coordinators** — they manage the logistics while the client’s private chats, personal photos, and AI history stay off-limits at the database.',
+    badge: 'Look premium · fewer client questions · private by default',
     isHero: true,
     href: '/use-cases/travel-concierge-client-portal',
   },
@@ -53,15 +53,17 @@ const scenarios: Scenario[] = [
     href: '/use-cases/music-tour-coordination',
   },
   {
-    title: 'Bachelor & Bachelorette Parties → Wedding Weekends',
-    subtitle: 'Bachelor & bachelorette trips · guests · families · vendors',
-    before: 'Dozens of chats with too many guests asking the same questions over and over.',
-    expandCTA: 'ChravelApp helps celebrations run smoothly',
+    title: 'Weddings & the Whole Weekend',
+    subtitle: 'Couples · bride & groom families · wedding party · planners · vendors',
+    before:
+      'A dozen side chats, the planner in your family thread, and guests asking the same questions over and over.',
+    expandCTA: 'Run the weekend as a Pro Trip',
     after:
-      'Shared itinerary, approved wedding looks, pinned locations, group sharing of wedding photos — less confusion, more celebration.',
-    badge: 'Fewer questions · more memories',
+      'Channels per audience (bride’s family, groom’s family, wedding party, vendors), a shared photo album, and a **Coordinator seat for your planner** — they run logistics without ever reading your family chat.',
+    badge: 'Private family threads · one shared weekend',
     href: '/use-cases/wedding-guest-coordination-app',
   },
+
   {
     title: 'Fraternities, Sororities & Student Organizations',
     subtitle: 'Rush · formals · retreats · philanthropy · chapter ops',

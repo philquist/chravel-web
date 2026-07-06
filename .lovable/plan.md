@@ -1,70 +1,99 @@
-# Fix Concierge Voice + Verify Search Deep-Links + Smoke Test
+# Coordinator Access for Pro Trips + Copy + Billing Story
 
-Based on trace analysis, the three Concierge controls fail *silently* for distinct reasons. This plan makes each one either work or explain why, then verifies end-to-end against a real trip.
+Three-part release, one branch: (A) ship the generic **Coordinator Access** permission model on Pro Trips, (B) rewrite the travel-concierge + wedding use-case articles and hub copy around it, (C) publish the billing model that answers "who pays for Pro" for concierge companies, couples, and organizations.
 
-## 1. Waveform (Realtime Voice) — make it start reliably with clear states
+Same universal Pro layout for every use case — no concierge-only shell, no new tabs.
 
-**File:** `src/features/concierge/components/RealtimeVoiceButton.tsx`
+---
 
-- Remove the internal `useFeatureFlag('concierge_realtime_voice')` re-check and the `if (!enabled) return null` — the parent (`AIConciergeChat.tsx:710`) already gates rendering, and the double-check causes hydration flicker + unmount races.
-- Stop passing `disabled={usage.isLimitReached}` straight to the `<button>` element (that swallows the click with no feedback). Instead:
-  - `handleStart`: if `disabled` → `toast.error('Voice unavailable — upgrade to get more asks.')` and return.
-  - Only apply `disabled` on the DOM element when `voice.isActive` (session already live).
-- While `voice.phase === 'connecting'` show a spinner in place of the waveform icon; when `voice.phase === 'error'` show error color + tooltip with `voice.errorMessage`.
-- Wrap `voice.start(tripId)` so any rejection surfaces as a toast (`useRealtimeVoice.start` already sets `errorMessage`, but a toast guarantees visibility even if the overlay is dismissed).
+## Part A — Coordinator Access (permissions)
 
-**File:** `src/features/concierge/hooks/useRealtimeVoice.ts` (defensive only)
+**Design (no new tables).** Extend `trip_admins.permissions` JSONB with `admin_scope: 'full' | 'coordinator'` plus capability flags. Every existing admin is backfilled to `full` — zero behavior change for current trips.
 
-- Guard `navigator.mediaDevices` before calling `getUserMedia` and throw a legible error ("Your browser does not expose the microphone. Try Safari/Chrome over HTTPS.") — currently throws an opaque `TypeError`.
+**Server-side (one migration).**
+- Backfill `admin_scope='full'` on all `trip_admins.permissions` (idempotent `jsonb_set`, `create_missing=true`).
+- Extend default JSON with: `can_manage_shared_calendar`, `can_manage_shared_tasks`, `can_manage_shared_places`, `can_manage_shared_files`, `can_manage_shared_links`, `can_invite_members`. Full = all true; coordinator template = all true except `can_invite_members=false` and no admin-bypass reads.
+- New SECURITY DEFINER helpers: `is_full_trip_admin(_user, _trip)`, `is_trip_coordinator(_user, _trip)`, `has_coordinator_capability(_user, _trip, _cap)`.
+- Update `get_trip_admin_permissions` → return `admin_scope` + capability flags.
+- Update `get_trip_mutation_permissions` + `can_manage_trip_content` so coordinators keep logistics write on `trip_events`, `trip_tasks`, `trip_places`, `trip_links`, `trip_polls` but never gain `admin`.
+- Extend `promote_to_admin(_trip, _target, _scope default 'full')` (backward compatible) + new `set_admin_scope` RPC.
+- **Rewrite every admin-bypass read** that uses a bare `EXISTS trip_admins` to use `is_full_trip_admin`. Grep-audited targets: private `channel_members` / `channel_messages` policies (esp. `20251210000000_fix_role_channels.sql`, `20260113100000_fix_role_channel_sync.sql`), `trip_files` private-visibility, `trip_chat_messages` admin-read, `event_qa_questions`, `join-trip` / `approve-join-request` / `stream-moderation-action` edge functions, `export-user-data` / trip-recap. Logistics-write policies keep coordinator access.
+- Verify `ai_queries` + `concierge_conversation_sessions` are strictly `user_id = auth.uid()` (no admin bypass); remove any that exist.
 
-## 2. Search + Upload — remove the overlay/gesture traps
+**Client (no new layout).**
+- `useProTripAdmin`: expose `adminScope`, `isFullAdmin`, `isCoordinator`, capability booleans.
+- `useTripAdmins.promoteToAdmin(userId, { scope })` + new `setAdminScope`.
+- Regenerate `config/permission-matrix.json` → add `pro_coordinator` role (logistics write, no delete on polls, no admin, no basecamp admin) → run `scripts/generate-permission-matrix.mjs` and `check-permission-matrix-drift.mjs`.
+- **UI touch-points only** (no new pages): in the Team tab promote dialog and the invite-member dialog, add a "Coordinator" option next to "Full admin" with helper text: *"Coordinator lets a planner, assistant, travel concierge, or outside organizer manage shared logistics — calendar, places, tasks, files, links — without seeing private chats, AI Concierge activity, or private media."* Show a "Coordinator" pill on roster rows where `admin_scope='coordinator'`.
 
-**File:** `src/components/AIConciergeChat.tsx`
+**Tests.** Vitest + SQL policy tests (12): full-admin regression; coordinator write on events/tasks/places/links; coordinator blocked on private channel `SELECT`; blocked on other users' `ai_queries`; blocked on private `trip_files`; export excludes private surfaces; invite gated by capability; `promote_to_admin` default keeps `full`; trips without coordinator behave identically (snapshot); `useMutationPermissions` returns correct booleans for `pro_coordinator`; matrix drift check passes.
 
-- Header Search and Upload buttons: add `disabled={realtimeVoiceEnabled && voice.isActive}` so DOM state matches the visual overlay (currently they look clickable but sit under `z-[120]` overlay).
-- Hidden file input at ~L397: change `className="hidden"` → `className="sr-only"` + `tabIndex={-1}`. iOS Safari/WKWebView silently ignores programmatic `.click()` on `display:none` inputs — this is why upload does nothing on iPhone.
+**Files to change.** New migration under `supabase/migrations/`; `config/permission-matrix.json` + generated TS/SQL; `src/hooks/useProTripAdmin.ts`, `useTripAdmins.ts`, `useMutationPermissions.ts`; existing promote/invite dialogs under `src/features/pro/**` and Team tab; `scripts/verify_auth.ts` extended.
 
-## 3. Verify Search Deep-Link on Mobile + Desktop
+---
 
-- Confirm `TripTabs` passes `onTabChange` to `AIConciergeChat` on both layouts (already wired at `TripTabs.tsx:274`).
-- Confirm `ConciergeSearchModal` result `onSelect` → `AIConciergeChat` handler at L486 calls `onTabChange(tab)` then scrolls to `metadata.anchor` (L79–93). Add smoke assertions for `tasks`, `messages`, `calendar`, `basecamp`, `places`.
-- No code change expected unless smoke test finds a gap; if the mobile drawer variant of `TripTabs` swallows the tab-change, wire it there too.
+## Part B — Use-case copy rewrite
 
-## 4. Authenticated Realtime Voice Smoke Test
+All copy lives in `src/lib/useCases.ts` (single source, already SEO-wired via `UseCasePage.tsx` + `UseCasesHub.tsx`). No new routes.
 
-Drive Playwright against `http://localhost:8080` using the injected Supabase session (per `browser-use`):
+**B1. `travel-concierge-client-portal`** — rewrite around the Coordinator Access promise. Add a dedicated **"What your clients see vs. what you see"** section with a two-column comparison:
 
-```text
-1. Restore Supabase session → navigate to a real Consumer trip URL for a membership the injected user has.
-2. Open Concierge chat → click waveform button.
-3. Grant fake mic permissions via `context.grant_permissions(['microphone'], origin='http://localhost:8080')`.
-4. Assert:
-   - RealtimeVoiceOverlay mounts with phase 'connecting' → 'listening' within 8s
-   - Network log shows POST /functions/v1/realtime-voice-session → 200
-   - Network log shows POST /functions/v1/mint-realtime-token → 200
-   - No console errors from '@ai-sdk/react'
-5. Trigger a tool intent (screenshot only — no need to speak) then `voice.stop()`; confirm overlay unmounts and mic tracks are released.
-6. Pull Supabase edge logs for `realtime-voice-session`, `mint-realtime-token`, `execute-concierge-tool` — attach any 4xx/5xx to the report.
-```
+| Client (Full member) | You (Coordinator) |
+|---|---|
+| Private chat with their family / party | ❌ Not visible |
+| Their personal photos & camera-roll uploads | ❌ Not visible |
+| Their AI Concierge questions & answers | ❌ Not visible |
+| Shared calendar, itinerary, base camps, tasks, places, links, shared docs | ✅ You manage these |
 
-If `LOVABLE_BROWSER_AUTH_STATUS !== 'injected'`, stop the smoke and tell the user to sign in via the preview so the session injects on the next turn (per browser-use rules).
+Add a "Privacy guarantee" callout (enforced by RLS at the database, not just UI). Add a "How you set it up" 3-step block: create the Pro Trip → invite the client as Full Member → invite yourself/your team as Coordinator. Update FAQ with: "Can you read our chats?" "Can you see our photos?" "Who owns the trip if we leave you?"
 
-## 5. Verification checklist before closing
+**B2. `wedding-guest-coordination-app`** — reposition weddings as a **Pro Trip** use case (not a Consumer trip). New copy explains channel-per-audience: bride's family, groom's family, wedding party, caterers/vendors, full guest list, planner-only. Coordinator access is the wedding-planner story: the planner runs logistics without living inside the couple's private family chats. Update FAQ: "Can our planner see our family chat?" → No, unless invited.
 
-- Waveform button: disabled state shows toast; connecting shows spinner; error shows tooltip; success shows overlay.
-- Upload: file picker opens on iOS Safari (verified via `sr-only` change).
-- Search: opens modal, results render, clicking each result deep-links to correct tab + scrolls to anchor on desktop and mobile.
-- Edge logs: `realtime-voice-session` / `mint-realtime-token` / `execute-concierge-tool` return 200 for the smoke session, no 4xx.
-- `npm run lint && npm run typecheck` pass.
+**B3. `UseCasesHub.tsx` intro + FAQ** — expand the "who is this for" answer to explicitly name travel concierges, wedding planners, tour managers, sports coordinators, corporate assistants, family-office staff. Add a hub FAQ: *"Can an outside organizer help run our trip without seeing our private conversations?"* → Yes, Coordinator Access.
 
-## Files to edit
+**B4. Consistency sweep.** Update `UseCasesSection.tsx` card blurbs for weddings + concierge to match. No changes to other slugs.
 
-1. `src/features/concierge/components/RealtimeVoiceButton.tsx` — remove double flag check, convert `disabled` to toast guard, add connecting/error states.
-2. `src/features/concierge/hooks/useRealtimeVoice.ts` — guard `navigator.mediaDevices`.
-3. `src/components/AIConciergeChat.tsx` — disable header buttons when voice overlay active; change hidden file input to `sr-only`.
-4. (Test) `src/components/__tests__/AIConciergeChat.test.tsx` — add cases for toast on limit-reached voice tap and sr-only upload input.
+---
 
-## Out of scope
+## Part C — Billing model ("who pays for Pro?")
 
-- Refactoring `useRealtimeVoice` reconnect logic (already bounded + tested).
-- Server-side changes to `mint-realtime-token` / `realtime-voice-session` — smoke test will surface if any are actually needed.
+**Decision to publish (both can pay, no double-charging on the same trip):**
+
+1. **Concierge / planner company pays** → they buy `pro-growth` (or `pro-enterprise` for >5 seats) and get **Pro Trip creation + Coordinator seats**. Each trip they run counts as one Pro Trip against their seat pool. Clients invited as Full Members do **not** need a paid account to participate in that trip (mirrors today's Pro Trip guest model). This is the default sell for concierges, wedding planners, tour managers, sports orgs, corporate assistants.
+2. **Client / couple / organization pays** → they buy `pro-growth` themselves because they want channels + roles for their own weekend/tour/retreat, and they invite outside help (planner, family assistant, tour vendor) as **Coordinator** — coordinators don't need their own paid seat when joining a paid trip.
+3. **Both pay** → totally supported. A frequent traveler can hold a personal `frequent-chraveler` subscription for their own trips, and separately be invited as a Full Member into a Pro Trip their concierge runs. Independent billing entities, no conflict.
+
+**Rule:** billing follows *who created the Pro Trip*. Every Pro Trip must be owned by one paid Pro account (individual or organization). Coordinators and guests inherit access for that trip only.
+
+**New Enterprise line: "Pro for Concierge & Planners."** Same `pro-enterprise` SKU, positioned as: multi-client concierge pricing (per-coordinator-seat + volume Pro Trips), white-glove onboarding, contract terms. Contact-sales only — no new Stripe product this pass.
+
+**Implementation for Part C.**
+- No new Stripe products/prices this release. Reuse `pro-starter`, `pro-growth`, `pro-enterprise`.
+- Update `src/components/conversion/PricingSection.tsx` Pro tier copy: bullet "Invite coordinators (planners, concierges, assistants) — they don't need a seat." Bullet "Bring clients or guests in as full members at no extra cost per trip."
+- Add a "Who pays?" table to the concierge + wedding use-case articles (rendered inline from `useCases.ts`).
+- New `/for-teams` block (edit `src/pages/ForTeams.tsx`) surfacing the three billing paths above with CTAs: **"Buy Pro" / "Talk to sales" / "Bring your planner in as a coordinator."**
+- Business rule audit only (no schema): confirm existing seat/entitlement counting in `src/billing/entitlements.ts` treats coordinators as non-billable seats. If today it counts every `trip_admins` row as a paid seat, add a check that skips `admin_scope='coordinator'`. Small, surgical.
+
+---
+
+## Sequencing & risk
+
+Land in this order behind the existing feature-flag pattern:
+1. Migration + regenerated types + matrix — merge, monitor RLS.
+2. Client hooks + Team tab UI — behind no flag; additive only.
+3. Copy + pricing surfaces — pure content, ship anytime after (1).
+4. Entitlement seat-count tweak — last, with billing regression tests.
+
+**Highest risk:** the RLS admin-bypass rewrite. Mitigation: full enumeration via `rg "EXISTS.*trip_admins"`, replace with `is_full_trip_admin`, run `scripts/verify_auth.ts` extended for coordinator scenarios against staging before deploy.
+
+## Non-goals
+
+New layout, concierge dashboard, white-label, booking, supplier CRM, new Stripe SKUs, per-seat metered billing, channel seed templates, new category. Wedding-website replacement is explicitly *not* the pitch.
+
+## Definition of done
+
+- Coordinator can be invited/promoted from Team tab; roster shows the pill.
+- SQL tests prove coordinator cannot read private channels/messages/AI/private media/export.
+- `travel-concierge-client-portal`, `wedding-guest-coordination-app`, and Use-Cases Hub copy live with the privacy comparison table + "Who pays?" answer.
+- `PricingSection` and `ForTeams` reflect the three billing paths.
+- `npm run lint && npm run typecheck && npm run build` + full vitest green.

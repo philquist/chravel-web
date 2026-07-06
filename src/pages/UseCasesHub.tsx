@@ -17,7 +17,11 @@ const HUB_FAQ = [
   },
   {
     q: 'Who uses ChravelApp?',
-    a: 'Travel concierges and advisors, couples and wedding parties, sports teams, touring crews, and friends and families planning trips together.',
+    a: 'Travel concierges and advisors, wedding planners, couples and wedding parties, tour managers, sports coordinators, corporate assistants, family-office staff, and friends and families planning trips together.',
+  },
+  {
+    q: 'Can an outside organizer help run our trip without seeing our private conversations?',
+    a: 'Yes. On a Pro Trip you can invite an outside planner, travel concierge, tour manager, or assistant as a **Coordinator**. Coordinators manage the shared calendar, tasks, places, files, and links — but they cannot read private chats, view private media, or see the AI Concierge activity of other members. The boundary is enforced by Postgres row-level security in the database, not just hidden in the UI.',
   },
   {
     q: 'Is there a free plan?',
@@ -27,6 +31,7 @@ const HUB_FAQ = [
     q: 'Does it work on iPhone, Android, and web?',
     a: 'Yes — ChravelApp runs on the web and as an installable app on iOS and Android.',
   },
+
 ];
 
 const HUB_TITLE = 'ChravelApp Use Cases | One App for Every Group Trip and Travel Team';

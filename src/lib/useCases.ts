@@ -78,83 +78,72 @@ export const USE_CASES: Array<UseCaseSummary | UseCaseDetail> = [
     status: 'published',
     cardTitle: 'Travel Concierge & Advisors',
     cardTagline:
-      'Give every client a polished trip portal after they book — itinerary, attachments, reservations, base camps, and tasks, all preloaded.',
+      'Run every client trip from one polished portal — with Coordinator Access that lets your team manage logistics without ever touching the client’s private chats, photos, or AI history.',
     cardCtaLabel: 'See ChravelApp for travel concierge',
     seo: {
-      title: 'Travel Concierge Client Portal | Organize Client Trips with ChravelApp',
+      title: 'Travel Concierge Client Portal | Coordinator Access with ChravelApp',
       description:
-        'ChravelApp gives travel concierges and advisors a client-ready trip portal — preload the itinerary, attachments, reservations, base camps, tasks, and recommendations, then invite the client into one organized workspace.',
+        'Deliver a private, white-glove trip portal after every booking. Coordinator Access lets your team manage the itinerary, base camps, tasks, files, and links — with a database-enforced privacy boundary that keeps the client’s chats, photos, and AI Concierge activity off-limits.',
     },
-    h1: 'A client-ready trip portal for travel concierge companies',
+    h1: 'A client-ready trip portal — with coordinator access built in',
     intro:
-      'Travel concierges and advisors sell peace of mind. ChravelApp lets you deliver it after the booking — one organized trip workspace your clients open instead of digging through email, WhatsApp, and Google Drive.',
+      'ChravelApp gives travel concierges and advisors one place to run every client trip. Preload the itinerary, attachments, base camps, and recommendations, then invite yourself and your team as Coordinators — a permission scope that grants full logistics control while keeping the client’s private conversations, media, and AI activity off-limits by default.',
     body: [
-      'A travel concierge sells peace of mind. The client pays precisely so they do not have to manage logistics, chase details, organize links, or remember every moving piece of the trip. But once the booking is confirmed, many concierge teams still deliver the experience through a messy stack of WhatsApp messages, iMessage threads, PDFs, Google Drive folders, email chains, and screenshots. That leaves a gap between the premium service the client bought and the fragmented way the trip actually arrives.',
-      'ChravelApp closes that gap with one place to organize the entire client experience after purchase. Create a trip, add the family or client group, and preload the itinerary onto the Calendar — or let Smart Import pull flights and reservations straight from confirmation emails and PDFs. Upload vouchers and receipts as Attachments, pin the hotel and meeting points as Base Camps, save vetted restaurants and activities in Explorer, and assign Tasks for passports, payments, or arrival details. When the client joins, they are not staring at a blank app. They enter a trip that already feels planned.',
-      'This matters because you are really selling confidence. When a client opens ChravelApp and sees their flights, hotels, reservations, documents, and reminders in one place, your company instantly looks more buttoned-up. Instead of asking "where was that confirmation?" or "which hotel are we meeting at?", they check the trip. And instead of sending the same update five different ways, you send one Broadcast to the whole group.',
-      'ChravelApp also helps you standardize operations. Build a repeatable shape for honeymoons, family vacations, ski weeks, milestone birthdays, retreats, and VIP travel — every trip carrying the same Calendar, Tasks, Attachments, Base Camp, Explorer, and shared Media. With ChravelApp Pro, admin-controlled seats and role-based access let multiple planners run client trips with the right permissions, so the experience stays consistent across your whole team instead of living in one person’s inbox.',
-      'The pitch is simple: after your client pays, do not send them another messy folder — send them a private trip command center. ChravelApp lets a travel concierge look more professional, cut client confusion, and deliver a more premium post-booking experience without building a custom app or standing up a white-label portal.',
+      'A travel concierge sells peace of mind. The client pays precisely so they don’t have to manage logistics, chase confirmations, organize links, or remember every moving piece. But most concierge teams still deliver the experience through a stack of WhatsApp threads, iMessage, PDFs, Google Drive folders, and forwarded emails. That leaves a gap between the premium service the client bought and the fragmented way the trip actually arrives.',
+      'ChravelApp closes that gap. Create a Pro Trip, preload the Calendar (or use Smart Import to pull flights and reservations from confirmation emails and PDFs), upload vouchers as Attachments, pin the hotel and meeting points as Base Camps, save vetted restaurants and activities in the Places tab, and drop pre-trip Tasks. When your client opens the trip, they don’t see a blank app — they see a private command center already planned.',
+      'The unlock for concierge companies is **Coordinator Access**. Instead of promoting your planners to full admins (which would grant them access to the client’s private family chat and personal photo uploads), you invite them as Coordinators. Coordinators can manage the shared calendar, tasks, places, files, and links across every client trip — but the client’s private conversations, camera-roll uploads, and AI Concierge questions stay locked to the client. The boundary is enforced at the database with Postgres row-level security, not just hidden in the UI.',
+      'This matters because your clients are trusting you with their trip, not their family group chat. A Coordinator-scoped planner can push a schedule update, add a reservation, swap a driver, upload a new voucher, and answer a logistics question — without ever being able to open the family thread where the client and their spouse are debating dinner. That’s the guarantee that lets luxury clients say yes without hesitation.',
+      'ChravelApp also helps you standardize operations. Build a repeatable shape for honeymoons, family vacations, ski weeks, milestone birthdays, retreats, and VIP travel — every trip carrying the same Calendar, Tasks, Attachments, Base Camps, Places, and shared Media surfaces. Your whole team can run client trips at the same standard, with the right access, without living in one person’s inbox.',
     ],
     featureMap: [
-      {
-        pain: 'Trip details scattered across email, texts, PDFs, and Drive',
-        solution: 'One shared trip workspace',
-      },
-      {
-        pain: 'Confirmations arrive as forwarded emails and PDFs',
-        solution: 'Smart Import + Attachments',
-      },
-      {
-        pain: 'Clients forget reservation times or where to meet',
-        solution: 'Calendar + Base Camps',
-      },
-      {
-        pain: 'Families ask the same questions over and over',
-        solution: 'Broadcasts + centralized details',
-      },
-      {
-        pain: 'Clients need to complete items before they travel',
-        solution: 'Tasks',
-      },
-      {
-        pain: 'Clients want vetted recommendations on the ground',
-        solution: 'Explorer (Places & Explore Links)',
-      },
-      {
-        pain: 'Splitting costs or collecting balances',
-        solution: 'Payments',
-      },
-      {
-        pain: 'Families want to keep the memories afterward',
-        solution: 'Shared Media album',
-      },
+      { pain: 'Planners need access to logistics — not private client chats', solution: 'Coordinator Access (logistics-only scope)' },
+      { pain: 'Trip details scattered across email, texts, PDFs, and Drive', solution: 'One shared trip workspace' },
+      { pain: 'Confirmations arrive as forwarded emails and PDFs', solution: 'Smart Import + Attachments' },
+      { pain: 'Clients forget reservation times or where to meet', solution: 'Calendar + Base Camps' },
+      { pain: 'Families ask the same questions over and over', solution: 'Broadcasts + centralized details' },
+      { pain: 'Clients need to complete items before they travel', solution: 'Tasks' },
+      { pain: 'Clients want vetted recommendations on the ground', solution: 'Places (curated locations & links)' },
+      { pain: 'Splitting costs or collecting balances', solution: 'Payments' },
+      { pain: 'Families want to keep the memories afterward', solution: 'Shared Media album (client-controlled)' },
     ],
     workflow: {
       heading: 'Set up a client trip in minutes',
       steps: [
-        'Create the trip and add the client or family.',
-        'Preload the itinerary on the Calendar — or use Smart Import to pull flights and reservations from confirmation emails, PDFs, and links.',
-        'Upload receipts, vouchers, and reservations as Attachments, then pin the hotel and key meeting points as Base Camps.',
-        'Drop vetted restaurants, tours, and activities into Explorer and assign any pre-trip Tasks.',
-        'Invite the client — they open a trip that is already planned, and you Broadcast updates as plans change.',
+        'Create the Pro Trip on your company’s Pro account and preload the Calendar — or use Smart Import to pull flights and reservations from confirmation emails, PDFs, and links.',
+        'Upload receipts, vouchers, and reservations as Attachments, pin the hotel and key meeting points as Base Camps, and drop vetted restaurants, tours, and activities in Places.',
+        'Invite the client and their party as **Full Members** — they get their own private chat, private AI Concierge, and personal media.',
+        'Invite yourself and your planners as **Coordinators** — you manage the shared itinerary, tasks, files, and links; the client’s private surfaces stay off-limits.',
+        'Send Broadcasts as plans change; the client opens a trip that is already planned and always current.',
       ],
     },
     faq: [
       {
+        q: 'Can your team read our private chats or see our personal photos?',
+        a: 'No. Coordinators can manage the shared itinerary, tasks, places, files, and links — but the client’s private chat, personal media uploads, and AI Concierge activity are off-limits. The boundary is enforced by Postgres row-level security in the database, not just hidden in the UI.',
+      },
+      {
+        q: 'What can a Coordinator actually do?',
+        a: 'Manage the shared Calendar, Tasks, Places, Files, and Links; send Broadcasts; add or update reservations, base camps, and vendors. Coordinators cannot manage roles, invite other admins, read private conversations, view private media, or see the client’s AI Concierge history.',
+      },
+      {
+        q: 'Who owns the trip if we stop working with your company?',
+        a: 'The client. The Pro Trip is a persistent workspace tied to trip membership. You can be removed as Coordinator at any time; the client keeps the trip, the media, the reservations, and every message they’ve ever sent.',
+      },
+      {
         q: 'Do I need to build a custom app or white-label ChravelApp?',
-        a: 'No. You create a client-ready trip in minutes inside ChravelApp — no custom development and no white-label setup required.',
+        a: 'No. Every client-ready trip is created in minutes inside ChravelApp — no custom development, no white-label setup, no separate portal to maintain.',
       },
       {
         q: 'Can my whole team manage client trips?',
-        a: 'Yes. ChravelApp Pro adds admin-controlled seats and role-based access, so multiple planners can run client trips with the right permissions.',
+        a: 'Yes. ChravelApp Pro gives your company Pro Trip creation and Coordinator seats. Multiple planners can be invited as Coordinators on each client trip with the right permissions.',
       },
       {
-        q: 'Can I control what clients see?',
-        a: 'You control membership and roles on each trip, so clients see their trip while internal notes and team channels stay separate.',
+        q: 'Do clients need to pay for their own account?',
+        a: 'No. When your concierge company owns the Pro Trip, invited clients and their party join as Full Members at no extra cost. See the "Who pays?" section below.',
       },
       {
         q: 'How do clients get their itinerary if it lives in my email?',
-        a: 'Use Smart Import to pull schedules and reservations from confirmation emails, PDFs, and links into the trip Calendar and Attachments.',
+        a: 'Use Smart Import to pull schedules and reservations from confirmation emails, PDFs, and links directly into the trip Calendar and Attachments.',
       },
       {
         q: 'Does it work on iPhone and Android?',
@@ -164,64 +153,67 @@ export const USE_CASES: Array<UseCaseSummary | UseCaseDetail> = [
     cta: {
       heading: 'Deliver a more premium trip after every booking',
       subtext:
-        'Create a client-ready ChravelApp trip, preload the details, and invite the family into one organized workspace.',
+        'Create a client-ready Pro Trip, invite your team as Coordinators, and hand the client one private workspace that already feels planned.',
       primaryLabel: 'Create a client trip',
       primaryTo: '/auth',
-      secondaryLabel: 'ChravelApp for teams',
+      secondaryLabel: 'ChravelApp for concierge teams',
       secondaryTo: '/teams',
     },
   },
+
   {
     slug: 'wedding-guest-coordination-app',
     status: 'published',
     cardTitle: 'Weddings',
     cardTagline:
-      'Keep guests, the wedding party, photos, dress codes, and weekend events in one shared hub.',
+      'Run the whole weekend as a Pro Trip — separate channels for each family, wedding party, and vendors; a shared photo album; and a coordinator seat for your planner.',
     cardCtaLabel: 'See ChravelApp for weddings',
     seo: {
-      title: 'Wedding Guest Coordination App | Plan the Whole Weekend with ChravelApp',
+      title: 'Wedding Planning App with Coordinator Access | ChravelApp',
       description:
-        'ChravelApp keeps wedding guests, the wedding party, schedules, dress codes, locations, and a shared photo album in one place — so everyone knows where to be, what to wear, and where to upload photos.',
+        'ChravelApp runs a wedding weekend as one Pro Trip: separate channels for the bride’s family, groom’s family, wedding party, and vendors; a shared photo album; and a Coordinator seat that lets your planner manage logistics without reading your family chats.',
     },
-    h1: 'The wedding guest coordination app for the whole weekend',
+    h1: 'Run the whole wedding weekend — with channels, a shared photo album, and coordinator access for your planner',
     intro:
-      'A wedding isn’t one event anymore — it’s a weekend. ChravelApp gives the couple, the wedding party, and every guest one shared place for the schedule, dress codes, locations, tasks, and photos.',
+      'A wedding isn’t one event anymore — it’s a weekend with a dozen side conversations. ChravelApp lets the couple run the whole thing as a Pro Trip: separate channels for the bride’s family, groom’s family, wedding party, and vendors; a shared calendar, tasks, and photo album; and a Coordinator seat for the wedding planner so they can manage the logistics without living inside your family threads.',
     body: [
-      'Weddings are full weekends now: welcome drinks, the rehearsal dinner, ceremony call times, shuttle pickups, the afterparty, brunch, dress codes, hotel blocks, family obligations, and a dozen side chats. The couple has a website, the planner has a timeline, the wedding party has a group chat, and guests still ask where to be, what to wear, and when to arrive.',
-      'ChravelApp turns the weekend into one shared hub. Add every event to the Calendar, pin the hotel as a Base Camp alongside the ceremony and reception venues, and upload the schedule, menus, and dress-code references as Attachments. Save the rehearsal spot, the brunch place, and nearby coffee in Explorer, and create Tasks for the wedding party. Instead of digging through an old flyer or scrolling a thread, everyone checks one place.',
+      'Weddings are full weekends now: welcome drinks, the rehearsal dinner, ceremony call times, shuttle pickups, the afterparty, brunch, dress codes, hotel blocks, family obligations, and a dozen side chats. The couple has a website, the planner has a timeline, the wedding party has a group chat, the caterer has an email thread, and guests still ask where to be, what to wear, and when to arrive.',
+      'ChravelApp runs the weekend as one **Pro Trip** with role-based channels — so you can have a bride-family channel, a groom-family channel, a wedding-party channel, a vendors channel (caterer, florist, photographer, DJ), and the full-guests channel — all inside the same hub. Every audience gets the messages that matter to them and none of the ones that don’t. Add every event to the Calendar, pin the hotel and venues as Base Camps, upload the schedule and lookbooks as Attachments, save nearby spots in Places, and assign wedding-party Tasks.',
       'The shared photo album is one of the strongest reasons to run a wedding on ChravelApp. Guests take hundreds of photos across the weekend, but they get trapped across iPhones, Android phones, and private camera rolls. ChravelApp’s shared Media album gives everyone one place to upload, on any device — so the couple sees candid moments without waiting on the photographer, and nobody has to text pictures one at a time.',
-      'It works for the wedding party too. The couple, planner, and party can use Tasks for attire deadlines, speeches, welcome-bag prep, and day-of responsibilities, and a single Broadcast to push an update when a time or location changes. For destination weddings it earns its keep twice over — guests aren’t just attending a ceremony, they’re traveling, switching hotels, and following a multi-day itinerary.',
-      'Replace scattered WhatsApp threads, lost links, and repeated questions with one shared wedding hub. Everyone gets the schedule, the dress code, the locations, and the photo album in their pocket.',
+      'The Pro Trip layer unlocks a real answer to the classic wedding question: *how does our planner help without reading everything?* Invite the planner as a **Coordinator** and they can manage the shared Calendar, Tasks, Places, Files, and Links across the whole weekend — but they can’t open the bride-family channel, they can’t see the couple’s private photo uploads, and they can’t read the AI Concierge questions the couple is asking about their own honeymoon. The boundary is enforced by Postgres row-level security in the database, not just hidden in the UI.',
+      'For destination weddings it earns its keep twice over — guests aren’t just attending a ceremony, they’re traveling, switching hotels, and following a multi-day itinerary. Replace scattered WhatsApp threads, lost links, and repeated questions with one shared wedding hub. Everyone gets the schedule, the dress code, the locations, and the photo album in their pocket.',
     ],
     featureMap: [
+      { pain: 'Bride’s side, groom’s side, and vendors need separate threads', solution: 'Pro Trip channels per audience' },
+      { pain: 'Your planner needs logistics access without reading family chats', solution: 'Coordinator Access' },
       { pain: 'Guests lose track of weekend events', solution: 'Shared Calendar' },
-      {
-        pain: '“What’s the dress code?” asked on repeat',
-        solution: 'Attachments (lookbooks & notes)',
-      },
-      {
-        pain: 'Guests ask the same logistics questions',
-        solution: 'Broadcasts + centralized details',
-      },
+      { pain: '“What’s the dress code?” asked on repeat', solution: 'Attachments (lookbooks & notes)' },
+      { pain: 'Guests ask the same logistics questions', solution: 'Broadcasts + centralized details' },
       { pain: 'The wedding party needs accountability', solution: 'Tasks' },
-      { pain: 'Ceremony, reception, and hotel are scattered', solution: 'Base Camps + Explorer' },
+      { pain: 'Ceremony, reception, and hotel are scattered', solution: 'Base Camps + Places' },
       { pain: 'Guest photos trapped across phones', solution: 'Shared Media album' },
-      {
-        pain: 'Destination guests juggling travel',
-        solution: 'Calendar + Attachments + locations',
-      },
+      { pain: 'Destination guests juggling travel', solution: 'Calendar + Attachments + locations' },
     ],
     workflow: {
       heading: 'Set up your wedding weekend',
       steps: [
-        'Create the trip and invite guests — or just the wedding party.',
-        'Add every event — welcome drinks, ceremony, reception, brunch — to the Calendar.',
-        'Pin the hotel as a Base Camp, add the ceremony and reception venues, and drop nearby spots in Explorer.',
-        'Upload the schedule and dress-code or lookbook references as Attachments, and assign wedding-party Tasks.',
+        'Create the wedding as a **Pro Trip** so you get role-based channels.',
+        'Add channels for the bride’s family, groom’s family, wedding party, vendors, and full guest list — each audience gets only what they need.',
+        'Add every event — welcome drinks, ceremony, reception, brunch — to the Calendar; pin the hotel and venues as Base Camps and drop nearby spots in Places.',
+        'Upload the schedule, menus, and dress-code lookbooks as Attachments, and assign wedding-party Tasks.',
+        'Invite your wedding planner as a **Coordinator** — they can manage the itinerary, tasks, places, files, and links without reading your family channels or seeing your private photos.',
         'Turn on the shared Media album so every guest uploads photos to one place, on any device.',
       ],
     },
     faq: [
+      {
+        q: 'Can our wedding planner see our family chat?',
+        a: 'Not unless you explicitly invite them into that channel. As a Coordinator they can manage the shared calendar, tasks, places, files, and links, but they cannot read the bride-family or groom-family channel, cannot view the couple’s private photos, and cannot see the AI Concierge questions the couple is asking. The boundary is enforced at the database.',
+      },
+      {
+        q: 'Do we really need the Pro plan for a wedding?',
+        a: 'For anything more than a small ceremony, yes — Pro Trips are what unlock role-based channels (bride’s family / groom’s family / wedding party / vendors), Coordinator access for your planner, and larger guest capacity.',
+      },
       {
         q: 'Can guests upload photos from both iPhone and Android?',
         a: 'Yes. The shared Media album works on the web and on iOS and Android, so every guest uploads to the same place regardless of device.',
@@ -232,11 +224,11 @@ export const USE_CASES: Array<UseCaseSummary | UseCaseDetail> = [
       },
       {
         q: 'Can we keep the wedding party separate from all guests?',
-        a: 'Yes. You control who is on the trip and their roles, so the wedding party can coordinate tasks separately from the full guest list.',
+        a: 'Yes — that’s exactly what channels are for. The wedding party gets its own channel; the full guest list gets its own; families get theirs.',
       },
       {
         q: 'Is this a replacement for our wedding website?',
-        a: 'It complements it. The website tells the story; ChravelApp is the live, in-pocket hub for schedule changes, locations, dress code, tasks, and the shared photo album.',
+        a: 'It complements it. The website tells the story publicly; ChravelApp is the live, in-pocket hub for schedule changes, locations, dress code, tasks, channels, and the shared photo album.',
       },
       {
         q: 'Does it work for destination weddings?',
@@ -246,13 +238,14 @@ export const USE_CASES: Array<UseCaseSummary | UseCaseDetail> = [
     cta: {
       heading: 'Make the whole wedding weekend easier',
       subtext:
-        'Put the schedule, locations, dress codes, tasks, and a shared photo album in one wedding hub — then invite the guests.',
+        'Run the weekend as a Pro Trip with channels per audience, a shared photo album, and a coordinator seat for your planner.',
       primaryLabel: 'Create a wedding trip',
       primaryTo: '/auth',
       secondaryLabel: 'Browse all use cases',
       secondaryTo: '/use-cases',
     },
   },
+
   {
     slug: 'group-travel-planning-app',
     status: 'published',

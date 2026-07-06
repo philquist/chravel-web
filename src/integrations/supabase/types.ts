@@ -5410,6 +5410,7 @@ export type Database = {
           user_local_start: string
         }[]
       }
+      get_trip_admin_permissions: { Args: { p_trip_id: string }; Returns: Json }
       get_user_primary_role: {
         Args: { _trip_id: string; _user_id: string }
         Returns: string
@@ -5439,6 +5440,10 @@ export type Database = {
       }
       has_admin_permission: {
         Args: { _permission: string; _trip_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_coordinator_capability: {
+        Args: { _capability: string; _trip_id: string; _user_id: string }
         Returns: boolean
       }
       has_role: {
@@ -5488,6 +5493,10 @@ export type Database = {
         Args: { _trip_id: string; _user_id: string }
         Returns: boolean
       }
+      is_full_trip_admin: {
+        Args: { _trip_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_org_admin: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
@@ -5503,6 +5512,10 @@ export type Database = {
       }
       is_trip_co_member: {
         Args: { target_user_id: string; viewer_id: string }
+        Returns: boolean
+      }
+      is_trip_coordinator: {
+        Args: { _trip_id: string; _user_id: string }
         Returns: boolean
       }
       is_trip_creator: {
@@ -5572,10 +5585,12 @@ export type Database = {
           source_type: string
         }[]
       }
-      promote_to_admin: {
-        Args: { _target_user_id: string; _trip_id: string }
-        Returns: Json
-      }
+      promote_to_admin:
+        | { Args: { _target_user_id: string; _trip_id: string }; Returns: Json }
+        | {
+            Args: { _scope?: string; _target_user_id: string; _trip_id: string }
+            Returns: Json
+          }
       reclaim_org_seat: {
         Args: { _org_id: string; _seat_key: string }
         Returns: {
@@ -5618,6 +5633,10 @@ export type Database = {
           p_user_ids: string[]
         }
         Returns: undefined
+      }
+      set_admin_scope: {
+        Args: { _scope: string; _target_user_id: string; _trip_id: string }
+        Returns: Json
       }
       set_trip_notifications_muted: {
         Args: { p_muted: boolean; p_trip_id: string }
