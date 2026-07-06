@@ -49,10 +49,7 @@ export const CoordinatorInviteDialog: React.FC<CoordinatorInviteDialogProps> = (
   }, [admins]);
 
   const coordinators = useMemo(
-    () =>
-      admins.filter(
-        a => (a.permissions as { admin_scope?: string } | null)?.admin_scope === 'coordinator',
-      ),
+    () => admins.filter(a => a.admin_scope === 'coordinator'),
     [admins],
   );
 
