@@ -491,12 +491,19 @@ export const AIConciergeChat = ({
         />
 
         {/* Hidden file input for header upload button */}
+        {/*
+          sr-only (not `hidden`/display:none) so iOS Safari + WKWebView will honor a
+          programmatic .click() from the header button. `display:none` inputs are
+          silently ignored by mobile Safari — the picker never opens.
+        */}
         <input
           ref={fileInputRef}
           type="file"
           accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,text/calendar,.ics,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           multiple
-          className="hidden"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
           onChange={e => {
             handleFilesSelected(Array.from(e.target.files || []));
             if (fileInputRef.current) fileInputRef.current.value = '';

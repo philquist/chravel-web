@@ -239,7 +239,14 @@ export function useRealtimeVoice(): UseRealtimeVoiceResult {
       reconnectAttemptsRef.current = 0;
       try {
         // Mic first: prompts permission and satisfies the iOS user-gesture requirement
-        // for audio playback before we open the socket.
+        // for audio playback before we open the socket. Guard `mediaDevices` explicitly:
+        // on http (non-localhost) or older Android WebViews it is undefined and the raw
+        // TypeError is illegible to users.
+        if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+          throw new Error(
+            'Your browser does not expose a microphone here. Try Safari or Chrome over HTTPS.',
+          );
+        }
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         streamRef.current = stream;
         tripIdRef.current = tripId;
