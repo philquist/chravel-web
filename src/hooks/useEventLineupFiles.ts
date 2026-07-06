@@ -13,6 +13,11 @@ function getPrefix(eventId: string): string {
   return `${eventId}/lineup-files`;
 }
 
+function getUploadPrefix(eventId: string, userId: string): string {
+  // Storage RLS requires `${eventId}/${auth.uid()}/...` on INSERT.
+  return `${eventId}/${userId}/lineup-files`;
+}
+
 function parseOriginalName(storedName: string): string {
   const idx = storedName.indexOf('--');
   if (idx === -1) return storedName;
