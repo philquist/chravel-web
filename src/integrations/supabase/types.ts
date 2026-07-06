@@ -3715,7 +3715,6 @@ export type Database = {
           requester_avatar_url: string | null
           requester_email: string | null
           requester_name: string | null
-          rejection_cooldown_until: string | null
           resolved_at: string | null
           resolved_by: string | null
           status: string
@@ -3729,7 +3728,6 @@ export type Database = {
           requester_avatar_url?: string | null
           requester_email?: string | null
           requester_name?: string | null
-          rejection_cooldown_until?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           status?: string
@@ -3743,7 +3741,6 @@ export type Database = {
           requester_avatar_url?: string | null
           requester_email?: string | null
           requester_name?: string | null
-          rejection_cooldown_until?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           status?: string
