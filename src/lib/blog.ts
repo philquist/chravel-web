@@ -485,10 +485,10 @@ export const BLOG_POSTS: BlogPost[] = [
   },
   {
     slug: 'how-to-create-client-trip-portal-without-custom-app',
-    title: 'How to Create a Client Trip Portal Without Building a Custom App',
+    title: 'How Luxury Concierges can use ChravelApp without building a custom app',
     description:
       'Travel concierges don’t need a white-label app to give clients a premium trip portal. Here’s how to run a multi-city, multi-base-camp luxury trip in ChravelApp — with the privacy boundary that keeps client chats and photos private.',
-    h1: 'How to create a client trip portal without building a custom app',
+    h1: 'How Luxury Concierges can use ChravelApp without building a custom app',
     excerpt:
       'A polished client portal sounds like a six-figure software project. It isn’t. Here’s exactly how a concierge runs a multi-city luxury trip in ChravelApp — base camps, tickets, tasks, and per-line costs — without touching a single line of code or a white-label vendor.',
     datePublished: '2026-07-07',
