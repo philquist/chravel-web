@@ -170,7 +170,11 @@ export async function uploadToStorage(
 
   const id = uuid();
   const ext = file.name.split('.').pop() ?? 'bin';
-  const key = `${tripId}/${subdir}/${id}.${ext}`;
+  // Storage RLS requires `${tripId}/${auth.uid()}/...` as the object key.
+  const { data: authData } = await supabase.auth.getUser();
+  const uploaderId = authData?.user?.id;
+  if (!uploaderId) throw new Error('You must be signed in to upload media.');
+  const key = `${tripId}/${uploaderId}/${subdir}/${id}.${ext}`;
 
   const contentType = getUploadContentType(file);
 
