@@ -391,14 +391,18 @@ export const RolesView = ({
               // Fall back to member.id when userId is absent (e.g., demo/mock data stores user ID in id)
               const memberUserId = member.userId || member.id;
               const isAdminMember = memberUserId ? adminUserIds.has(memberUserId) : false;
+              const isCoordinatorMember = memberUserId
+                ? coordinatorUserIds.has(memberUserId)
+                : false;
               const assignedRoles = memberUserId ? memberRolesMap.get(memberUserId) || [] : [];
 
-              // Combine roles: admin first, then assigned roles sorted alphabetically
-              const allRolePills: { name: string; isAdmin: boolean }[] = [];
+              // Combine roles: admin/coordinator first, then assigned roles sorted alphabetically
+              const allRolePills: { name: string; isAdmin: boolean; isCoordinator?: boolean }[] = [];
 
-              // Add admin pill if applicable
               if (isAdminMember) {
                 allRolePills.push({ name: 'admin', isAdmin: true });
+              } else if (isCoordinatorMember) {
+                allRolePills.push({ name: 'coordinator', isAdmin: false, isCoordinator: true });
               }
 
               // Add assigned roles (sorted alphabetically, case-insensitive)
