@@ -41,13 +41,15 @@ export const TripSettings = ({
   currentUserId,
 }: TripSettingsProps) => {
   const [activeTab, setActiveTab] = useState<
-    'users' | 'general' | 'activity' | 'danger' | 'eventlog'
+    'users' | 'general' | 'activity' | 'danger' | 'eventlog' | 'travel-company'
   >('users');
   const [tripCategory, setTripCategory] = useState('Business Travel');
   const [customCategory, setCustomCategory] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [showEventLog, setShowEventLog] = useState(false);
   const showEventLogTab = isConsumerTrip(tripId);
+  const showTravelCompanyTab = isProTrip(tripId);
+  const coordinatorRoleEnabled = useFeatureFlag('pro_coordinator_role', false);
 
   // Mock users data - this would come from your backend
   const [users, setUsers] = useState<TripUser[]>([
