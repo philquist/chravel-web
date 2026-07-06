@@ -266,7 +266,13 @@ export const TripTabs = ({
         case 'concierge':
           return (
             <FeatureErrorBoundary featureName="AI Concierge">
-              <AIConciergeChat tripId={tripId} basecamp={basecamp} isDemoMode={isDemoMode} />
+              <AIConciergeChat
+                tripId={tripId}
+                basecamp={basecamp}
+                isDemoMode={isDemoMode}
+                isActive={activeTab === tabId}
+                onTabChange={parentOnTabChange}
+              />
             </FeatureErrorBoundary>
           );
         default:
@@ -277,7 +283,7 @@ export const TripTabs = ({
           );
       }
     },
-    [tripId, tripName, basecamp, isDemoMode],
+    [tripId, tripName, basecamp, isDemoMode, activeTab, parentOnTabChange],
   );
 
   // ⚡ PERFORMANCE: Prefetch tab data on hover
