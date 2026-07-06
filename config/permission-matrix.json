@@ -21,6 +21,13 @@
       "basecamp": { "read": true, "write": false, "delete": false, "admin": false },
       "links": { "read": true, "write": true, "delete": false, "admin": false }
     },
+    "pro_coordinator": {
+      "tasks": { "read": true, "write": true, "delete": true, "admin": false },
+      "polls": { "read": true, "write": true, "delete": false, "admin": false },
+      "calendar": { "read": true, "write": true, "delete": true, "admin": false },
+      "basecamp": { "read": true, "write": false, "delete": false, "admin": false },
+      "links": { "read": true, "write": true, "delete": true, "admin": false }
+    },
     "event_organizer": { "*": { "read": true, "write": true, "delete": true, "admin": true } },
     "event_attendee": {
       "tasks": { "read": true, "write": false, "delete": false, "admin": false },

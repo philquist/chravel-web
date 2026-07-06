@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Users, AlertTriangle, UserPlus, Clock, Cog, LayoutGrid, Network } from 'lucide-react';
+import { Users, AlertTriangle, UserPlus, Clock, Cog, LayoutGrid, Network, ShieldCheck } from 'lucide-react';
 import { ProParticipant, TeamTripContext } from '../../../types/pro';
 import { ProTripCategory, getCategoryConfig } from '../../../types/proCategories';
 import { TeamOnboardingBanner } from '../TeamOnboardingBanner';
@@ -15,11 +15,13 @@ import { useSuperAdmin } from '../../../hooks/useSuperAdmin';
 import { useIsMobile } from '../../../hooks/use-mobile';
 import { JoinRequestsDialog } from '../admin/JoinRequestsDialog';
 import { RoleManagerDialog } from '../admin/RoleManagerDialog';
+import { CoordinatorInviteDialog } from '../admin/CoordinatorInviteDialog';
 import { TeamOrgChart } from '../TeamOrgChart';
 import { VirtualizedRosterGrid } from './VirtualizedRosterGrid';
 import { TripRole } from '../../../types/roleChannels';
 import { useRoleAssignments } from '../../../hooks/useRoleAssignments';
 import { useTripAdmins } from '../../../hooks/useTripAdmins';
+import { useFeatureFlag } from '../../../lib/featureFlags';
 
 interface RolesViewProps {
   roster: ProParticipant[];
@@ -68,6 +70,8 @@ export const RolesView = ({
   const [showRequestsDialog, setShowRequestsDialog] = useState(false);
   const [showRoleManagerDialog, setShowRoleManagerDialog] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'orgchart'>('grid');
+  const [showCoordinatorDialog, setShowCoordinatorDialog] = useState(false);
+  const coordinatorRoleEnabled = useFeatureFlag('pro_coordinator_role', false);
 
   // Fetch role assignments and admins to display role pills per member
   const { assignments } = useRoleAssignments({ tripId: tripId || '', enabled: !!tripId });
@@ -225,6 +229,18 @@ export const RolesView = ({
               <Clock className="w-4 h-4 mr-1.5 shrink-0" />
               Requests
             </Button>
+            {coordinatorRoleEnabled && tripId && (
+              <Button
+                onClick={() => setShowCoordinatorDialog(true)}
+                variant="outline"
+                size="sm"
+                className="rounded-full bg-black/40 hover:bg-black/60 hover:text-amber-400 hover:border-amber-400/50 text-white border-white/20 transition-colors min-h-[42px] px-4 text-xs whitespace-nowrap"
+                title="Grant logistics-only access to an outside organizer"
+              >
+                <ShieldCheck className="w-4 h-4 mr-1.5 shrink-0" />
+                Coordinator
+              </Button>
+            )}
           </div>
         )}
 
@@ -534,6 +550,15 @@ export const RolesView = ({
             tripCreatorId={tripCreatorId}
           />
         </>
+      )}
+
+      {tripId && coordinatorRoleEnabled && (
+        <CoordinatorInviteDialog
+          open={showCoordinatorDialog}
+          onOpenChange={setShowCoordinatorDialog}
+          tripId={tripId}
+          roster={roster}
+        />
       )}
     </div>
   );

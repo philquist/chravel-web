@@ -74,6 +74,15 @@ BEGIN
         WHEN 'links' THEN RETURN p_action IN ('read', 'write');
         ELSE RETURN FALSE;
       END
+    WHEN 'pro_coordinator' THEN
+      CASE p_resource
+        WHEN 'tasks' THEN RETURN p_action IN ('read', 'write', 'delete');
+        WHEN 'polls' THEN RETURN p_action IN ('read', 'write');
+        WHEN 'calendar' THEN RETURN p_action IN ('read', 'write', 'delete');
+        WHEN 'basecamp' THEN RETURN p_action IN ('read');
+        WHEN 'links' THEN RETURN p_action IN ('read', 'write', 'delete');
+        ELSE RETURN FALSE;
+      END
     WHEN 'event_organizer' THEN
       CASE p_resource
         WHEN 'tasks' THEN RETURN p_action IN ('read', 'write', 'delete', 'admin');
