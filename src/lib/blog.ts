@@ -490,7 +490,7 @@ export const BLOG_POSTS: BlogPost[] = [
       'Travel concierges don’t need a white-label app to give clients a premium trip portal. Here’s how to run a multi-city, multi-base-camp luxury trip in ChravelApp — with the privacy boundary that keeps client chats and photos private.',
     h1: 'How Luxury Concierges can use ChravelApp without building a custom app',
     excerpt:
-      'A polished client portal sounds like a six-figure software project. It isn’t. Here’s exactly how a concierge runs a multi-city luxury trip in ChravelApp — base camps, tickets, tasks, and per-line costs — without touching a single line of code or a white-label vendor.',
+      'A polished client portal sounds like a six-figure software project. It isn’t. Here’s exactly how a luxury concierge company runs a multi-city trip in ChravelApp — base camps, tickets, tasks, and per-line costs — without touching a single line of code or a white-label vendor.',
     datePublished: '2026-07-07',
     dateModified: '2026-07-07',
     author: BLOG_AUTHOR,
