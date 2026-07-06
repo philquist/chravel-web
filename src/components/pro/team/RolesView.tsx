@@ -15,11 +15,13 @@ import { useSuperAdmin } from '../../../hooks/useSuperAdmin';
 import { useIsMobile } from '../../../hooks/use-mobile';
 import { JoinRequestsDialog } from '../admin/JoinRequestsDialog';
 import { RoleManagerDialog } from '../admin/RoleManagerDialog';
+import { CoordinatorInviteDialog } from '../admin/CoordinatorInviteDialog';
 import { TeamOrgChart } from '../TeamOrgChart';
 import { VirtualizedRosterGrid } from './VirtualizedRosterGrid';
 import { TripRole } from '../../../types/roleChannels';
 import { useRoleAssignments } from '../../../hooks/useRoleAssignments';
 import { useTripAdmins } from '../../../hooks/useTripAdmins';
+import { useFeatureFlag } from '../../../lib/featureFlags';
 
 interface RolesViewProps {
   roster: ProParticipant[];
