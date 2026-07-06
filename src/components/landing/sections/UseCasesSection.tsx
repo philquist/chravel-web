@@ -22,7 +22,7 @@ const scenarios: Scenario[] = [
     title: 'Travel Concierge & Advisors',
     subtitle: 'Luxury planners · travel advisors · client trips · families',
     before:
-      'After the client pays, the trip still arrives as scattered WhatsApp messages, PDFs, Google Drive links, and email chains — and your planners either see everything or nothing.',
+      'After the client pays, the trip still arrives as scattered WhatsApp messages, PDFs, Google Drive links, and email chains — and your planners either see everything or nothing. Why build a custom app from scratch when ChravelApp covers all your needs and more?',
     expandCTA: 'Deliver a premium client experience with Coordinator Access',
     after:
       'Run every client trip as a Pro Trip. Preload the itinerary, attachments, base camps, and tasks, then invite your team as **Coordinators** — they manage the logistics while the client’s private chats, personal photos, and AI history stay off-limits at the database.',
