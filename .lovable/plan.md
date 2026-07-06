@@ -1,47 +1,69 @@
-# Overhaul: `/blog/how-to-create-client-trip-portal-without-custom-app`
+## Goal
 
-Rewrite this single blog entry in `src/lib/blog.ts` (lines 487–588) into a much longer, concrete, SEO-focused article aimed at travel concierge companies. No route, schema, or component changes — pure content edit inside the existing `BlogPost` object.
+Bring the newly-shipped Coordinator/Roles work into a polished, premium-feeling surface for luxury concierges and pro orgs. Two entry points, one mental model:
 
-## Goals
-- Make it obvious that ChravelApp (Pro Trip + new **Coordinator** role) is a better home hub than a white-label build or a hand-rolled Notion/Drive/WhatsApp stack.
-- Prove it with one detailed, platform-agnostic worked example (a concierge running a high-end multi-city family vacation).
-- Reinforce the coordinator ↔ client **privacy boundary** we just shipped (coordinators manage logistics; client chats/photos/AI stay private).
-- Rank for: *travel concierge client portal*, *white label travel app alternative*, *multi-city itinerary tool for concierges*, *travel concierge software without custom app*.
+1. **Team tab** — day-to-day: see roles, see who the Coordinator is, add/remove Coordinators.
+2. **Pro Trip Settings → Travel Company** — trip-level: attach the org running the trip and (optionally) mark the org's own people as Coordinators so they get logistics-only scope on their own client's trip.
 
-## Content structure (new sections replacing the current 6)
+Both call the same `useTripAdmins` scope logic (RLS already enforces the `is_full_trip_admin` boundary from the last migration).
 
-1. **Intro** — reframe: "You don't need a white-label app. You need a shared trip workspace your client already knows how to use." Name the audience (independent concierges, luxury travel agencies, family office assistants, DMCs).
-2. **What a real client portal has to do** — expand existing bullets; add multi-city base camps, per-item cost transparency, pre-trip tasks with due dates, document vault, live updates without a resend.
-3. **Why white-labeling is the wrong bet in 2026** — build cost, maintenance, app-store review cycles, security/compliance surface, and the fact that clients won't install a one-off app per agency. Cite the alternative: one app they keep for every trip in their life.
-4. **A worked example: the Rossi family, 12 days across Rome → Florence → Positano** — the centerpiece. Walk through, in numbered beats, exactly what the concierge does inside ChravelApp:
-   - Create the Pro Trip, invite the family as members, invite themselves as **Coordinator** (logistics-only scope).
-   - Load **three base camps** with dates: Hotel de Russie (Rome, Jun 3–6), Portrait Firenze (Jun 6–9), Le Sirenuse (Jun 9–15) — note how the active base camp auto-switches by date and drives distances in Places.
-   - Drop confirmations into the file vault: flights, hotel vouchers, Uffizi timed tickets, Frecciarossa train PDFs, driver contacts, restaurant confirmations.
-   - Build the calendar: Da Enzo dinner, Galleria Borghese entry, private Vespa tour, Teatro dell'Opera, Amalfi boat day — each event with location, time, dress code, and the linked confirmation file.
-   - Pin **Places**: restaurants, museums, the tailor in Florence, the private beach club — with the concierge's notes.
-   - Assign **pre-trip tasks** with due dates: "Renew passports (expires <6 mo from return)", "Pick up Frecciarossa paper tickets at Termini window 12", "Confirm dietary restrictions", "Download offline maps".
-   - Post one welcome **Broadcast** — everyone gets it, nothing lost in a group chat.
-5. **Payments & cost transparency without becoming a processor** — how the concierge uses the Payments tab to line-item what was booked on the client's behalf ("Vespa tour — €480", "Boat day w/ captain — €1,850", "Opera box — €620"), so the family sees the ledger upfront instead of getting a surprise invoice. Note that ChravelApp tracks; the concierge still bills through their normal channel.
-6. **The privacy boundary that makes concierges look professional** — the Coordinator role we just shipped: coordinator can manage calendar, places, tasks, files, base camps, and broadcasts, but **cannot** read the family's private group chat, private AI Concierge sessions, or private media. Cross-link to the use case page.
-7. **Running a book of clients** — one workspace per family, repeatable template, handoff between planners, no per-client "portal" to maintain.
-8. **When a white-label still makes sense** — keep the honest note; large agencies with unique workflows, later, not first.
-9. **Stand up your first client portal today** — the existing checklist, expanded with base camps and payments.
+## What ships
 
-## FAQ additions
-Keep existing four, add:
-- "Can I manage the trip without seeing my clients' private conversations?" → coordinator scope.
-- "What about multi-city or multi-country trips?" → base camps by date.
-- "Can clients see what each booked item cost?" → Payments tab line items.
-- "Can I template this for every new family?" → duplicate Pro Trip pattern.
+### 1. Team tab — Coordinator visibility polish
+File: `src/components/pro/team/RolesView.tsx`
 
-## Related links
-Keep the three existing; add `/use-cases/wedding-guest-coordination-app` (planner parallel) and `/blog/why-whatsapp-google-drive-not-enough-luxury-travel-planning`.
+- Add a **Coordinator strip** above the roster (shown when `pro_coordinator_role` flag is on) listing current Coordinators as avatar chips with a `Manage` button that opens the existing `CoordinatorInviteDialog`.
+- On each roster card, if the member is a Coordinator, show a small amber `Coordinator` pill next to their name (source: `admins` where `admin_scope === 'coordinator'`).
+- Empty state chip: "Add a Coordinator — outside organizer, logistics-only access." Clicking opens the dialog.
+- No new dialogs — reuse `CoordinatorInviteDialog`.
 
-## CTA
-Sharpen: primary "Create your first client portal" → `/auth`; secondary "See the concierge use case" → `/use-cases/travel-concierge-client-portal`.
+### 2. CoordinatorInviteDialog — clarity + premium polish
+File: `src/components/pro/admin/CoordinatorInviteDialog.tsx`
+
+- Replace the raw UUID in "Current coordinators" with the roster's display name + avatar (join `admins` ↔ `roster` by `userId`).
+- Add a "What Coordinators can do / can't do" two-column panel (Calendar, Tasks, Places, Links vs. Private chat, AI Concierge, Private media) — the same boundary the article now sells.
+- Tighten spacing, use `Card`/section headers consistent with settings polish.
+- Add a secondary tab/toggle: **Add by email** (invite an outside organizer who isn't in the roster yet) — reuses the existing invite-link/email flow already used for member invites; the invitee joins with Coordinator scope pre-set. If that flow doesn't cleanly accept a role hint, we fall back to a two-step "send invite → auto-promote on accept" using a `pending_coordinator_invites` field on the invite row. **Scope call-out below.**
+
+### 3. Pro Trip Settings → Travel Company section (new)
+Files: `src/components/EnterpriseSettings.tsx` (add a section), new `src/components/pro/settings/TravelCompanySection.tsx`
+
+- New settings section titled **Travel Company** (shown on Pro trips only).
+- Row 1: **Organization** — dropdown of the user's orgs (from existing `useOrganizations`/enterprise data) + "Create organization" link that opens the existing `CreateOrganizationModal`. Persists `trip.organization_id`.
+- Row 2: **Coordinators from this organization** — searchable list of org members with a per-row `Assign as Coordinator` toggle. Same underlying `promoteToAdmin(userId, { scope: 'coordinator' })` call; org members not yet on the trip are added to the trip first (existing invite flow) then promoted.
+- Row 3: **Boundary explainer** — short static block mirroring the article: "Coordinators manage logistics. They cannot read private family chat, AI Concierge, or private media."
+- If the current user is the trip creator AND part of the selected org, offer a one-click **"Assign myself as Coordinator"** button so a concierge owner can voluntarily downgrade themselves for a given client trip.
+
+### 4. Premium visual pass (settings-only, no logic changes)
+- Consistent card chrome: `bg-white/[0.04] border border-white/10 rounded-2xl`, section header with small gold icon square (matches OrganizationSection header pattern).
+- Tighter vertical rhythm (`space-y-6` inside sections, `gap-4` in grids).
+- Use existing `gold-primary`/`gold-mid` tokens — no new colors.
+- Scope: Pro Trip Settings + Team tab Coordinator surfaces only. No changes to consumer settings, chat, calendar, etc.
+
+### 5. Wiring & data
+- `trip.organization_id` column: check `trips` schema; if missing, add a migration (nullable uuid ref → organizations, index, RLS unchanged). **Scope call-out below.**
+- No RLS changes — Coordinator boundary already enforced by prior migration.
+- Feature flag `pro_coordinator_role` continues to gate all Coordinator UI.
 
 ## Files touched
-- `src/lib/blog.ts` — replace the single `BlogPost` object at lines 487–588 (description, excerpt, sections, faq, related, cta). No other files.
 
-## Out of scope
-No route changes, no new components, no image assets, no sitemap edits (slug unchanged), no schema/RLS work.
+```
+src/components/pro/team/RolesView.tsx                (Coordinator strip + pill)
+src/components/pro/admin/CoordinatorInviteDialog.tsx (names, boundary panel, add-by-email)
+src/components/pro/settings/TravelCompanySection.tsx (new)
+src/components/EnterpriseSettings.tsx                (mount new section on Pro trips)
+src/components/enterprise/OrganizationSection.tsx    (minor: shared header pattern, no behavior change)
+supabase/migrations/<new>.sql                        (only if trips.organization_id missing)
+```
+
+## Out of scope (call out before I code)
+
+- **DB migration for `trips.organization_id`** — I'll confirm whether the column exists before writing SQL; if it does, no migration ships in this pass.
+- **Add-by-email Coordinator invite** — depends on the current invite flow supporting a role hint. If it doesn't, I'll ship the roster-based promotion in this PR and file a follow-up for email invite, rather than expand scope.
+- No changes to the blog article, marketing pages, or consumer trip settings.
+- No changes to permission-matrix.json (Coordinator role already added in prior turn).
+
+## Validation
+
+- `npm run lint && npm run typecheck && npm run build`
+- Manual: on a Pro trip, promote a roster member to Coordinator from both entry points, confirm pill/strip render, confirm dialog shows names not UUIDs, confirm boundary explainer matches article language.
