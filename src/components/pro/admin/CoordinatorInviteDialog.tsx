@@ -48,6 +48,15 @@ export const CoordinatorInviteDialog: React.FC<CoordinatorInviteDialogProps> = (
     return m;
   }, [admins]);
 
+  const rosterByUserId = useMemo(() => {
+    const m = new Map<string, ProParticipant>();
+    roster.forEach(r => {
+      const uid = r.userId || r.id;
+      if (uid) m.set(uid, r);
+    });
+    return m;
+  }, [roster]);
+
   const coordinators = useMemo(
     () => admins.filter(a => a.admin_scope === 'coordinator'),
     [admins],
