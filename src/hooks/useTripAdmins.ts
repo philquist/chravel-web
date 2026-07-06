@@ -254,6 +254,8 @@ export const useTripAdmins = ({ tripId, enabled = true }: UseTripAdminsProps) =>
     isProcessing,
     promoteToAdmin,
     demoteFromAdmin,
+    setAdminScope,
     refetch,
   };
 };
+
