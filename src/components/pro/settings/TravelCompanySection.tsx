@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Building2, ShieldCheck, UserPlus, X, Loader2, Plus, Info, Check } from 'lucide-react';
+import { Building2, ShieldCheck, UserPlus, X, Loader2, Plus, Info, Check, Users } from 'lucide-react';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
