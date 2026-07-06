@@ -271,7 +271,10 @@ export const TripTabs = ({
                 basecamp={basecamp}
                 isDemoMode={isDemoMode}
                 isActive={activeTab === tabId}
-                onTabChange={parentOnTabChange}
+                onTabChange={tab => {
+                  setActiveTab(tab);
+                  parentOnTabChange(tab);
+                }}
               />
             </FeatureErrorBoundary>
           );
