@@ -366,6 +366,14 @@ serve(async req => {
 
       logStep('Requester profile captured', { requesterName, requesterEmail });
 
+      // Shared "episode" timestamp: reused-row paths below (rejected→pending,
+      // approved→pending) UPDATE the same trip_join_requests.id rather than
+      // inserting a fresh row, so joinRequestId alone is not a safe fanout key —
+      // it would collide with whatever notification key was used the first time
+      // this id was pending. Folding this timestamp into the key gives each
+      // pending episode its own identity even when the row id repeats.
+      const requestEpisodeAt = new Date().toISOString();
+
       // Check if user has an existing request for this trip
       const { data: existingRequest } = await supabaseClient
         .from('trip_join_requests')
@@ -406,7 +414,7 @@ serve(async req => {
             .from('trip_join_requests')
             .update({
               status: 'pending',
-              requested_at: new Date().toISOString(),
+              requested_at: requestEpisodeAt,
               resolved_at: null,
               resolved_by: null,
               invite_code: normalizedInviteCode,
@@ -438,7 +446,7 @@ serve(async req => {
             .from('trip_join_requests')
             .update({
               status: 'pending',
-              requested_at: new Date().toISOString(),
+              requested_at: requestEpisodeAt,
               resolved_at: null,
               resolved_by: null,
               invite_code: normalizedInviteCode,
@@ -547,14 +555,16 @@ serve(async req => {
       }
 
       // Create notifications for all recipients. fanout_event_key is a GENERATED
-      // column from metadata->>'fanout_event_key'. Scoped to this specific request
-      // row (not trip+requester) so the unique index (user_id, type,
-      // fanout_event_key) only dedupes accidental repeat notification attempts for
-      // the SAME request event — a later legitimate request (after cancel, or
-      // after a rejection's cooldown expires) gets a new joinRequestId and still
-      // notifies. A trip+requester-scoped key would silently swallow that
-      // legitimate re-request's notifications forever.
-      const fanoutEventKey = `join_request:${joinRequestId}`;
+      // column from metadata->>'fanout_event_key'. Scoped to this pending episode
+      // (request row id + the timestamp it most recently became pending), not
+      // just the row id: rejected→pending and approved→pending both UPDATE the
+      // same existing row rather than inserting a new one, so the id alone would
+      // collide with whatever notification key was used the first time this row
+      // was pending — silently swallowing the exact re-request notification the
+      // 24h cooldown (or leave-then-rejoin) flow is supposed to deliver. A fresh
+      // insert also gets a fresh id, so this still dedupes accidental repeat
+      // attempts within the same request event without blocking later ones.
+      const fanoutEventKey = `join_request:${joinRequestId}:${requestEpisodeAt}`;
       const notificationPromises = recipientIds.map(recipientId =>
         supabaseClient.from('notifications').insert({
           user_id: recipientId,
