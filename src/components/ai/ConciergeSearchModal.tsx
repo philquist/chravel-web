@@ -201,10 +201,10 @@ export const ConciergeSearchModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showClose={false}
-        className="!bg-neutral-900 border-white/10 text-white max-w-md sm:max-w-lg p-0 gap-0 overflow-hidden"
+        className="bg-background border-border text-foreground max-w-md sm:max-w-lg p-0 gap-0 overflow-hidden"
       >
-        <DialogHeader className="p-4 pb-2 border-b border-white/10 !bg-neutral-900">
-          <DialogTitle className="text-white text-base sr-only">Search Concierge</DialogTitle>
+        <DialogHeader className="p-4 pb-2 border-b border-border bg-background">
+          <DialogTitle className="text-foreground text-base sr-only">Search Concierge</DialogTitle>
           <div className="relative">
             <Search
               size={16}
@@ -215,12 +215,13 @@ export const ConciergeSearchModal = ({
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Search across trip..."
-              className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-8 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-gold-primary/50 transition-all"
+              className="w-full bg-muted border border-border rounded-lg pl-9 pr-8 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold-primary/50 transition-all"
             />
             {query && (
               <button
                 onClick={() => setQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
               >
                 <X size={14} />
               </button>
@@ -229,20 +230,20 @@ export const ConciergeSearchModal = ({
         </DialogHeader>
 
         {/* Results */}
-        <div className="max-h-[60vh] overflow-y-auto p-0 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent bg-neutral-900/95">
+        <div className="max-h-[60vh] overflow-y-auto p-0 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent bg-background">
           {isLoading && results.length === 0 && (
-            <div className="py-12 text-center text-neutral-500 text-sm animate-pulse flex flex-col items-center gap-2">
+            <div className="py-12 text-center text-muted-foreground text-sm animate-pulse flex flex-col items-center gap-2">
               <div className="w-6 h-6 gold-gradient-spinner animate-spin"></div>
               <span>Searching trip...</span>
             </div>
           )}
 
           {!isLoading && query.trim().length >= 2 && results.length === 0 && (
-            <div className="py-12 text-center text-neutral-500 text-sm">
-              <p className="text-neutral-400 font-medium">
+            <div className="py-12 text-center text-sm">
+              <p className="text-foreground font-medium">
                 No results found for &quot;{query}&quot;
               </p>
-              <p className="text-xs mt-2 text-neutral-600">
+              <p className="text-xs mt-2 text-muted-foreground">
                 Try searching tasks, events, places...
               </p>
             </div>
@@ -260,10 +261,10 @@ export const ConciergeSearchModal = ({
 
                 return (
                   <div key={type} className="space-y-1">
-                    <div className="px-4 py-1 flex items-center gap-2 text-[10px] font-bold text-neutral-500 uppercase tracking-widest bg-white/5 backdrop-blur-sm sticky top-0 z-10 border-y border-white/5">
+                    <div className="px-4 py-1 flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted/60 backdrop-blur-sm sticky top-0 z-10 border-y border-border">
                       {getIcon(type)}
                       <span>{getLabel(type)}</span>
-                      <span className="ml-auto bg-white/10 text-white/70 px-1.5 rounded-sm">
+                      <span className="ml-auto bg-muted text-muted-foreground px-1.5 rounded-sm">
                         {items.length}
                       </span>
                     </div>
@@ -272,18 +273,18 @@ export const ConciergeSearchModal = ({
                         <button
                           key={item.id}
                           onClick={() => handleSelect(item)}
-                          className="w-full text-left px-3 py-3 rounded-lg hover:bg-white/5 transition-all group flex items-start gap-3 active:scale-[0.99]"
+                          className="w-full text-left px-3 py-3 rounded-lg hover:bg-muted transition-all group flex items-start gap-3 active:scale-[0.99]"
                         >
-                          <div className="mt-0.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity bg-white/5 p-1.5 rounded-md">
+                          <div className="mt-0.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity bg-muted p-1.5 rounded-md">
                             {getIcon(type)}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-2 mb-0.5">
-                              <p className="text-sm font-medium text-neutral-200 truncate group-hover:text-white transition-colors">
+                              <p className="text-sm font-medium text-foreground truncate transition-colors">
                                 {highlight(item.title, query)}
                               </p>
                               {item.timestamp && (
-                                <span className="text-[10px] text-neutral-600 shrink-0 whitespace-nowrap">
+                                <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">
                                   {new Date(item.timestamp).toLocaleDateString(undefined, {
                                     month: 'short',
                                     day: 'numeric',
@@ -291,7 +292,7 @@ export const ConciergeSearchModal = ({
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-neutral-400 line-clamp-2 leading-relaxed">
+                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                               {highlight(item.snippet, query)}
                             </p>
                           </div>
@@ -300,7 +301,7 @@ export const ConciergeSearchModal = ({
                       {hasMore && !isExpanded && (
                         <button
                           onClick={() => toggleCategory(type)}
-                          className="w-full text-center py-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors flex items-center justify-center gap-1"
+                          className="w-full text-center py-2 text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
                         >
                           <ChevronDown size={12} />
                           Show {items.length - INITIAL_RESULTS_LIMIT} more
@@ -318,15 +319,15 @@ export const ConciergeSearchModal = ({
               <div className="w-16 h-16 bg-gold-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-gold-primary/30">
                 <Search className="text-gold-primary" size={24} />
               </div>
-              <h3 className="text-white font-medium mb-1">Trip Search</h3>
-              <p className="text-sm text-neutral-500 max-w-xs mx-auto mb-6">
+              <h3 className="text-foreground font-medium mb-1">Trip Search</h3>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
                 Search across Concierge, Calendar, Tasks, Places, and more.
               </p>
               <div className="flex flex-wrap justify-center gap-2 max-w-xs mx-auto">
                 {['Events', 'Tasks', 'Concierge', 'Places', 'Payments'].map(tag => (
                   <span
                     key={tag}
-                    className="text-xs bg-white/5 border border-white/5 text-neutral-400 px-2.5 py-1 rounded-full"
+                    className="text-xs bg-muted border border-border text-muted-foreground px-2.5 py-1 rounded-full"
                   >
                     {tag}
                   </span>
