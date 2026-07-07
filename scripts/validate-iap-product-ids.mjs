@@ -38,6 +38,7 @@ const REPO = resolve(__dirname, '..');
 // ---- Canonical IDs Apple expects on the current 2.0(60) submission ----------
 // If you change this list, also update .lovable/plan.md and the ASC listing.
 const CANONICAL = [
+  'com.chravel.explorer.monthly',
   'com.chravel.frequentchraveler.monthly',
   'com.chravel.explorer.annual',
   'com.chravel.frequentchraveler.annual',

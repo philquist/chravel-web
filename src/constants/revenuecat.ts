@@ -62,8 +62,8 @@ export const REVENUECAT_PRODUCTS = {
   frequentChravelerAnnual: 'com.chravel.frequentchraveler.annual',
 
   // Trip Passes (one-time, primary consumer offering)
-  explorerPass45: 'com.chravel.explorer.pass45',
-  frequentChravelerPass90: 'com.chravel.frequentchraveler.pass90',
+  explorerPass45: 'com.chravel.trippass.explorer',
+  frequentChravelerPass90: 'com.chravel.trippass.frequent',
 
   // Pro tiers — exposed on iOS via RevenueCat so every plan is purchasable
   // in-app. Pricing must match BILLING_PRODUCTS in src/billing/config.ts.
