@@ -439,7 +439,7 @@ function mapAIEventsToICS(aiEvents: AIExtractedEvent[]): {
 
 export async function parseWithAI(file: File, tripId?: string): Promise<SmartParseResult> {
   const sourceFormat: ImportSourceFormat = file.type === 'application/pdf' ? 'pdf' : 'image';
-  let filePath: string | null = null;
+  const filePath: string | null = null;
 
   try {
     let fileUrl: string | null = null;
