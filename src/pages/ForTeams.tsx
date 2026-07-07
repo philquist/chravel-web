@@ -8,14 +8,14 @@ import {
   Check,
   Users,
   Shield,
-  Zap,
-  BarChart3,
+  TrendingUp,
+  CalendarDays,
   Phone,
   Trophy,
   Mic2,
   Building2,
   Tent,
-  GraduationCap,
+  Headphones,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import channelsPro from '@/assets/app-screenshots/channels-pro.png';
@@ -31,18 +31,18 @@ export const ForTeams = () => {
         'Cut coordination time by 70% and eliminate tool sprawl across your organization',
     },
     {
-      icon: <Users size={32} className="text-accent" />,
+      icon: <TrendingUp size={32} className="text-accent" />,
       title: 'Scale Team Coordination',
       description: 'From 10 to 100+ team members, ChravelApp handles complex logistics seamlessly',
     },
     {
-      icon: <BarChart3 size={32} className="text-primary" />,
+      icon: <Users size={32} className="text-primary" />,
       title: 'Seat & Member Management',
       description:
         'Admin-controlled seats, invite approvals, and bulk role assignment for traveling parties of any size',
     },
     {
-      icon: <Zap size={32} className="text-accent" />,
+      icon: <CalendarDays size={32} className="text-accent" />,
       title: 'Calendar Sync & Smart Import',
       description:
         'Google Calendar sync plus AI-powered import of schedules and reservations from emails, PDFs, and links — with more integrations on the way',
@@ -74,10 +74,10 @@ export const ForTeams = () => {
         'Professional event planners running conferences, festivals, and large-scale gatherings',
     },
     {
-      icon: <GraduationCap size={28} strokeWidth={1.25} className="text-primary" />,
-      title: 'Greek Life & Chapters',
+      icon: <Headphones size={28} strokeWidth={1.25} className="text-primary" />,
+      title: 'Travel Concierge',
       description:
-        'Fraternities, sororities, and alumni chapters coordinating rush, formals, retreats, and philanthropy',
+        'White-glove trip planners and concierges coordinating client itineraries, reservations, and logistics across multiple parties',
     },
   ];
 
@@ -216,7 +216,7 @@ export const ForTeams = () => {
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-foreground mb-2">Starter Pro</h3>
                 <div className="text-4xl font-bold text-foreground mb-2">
-                  $49<span className="text-xl text-muted-foreground">/mo</span>
+                  $49.99<span className="text-xl text-muted-foreground">/mo</span>
                 </div>
                 <p className="text-foreground">Up to 50 team members</p>
               </div>
