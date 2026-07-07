@@ -315,8 +315,8 @@ export const ConciergeSearchModal = ({
 
           {!query && (
             <div className="py-16 text-center px-6">
-              <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
-                <Wand2 className="text-emerald-400" size={24} />
+              <div className="w-16 h-16 bg-gold-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-gold-primary/30">
+                <Search className="text-gold-primary" size={24} />
               </div>
               <h3 className="text-white font-medium mb-1">Trip Search</h3>
               <p className="text-sm text-neutral-500 max-w-xs mx-auto mb-6">
