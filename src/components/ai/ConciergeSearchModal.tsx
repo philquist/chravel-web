@@ -2,7 +2,6 @@ import React, { useState, useMemo, useCallback } from 'react';
 import {
   Search,
   X,
-  Wand2,
   Calendar,
   CheckSquare,
   BarChart2,
