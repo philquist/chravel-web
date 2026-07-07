@@ -51,7 +51,9 @@
     "permissions:drift": "node scripts/check-permission-matrix-drift.mjs",
     "lint:dal": "bash scripts/check-duplicate-service-wrappers.sh",
     "health:metrics": "node scripts/codebase-health-metrics.cjs",
-    "qa:android15-edge": "node scripts/qa/check-android-15-edge-to-edge.cjs --require-native"
+    "qa:android15-edge": "node scripts/qa/check-android-15-edge-to-edge.cjs --require-native",
+    "iap:validate": "node scripts/validate-iap-product-ids.mjs",
+    "iap:validate:api": "node scripts/validate-iap-product-ids.mjs --source=api"
   },
   "overrides": {
     "@tanstack/query-async-storage-persister": {
