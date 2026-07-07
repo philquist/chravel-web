@@ -1,69 +1,100 @@
-## Goal
+# Fix full-screen Voice Concierge
 
-Bring the newly-shipped Coordinator/Roles work into a polished, premium-feeling surface for luxury concierges and pro orgs. Two entry points, one mental model:
+Two problems to solve in the full-screen voice overlay:
 
-1. **Team tab** — day-to-day: see roles, see who the Coordinator is, add/remove Coordinators.
-2. **Pro Trip Settings → Travel Company** — trip-level: attach the org running the trip and (optionally) mark the org's own people as Coordinators so they get logistics-only scope on their own client's trip.
+1. **It looks connected but nothing works.** Dictation never appears under the waveform and no assistant text appears above it — the overlay is stuck at "Starting your voice session…" / "Your words appear here".
+2. **It's always dark.** The overlay is hardcoded to a black/gold palette regardless of app theme, so it clashes with light mode.
 
-Both call the same `useTripAdmins` scope logic (RLS already enforces the `is_full_trip_admin` boundary from the last migration).
+Scope is limited to the voice overlay + the transcript wiring inside `useRealtimeVoice`. No changes to backend edge functions, tools, models, or the text concierge.
 
-## What ships
+---
 
-### 1. Team tab — Coordinator visibility polish
-File: `src/components/pro/team/RolesView.tsx`
+## Part 1 — Make dictation + responses actually show
 
-- Add a **Coordinator strip** above the roster (shown when `pro_coordinator_role` flag is on) listing current Coordinators as avatar chips with a `Manage` button that opens the existing `CoordinatorInviteDialog`.
-- On each roster card, if the member is a Coordinator, show a small amber `Coordinator` pill next to their name (source: `admins` where `admin_scope === 'coordinator'`).
-- Empty state chip: "Add a Coordinator — outside organizer, logistics-only access." Clicking opens the dialog.
-- No new dialogs — reuse `CoordinatorInviteDialog`.
+### What we're seeing
 
-### 2. CoordinatorInviteDialog — clarity + premium polish
-File: `src/components/pro/admin/CoordinatorInviteDialog.tsx`
+`useRealtimeVoice` maps `realtime.messages` to `turns` using `extractMessageText`, which only reads `part.text`. OpenAI Realtime (via AI SDK v7 `useRealtime`) surfaces user speech and assistant speech through additional part types (transcription deltas / audio-transcript parts) that don't carry a plain `text` field on the same shape — so the messages exist but resolve to empty strings, get filtered out by `turn.text.length > 0`, and the overlay renders the empty state forever.
 
-- Replace the raw UUID in "Current coordinators" with the roster's display name + avatar (join `admins` ↔ `roster` by `userId`).
-- Add a "What Coordinators can do / can't do" two-column panel (Calendar, Tasks, Places, Links vs. Private chat, AI Concierge, Private media) — the same boundary the article now sells.
-- Tighten spacing, use `Card`/section headers consistent with settings polish.
-- Add a secondary tab/toggle: **Add by email** (invite an outside organizer who isn't in the roster yet) — reuses the existing invite-link/email flow already used for member invites; the invitee joins with Coordinator scope pre-set. If that flow doesn't cleanly accept a role hint, we fall back to a two-step "send invite → auto-promote on accept" using a `pending_coordinator_invites` field on the invite row. **Scope call-out below.**
+The header status pill also stays on "Connecting…" longer than it should because the overlay treats `phase === 'connecting'` as the copy trigger even after the socket has moved to `connected` with `isCapturing = true` but zero turns.
 
-### 3. Pro Trip Settings → Travel Company section (new)
-Files: `src/components/EnterpriseSettings.tsx` (add a section), new `src/components/pro/settings/TravelCompanySection.tsx`
+### Fix
 
-- New settings section titled **Travel Company** (shown on Pro trips only).
-- Row 1: **Organization** — dropdown of the user's orgs (from existing `useOrganizations`/enterprise data) + "Create organization" link that opens the existing `CreateOrganizationModal`. Persists `trip.organization_id`.
-- Row 2: **Coordinators from this organization** — searchable list of org members with a per-row `Assign as Coordinator` toggle. Same underlying `promoteToAdmin(userId, { scope: 'coordinator' })` call; org members not yet on the trip are added to the trip first (existing invite flow) then promoted.
-- Row 3: **Boundary explainer** — short static block mirroring the article: "Coordinators manage logistics. They cannot read private family chat, AI Concierge, or private media."
-- If the current user is the trip creator AND part of the selected org, offer a one-click **"Assign myself as Coordinator"** button so a concierge owner can voluntarily downgrade themselves for a given client trip.
+1. **Broaden `extractMessageText`** in `src/features/concierge/hooks/useRealtimeVoice.ts` to accept every AI SDK Realtime transcript part shape:
+   - `part.text` (already handled)
+   - `part.transcript` (assistant audio transcript)
+   - `part.delta` when `part.type` indicates a transcript delta
+   - `part.input_transcript` / user transcription part
+   - Fall back to empty string; keep join+trim behavior.
+   Add short inline comments naming each shape so this doesn't rot.
 
-### 4. Premium visual pass (settings-only, no logic changes)
-- Consistent card chrome: `bg-white/[0.04] border border-white/10 rounded-2xl`, section header with small gold icon square (matches OrganizationSection header pattern).
-- Tighter vertical rhythm (`space-y-6` inside sections, `gap-4` in grids).
-- Use existing `gold-primary`/`gold-mid` tokens — no new colors.
-- Scope: Pro Trip Settings + Team tab Coordinator surfaces only. No changes to consumer settings, chat, calendar, etc.
+2. **Add a lightweight dev log** (gated on `import.meta.env.DEV`) that prints unknown message part types once per session. This is a diagnostic aid so if the SDK changes shapes again we see it in the console instead of silently rendering nothing. No production logging.
 
-### 5. Wiring & data
-- `trip.organization_id` column: check `trips` schema; if missing, add a migration (nullable uuid ref → organizations, index, RLS unchanged). **Scope call-out below.**
-- No RLS changes — Coordinator boundary already enforced by prior migration.
-- Feature flag `pro_coordinator_role` continues to gate all Coordinator UI.
+3. **Overlay copy states** in `RealtimeVoiceOverlay.tsx`:
+   - Show "Starting your voice session…" only while `phase === 'connecting'`.
+   - Once `phase` is `listening`/`speaking` with no turns yet, show "Listening — say hello to your concierge" above the wave and keep the mic hint below.
+   - When the user has spoken but the assistant hasn't replied yet, keep the user's latest line visible below and show a subtle "…" placeholder above.
+
+4. **Live user transcript while speaking**: `useRealtimeVoice` already exposes `latestUserText`. Pass it through so the below-line region shows the in-progress utterance even before the message part is finalized. Same for `latestAssistantText` above the line (used as the "current" line when it hasn't been committed as a message yet).
+
+### How we'll verify
+
+- Open the overlay in the preview, tap Start, speak "hello", confirm:
+  - "Listening" pill appears within ~1s of Start.
+  - The word "hello" (or close) appears below the wave.
+  - The concierge's spoken reply appears above the wave as it speaks.
+- Watch DevTools console for the "unknown part type" diagnostic; it should be silent for normal traffic.
+
+---
+
+## Part 2 — Theme-aware overlay
+
+Right now the overlay hardcodes:
+- `bg-gradient-to-b from-[#0b0b0f] via-[#0d0c12] to-black/95`
+- `text-white`, `text-white/40`, `text-white/70`
+- `bg-white/10`, `bg-white/15`
+- Status pill uses `bg-[#c49746]/15 text-[#feeaa5]`
+
+That works in dark mode, but in light mode the surrounding app is cream and the overlay is a black rectangle — the same class of contrast bug we just fixed for the search modal.
+
+### Fix
+
+Rewrite the overlay to use semantic tokens so it inherits the current theme:
+
+- Container background → `bg-background/95` with a subtle themed gradient using `from-background via-background to-muted/40`, plus `backdrop-blur-xl`.
+- Text: `text-foreground` for the current line, `text-muted-foreground` for prior lines and hints.
+- Buttons: use `bg-muted hover:bg-muted/80 text-foreground` for the End button; use `Button` variant `ghost` semantics for the close X.
+- Status pill:
+  - Idle/listening/speaking → `bg-gold-primary/15 text-gold-primary border border-gold-primary/30` (gold reads on both themes).
+  - Error → `bg-destructive/15 text-destructive border border-destructive/30`.
+- Keep the gold waveform colors as-is — the gold gradient is a brand accent and reads on both light and dark backgrounds; only nudge the SVG drop-shadow opacity down slightly for light mode via a wrapper class.
+- Mic icon + "Your words appear here" → `text-muted-foreground`.
+
+No changes to layout, spacing, or the wave animation — only tokens.
+
+### How we'll verify
+
+- Toggle the app between light and dark theme, open the overlay in both, check:
+  - Text is readable in both modes (foreground vs background contrast, not white-on-cream).
+  - Status pill, End button, and close X all have visible borders/hover in both modes.
+  - Waveform still reads on both backgrounds.
+
+---
 
 ## Files touched
 
-```
-src/components/pro/team/RolesView.tsx                (Coordinator strip + pill)
-src/components/pro/admin/CoordinatorInviteDialog.tsx (names, boundary panel, add-by-email)
-src/components/pro/settings/TravelCompanySection.tsx (new)
-src/components/EnterpriseSettings.tsx                (mount new section on Pro trips)
-src/components/enterprise/OrganizationSection.tsx    (minor: shared header pattern, no behavior change)
-supabase/migrations/<new>.sql                        (only if trips.organization_id missing)
+```text
+src/features/concierge/hooks/useRealtimeVoice.ts        (extractMessageText + dev diag)
+src/features/concierge/components/RealtimeVoiceOverlay.tsx  (transcript copy + theme tokens)
 ```
 
-## Out of scope (call out before I code)
+No backend, no schema, no new deps.
 
-- **DB migration for `trips.organization_id`** — I'll confirm whether the column exists before writing SQL; if it does, no migration ships in this pass.
-- **Add-by-email Coordinator invite** — depends on the current invite flow supporting a role hint. If it doesn't, I'll ship the roster-based promotion in this PR and file a follow-up for email invite, rather than expand scope.
-- No changes to the blog article, marketing pages, or consumer trip settings.
-- No changes to permission-matrix.json (Coordinator role already added in prior turn).
+---
 
-## Validation
+## Out of scope
 
-- `npm run lint && npm run typecheck && npm run build`
-- Manual: on a Pro trip, promote a roster member to Coordinator from both entry points, confirm pill/strip render, confirm dialog shows names not UUIDs, confirm boundary explainer matches article language.
+- Changing the realtime model, provider, or session config.
+- Rewriting the mint/setup endpoints.
+- Persisting voice transcripts to the DB.
+
+If after Part 1 dictation still doesn't surface, next step is to instrument the `mint-realtime-token` + preflight response in the overlay error region so the real gateway/credits/model error becomes visible — but we'll only add that if the transcript-shape fix isn't enough.

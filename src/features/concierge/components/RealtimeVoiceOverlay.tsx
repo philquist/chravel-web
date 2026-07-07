@@ -6,6 +6,9 @@
  *   - Animated gold wave across the middle (energy reacts to listening/speaking)
  *   - User transcript BELOW the line (what you said)
  * Both transcripts stay readable so a missed/quiet response can always be read.
+ *
+ * Uses semantic theme tokens so the overlay adapts to light and dark mode instead
+ * of hardcoding a dark palette.
  */
 import { type RefObject, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -22,6 +25,10 @@ interface RealtimeVoiceOverlayProps {
   isCapturing: boolean;
   isPlaying: boolean;
   errorMessage: string | null;
+  /** Latest in-progress user utterance (may not yet be a committed message). */
+  latestUserText?: string;
+  /** Latest in-progress assistant reply (may not yet be a committed message). */
+  latestAssistantText?: string;
   onEnd: () => void;
   /**
    * Element to confine the overlay to (the concierge chat window). When provided, the
@@ -56,20 +63,19 @@ function sinePath(
 }
 
 function GoldWave({ intensity }: { intensity: number }) {
-  // viewBox is 2× a 1000-wide tile so the drift keyframe (translateX -1000) loops seamlessly.
   const width = 2000;
   const midY = 100;
   const wavelength = 1000;
   const paths = useMemo(
     () => [
-      { d: sinePath(width, midY, 26, wavelength, 0), stroke: '#feeaa5', opacity: 0.45, w: 2 },
+      { d: sinePath(width, midY, 26, wavelength, 0), stroke: '#feeaa5', opacity: 0.55, w: 2 },
       {
         d: sinePath(width, midY, 34, wavelength, Math.PI / 2),
         stroke: '#e8af48',
-        opacity: 0.7,
+        opacity: 0.8,
         w: 2.5,
       },
-      { d: sinePath(width, midY, 30, wavelength, Math.PI), stroke: '#c49746', opacity: 0.9, w: 3 },
+      { d: sinePath(width, midY, 30, wavelength, Math.PI), stroke: '#c49746', opacity: 0.95, w: 3 },
     ],
     [],
   );
@@ -81,9 +87,8 @@ function GoldWave({ intensity }: { intensity: number }) {
       preserveAspectRatio="none"
       height={160}
       aria-hidden="true"
-      style={{ filter: 'drop-shadow(0 0 12px rgba(232,175,72,0.45))' }}
+      style={{ filter: 'drop-shadow(0 0 10px rgba(196,151,70,0.35))' }}
     >
-      {/* Amplitude reacts to speaking/listening energy; eased for a living feel. */}
       <g
         style={{
           transform: `scaleY(${0.35 + intensity * 0.95})`,
@@ -115,23 +120,23 @@ export function RealtimeVoiceOverlay({
   isCapturing,
   isPlaying,
   errorMessage,
+  latestUserText,
+  latestAssistantText,
   onEnd,
   containerRef,
 }: RealtimeVoiceOverlayProps) {
   const assistantTurns = turns.filter(t => t.role === 'assistant');
   const userTurns = turns.filter(t => t.role === 'user');
 
-  // Newest assistant text should hug the line (bottom of the upper region).
   const assistantScrollRef = useRef<HTMLDivElement>(null);
   const userScrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     assistantScrollRef.current?.scrollTo({ top: assistantScrollRef.current.scrollHeight });
-  }, [assistantTurns.length, turns]);
+  }, [assistantTurns.length, turns, latestAssistantText]);
 
   const intensity =
     phase === 'speaking' && isPlaying ? 1 : phase === 'listening' && isCapturing ? 0.6 : 0.15;
 
-  // Escape ends the session.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onEnd();
@@ -140,12 +145,25 @@ export function RealtimeVoiceOverlay({
     return () => window.removeEventListener('keydown', onKey);
   }, [onEnd]);
 
-  // Confine to the chat window when a container is given; otherwise cover the viewport.
   const target = containerRef?.current ?? null;
+
+  // Determine what to render above/below the wave.
+  const hasAssistantTurns = assistantTurns.length > 0;
+  const hasUserTurns = userTurns.length > 0;
+  const liveAssistant = latestAssistantText?.trim() ?? '';
+  const liveUser = latestUserText?.trim() ?? '';
+
+  const assistantEmptyCopy =
+    phase === 'connecting'
+      ? 'Starting your voice session…'
+      : phase === 'listening' || phase === 'speaking'
+        ? 'Listening — say hello to your concierge.'
+        : 'Say hello to your concierge.';
+
   const overlay = (
     <div
       className={cn(
-        'z-[120] flex flex-col bg-gradient-to-b from-[#0b0b0f] via-[#0d0c12] to-black/95 backdrop-blur-xl animate-fade-in',
+        'z-[120] flex flex-col bg-gradient-to-b from-background via-background to-muted/40 backdrop-blur-xl animate-fade-in',
         target ? 'absolute inset-0' : 'fixed inset-0',
       )}
       role="dialog"
@@ -164,20 +182,22 @@ export function RealtimeVoiceOverlay({
       <div className="flex items-center justify-between px-5">
         <div
           className={cn(
-            'inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium',
-            phase === 'error' ? 'bg-red-500/15 text-red-300' : 'bg-[#c49746]/15 text-[#feeaa5]',
+            'inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium border',
+            phase === 'error'
+              ? 'bg-destructive/15 text-destructive border-destructive/30'
+              : 'bg-gold-primary/15 text-gold-primary border-gold-primary/30',
           )}
         >
           <span
             className={cn(
               'h-2 w-2 rounded-full',
               phase === 'speaking'
-                ? 'bg-[#e8af48] animate-pulse'
+                ? 'bg-gold-primary animate-pulse'
                 : phase === 'listening'
-                  ? 'bg-emerald-400 animate-pulse'
+                  ? 'bg-emerald-500 animate-pulse'
                   : phase === 'error'
-                    ? 'bg-red-400'
-                    : 'bg-[#c49746]',
+                    ? 'bg-destructive'
+                    : 'bg-gold-primary',
             )}
           />
           {PHASE_LABEL[phase]}
@@ -186,7 +206,7 @@ export function RealtimeVoiceOverlay({
           type="button"
           onClick={onEnd}
           aria-label="End voice session"
-          className="rounded-full p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
+          className="rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
         >
           <X className="h-5 w-5" />
         </button>
@@ -198,26 +218,29 @@ export function RealtimeVoiceOverlay({
         className="flex-1 overflow-y-auto px-6 pb-4 flex flex-col justify-end items-center text-center"
       >
         <div className="w-full max-w-2xl space-y-3">
-          {assistantTurns.length === 0 ? (
-            <p className="text-white/40 text-base">
-              {phase === 'connecting'
-                ? 'Starting your voice session…'
-                : 'Say hello to your concierge.'}
-            </p>
+          {!hasAssistantTurns && !liveAssistant ? (
+            <p className="text-muted-foreground text-base">{assistantEmptyCopy}</p>
           ) : (
-            assistantTurns.map((turn, i) => (
-              <p
-                key={turn.id}
-                className={cn(
-                  'leading-relaxed transition-colors',
-                  i === assistantTurns.length - 1
-                    ? 'text-[#feeaa5] text-2xl font-medium'
-                    : 'text-white/45 text-lg',
-                )}
-              >
-                {turn.text}
-              </p>
-            ))
+            <>
+              {assistantTurns.slice(0, -1).map(turn => (
+                <p key={turn.id} className="leading-relaxed text-muted-foreground text-lg">
+                  {turn.text}
+                </p>
+              ))}
+              {(() => {
+                const last = assistantTurns[assistantTurns.length - 1];
+                const text = liveAssistant || last?.text || '';
+                if (!text) return null;
+                return (
+                  <p
+                    key={last?.id ?? 'live-assistant'}
+                    className="leading-relaxed text-foreground text-2xl font-medium"
+                  >
+                    {text}
+                  </p>
+                );
+              })()}
+            </>
           )}
         </div>
       </div>
@@ -233,23 +256,31 @@ export function RealtimeVoiceOverlay({
         className="flex-1 overflow-y-auto px-6 pt-4 flex flex-col items-center text-center"
       >
         <div className="w-full max-w-2xl space-y-2">
-          {userTurns.length === 0 ? (
-            <p className="inline-flex items-center gap-2 text-white/35 text-sm">
+          {!hasUserTurns && !liveUser ? (
+            <p className="inline-flex items-center gap-2 text-muted-foreground text-sm">
               <Mic className="h-4 w-4" /> Your words appear here
             </p>
           ) : (
-            userTurns.slice(-4).map((turn, i, arr) => (
-              <p
-                key={turn.id}
-                className={cn(
-                  i === arr.length - 1
-                    ? 'text-white text-lg font-medium'
-                    : 'text-white/40 text-base',
-                )}
-              >
-                {turn.text}
-              </p>
-            ))
+            <>
+              {userTurns.slice(-4, -1).map(turn => (
+                <p key={turn.id} className="text-muted-foreground text-base">
+                  {turn.text}
+                </p>
+              ))}
+              {(() => {
+                const last = userTurns[userTurns.length - 1];
+                const text = liveUser || last?.text || '';
+                if (!text) return null;
+                return (
+                  <p
+                    key={last?.id ?? 'live-user'}
+                    className="text-foreground text-lg font-medium"
+                  >
+                    {text}
+                  </p>
+                );
+              })()}
+            </>
           )}
         </div>
       </div>
@@ -257,12 +288,12 @@ export function RealtimeVoiceOverlay({
       {/* Error + end control */}
       <div className="shrink-0 px-6 pt-2 flex flex-col items-center gap-3">
         {errorMessage && phase === 'error' && (
-          <p className="text-red-300 text-sm text-center max-w-md">{errorMessage}</p>
+          <p className="text-destructive text-sm text-center max-w-md">{errorMessage}</p>
         )}
         <button
           type="button"
           onClick={onEnd}
-          className="rounded-full bg-white/10 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-white/15"
+          className="rounded-full bg-muted px-6 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/80"
         >
           End conversation
         </button>

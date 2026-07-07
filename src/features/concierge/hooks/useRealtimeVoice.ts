@@ -55,14 +55,37 @@ export interface UseRealtimeVoiceResult {
   stop: () => void;
 }
 
-/** Concatenate the text of a UIMessage's parts (text + any transcript parts). */
+/**
+ * Concatenate the text of a UIMessage's parts. OpenAI Realtime (via AI SDK v7
+ * `useRealtime`) surfaces spoken content through several shapes depending on
+ * whether it's a finalized text part, an assistant audio transcript, an
+ * incremental delta, or a user input transcription — all can appear on the
+ * same message. Read every one that carries a string so nothing silently
+ * disappears from the transcript.
+ */
+const _loggedUnknownPartTypes = new Set<string>();
 function extractMessageText(message: { parts?: unknown }): string {
   const parts = Array.isArray(message.parts) ? message.parts : [];
   return parts
     .map(part => {
-      if (part && typeof part === 'object' && 'text' in part) {
-        const text = (part as { text?: unknown }).text;
-        return typeof text === 'string' ? text : '';
+      if (!part || typeof part !== 'object') return '';
+      const p = part as Record<string, unknown>;
+      // Finalized text part.
+      if (typeof p.text === 'string') return p.text;
+      // Assistant audio transcript part.
+      if (typeof p.transcript === 'string') return p.transcript;
+      // User input audio transcription part.
+      if (typeof p.input_transcript === 'string') return p.input_transcript as string;
+      // Streaming delta (transcript.delta / text.delta / audio-transcript.delta).
+      if (typeof p.delta === 'string') return p.delta;
+      // Dev-only diagnostic so a future SDK shape change doesn't silently blank the UI.
+      if (import.meta.env.DEV) {
+        const t = typeof p.type === 'string' ? (p.type as string) : 'unknown';
+        if (!_loggedUnknownPartTypes.has(t)) {
+          _loggedUnknownPartTypes.add(t);
+          // eslint-disable-next-line no-console
+          console.debug('[realtime-voice] unknown message part type', t, p);
+        }
       }
       return '';
     })

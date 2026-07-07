@@ -94,6 +94,8 @@ export function RealtimeVoiceButton({
           isCapturing={voice.isCapturing}
           isPlaying={voice.isPlaying}
           errorMessage={voice.errorMessage}
+          latestUserText={voice.latestUserText}
+          latestAssistantText={voice.latestAssistantText}
           onEnd={voice.stop}
           containerRef={containerRef}
         />
