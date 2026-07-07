@@ -1,58 +1,72 @@
-## Context
+## Reply to paste back to Claude in App Store Connect
 
-App Store rejected build 2.0(60) under Guideline 2.1(b): the 7 IAP products aren't attached to the version submission and each is missing its required **App Review Screenshot** in App Store Connect. The repo already has a dev-only capture surface (`src/pages/DevBillingPreview.tsx`) and a documented workflow (`docs/agentic/app-store-connect-iap-review-screenshots.md`) — but the actual PNGs are not committed. No app code changes are needed.
+Below is a copy-paste answer for Claude. It gives explicit go-ahead, resolves all 4 decisions, and locks in the naming/group/copy so nothing gets guessed. After Claude finishes, I'll generate the Lovable/codebase sync prompt so the app's product IDs match exactly what ends up in ASC.
 
-## What I'll do (headless browser, in-sandbox)
+---
 
-Use Playwright against the running Vite dev server (`http://localhost:8080`) to render `DevBillingPreview` and `TripPassModal` with an iOS WKWebView user-agent + `?app_context=native` so `isIOSNativeShell()` returns true and CTAs render as "Subscribe with Apple" / "Buy with Apple" (guideline 3.1.1). Viewport `390×844` at `deviceScaleFactor 3.31` → exact **1290×2796** PNGs (iPhone 6.9", well above Apple's 640×920 floor).
+**Paste this to Claude:**
 
-Capture the 7 required screenshots, each framed on its own product/CTA:
+Confirmed — go ahead and create the 4 missing products. I accept that Apple product IDs are permanent and that these exact IDs, names, prices, and group assignments will be the canonical source of truth going forward. Do NOT touch the 3 existing correct products, the 5 `.app.`-prefixed "Chravel Memberships" products, or the extra `com.chravel.explorer.monthly`. Leave all of those exactly as they are — I will clean up / delete the `.app.` duplicates and the stray monthly Explorer myself later.
 
-| # | File | Product Apple ID | Route |
-|---|------|------------------|-------|
-| 1 | iap-01-frequent-monthly.png | com.chravel.frequentchraveler.monthly | `/dev/billing-preview?app_context=native&highlight=frequent-monthly` |
-| 2 | iap-02-explorer-annual.png | com.chravel.explorer.annual | `…&highlight=explorer-annual` |
-| 3 | iap-03-frequent-annual.png | com.chravel.frequentchraveler.annual | `…&highlight=frequent-annual` |
-| 4 | iap-04-pro-starter-monthly.png | com.chravel.pro.starter.monthly | `…&highlight=pro-starter` |
-| 5 | iap-05-pro-growth-monthly.png | com.chravel.pro.growth.monthly | `…&highlight=pro-growth` |
-| 6 | iap-06-trippass-explorer.png | com.chravel.trippass.explorer | `…&trippass=1&highlight=explorer-pass` |
-| 7 | iap-07-trippass-frequent.png | com.chravel.trippass.frequent | `…&trippass=1&highlight=frequent-pass` |
+Answers to your 4 questions:
 
-Delivery locations (all downloadable from chat):
-- `/mnt/documents/iap-screenshots/iap-01…iap-07.png` (individual files, each with a `<presentation-artifact>` link)
-- `/mnt/documents/chravel-iap-screenshots-v3.zip` (bundled)
-- Also mirrored to `appstore/iap-screenshots/` in the repo for regeneration.
+**1. Subscription group placement**
+Create a **new, separate** subscription group for the Pro tiers.
+- Group Reference Name: `Chravel Organization Plans`
+- Both `com.chravel.pro.starter.monthly` and `com.chravel.pro.growth.monthly` go in this new group.
+- Rationale: Org-tier plans must be independently held from individual Explorer/Frequent plans (a Pro admin may also be an individual subscriber). Keeping them in a separate group avoids Apple's mutual-exclusion behavior.
 
-Post-capture QA on every PNG: dimensions == 1290×2796, target product visible, CTA reads "Subscribe with Apple" or "Buy with Apple" (not "Subscribe"/"Buy" — that would be a rejection risk). If `DevBillingPreview` doesn't currently render a distinct card for one of the 7 IDs (e.g. Pro tier cards or the two Trip Pass variants), I'll flag it and make the smallest possible additive change to `DevBillingPreview.tsx` only (no shared component edits) so the capture is possible — reported explicitly in delivery.
+**2. Reference Name format**
+Use the **"Chravel [Name]" pattern** for consistency with the 3 existing correct products. Exact reference names:
+- `com.chravel.pro.starter.monthly` → **Chravel Starter Pro Monthly**
+- `com.chravel.pro.growth.monthly` → **Chravel Growth Pro Monthly**
+- `com.chravel.trippass.explorer` → **Chravel Explorer Trip Pass**
+- `com.chravel.trippass.frequent` → **Chravel Frequent Chraveler Trip Pass**
 
-## What you'll do (Claude for Chrome extension in App Store Connect)
+**3. Display Name + Description (en-US, use verbatim)**
 
-I'll deliver a paste-ready **Claude for Chrome** agent prompt (you sign into https://appstoreconnect.apple.com first, then hand the tab to Claude). The prompt will:
+`com.chravel.pro.starter.monthly`
+- Display Name: `Starter Pro`
+- Description: `Chravel Starter Pro for small organizations. Manage up to 5 pro trips with roles, permissions, broadcasts, and organization-wide admin controls. Billed monthly. Auto-renews until canceled.`
 
-1. **Per-product upload loop** — for each of the 7 IAP IDs above:
-   a. Navigate to Apps → Chravel → Monetization → In-App Purchases and Subscriptions.
-   b. Open the product by exact Apple ID (fail loudly if not found — no fuzzy match).
-   c. Verify Reference Name, Duration, and **US price** match the canonical matrix (Explorer $9.99/mo·$99/yr, Frequent Chraveler $19.99/mo·$199/yr, Pro Starter $49/mo, Pro Growth $99/mo, Explorer Trip Pass $39.99/45d, Frequent Chraveler Trip Pass $74.99/90d). Report mismatches, do NOT auto-edit price.
-   d. In App Review Information, upload the matching PNG to **Review Screenshot** (replace if one exists).
-   e. Paste standardized Review Notes: *"Screenshot captured from the in-app Settings → Billing panel showing this product on the paywall. CTA reads 'Subscribe with Apple' (or 'Buy with Apple' for Trip Passes) because the app uses StoreKit / RevenueCat for all iOS purchases. No external payment links are present."*
-   f. Save; confirm status flips from "Missing Metadata" → "Ready to Submit".
+`com.chravel.pro.growth.monthly`
+- Display Name: `Growth Pro`
+- Description: `Chravel Growth Pro for growing teams. Unlimited pro trips, advanced roles and permissions, priority support, broadcast channels, and organization-wide admin controls. Billed monthly. Auto-renews until canceled.`
 
-2. **Attach to version 2.0** — on App Store → iOS App → 2.0 Prepare for Submission, scroll to *In-App Purchases and Subscriptions*, add all 7 IAPs, save. This is the specific fix Apple asked for; adding them here submits them **with** the existing binary — no new build required.
+`com.chravel.trippass.explorer` (Non-Consumable)
+- Display Name: `Explorer Trip Pass`
+- Description: `One-time 45-day Explorer access pass. Unlocks Explorer-tier features for a single trip window. Does not auto-renew.`
 
-3. **Resubmit for review** — click Add for Review → Submit to App Review. Screenshot the confirmation.
+`com.chravel.trippass.frequent` (Non-Consumable)
+- Display Name: `Frequent Chraveler Trip Pass`
+- Description: `One-time 90-day Frequent Chraveler access pass. Unlocks Frequent Chraveler-tier features for a single trip window. Does not auto-renew.`
 
-4. **Final report** — Claude replies with: per-product status table, screenshot of the version's IAP attach list, and submission confirmation ID.
+Review Notes (paste verbatim into every one of these 4 + all uploads later): `Screenshot captured from the in-app Settings → Billing panel showing this product on the paywall. CTA reads 'Subscribe with Apple' (or 'Buy with Apple' for Trip Passes) because the app uses StoreKit / RevenueCat for all iOS purchases. No external payment links are present.`
 
-## Deliverables in chat at end of build
+**4. Pricing (US tier — confirm the tier label before saving; do NOT proceed if the tier doesn't map cleanly to the exact USD amount)**
+- Starter Pro Monthly: **$49.00 USD / month**, 1 month duration
+- Growth Pro Monthly: **$99.00 USD / month**, 1 month duration
+- Explorer Trip Pass: **$39.99 USD** one-time (Non-Consumable)
+- Frequent Chraveler Trip Pass: **$74.99 USD** one-time (Non-Consumable)
 
-1. Seven individual `<presentation-artifact>` PNG downloads.
-2. One `chravel-iap-screenshots-v3.zip` download.
-3. QA report (per-product: dimensions ✅, CTA copy ✅, product visible ✅).
-4. Paste-ready Claude for Chrome prompt with the full loop + resubmit steps.
-5. Note on the "new binary" phrasing in Apple's email: attaching the IAPs to the current version usually suffices; if reviewer explicitly wants a new build, you can bump `CFBundleVersion` to 61 and re-archive — I'll include the exact 2-line change if needed but won't do it unprompted.
+**Sequence to follow, then STOP:**
+1. Create the new "Chravel Organization Plans" subscription group.
+2. Create the 2 Pro subscriptions in it with the IDs/names/prices/descriptions above.
+3. Create the 2 Trip Passes as Non-Consumable In-App Purchases with the IDs/names/prices/descriptions above.
+4. For the 3 existing correct products (Explorer Annual, Frequent Chraveler Monthly, Frequent Chraveler Annual): paste the Review Notes verbatim into the App Review Information field and Save. Do NOT edit their reference names, prices, or group.
+5. For all 7 products: leave the Review Screenshot slot empty — I'll upload those myself.
+6. Do NOT attach anything to Version 2.0 yet. Do NOT resubmit. Stop and report back with a per-product table (ID · Reference Name · Group · Duration · US Price · Status) so I can verify before uploads.
 
-## Out of scope
+Once you report back and I've uploaded the 7 screenshots, I'll give you a fresh go-ahead for Phase 2 (attach all 7 to Version 2.0) and Phase 3 (Submit to App Review).
 
-- No changes to prices, product IDs, RevenueCat config, or shared paywall components.
-- No new binary upload / Fastlane run.
-- No writes to App Store Connect from my side (I can't reach it — that's why you drive Claude for Chrome).
+Re: "Clog" — that was autocorrect for **Lovable**. After you finish, I'll generate the Lovable prompt to sync the codebase (`src/constants/stripe.ts`, RevenueCat product identifiers, and `src/billing/config.ts`) to the exact IDs you end up saving. No code changes happen until ASC is locked in.
+
+---
+
+## What I'll do on my side after Claude reports back
+
+- Take Claude's final per-product table and produce a Lovable prompt that updates: RevenueCat product identifiers, `src/constants/stripe.ts` Pro tier price IDs (web-Stripe parity later), `src/billing/config.ts` display prices, and the DevBillingPreview mapping so `iap-04/05/06/07` continue to render the exact new IDs.
+- Regenerate `iap-04` through `iap-07` screenshots against the new IDs so the printed "Apple Product ID:" line on each PNG matches ASC exactly. (`iap-01/02/03` stay as-is since those IDs already match.)
+- Deliver the 4 refreshed PNGs individually + a new zip.
+
+Nothing in the app code or screenshots changes until you confirm ASC creation succeeded.
