@@ -227,6 +227,13 @@ export const ConsumerBillingSection = () => {
 
   return (
     <div className="space-y-3">
+      <a
+        href="/settings/subscription"
+        className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] px-4 py-3 text-sm text-white transition-colors"
+      >
+        <span className="font-medium">View subscription status</span>
+        <span className="text-white/50">Plan · renewal · payment →</span>
+      </a>
       {useAppleManagementOnIOS && (
         <div className="rounded-xl p-4 bg-blue-500/10 border border-blue-500/30 space-y-3">
           <div>
