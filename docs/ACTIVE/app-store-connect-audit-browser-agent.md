@@ -14,7 +14,8 @@ account is in a state that could support submission. Apple IAP is currently **di
 **Apple product IDs** (must equal RevenueCat product identifiers):
 `com.chravel.explorer.monthly`, `com.chravel.explorer.annual`,
 `com.chravel.frequentchraveler.monthly`, `com.chravel.frequentchraveler.annual`,
-`com.chravel.explorer.pass45`, `com.chravel.frequentchraveler.pass90`.
+`com.chravel.trippass.explorer`, `com.chravel.trippass.frequent`,
+`com.chravel.pro.starter.monthly`, `com.chravel.pro.growth.monthly`.
 **Prices:** Explorer $9.99/mo, $99/yr · Frequent Chraveler $19.99/mo, $199/yr · passes $39.99 / $74.99.
 
 ## Steps & what to capture

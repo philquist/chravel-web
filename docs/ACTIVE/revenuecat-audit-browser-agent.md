@@ -16,7 +16,8 @@ Also help resolve the **dual-config ambiguity**: the repo has both a web-billing
 **Product identifiers** (must match App Store Connect / Google Play):
 `com.chravel.explorer.monthly`, `com.chravel.explorer.annual`,
 `com.chravel.frequentchraveler.monthly`, `com.chravel.frequentchraveler.annual`,
-`com.chravel.explorer.pass45`, `com.chravel.frequentchraveler.pass90`.
+`com.chravel.trippass.explorer`, `com.chravel.trippass.frequent`,
+`com.chravel.pro.starter.monthly`, `com.chravel.pro.growth.monthly`.
 **Display pricing:** Explorer $9.99/mo, $99/yr · Frequent Chraveler $19.99/mo, $199/yr · passes $39.99 / $74.99.
 
 ## Steps & what to capture
