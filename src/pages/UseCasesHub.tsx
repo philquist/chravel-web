@@ -8,6 +8,7 @@ import { ArticleHeader, EditorialKicker, GoldRule } from '@/components/landing/E
 import { useForceDarkTheme } from '@/hooks/useForceDarkTheme';
 import { SITE_URL, breadcrumbJsonLd, faqJsonLd, siteIdentityJsonLd } from '@/lib/seo';
 import { getUseCaseImage } from '@/lib/useCaseImages';
+import { renderInlineMarkdown } from '@/lib/inlineMarkdown';
 import { USE_CASES, USE_CASES_PATH, USE_CASE_FEATURES, getUseCaseHref } from '@/lib/useCases';
 
 const HUB_FAQ = [
