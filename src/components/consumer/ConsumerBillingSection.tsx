@@ -11,8 +11,8 @@ import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDe
 import {
   purchaseConsumerSubscription,
   purchaseProSubscription,
+  purchaseTripPass,
 } from '@/integrations/revenuecat/revenuecatClient';
-import { TripPassModal } from '../conversion/TripPassModal';
 import { RestorePurchasesButton } from '../billing/RestorePurchasesButton';
 import { handlePurchaseResult } from '@/integrations/revenuecat/revenuecatClient';
 
@@ -35,7 +35,8 @@ export const ConsumerBillingSection = () => {
   const [expandedPlan, setExpandedPlan] = useState<string | null>(tier);
   const [expandedProPlan, setExpandedProPlan] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [tripPassOpen, setTripPassOpen] = useState(false);
+  const [expandedTripPass, setExpandedTripPass] = useState<string | null>(null);
+  const [purchasingPass, setPurchasingPass] = useState<string | null>(null);
 
   useEffect(() => {
     void checkSubscription();
@@ -174,6 +175,48 @@ export const ConsumerBillingSection = () => {
       return;
     }
     await upgradeToTier(consumerTier, cycle);
+  };
+
+  const handleTripPassPurchase = async (passTier: 'explorer' | 'frequent-chraveler') => {
+    setPurchasingPass(passTier);
+    try {
+      if (isNativeIOS) {
+        const result = await purchaseTripPass(passTier);
+        handlePurchaseResult(result, {
+          successMessage: 'Trip Pass activated!',
+          successDescription: 'Your premium features are unlocking for this trip window.',
+          onRetry: () => void handleTripPassPurchase(passTier),
+          context: `trippass/${passTier}`,
+        });
+        if (result.success) await checkSubscription();
+        return;
+      }
+
+      const passId = passTier === 'explorer' ? 'pass-explorer-45' : 'pass-frequent-90';
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please sign in to purchase a Trip Pass');
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { tier: passId, purchase_type: 'pass', platform: 'web' },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      } else {
+        toast.error('Failed to start Trip Pass checkout.');
+      }
+    } catch (err) {
+      toast.error(
+        `Failed to start checkout: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      );
+      console.error(err);
+    } finally {
+      setPurchasingPass(null);
+    }
   };
 
   const plans = {
@@ -376,35 +419,78 @@ export const ConsumerBillingSection = () => {
         </div>
       </div>
 
-      {/* One-time Trip Pass — alternative to recurring subscriptions */}
-      {!isSubscribed && !isSuperAdmin && (
-        <div className="bg-gradient-to-br from-gold-primary/10 to-gold-primary/5 border border-gold-primary/30 rounded-xl p-4">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-start gap-3 flex-1 min-w-[220px]">
-              <div className="w-10 h-10 rounded-full bg-gold-primary/20 text-gold-primary flex items-center justify-center flex-shrink-0">
-                <Ticket size={20} />
-              </div>
-              <div>
-                <h4 className="text-base font-semibold text-white mb-1">One-time Trip Pass</h4>
-                <p className="text-sm text-gray-300">
-                  Full premium for one trip — no recurring charge. Explorer{' '}
-                  {TRIP_PASS_DISPLAY.explorer.price} ({TRIP_PASS_DISPLAY.explorer.durationDays}{' '}
-                  days) · Frequent Chraveler {TRIP_PASS_DISPLAY['frequent-chraveler'].price} (
-                  {TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays} days).
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setTripPassOpen(true)}
-              className="min-h-[42px] bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-black px-5 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Get a Trip Pass
-            </button>
-          </div>
+      {/* Trip Passes (one-time, per-trip premium) */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+        <h4 className="text-base font-semibold text-white mb-1">Trip Passes (One-time)</h4>
+        <p className="text-sm text-gray-400 mb-3">
+          Unlock full premium for a single trip window — no recurring charge. Available on iOS via
+          Apple In-App Purchase and on web via Stripe.
+        </p>
+        <div className="space-y-3">
+          {tripPasses.map(pass => {
+            const PassIcon = pass.icon;
+            const isBusy = purchasingPass === pass.tier;
+            return (
+              <Collapsible
+                key={pass.tier}
+                open={expandedTripPass === pass.tier}
+                onOpenChange={() =>
+                  setExpandedTripPass(expandedTripPass === pass.tier ? null : pass.tier)
+                }
+              >
+                <CollapsibleTrigger className="w-full">
+                  <div className="border border-gold-primary/30 bg-gold-primary/5 rounded-lg p-3 transition-colors hover:bg-gold-primary/10">
+                    <div className="flex items-center justify-between">
+                      <div className="text-left flex items-center gap-3">
+                        <PassIcon size={20} className="text-gold-primary" />
+                        <div>
+                          <h5 className="font-semibold text-white">{pass.name}</h5>
+                          <div className="text-lg font-bold text-white">
+                            {pass.priceLabel}{' '}
+                            <span className="text-sm font-normal text-gray-400">
+                              · {pass.durationDays} days
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-gray-400">
+                        {expandedTripPass === pass.tier ? '−' : '+'}
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="bg-white/5 rounded-lg p-3 ml-4">
+                    <p className="text-sm text-gray-300 mb-2">{pass.description}</p>
+                    <h6 className="font-medium text-white mb-2">What's included:</h6>
+                    <ul className="space-y-1.5 text-sm text-gray-300">
+                      {pass.features.map((feature, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 bg-gold-primary rounded-full mt-2 flex-shrink-0"></div>
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      onClick={() => handleTripPassPurchase(pass.tier)}
+                      disabled={isBusy || purchasingPass !== null}
+                      className="mt-4 bg-gradient-to-r from-gold-primary to-gold-mid hover:from-gold-mid hover:to-gold-primary text-black px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    >
+                      {isBusy
+                        ? 'Processing...'
+                        : isNativeIOS
+                          ? `Purchase with Apple — ${pass.name}`
+                          : `Buy ${pass.name} — ${pass.priceLabel}`}
+                    </button>
+                    <p className="text-xs text-gray-500 mt-2">One-time charge. No auto-renewal.</p>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            );
+          })}
         </div>
-      )}
+      </div>
 
-      <TripPassModal open={tripPassOpen} onOpenChange={setTripPassOpen} />
 
       {/* Available Plans */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
@@ -496,13 +582,15 @@ export const ConsumerBillingSection = () => {
         </p>
         {isNativeIOS && (
           <p className="text-xs text-muted-foreground mb-3">
-            Pro plans are also purchasable in-app via Apple. Enterprise+ requires Sales — visit
-            chravel.app.
+            Pro plans are purchasable in-app via Apple. Enterprise pricing is custom — please visit
+            chravel.app to contact Sales.
           </p>
         )}
 
         <div className="space-y-3">
-          {Object.entries(proPlans).map(([key, plan]) => {
+          {Object.entries(proPlans)
+            .filter(([key]) => !(isNativeIOS && key === 'pro-enterprise'))
+            .map(([key, plan]) => {
             const PlanIcon = plan.icon;
             const isCurrentProPlan = isSuperAdmin && key === proTier;
             return (
@@ -581,6 +669,44 @@ export const ConsumerBillingSection = () => {
     </div>
   );
 };
+
+const tripPasses = [
+  {
+    tier: 'explorer' as const,
+    name: 'Explorer Trip Pass',
+    priceLabel: TRIP_PASS_DISPLAY.explorer.price,
+    durationDays: TRIP_PASS_DISPLAY.explorer.durationDays,
+    icon: Ticket,
+    description: 'All Explorer premium features for a single trip window.',
+    features: [
+      'Unlimited saved trips + restore archived',
+      '25 AI Concierge queries per user per trip',
+      'Unlimited photos, videos & extended storage',
+      'Up to 10 payment splits per trip',
+      'Unlimited PDF trip exports',
+      'Smart Import (Calendar, Agenda, Line-up from URL)',
+      'Location-aware AI recommendations',
+    ],
+  },
+  {
+    tier: 'frequent-chraveler' as const,
+    name: 'Frequent Chraveler Trip Pass',
+    priceLabel: TRIP_PASS_DISPLAY['frequent-chraveler'].price,
+    durationDays: TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays,
+    icon: Ticket,
+    description:
+      'All Frequent Chraveler premium features for multi-city trips — best for longer travel.',
+    features: [
+      'Everything in Explorer Trip Pass',
+      'Unlimited AI Concierge queries',
+      'Unlimited storage & payment splits',
+      'Voice Concierge, PDF export & calendar sync',
+      'Create a ChravelApp Pro trip (50-seat limit)',
+      'Role-based channels on Pro trips',
+      'Early feature access',
+    ],
+  },
+];
 
 const proPlans = {
   'pro-starter': {
