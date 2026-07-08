@@ -4,6 +4,7 @@ import { useDemoMode } from '@/hooks/useDemoMode';
 import { useAuth } from '@/hooks/useAuth';
 import { useStreamClient } from '@/hooks/stream/useStreamClient';
 import { useAppBadge } from '@/hooks/useAppBadge';
+import { useAutoPushRegistration } from '@/hooks/useAutoPushRegistration';
 
 /**
  * AppInitializer - Runs API health checks on app startup
@@ -24,6 +25,9 @@ export const AppInitializer = ({ children }: { children: React.ReactNode }) => {
   // self-guards on `user`). Mounted here, not on the home route, so foreground and
   // realtime badge reconciliation keeps working on /trip/:id and elsewhere.
   useAppBadge();
+
+  // Register APNs/FCM (native) or Web Push when push_enabled but this device has no token.
+  useAutoPushRegistration();
 
   // CSP violation monitoring with error safety
   useEffect(() => {
