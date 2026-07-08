@@ -588,7 +588,9 @@ export const ConsumerBillingSection = () => {
         )}
 
         <div className="space-y-3">
-          {Object.entries(proPlans).map(([key, plan]) => {
+          {Object.entries(proPlans)
+            .filter(([key]) => !(isNativeIOS && key === 'pro-enterprise'))
+            .map(([key, plan]) => {
             const PlanIcon = plan.icon;
             const isCurrentProPlan = isSuperAdmin && key === proTier;
             return (
