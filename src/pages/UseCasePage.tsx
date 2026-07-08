@@ -151,7 +151,7 @@ export default function UseCasePage() {
                   >
                     {String(i + 1).padStart(2, '0')}
                   </span>
-                  <p className="text-base md:text-lg leading-relaxed text-white/80">{step}</p>
+                  <p className="text-base md:text-lg leading-relaxed text-white/80">{renderInlineMarkdown(step)}</p>
                 </li>
               ))}
             </ol>
