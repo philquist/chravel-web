@@ -51,7 +51,7 @@ export const UpgradeModal = ({ isOpen, onClose }: UpgradeModalProps) => {
     // iOS native shell — Apple IAP via RevenueCat for every plan (Guideline 3.1.1)
     if (iosNative) {
       if (selectedPlan === 'travel-pro') {
-        const result = await purchaseProSubscription('pro-starter', billingCycle);
+        const result = await purchaseProSubscription('pro-starter', 'monthly');
         if (result.success) {
           toast.success('ChravelApp Pro activated!');
           onClose();

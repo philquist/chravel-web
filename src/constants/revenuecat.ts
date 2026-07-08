@@ -32,7 +32,7 @@ export const REVENUECAT_ENTITLEMENTS = {
     import.meta.env.VITE_REVENUECAT_FREQUENT_CHRAVELER_ENTITLEMENT_ID ||
     'chravel_frequent_chraveler',
 
-  // Pro tiers (for future use - B2B uses web checkout, not RevenueCat)
+  // Pro tiers (web uses Stripe; iOS exposes Starter/Growth monthly through RevenueCat)
   proStarter: 'chravel_pro_starter',
   proGrowth: 'chravel_pro_growth',
   proEnterprise: 'chravel_pro_enterprise',
@@ -65,15 +65,10 @@ export const REVENUECAT_PRODUCTS = {
   explorerPass45: 'com.chravel.trippass.explorer',
   frequentChravelerPass90: 'com.chravel.trippass.frequent',
 
-  // Pro tiers — exposed on iOS via RevenueCat so every plan is purchasable
-  // in-app. Pricing must match BILLING_PRODUCTS in src/billing/config.ts.
-  // App Store Connect product IDs follow the same com.chravel.* convention.
+  // Pro tiers — Starter/Growth monthly are exposed on iOS via RevenueCat.
+  // Enterprise remains contact-sales; annual Pro IAPs are not part of the 2.0(60) submission.
   proStarterMonthly: 'com.chravel.pro.starter.monthly',
-  proStarterAnnual: 'com.chravel.pro.starter.annual',
   proGrowthMonthly: 'com.chravel.pro.growth.monthly',
-  proGrowthAnnual: 'com.chravel.pro.growth.annual',
-  proEnterpriseMonthly: 'com.chravel.pro.enterprise.monthly',
-  proEnterpriseAnnual: 'com.chravel.pro.enterprise.annual',
 } as const;
 
 /**
@@ -92,11 +87,7 @@ export const REQUIRED_IOS_PRODUCT_IDS = [
   REVENUECAT_PRODUCTS.explorerPass45,
   REVENUECAT_PRODUCTS.frequentChravelerPass90,
   REVENUECAT_PRODUCTS.proStarterMonthly,
-  REVENUECAT_PRODUCTS.proStarterAnnual,
   REVENUECAT_PRODUCTS.proGrowthMonthly,
-  REVENUECAT_PRODUCTS.proGrowthAnnual,
-  REVENUECAT_PRODUCTS.proEnterpriseMonthly,
-  REVENUECAT_PRODUCTS.proEnterpriseAnnual,
 ] as const;
 
 export interface ProductIdAssertion {

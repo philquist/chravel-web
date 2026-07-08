@@ -427,22 +427,16 @@ export async function purchaseConsumerSubscription(
  * purchasable on iOS without forcing users to leave the app.
  */
 export async function purchaseProSubscription(
-  tier: 'pro-starter' | 'pro-growth' | 'pro-enterprise',
-  cycle: 'monthly' | 'annual' = 'monthly',
+  tier: 'pro-starter' | 'pro-growth',
+  cycle: 'monthly' = 'monthly',
   isDemoMode: boolean = false,
 ): Promise<RevenueCatPurchaseResult> {
   const map = {
     'pro-starter': {
       monthly: REVENUECAT_PRODUCTS.proStarterMonthly,
-      annual: REVENUECAT_PRODUCTS.proStarterAnnual,
     },
     'pro-growth': {
       monthly: REVENUECAT_PRODUCTS.proGrowthMonthly,
-      annual: REVENUECAT_PRODUCTS.proGrowthAnnual,
-    },
-    'pro-enterprise': {
-      monthly: REVENUECAT_PRODUCTS.proEnterpriseMonthly,
-      annual: REVENUECAT_PRODUCTS.proEnterpriseAnnual,
     },
   } as const;
   return purchaseByProductId(map[tier][cycle], isDemoMode);

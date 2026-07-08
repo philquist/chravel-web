@@ -30,6 +30,22 @@ type ReviewCard = {
 };
 
 const CARDS: Record<string, ReviewCard> = {
+  'com.chravel.explorer.monthly': {
+    productId: 'com.chravel.explorer.monthly',
+    referenceName: 'Explorer Monthly',
+    planName: 'Explorer',
+    duration: '1 Month',
+    price: CONSUMER_PRICE_DISPLAY.explorer.monthly,
+    perLabel: '/ month',
+    cta: 'Subscribe with Apple',
+    icon: <Globe size={28} />,
+    bullets: [
+      'Unlimited saved trips + restore archived',
+      '25 AI queries per user per trip',
+      'Unlimited PDF exports',
+      'Smart Import + ICS calendar export',
+    ],
+  },
   'com.chravel.frequentchraveler.monthly': {
     productId: 'com.chravel.frequentchraveler.monthly',
     referenceName: 'Frequent Chraveler Monthly',
@@ -105,7 +121,7 @@ const CARDS: Record<string, ReviewCard> = {
     icon: <TrendingUp size={28} />,
     bullets: [
       'For growing organizations',
-      'Advanced integrations (Slack, QuickBooks)',
+      'Advanced team coordination',
       'Compliance and audit trails',
       'Everything in Starter Pro',
     ],

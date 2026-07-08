@@ -119,9 +119,14 @@ export const ConsumerBillingSection = () => {
   };
 
   const handleUpgradeToProPlan = async (planKey: string) => {
+    if (planKey === 'pro-enterprise') {
+      window.location.href = 'mailto:billing@chravelapp.com?subject=Enterprise%20Inquiry';
+      return;
+    }
+
     // iOS native shell — Apple IAP via RevenueCat (Guideline 3.1.1)
     if (isNativeIOS) {
-      const tier = planKey as 'pro-starter' | 'pro-growth' | 'pro-enterprise';
+      const tier = planKey as 'pro-starter' | 'pro-growth';
       const attempt = () => purchaseProSubscription(tier, 'monthly');
       const result = await attempt();
       handlePurchaseResult(result, {
@@ -525,7 +530,7 @@ export const ConsumerBillingSection = () => {
                             {plan.name}
                           </h5>
                           <div className="text-xl font-bold text-foreground">
-                            ${plan.price}/month
+                            {typeof plan.price === 'number' ? `$${plan.price}/month` : plan.price}
                           </div>
                         </div>
                       </div>
@@ -559,7 +564,9 @@ export const ConsumerBillingSection = () => {
                       >
                         {isLoading
                           ? 'Processing...'
-                          : isNativeIOS
+                          : key === 'pro-enterprise'
+                            ? 'Contact Sales'
+                            : isNativeIOS
                             ? `Subscribe with Apple — ${plan.name}`
                             : `Upgrade to ${plan.name}`}
                       </button>
@@ -608,7 +615,7 @@ const proPlans = {
   },
   'pro-enterprise': {
     name: 'Enterprise',
-    price: 199,
+    price: 'Custom',
     icon: Shield,
     features: [
       'Up to 250 team members',

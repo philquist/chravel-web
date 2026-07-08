@@ -104,7 +104,8 @@ export const BILLING_PRODUCTS: Record<string, ProductConfig> = {
     stripeProductId: 'prod_U73Vlcl4lqgsb4',
     stripePriceIdMonthly: 'price_1T8pOe47wCAQ57MmkShIK75i',
     stripePriceIdAnnual: 'price_1T8pOe47wCAQ57MmkShIK75i', // Pro plans monthly only
-    requiresIAPOnIOS: false, // B2B exception
+    appleProductIdMonthly: 'com.chravel.pro.starter.monthly',
+    requiresIAPOnIOS: false, // B2B exception; iOS still offers optional IAP for review parity
     priceMonthly: 49,
     priceAnnual: 490,
     entitlements: [
@@ -127,6 +128,7 @@ export const BILLING_PRODUCTS: Record<string, ProductConfig> = {
     stripeProductId: 'prod_U73VPX6TlClQ7J',
     stripePriceIdMonthly: 'price_1T8pOf47wCAQ57Mm5k8uVQrW',
     stripePriceIdAnnual: 'price_1T8pOf47wCAQ57Mm5k8uVQrW', // Pro plans monthly only
+    appleProductIdMonthly: 'com.chravel.pro.growth.monthly',
     requiresIAPOnIOS: false,
     priceMonthly: 99,
     priceAnnual: 990,

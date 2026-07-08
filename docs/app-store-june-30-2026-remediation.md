@@ -47,16 +47,12 @@ Required iOS product IDs currently referenced by `Chravel-Inc/chravel-web`:
 - `com.chravel.explorer.annual`
 - `com.chravel.frequentchraveler.monthly`
 - `com.chravel.frequentchraveler.annual`
-- `com.chravel.explorer.pass45`
-- `com.chravel.frequentchraveler.pass90`
 - `com.chravel.pro.starter.monthly`
-- `com.chravel.pro.starter.annual`
 - `com.chravel.pro.growth.monthly`
-- `com.chravel.pro.growth.annual`
-- `com.chravel.pro.enterprise.monthly`
-- `com.chravel.pro.enterprise.annual`
+- `com.chravel.trippass.explorer`
+- `com.chravel.trippass.frequent`
 
-If any of those products are not meant to be sold in the iOS binary, remove that product's UI/reference from the iOS-native surface before submission. Otherwise submit every referenced product with the binary.
+Enterprise remains contact-sales; Pro annual IAPs are not part of the 2.0(60) submission. If any of the eight products above are not meant to be sold in the iOS binary, remove that product's UI/reference from the iOS-native surface before submission. Otherwise submit every referenced product with the binary.
 
 ## Once-and-for-all release checklist
 
