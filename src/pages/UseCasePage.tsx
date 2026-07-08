@@ -165,7 +165,7 @@ export default function UseCasePage() {
             {uc.faq.map(item => (
               <div key={item.q} className="py-5">
                 <h3 className="font-semibold text-white/90">{item.q}</h3>
-                <p className="mt-1.5 leading-relaxed text-white/60">{item.a}</p>
+                <p className="mt-1.5 leading-relaxed text-white/60">{renderInlineMarkdown(item.a)}</p>
               </div>
             ))}
           </div>
