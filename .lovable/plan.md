@@ -1,76 +1,71 @@
-
 ## Goal
 
-In Settings → Billing on iOS/mobile:
-1. Remove the "$199/month" Enterprise tier (Apple IAP has no Enterprise SKU — showing a price with no purchase path is what triggers review confusion).
-2. Add both **Trip Pass** in-app purchases as real, expandable options with name, price, duration, benefits, and a "Purchase with Apple" button — matching the two SKUs already in App Store Connect (`com.chravel.trippass.explorer`, `com.chravel.trippass.frequent`).
+Guarantee that Apple product IDs, RevenueCat entitlements, display names, and prices are identical across three places — the codebase, App Store Connect, and RevenueCat — so App Review can't reject on IAP mismatch and payouts flow correctly.
 
-No pricing changes. No changes to Stripe/web billing. No changes to marketing pages.
+## Current state (verified in code)
 
-## Scope
+Canonical set already exists in `src/billing/config.ts` and `src/constants/revenuecat.ts`. Everything the UI shows is derived from `config.ts` via `pricingDisplay.ts` — no hardcoded strings. Parity table:
 
-Single file: `src/components/consumer/ConsumerBillingSection.tsx`.
+| Offering | Apple / Google Product ID | RevenueCat Entitlement | Price | Duration | Display Name |
+|---|---|---|---|---|---|
+| Explorer Monthly | `com.chravel.explorer.monthly` | `chravel_explorer` | $9.99 | 1 mo | Explorer |
+| Explorer Annual | `com.chravel.explorer.annual` | `chravel_explorer` | $99 | 1 yr | Explorer |
+| Frequent Chraveler Monthly | `com.chravel.frequentchraveler.monthly` | `chravel_frequent_chraveler` | $19.99 | 1 mo | Frequent Chraveler |
+| Frequent Chraveler Annual | `com.chravel.frequentchraveler.annual` | `chravel_frequent_chraveler` | $199 | 1 yr | Frequent Chraveler |
+| Pro Starter Monthly | `com.chravel.pro.starter.monthly` | `chravel_pro_starter` | $49 | 1 mo | Starter Pro |
+| Pro Growth Monthly | `com.chravel.pro.growth.monthly` | `chravel_pro_growth` | $99 | 1 mo | Growth Pro |
+| Explorer Trip Pass | `com.chravel.trippass.explorer` | `chravel_explorer` (non-renewing, 45-day grant) | $39.99 | 45 d | Explorer Trip Pass (45 days) |
+| Frequent Chraveler Trip Pass | `com.chravel.trippass.frequent` | `chravel_frequent_chraveler` (non-renewing, 90-day grant) | $74.99 | 90 d | Frequent Chraveler Trip Pass (90 days) |
 
-Config (`src/billing/config.ts`, `TRIP_PASS_PRODUCTS`) already holds the canonical Trip Pass data (name, price, duration, entitlements, Apple product IDs via `src/constants/revenuecat.ts`). No config edits needed.
+Enterprise is intentionally NOT in this set — contact-sales only, hidden on iOS.
 
 ## Changes
 
-### 1. Enterprise row — hide on iOS, keep on web as "Contact Sales"
+### 1. Add a code-side parity guard — `scripts/validate-iap-parity.mjs`
 
-In the Organization Plans list, filter `pro-enterprise` out of `proPlans` when `isNativeIOS` is true. On web, keep the existing row but force the price label to `Custom` (already the case in `proPlans`) and the CTA to `Contact Sales` (already the case). Also drop the "$199" that appears in any stale copy — verify the rendered price for `pro-enterprise` reads `Custom`, not `$199/month`.
+Extends the existing `validate-iap-product-ids.mjs` to cross-check three things and fail CI if any drift:
 
-Result:
-- iOS: Enterprise card not shown at all.
-- Web: Enterprise card shown with "Custom" pricing and "Contact Sales" CTA (unchanged behavior).
+- Every `appleProductIdMonthly` / `appleProductIdAnnual` / `TRIP_PASS_PRODUCTS[*].appleProductId` in `billing/config.ts` appears exactly once in `REVENUECAT_PRODUCTS` in `constants/revenuecat.ts`.
+- Every ID in `REQUIRED_IOS_PRODUCT_IDS` maps back to a product in `BILLING_PRODUCTS` or `TRIP_PASS_PRODUCTS`.
+- Prices in `REVENUECAT_PRICING` equal prices in `BILLING_PRODUCTS` / `TRIP_PASS_PRODUCTS`.
+- Every product referenced maps to a known entitlement in `REVENUECAT_ENTITLEMENTS` via `ENTITLEMENT_TO_TIER`.
+- The ASC snapshot in `appstore/asc-products.json` matches `REQUIRED_IOS_PRODUCT_IDS` exactly (no orphans on either side).
 
-### 2. Trip Passes — replace the single "Get a Trip Pass" banner with two expandable option cards
+Wire it into `package.json` as `npm run validate:iap` and reference it from the pre-PR gate.
 
-Today the section is a single gold banner that opens `TripPassModal`. Replace with a "Trip Passes (One-time)" section that mirrors the Available Plans / Organization Plans visual pattern:
+### 2. Add a Vitest parity test — `src/billing/__tests__/iap-parity.test.ts`
 
-```text
-Trip Passes (One-time)
-For a single trip — no recurring charge.
+Same assertions as the script, but runs inside the standard test suite so an editor change to `revenuecat.ts` prices trips a red test immediately (not only at PR time).
 
-[ 🎟  Explorer Trip Pass
-      $39.99 · 45 days                                +
-]
-   Features:
-   • All Explorer benefits for one trip
-   • 25 AI Concierge queries per trip
-   • Unlimited photos/videos, extended storage
-   • 10 payment splits
-   • PDF trip export
-   [ Purchase with Apple — Explorer Trip Pass ]   (iOS)
-   [ Buy Explorer Trip Pass — $39.99 ]            (web)
+### 3. Refresh the RevenueCat + ASC audit doc — `docs/ACTIVE/revenuecat-audit-browser-agent.md`
 
-[ 🎟  Frequent Chraveler Trip Pass
-      $74.99 · 90 days                              +
-]
-   Features:
-   • All Frequent Chraveler benefits for one trip
-   • Unlimited AI Concierge
-   • Unlimited storage & payment splits
-   • Voice Concierge, PDF export, calendar sync
-   • Pro Trip creation
-   [ Purchase with Apple — FC Trip Pass ]
-```
+Rewrite as a strict, read-only checklist the browser agent runs against RevenueCat and App Store Connect, with the canonical table above embedded. For each row the agent must confirm:
 
-- Prices/durations pulled from `TRIP_PASS_DISPLAY` (already derived from `TRIP_PASS_PRODUCTS`) — no hardcoded dollar amounts.
-- Feature bullets derived by mapping each pass's `entitlements` to a short label list local to this component (same style as `plans` / `proPlans` above).
-- Purchase button reuses the existing `handleConsumerUpgrade` path with `purchaseType: 'pass'` (already supported by `PurchaseRequest`); on iOS this routes through RevenueCat with the correct `com.chravel.trippass.*` product ID, on web it opens Stripe checkout for the pass price.
-- Section is shown to signed-in users regardless of current subscription (a pass is a valid one-off even for Free users; subscribed users can still gift/extend — keep visible, matches App Store Connect where both passes are always purchasable).
-- The old compact banner and standalone `TripPassModal` trigger are removed (component import + `tripPassOpen` state deleted since the new inline UI replaces them).
+- **App Store Connect:** product exists, Reference Name matches "Display Name" column, price matches, status is `Ready to Submit` or `Approved`, attached to the current binary submission, and (for Trip Passes) type is Non-Renewing Subscription.
+- **RevenueCat:** product identifier equals the Apple ID string, is attached to the listed Entitlement, appears in the current Offering, and (for Trip Passes) has the correct 45-day / 90-day grant duration.
+- **Bundle ID** in RevenueCat's iOS app matches the ASC bundle ID.
+- **App Store Server Notifications** URL is RevenueCat's (not something stale).
+
+Output format the agent must return: one row per product with three columns — `code ✓/✗`, `ASC ✓/✗`, `RevenueCat ✓/✗` — plus a mismatch list ranked Critical/High/Medium.
+
+### 4. Add a paste-ready operator checklist — `appstore/IAP_PARITY_CHECKLIST.md`
+
+Short human version of #3 for you to run through manually in ASC + RevenueCat before hitting Submit. Same table, tick-boxes, no prose.
 
 ## Non-goals
 
-- No changes to `src/billing/config.ts`, `src/constants/revenuecat.ts`, or `TRIP_PASS_PRODUCTS`.
-- No changes to Stripe products, prices, or webhooks.
-- No changes to Pro Starter ($49) or Pro Growth ($99) rows.
-- No changes to App Store Connect metadata — the two Trip Pass SKUs are already configured; this only makes them visible/purchasable inside the app so Apple review can see them wired up.
+- No changes to product IDs, prices, entitlement IDs, or display names — those are already correct and locked.
+- No changes to Stripe products.
+- No changes to the iOS binary or RevenueCat SDK integration.
+- No changes to `ConsumerBillingSection.tsx` (already synced in the prior change).
 
 ## Validation
 
-- `npm run typecheck && npm run lint`
-- Manual (mobile viewport 440px): open Settings → Billing → confirm Enterprise card is gone, both Trip Pass cards render and expand, purchase button label reads "Purchase with Apple — …".
-- Manual (desktop): Enterprise card still present with "Custom" / "Contact Sales"; Trip Pass cards render with Stripe-style "Buy …" CTAs.
-- Existing tests: `src/components/__tests__/UpgradeModal.test.tsx` untouched (UpgradeModal not modified).
+- `node scripts/validate-iap-parity.mjs` exits 0.
+- `npm run test -- iap-parity` passes.
+- `npm run typecheck && npm run lint` pass.
+- Manually walk the browser-agent doc against RevenueCat + ASC once; every row should return `code ✓ / ASC ✓ / RevenueCat ✓`.
+
+## Why this closes the risk
+
+Today the three surfaces (code / ASC / RevenueCat) are aligned but nothing *enforces* it — a future price bump in one place silently drifts. Steps 1 and 2 make code drift a build failure. Steps 3 and 4 give you a repeatable read-only audit for the two systems Lovable can't write to, so you can prove parity to Apple in one pass instead of guessing.
