@@ -35,13 +35,12 @@ export const ProUpgradeModal = ({ isOpen, onClose }: ProUpgradeModalProps) => {
 
       // iOS native shell — Apple IAP via RevenueCat (Guideline 3.1.1)
       if (iosNative) {
-        // Enterprise+ requires a sales conversation; route to web only for that custom-quote tier.
-        if (tierKey === 'pro-enterprise' && tier === 'enterprise-plus') {
+        // Enterprise tiers require a sales conversation; Starter/Growth are monthly IAPs.
+        if (tierKey === 'pro-enterprise') {
           toast.info('Contact sales for Enterprise+ pricing.');
           return;
         }
-        const proTier =
-          (tierKey as 'pro-starter' | 'pro-growth' | 'pro-enterprise') || 'pro-starter';
+        const proTier = (tierKey as 'pro-starter' | 'pro-growth') || 'pro-starter';
         const result = await purchaseProSubscription(proTier, 'monthly');
         if (result.success) {
           toast.success('ChravelApp Pro activated!');
