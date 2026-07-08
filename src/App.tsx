@@ -98,6 +98,7 @@ const Healthz = lazy(() => retryImport(() => import('./pages/Healthz')));
 const PrivacyPolicy = lazy(() => retryImport(() => import('./pages/PrivacyPolicy')));
 const SupportPage = lazy(() => retryImport(() => import('./pages/SupportPage')));
 const TermsOfService = lazy(() => retryImport(() => import('./pages/TermsOfService')));
+const OAuthConsent = lazy(() => retryImport(() => import('./pages/OAuthConsent')));
 const DeleteAccountPage = lazy(() => retryImport(() => import('./pages/DeleteAccountPage')));
 const GmailCallbackPage = lazy(() =>
   retryImport(() =>
@@ -338,6 +339,14 @@ const App = () => {
                         element={
                           <LazyRoute>
                             <GmailCallbackPage />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/.lovable/oauth/consent"
+                        element={
+                          <LazyRoute>
+                            <OAuthConsent />
                           </LazyRoute>
                         }
                       />
