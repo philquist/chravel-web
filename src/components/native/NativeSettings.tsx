@@ -36,6 +36,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { RefreshCw } from 'lucide-react';
 
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
+import { usePushPreferenceToggle } from '@/hooks/usePushPreferenceToggle';
 import { TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
 import { toast } from 'sonner';
 
@@ -68,6 +69,7 @@ export const NativeSettings = ({
   const [buildNumber, setBuildNumber] = useState<string>('1');
 
   const { preferences, updatePreference } = useNotificationPreferences();
+  const { applyPushEnabled } = usePushPreferenceToggle();
   const navigate = useNavigate();
 
   const handleDeleteAccount = useCallback(async () => {
@@ -270,7 +272,18 @@ export const NativeSettings = ({
               icon={<Bell size={18} />}
               label="Push Notifications"
               checked={preferences.push_enabled}
-              onChange={checked => void updatePreference('push_enabled', checked)}
+              onChange={checked => {
+                void (async () => {
+                  const result = await applyPushEnabled(checked);
+                  if (result === 'ok' || result === 'unsupported') {
+                    await updatePreference('push_enabled', checked);
+                    return;
+                  }
+                  if (result === 'permission_denied') {
+                    toast.error('Allow notifications in iOS Settings to enable push.');
+                  }
+                })();
+              }}
             />
             <NativeToggleItem
               icon={<Mail size={18} />}

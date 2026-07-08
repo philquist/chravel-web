@@ -152,6 +152,26 @@ export async function updateLastSeen(userId: string, token: string): Promise<voi
 }
 
 /**
+ * Returns true when the user has at least one active native push device token.
+ */
+export async function hasActiveDeviceToken(userId: string): Promise<boolean> {
+  try {
+    const { count, error } = await supabase
+      .from('push_device_tokens')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .is('disabled_at', null);
+
+    if (error) {
+      return false;
+    }
+    return (count ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Get all tokens for a user (for debugging)
  */
 export async function getUserTokens(userId: string): Promise<DeviceToken[]> {

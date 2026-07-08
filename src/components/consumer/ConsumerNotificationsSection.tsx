@@ -22,7 +22,7 @@ export const ConsumerNotificationsSection = () => {
   const { user } = useAuth();
   const { preferences, updatePreferences, isUpdating } = useGlobalSystemMessagePreferences();
   const { toast } = useToast();
-  const { isNative: isNativePush } = useNativePush();
+  const { isNative: isNativePush, isRegistered: isNativePushRegistered } = useNativePush();
   const { requiresHomeScreen: webPushRequiresHomeScreen, iosUnsupported: webPushIosUnsupported } =
     useWebPush();
   const { showDemoContent } = useDemoMode();
@@ -298,6 +298,19 @@ export const ConsumerNotificationsSection = () => {
           Broadcasts and pins use the first toggle. Trip chat is separate so you can follow every
           message or keep chat silent.
         </p>
+
+        {notificationSettings.push &&
+          isNativePush &&
+          !isNativePushRegistered &&
+          !isUpdatingPush && (
+            <p
+              className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+              data-testid="native-push-registration-hint"
+            >
+              Push is enabled in your account but this iPhone is not registered yet. Open Delivery
+              Methods below and toggle Push Notifications ON to allow alerts on this device.
+            </p>
+          )}
 
         <div className="space-y-3" data-testid="trip-notification-preference-rows">
           {notificationCategories.map(category => (
