@@ -14,6 +14,7 @@ import {
 import { useForceDarkTheme } from '@/hooks/useForceDarkTheme';
 import { breadcrumbJsonLd, faqJsonLd, siteIdentityJsonLd } from '@/lib/seo';
 import { getUseCaseImage } from '@/lib/useCaseImages';
+import { renderInlineMarkdown } from '@/lib/inlineMarkdown';
 import {
   USE_CASES,
   USE_CASES_PATH,
