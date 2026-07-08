@@ -13,6 +13,7 @@ Paste into Claude Code Agentic Browser after signing in to https://appstoreconne
 | 5 | iap-05-pro-growth-monthly.png     | com.chravel.pro.growth.monthly        | Growth Pro Monthly |
 | 6 | iap-06-trippass-explorer.png      | com.chravel.trippass.explorer         | Explorer Trip Pass |
 | 7 | iap-07-trippass-frequent.png      | com.chravel.trippass.frequent         | Frequent Chraveler Trip Pass |
+| 8 | iap-08-explorer-monthly.png       | com.chravel.explorer.monthly          | Explorer Monthly |
 
 All PNGs are 1290×2796 (iPhone 6.9"), well above Apple's 640×920 minimum.
 
