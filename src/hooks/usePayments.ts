@@ -16,6 +16,14 @@ import {
   buildPaymentMessage,
 } from '@/lib/paymentCacheUtils';
 import { normalizePaymentMessages, toAppPayment } from '@/lib/adapters/paymentAdapter';
+import { systemMessageService } from '@/services/systemMessageService';
+
+const resolveActorName = (
+  user: { displayName?: string | null; email?: string | null } | null | undefined,
+): string => {
+  if (!user) return 'Someone';
+  return user.displayName || user.email?.split('@')[0] || 'Someone';
+};
 
 class CreatePaymentMutationError extends Error {
   public readonly code: string;
