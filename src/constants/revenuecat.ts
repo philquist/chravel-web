@@ -71,6 +71,22 @@ export const REVENUECAT_PRODUCTS = {
   proGrowthMonthly: 'com.chravel.pro.growth.monthly',
 } as const;
 
+/** Regex for App Store Trip Pass SKUs (non-renewing IAP). */
+export const TRIP_PASS_PRODUCT_ID_RE = /trippass|\.pass\d+/i;
+
+export type RevenueCatPurchaseType = 'subscription' | 'pass';
+
+export function isTripPassProductId(productId: string | null | undefined): boolean {
+  if (!productId) return false;
+  return TRIP_PASS_PRODUCT_ID_RE.test(productId);
+}
+
+export function resolvePurchaseTypeForProductId(
+  productId: string | null | undefined,
+): RevenueCatPurchaseType {
+  return isTripPassProductId(productId) ? 'pass' : 'subscription';
+}
+
 /**
  * Single source of truth for which RevenueCat / App Store Connect product IDs
  * MUST exist for iOS purchases to function. Used at runtime by

@@ -1,7 +1,11 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { requireSecrets } from '../_shared/validateSecrets.ts';
-import { USER_ENTITLEMENT_CONFLICT_TARGET } from '../_shared/entitlementUpsert.ts';
+import {
+  USER_ENTITLEMENT_CONFLICT_TARGET,
+  resolvePurchaseTypeForProductId,
+  type RevenueCatPurchaseType,
+} from '../_shared/entitlementUpsert.ts';
 import {
   SUBSCRIPTION_EVENTS,
   deriveEntitlementFromEvent,
@@ -102,6 +106,7 @@ serve(async req => {
   };
 
   const { plan, status, currentPeriodEnd } = deriveEntitlementFromEvent(event);
+  const purchaseType: RevenueCatPurchaseType = resolvePurchaseTypeForProductId(event.product_id);
 
   // Read the current entitlement once: used for both the reorder guard and the
   // no-op content-diff check.
@@ -110,7 +115,7 @@ serve(async req => {
     .select('plan, status, current_period_end')
     .eq('user_id', userId)
     .eq('source', 'revenuecat')
-    .eq('purchase_type', 'subscription')
+    .eq('purchase_type', purchaseType)
     .maybeSingle();
 
   // Reorder guard: a late/replayed EXPIRATION must not revoke access that a newer
@@ -145,7 +150,7 @@ serve(async req => {
       source: 'revenuecat',
       plan,
       status,
-      purchase_type: 'subscription',
+      purchase_type: purchaseType,
       current_period_end: currentPeriodEnd,
       entitlements: event.entitlement_ids || [],
       revenuecat_customer_id: event.app_user_id,

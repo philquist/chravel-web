@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext, useCallback } from 'rea
 import { ConsumerSubscription } from '../types/consumer';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { ENTITLEMENTS_UPDATED_EVENT } from '@/integrations/revenuecat/revenuecatClient';
 import { openExternalUrl } from '@/platform/navigation';
 import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
 import { toast } from 'sonner';
@@ -145,6 +146,17 @@ export const ConsumerSubscriptionProvider = ({ children }: { children: React.Rea
 
     window.addEventListener('visibilitychange', onVisibility);
     return () => window.removeEventListener('visibilitychange', onVisibility);
+  }, [user, checkSubscriptionWithStaleGuard]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const onEntitlementsUpdated = () => {
+      void checkSubscriptionWithStaleGuard('manual', true);
+    };
+
+    window.addEventListener(ENTITLEMENTS_UPDATED_EVENT, onEntitlementsUpdated);
+    return () => window.removeEventListener(ENTITLEMENTS_UPDATED_EVENT, onEntitlementsUpdated);
   }, [user, checkSubscriptionWithStaleGuard]);
 
   useEffect(() => {

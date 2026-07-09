@@ -10,7 +10,7 @@ import {
   isIOSNativeShell,
   isNativeWebView,
 } from '@/utils/platformDetection';
-import { purchaseTripPass } from '@/integrations/revenuecat/revenuecatClient';
+import { purchaseTripPass, handlePurchaseResult } from '@/integrations/revenuecat/revenuecatClient';
 import { toast } from 'sonner';
 import { CONSUMER_PRICE_DISPLAY, TRIP_PASS_DISPLAY } from '@/billing/pricingDisplay';
 
@@ -71,15 +71,14 @@ export const TripPassModal: React.FC<TripPassModalProps> = ({ open, onOpenChange
         const tier: 'explorer' | 'frequent-chraveler' =
           passId === 'pass-explorer-45' ? 'explorer' : 'frequent-chraveler';
         const result = await purchaseTripPass(tier);
+        handlePurchaseResult(result, {
+          successMessage: 'Trip Pass activated!',
+          successDescription: 'Premium features are unlocking now.',
+          onRetry: () => void handlePurchase(passId),
+          context: `trippass/${tier}`,
+        });
         if (result.success) {
-          toast.success('Trip Pass activated! Premium features are unlocking…');
           onOpenChange(false);
-        } else if (result.errorCode === 'CANCELLED') {
-          // user dismissed — silent
-        } else if (!result.supported) {
-          toast.error('In-app purchases are not available on this device.');
-        } else {
-          toast.error(result.error || 'Failed to purchase Trip Pass. Please try again.');
         }
         return;
       }

@@ -3,7 +3,7 @@
 // supabase function: mcp
 // Bundled from src/lib/mcp/index.ts by @lovable.dev/mcp-js.
 // src/lib/mcp/index.ts
-import { defineMcp } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.20.0";
 
 // src/lib/mcp/tools/echo.ts
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.20.0";
@@ -26,11 +26,16 @@ var echo_default = defineTool({
 });
 
 // src/lib/mcp/index.ts
+var projectRef = "jmjiyekmxwsxkfnqwyaa";
 var mcp_default = defineMcp({
   name: "chravel-mcp",
   title: "Chravel MCP",
   version: "0.1.0",
-  instructions: "Chravel agent integrations. Use `echo` to verify connectivity. Additional trip-aware tools will be added over time.",
+  instructions: "Chravel agent integrations. Use `echo` to verify connectivity. Additional trip-aware tools will be added over time. Callers authenticate as a Chravel user via Supabase OAuth; tools act as that user.",
+  auth: auth.oauth.issuer({
+    issuer: `https://${projectRef}.supabase.co/auth/v1`,
+    acceptedAudiences: "authenticated"
+  }),
   tools: [echo_default]
 });
 

@@ -29,6 +29,38 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { detectNativeBillingPlatform, isNativeWebView } from '@/utils/platformDetection';
 
+/** Dispatched after RevenueCat entitlements are synced to Supabase. */
+export const ENTITLEMENTS_UPDATED_EVENT = 'chravel:entitlements-updated';
+
+function dispatchEntitlementsUpdated(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(ENTITLEMENTS_UPDATED_EVENT));
+  }
+}
+
+async function syncCustomerInfoToBackend(
+  customerInfo: RevenueCatCustomerInfo,
+  options: { productId?: string; syncAll?: boolean } = {},
+): Promise<{ ok: boolean; error?: string }> {
+  const syncResult = await supabase.functions.invoke('sync-revenuecat-entitlement', {
+    body: {
+      customerInfo,
+      productId: options.productId,
+      syncAll: options.syncAll,
+    },
+  });
+
+  if (syncResult.error) {
+    return {
+      ok: false,
+      error: syncResult.error.message || 'Failed to sync RevenueCat entitlement',
+    };
+  }
+
+  dispatchEntitlementsUpdated();
+  return { ok: true };
+}
+
 // Native IAP handled by chravel-mobile.
 // This variable is kept as a null placeholder for the loadPurchasesPlugin() interface.
 const Purchases: unknown | null = null;
@@ -63,8 +95,17 @@ export function isRevenueCatAvailable(): boolean {
 async function loadPurchasesPlugin(): Promise<unknown | null> {
   if (Purchases) return Purchases;
 
+  if (typeof window !== 'undefined') {
+    const win = window as Window & {
+      Purchases?: unknown;
+      Capacitor?: { Plugins?: { Purchases?: unknown } };
+    };
+    if (win.Purchases) return win.Purchases;
+    if (win.Capacitor?.Plugins?.Purchases) return win.Capacitor.Plugins.Purchases;
+  }
+
   try {
-    // Plugin removed — native IAP handled by chravel-mobile
+    // Plugin removed — native IAP handled by chravel-mobile shell injection.
     return null;
   } catch (error) {
     console.warn('[RevenueCat] Failed to load plugin:', error);
@@ -357,10 +398,16 @@ export async function purchaseByProductId(
 
     const { customerInfo } = await (purchases as any).purchasePackage({ aPackage: pkg });
     console.log('[RevenueCat] Purchase successful', { productId });
+    const typedCustomerInfo = customerInfo as unknown as RevenueCatCustomerInfo;
+    const syncRes = await syncCustomerInfoToBackend(typedCustomerInfo, { productId });
+    if (!syncRes.ok) {
+      console.warn('[RevenueCat] Post-purchase sync failed:', syncRes.error);
+    }
+    verifyEntitlementMapping(typedCustomerInfo);
     return {
       success: true,
       supported: true,
-      data: customerInfo as unknown as RevenueCatCustomerInfo,
+      data: typedCustomerInfo,
     };
   } catch (error: unknown) {
     console.error('[RevenueCat] Purchase failed:', error, { productId });
@@ -534,16 +581,14 @@ export async function syncRevenueCatEntitlementsForUser(
     return customerInfoResult;
   }
 
-  const syncResult = await supabase.functions.invoke('sync-revenuecat-entitlement', {
-    body: { customerInfo: customerInfoResult.data },
-  });
+  const syncRes = await syncCustomerInfoToBackend(customerInfoResult.data, { syncAll: true });
 
-  if (syncResult.error) {
+  if (!syncRes.ok) {
     return {
       success: false,
       supported: true,
       errorCode: 'UNKNOWN',
-      error: syncResult.error.message || 'Failed to sync RevenueCat entitlement',
+      error: syncRes.error || 'Failed to sync RevenueCat entitlement',
     };
   }
 
@@ -606,12 +651,22 @@ export function derivePlanFromCustomerInfo(customerInfo: RevenueCatCustomerInfo)
  */
 export function setupGlobalPurchaseListener() {
   if (typeof window !== 'undefined') {
-    window.onRevenueCatPurchase = () => {
-      console.log('[Native] Purchase completed successfully');
-      toast.success('Subscription Updated', {
-        description: 'Your purchase was successful! Features are unlocking...',
-      });
-      // Force reload entitlements if needed, or rely on realtime updates
+    window.onRevenueCatPurchase = async () => {
+      console.log('[Native] Purchase completed — syncing entitlements');
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const userId = session?.user?.id;
+        if (!userId) return;
+
+        await syncRevenueCatEntitlementsForUser(userId);
+        toast.success('Subscription Updated', {
+          description: 'Your purchase was successful! Features are unlocking...',
+        });
+      } catch (err) {
+        console.warn('[RevenueCat] onRevenueCatPurchase sync failed:', err);
+      }
     };
   }
 }
@@ -694,12 +749,8 @@ export async function restoreAndSyncEntitlements(
   const customerInfo = restoreRes.data;
   const plan = derivePlanFromCustomerInfo(customerInfo);
 
-  // Push restored entitlements to the backend so server-side checks
-  // (`useConsumerSubscription`, edge function gating) reflect them.
-  const syncRes = await supabase.functions.invoke('sync-revenuecat-entitlement', {
-    body: { customerInfo },
-  });
-  if (syncRes.error) {
+  const syncRes = await syncCustomerInfoToBackend(customerInfo, { syncAll: true });
+  if (!syncRes.ok) {
     console.warn('[RevenueCat] Restore sync failed:', syncRes.error);
   }
 

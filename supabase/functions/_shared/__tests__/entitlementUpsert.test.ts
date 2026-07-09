@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { applyEntitlementUpserts, USER_ENTITLEMENT_CONFLICT_TARGET } from '../entitlementUpsert.ts';
+import {
+  applyEntitlementUpserts,
+  USER_ENTITLEMENT_CONFLICT_TARGET,
+  isTripPassProductId,
+  resolvePurchaseTypeForProductId,
+} from '../entitlementUpsert.ts';
 
 describe('entitlement upsert conflict target', () => {
   it('uses composite conflict target for purchase-scoped upserts', () => {
@@ -21,6 +26,21 @@ describe('entitlement upsert conflict target', () => {
         expect.objectContaining({ purchase_type: 'subscription', plan: 'pro-starter' }),
         expect.objectContaining({ purchase_type: 'pass', plan: 'frequent-chraveler' }),
       ]),
+    );
+  });
+});
+
+describe('RevenueCat purchase type classification', () => {
+  it('classifies Trip Pass App Store SKUs as pass purchases', () => {
+    expect(isTripPassProductId('com.chravel.trippass.explorer')).toBe(true);
+    expect(isTripPassProductId('com.chravel.trippass.frequent')).toBe(true);
+    expect(resolvePurchaseTypeForProductId('com.chravel.trippass.explorer')).toBe('pass');
+  });
+
+  it('classifies subscription SKUs as subscription purchases', () => {
+    expect(isTripPassProductId('com.chravel.explorer.monthly')).toBe(false);
+    expect(resolvePurchaseTypeForProductId('com.chravel.frequentchraveler.annual')).toBe(
+      'subscription',
     );
   });
 });

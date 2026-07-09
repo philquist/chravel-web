@@ -134,7 +134,11 @@ export const faqJsonLd = (faq: Array<{ q: string; a: string }>): JsonLdObject =>
   mainEntity: faq.map(item => ({
     '@type': 'Question',
     name: item.q,
-    acceptedAnswer: { '@type': 'Answer', text: item.a },
+    acceptedAnswer: {
+      '@type': 'Answer',
+      // Strip inline markdown (**bold**, *italic*) so search engines don't index raw delimiters.
+      text: item.a.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1'),
+    },
   })),
 });
 

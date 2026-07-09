@@ -13,10 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useConsumerSubscription } from '@/hooks/useConsumerSubscription';
-import {
-  getCustomerInfo,
-  isNativePlatform,
-} from '@/integrations/revenuecat/revenuecatClient';
+import { getCustomerInfo, isNativePlatform } from '@/integrations/revenuecat/revenuecatClient';
 import type { RevenueCatCustomerInfo } from '@/integrations/revenuecat/types';
 import { RestorePurchasesButton } from '@/components/billing/RestorePurchasesButton';
 import { openExternalUrl } from '@/platform/navigation';
@@ -112,7 +109,9 @@ const StatusBadge: React.FC<{
   } as const;
   const { label, cls } = map[status] ?? map.expired;
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cls}`}>
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cls}`}
+    >
       {label}
     </span>
   );
@@ -134,7 +133,8 @@ const Row: React.FC<{ label: string; value: React.ReactNode; icon?: React.ReactN
 
 export default function SubscriptionStatus() {
   const { user } = useAuth();
-  const { subscription, tier, isLoading, checkSubscription, isSuperAdmin } = useConsumerSubscription();
+  const { subscription, tier, isLoading, checkSubscription, isSuperAdmin } =
+    useConsumerSubscription();
   const [receipt, setReceipt] = useState<RevenueCatCustomerInfo | null>(null);
   const [receiptLoading, setReceiptLoading] = useState(false);
   const [receiptError, setReceiptError] = useState<string | null>(null);
@@ -180,18 +180,20 @@ export default function SubscriptionStatus() {
 
   return (
     <div className="min-h-screen bg-luxury-dark text-white">
-      <div className="mx-auto max-w-2xl px-4 py-6 space-y-6">
-        <header className="flex items-center gap-3">
+      <header className="sticky top-0 z-10 border-b border-white/5 bg-luxury-dark/95 backdrop-blur-md mobile-safe-header">
+        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 pb-3">
           <Link
             to="/"
-            className="inline-flex items-center gap-1 text-sm text-white/60 hover:text-white"
+            className="inline-flex min-h-[44px] items-center gap-1 text-sm text-white/60 hover:text-white"
           >
             <ArrowLeft size={16} />
             Back
           </Link>
-          <h1 className="text-2xl font-serif ml-auto">Subscription</h1>
-        </header>
+          <h1 className="ml-auto text-2xl font-serif">Subscription</h1>
+        </div>
+      </header>
 
+      <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 pb-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1.5rem))]">
         {/* Active plan */}
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
           <div className="flex items-center justify-between">
@@ -263,7 +265,10 @@ export default function SubscriptionStatus() {
               }
             />
             {derived?.activeSubProductId ? (
-              <Row label="Product ID" value={<code className="text-xs">{derived.activeSubProductId}</code>} />
+              <Row
+                label="Product ID"
+                value={<code className="text-xs">{derived.activeSubProductId}</code>}
+              />
             ) : null}
             {derived?.periodType && derived.periodType !== 'normal' ? (
               <Row label="Period" value={derived.periodType} />

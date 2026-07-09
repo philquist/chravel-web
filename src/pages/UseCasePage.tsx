@@ -14,6 +14,7 @@ import {
 import { useForceDarkTheme } from '@/hooks/useForceDarkTheme';
 import { breadcrumbJsonLd, faqJsonLd, siteIdentityJsonLd } from '@/lib/seo';
 import { getUseCaseImage } from '@/lib/useCaseImages';
+import { renderInlineMarkdown } from '@/lib/inlineMarkdown';
 import {
   USE_CASES,
   USE_CASES_PATH,
@@ -105,10 +106,10 @@ export default function UseCasePage() {
 
         {/* Article body — lede paragraph runs larger, reporting style */}
         <div className="space-y-5">
-          {lede && <p className="text-lg md:text-xl leading-relaxed text-white/85">{lede}</p>}
+          {lede && <p className="text-lg md:text-xl leading-relaxed text-white/85">{renderInlineMarkdown(lede)}</p>}
           {bodyRest.map((paragraph, i) => (
             <p key={i} className="text-base md:text-lg leading-relaxed text-white/75">
-              {paragraph}
+              {renderInlineMarkdown(paragraph)}
             </p>
           ))}
         </div>
@@ -150,7 +151,7 @@ export default function UseCasePage() {
                   >
                     {String(i + 1).padStart(2, '0')}
                   </span>
-                  <p className="text-base md:text-lg leading-relaxed text-white/80">{step}</p>
+                  <p className="text-base md:text-lg leading-relaxed text-white/80">{renderInlineMarkdown(step)}</p>
                 </li>
               ))}
             </ol>
@@ -164,7 +165,7 @@ export default function UseCasePage() {
             {uc.faq.map(item => (
               <div key={item.q} className="py-5">
                 <h3 className="font-semibold text-white/90">{item.q}</h3>
-                <p className="mt-1.5 leading-relaxed text-white/60">{item.a}</p>
+                <p className="mt-1.5 leading-relaxed text-white/60">{renderInlineMarkdown(item.a)}</p>
               </div>
             ))}
           </div>

@@ -8,6 +8,7 @@ import { ArticleHeader, EditorialKicker, GoldRule } from '@/components/landing/E
 import { useForceDarkTheme } from '@/hooks/useForceDarkTheme';
 import { SITE_URL, breadcrumbJsonLd, faqJsonLd, siteIdentityJsonLd } from '@/lib/seo';
 import { getUseCaseImage } from '@/lib/useCaseImages';
+import { renderInlineMarkdown } from '@/lib/inlineMarkdown';
 import { USE_CASES, USE_CASES_PATH, USE_CASE_FEATURES, getUseCaseHref } from '@/lib/useCases';
 
 const HUB_FAQ = [
@@ -229,7 +230,7 @@ export default function UseCasesHub() {
             {HUB_FAQ.map(item => (
               <div key={item.q} className="py-5">
                 <h3 className="font-semibold text-white/90">{item.q}</h3>
-                <p className="mt-1.5 leading-relaxed text-white/60">{item.a}</p>
+                <p className="mt-1.5 leading-relaxed text-white/60">{renderInlineMarkdown(item.a)}</p>
               </div>
             ))}
           </div>

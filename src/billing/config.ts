@@ -190,6 +190,8 @@ export interface TripPassConfig {
   name: string;
   stripeProductId: string;
   stripePriceId: string;
+  /** App Store Connect / RevenueCat product identifier (non-renewing IAP). */
+  appleProductId: string;
   durationDays: number;
   tier: SubscriptionTier;
   price: number;
@@ -201,6 +203,7 @@ export const TRIP_PASS_PRODUCTS: Record<string, TripPassConfig> = {
     name: 'Explorer Trip Pass (45 days)',
     stripeProductId: 'prod_U73WaALe9yjrAR',
     stripePriceId: 'price_1T8pP047wCAQ57Mm6sfNTg2w',
+    appleProductId: 'com.chravel.trippass.explorer',
     durationDays: 45,
     tier: 'explorer',
     price: 39.99,
@@ -210,6 +213,7 @@ export const TRIP_PASS_PRODUCTS: Record<string, TripPassConfig> = {
     name: 'Frequent Chraveler Trip Pass (90 days)',
     stripeProductId: 'prod_U73W99ebeJvbLB',
     stripePriceId: 'price_1T8pP047wCAQ57Mm2DOch99F',
+    appleProductId: 'com.chravel.trippass.frequent',
     durationDays: 90,
     tier: 'frequent-chraveler',
     price: 74.99,

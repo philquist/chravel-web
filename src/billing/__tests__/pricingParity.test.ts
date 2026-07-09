@@ -18,7 +18,12 @@ import { describe, expect, it } from 'vitest';
 
 import { BILLING_FLAGS, BILLING_PRODUCTS, TRIP_PASS_PRODUCTS } from '@/billing/config';
 import { CONSUMER_PLANS, PRO_PLANS, TRIP_PASS_PLANS, STRIPE_PRODUCTS } from '@/constants/stripe';
-import { REVENUECAT_PRICING, ENTITLEMENT_TO_TIER } from '@/constants/revenuecat';
+import {
+  REVENUECAT_PRICING,
+  ENTITLEMENT_TO_TIER,
+  REVENUECAT_PRODUCTS,
+  isTripPassProductId,
+} from '@/constants/revenuecat';
 import { FREEMIUM_LIMITS } from '@/utils/featureTiers';
 import { FEATURE_LIMITS } from '@/billing/entitlements';
 import { CONSUMER_PRICING } from '@/types/consumer';
@@ -104,6 +109,7 @@ describe('pricing parity — constants/stripe.ts mirrors billing/config.ts', () 
     expect(explorerPassLegacy.price_id).toBe(explorerPass.stripePriceId);
     expect(explorerPassLegacy.amount).toBe(dollarsToCents(explorerPass.price));
     expect(explorerPassLegacy.durationDays).toBe(explorerPass.durationDays);
+    expect(explorerPass.appleProductId).toBe('com.chravel.trippass.explorer');
 
     const fcPass = TRIP_PASS_PRODUCTS['pass-frequent-90'];
     const fcPassLegacy = TRIP_PASS_PLANS['pass-frequent-90'];
@@ -111,6 +117,7 @@ describe('pricing parity — constants/stripe.ts mirrors billing/config.ts', () 
     expect(fcPassLegacy.price_id).toBe(fcPass.stripePriceId);
     expect(fcPassLegacy.amount).toBe(dollarsToCents(fcPass.price));
     expect(fcPassLegacy.durationDays).toBe(fcPass.durationDays);
+    expect(fcPass.appleProductId).toBe('com.chravel.trippass.frequent');
   });
 });
 
@@ -128,6 +135,12 @@ describe('pricing parity — constants/revenuecat.ts mirrors billing/config.ts',
     expect(REVENUECAT_PRICING.frequentChraveler.annual).toBe(
       BILLING_PRODUCTS['consumer-frequent-chraveler'].priceAnnual,
     );
+  });
+
+  it('RevenueCat trip-pass product IDs match billing/config Trip Pass appleProductId', () => {
+    expect(REVENUECAT_PRODUCTS.explorerPass45).toBe('com.chravel.trippass.explorer');
+    expect(REVENUECAT_PRODUCTS.frequentChravelerPass90).toBe('com.chravel.trippass.frequent');
+    expect(isTripPassProductId(REVENUECAT_PRODUCTS.explorerPass45)).toBe(true);
   });
 
   it('RevenueCat trip-pass pricing matches Stripe trip-pass pricing', () => {
