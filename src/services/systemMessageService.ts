@@ -97,7 +97,15 @@ class SystemMessageService {
     eventType: SystemEventType,
     body: string,
     payload?: SystemMessagePayload,
+    dedupeKey?: string,
   ): Promise<boolean> {
+    if (this.isDuplicateDedupeKey(dedupeKey)) {
+      if (import.meta.env.DEV) {
+        console.log('[SystemMessage] Deduped:', dedupeKey);
+      }
+      return false;
+    }
+
     const tripType = await this.getTripType(tripId);
     if (!this.isTripTypeEligibleForInlineActivity(tripType)) {
       return false;
@@ -131,6 +139,7 @@ class SystemMessageService {
       return false;
     }
   }
+
 
   /**
    * Create a batched upload system message
