@@ -233,11 +233,14 @@ class SystemMessageService {
       body = `Base camp was updated`;
     }
 
-    return this.createSystemMessage(tripId, 'trip_base_camp_updated', body, {
-      actorName,
-      previousAddress,
-      newAddress,
-    });
+    return this.createSystemMessage(
+      tripId,
+      'trip_base_camp_updated',
+      body,
+      { actorName, previousAddress, newAddress },
+      `basecamp_updated:${tripId}:${newAddress ?? previousAddress ?? 'unknown'}`,
+    );
+
   }
 
   async personalBaseCampUpdated(
