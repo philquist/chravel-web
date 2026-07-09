@@ -1,67 +1,65 @@
+## Goal
+Close the remaining notification gaps so users can (a) see unread counts on Alerts + inline chat activity, (b) never see the same task-created system message twice, (c) tap an alert and land on the exact trip/tab/message, and (d) trust that every settings toggle actually gates delivery.
 
-## Problem
+## 1. Deduplicate task system messages
+**Problem:** `useTripTasks.createTask` calls `systemMessageService.taskCreated`, AND the DB `notify_on_task_assignment` trigger fanout also currently posts a "task assigned to X" activity via `systemMessageService`. When a user creates a task with themselves (or anyone) assigned, both fire → two inline messages.
 
-Two disconnects the user reported:
+**Fix:** Make `taskCreated` the single source of truth for the "task was created" inline message. In `useTripTasks.createTask`:
+- If assignees are provided at creation, call `systemMessageService.taskCreated` with an assignee suffix (e.g., "Nick created a task 'Pack bags' · assigned to Ana") and set a dedupe key `task_created:<taskId>`.
+- Skip a separate `taskAssigned` inline post for the initial assignment batch (only post `taskAssigned` for later re-assignments in `assignTask`).
+- Add `dedupeKey` support in `systemMessageService` so repeat sends for the same key are dropped (in-memory Set + optimistic short-circuit).
 
-1. **Settings ↔ Alerts panel** — toggles for Polls, Calendar Events, Basecamp Updates, and (non-assignment) Tasks are ON, but no rows land in the `notifications` table for those events, so the Alerts (bell) panel stays empty even when those things happen.
-2. **Inline chat activity** — action items like "Sarah created a poll", "Basecamp updated", "Mike added a payment request" don't reliably show up as system messages inside the trip chat, so members miss them unless they open the exact tab.
+Audit other paths (`useTripPolls`, `useCalendarManagement`, `usePayments`, `basecampService`) for the same double-post risk and add dedupe keys.
 
-## Root cause (verified)
+## 2. Unread indicators
+Two surfaces need badges:
 
-- `systemMessageService` already has methods for `pollCreated / pollClosed`, `taskCreated / taskCompleted`, `calendarItemAdded`, `paymentRecorded / paymentSettled`, `tripBaseCampUpdated`, `personalBaseCampUpdated`, `memberJoined/Left`, uploads.
-- Callers that exist: tasks (`useTripTasks`), polls (`useTripPolls`), calendar (`useCalendarManagement`), basecamp (`basecampService`), media, member joined. **Payments are NOT calling `paymentRecorded / paymentSettled`** — `paymentService.createPaymentMessage` and `usePayments` never fan out an inline system message.
-- DB fanout (`create_notification_for_trip_members`) is only wired for: `broadcast`, `mention`, `task_assignment`, `payment`, `trip_invite`, `member_joined`. **No triggers exist for `poll_created`, `calendar_event_added` (bulk trigger exists for imports only), `task_created` (only assignment), or `basecamp_updated`.** So those preference toggles have nothing feeding them → Alerts stays empty.
+**Alerts bell (global):**
+- Already backed by `notificationRealtimeStore.unreadCount`. Verify the bell icon in the top header reads it and shows a red dot + count. If missing, wire it in the header/notifications-dialog trigger.
 
-## Scope of change
+**Inline chat system activity (per-trip):**
+- Add a lightweight `useTripSystemActivityUnread(tripId)` hook that counts system messages newer than the user's `last_read_at` for the trip's chat channel (already tracked in Stream read state).
+- Surface a small pill on the Chat tab label and on the trip card ("3 new updates") when > 0. Consumes `splitUnreadFromStreamReadState` output — system messages are the "message_type === 'system'" bucket.
 
-Frontend + one focused SQL migration. No refactors of unrelated systems. Preference gating already lives in `should_send_notification()` — we route new fanouts through `create_notification_for_trip_members()` so gating is automatic.
+## 3. Deep links on Alerts items
+Every notification row already carries `metadata` (trip_id, tab, message_id, channel_type). `resolveNotificationNavigation` returns `{ tab, shouldHandshakeChat }`.
 
-### 1. Chat inline activity — close the payments gap
+**Fix:** In the Alerts list item click handler (find in `NotificationsDialog.tsx` / consumer + enterprise notification sections):
+1. Parse metadata via `parseNotificationMetadata`.
+2. Resolve tab via `resolveNotificationNavigation`.
+3. Navigate to `/trip/:tripId?tab=<tab>&focus=<message_id|event_id|poll_id|task_id>`.
+4. Mark the row read on click (optimistic).
+5. In the target tab, read `?focus=` from the URL and scroll/highlight the matching row. For chat, use Stream's `jumpToMessage(messageId)`.
 
-- `src/services/paymentService.ts` / `src/hooks/usePayments.ts`: after `createPaymentMessage` returns a `paymentId`, emit `systemMessageService.paymentRecorded(tripId, actorName, paymentId, amount, currency, description)`. Fire-and-forget (`void`), never block the mutation.
-- `src/components/payments/PaymentsTab.tsx` settle flow / hook: on successful settle, emit `systemMessageService.paymentSettled(...)`.
-- No changes to Stream schema — `systemMessageService` already sends `message_type: 'system'` with `silent: true` and `skip_push: true`, and `SystemMessageBubble` already renders them. Chat push is separately gated by `chat_messages` pref, so this does not create push spam.
+Backfill missing metadata on the four new triggers from migration `20260709155343_*.sql` so poll/task/calendar/basecamp notifications include `tab`, `message_id` (or entity id), and `entity_type` — currently they only pass generic fields.
 
-### 2. Alerts panel — add DB fanout for the missing categories
+## 4. Verify every settings toggle end-to-end
+Write a Vitest integration spec `src/__tests__/notificationPreferences.integration.test.ts` that, for each of the 6 categories (messages, broadcasts_and_pins, tasks, payments, calendar_events, polls):
+1. Toggles the pref OFF via `useNotificationPreferences`.
+2. Simulates the source event (mock insert via `supabase.from(...).insert`).
+3. Asserts NO row lands in `notifications` for the user (pref gate held).
+4. Toggles ON, repeats, asserts a row DOES appear with correct `metadata.tab` and `metadata` deep-link fields.
+5. Asserts inline chat system message posts regardless of the pref (chat activity is UI-only, not gated by push prefs).
 
-New migration `supabase/migrations/<ts>_notify_on_activity_fanout.sql`:
-
-- `notify_on_poll_created()` AFTER INSERT on `trip_polls` (or the canonical polls table) → `create_notification_for_trip_members(trip_id, created_by, 'poll', 'poll', poll_id, 'polls', 'normal', '/trip/<id>?tab=polls', 'New poll', LEFT(question,140), jsonb_build_object('poll_id', id), 'poll:'||id)`.
-- `notify_on_task_created()` AFTER INSERT on `trip_tasks` → category `'tasks'`, tab `tasks`. Skips when row also has an assignee (existing assignment trigger already covers that case) to avoid double-notify.
-- `notify_on_calendar_event_added()` AFTER INSERT on `trip_calendar_events` → category `'calendar_events'`, tab `calendar`. Suppressed when insert originates from bulk import batch (existing bulk trigger stays authoritative).
-- `notify_on_basecamp_updated()` AFTER UPDATE on `trips` WHEN `NEW.basecamp_address IS DISTINCT FROM OLD.basecamp_address` → category `'basecamp_updates'`, tab `places`, title "Basecamp updated".
-- All triggers `SECURITY DEFINER`, `search_path = public`, dedupe key includes the row id so retries don't duplicate.
-- Each trigger uses `should_send_notification()` implicitly via the shared fanout helper (which the existing gate already respects for `in_app`).
-
-Grants: none (functions only, no new tables).
-
-### 3. Preference contract — no schema change
-
-`notification_preferences` already has `polls`, `tasks`, `calendar_events`, `payments`, `basecamp_updates`, `chat_messages`, `broadcasts`, `join_requests`. `should_send_notification()` (2260708120000 migration) already maps all these labels — verified.
-
-### 4. Verification
-
-- Unit: extend `src/services/__tests__/systemMessageService.stream.test.ts` with `paymentRecorded/paymentSettled` cases.
-- Manual: on a real trip, toggle each pref OFF/ON and confirm (a) inline system message appears in chat, (b) row appears in `notifications` and rings the Alerts bell only when the matching pref is ON.
-- Regression: broadcasts, mentions, task-assignment, member-joined paths untouched.
-
-## Out of scope
-
-- No changes to push delivery (VAPID/APNs), Delivery Methods UI, or Stream config.
-- No changes to per-trip `TripActivitySettings` override contract.
-- No changes to the demo-mode mock data path.
+Also add a small manual QA checklist under `docs/qa/notifications-toggle-matrix.md` for reviewer sign-off.
 
 ## Files touched
+- `src/services/systemMessageService.ts` — dedupe key support
+- `src/hooks/useTripTasks.ts` — merge assignees into `taskCreated`, drop redundant `taskAssigned` on initial create
+- `src/hooks/useTripPolls.ts`, `src/hooks/usePayments.ts`, `src/features/calendar/hooks/useCalendarManagement.ts`, `src/services/basecampService.ts` — add dedupe keys
+- `src/hooks/useTripSystemActivityUnread.ts` (new)
+- Chat tab label component + trip card — render new unread pill
+- `src/components/home/NotificationsDialog.tsx` + consumer/enterprise notification sections — click handler → deep-link nav + mark-read
+- Trip detail route — read `?focus=` and scroll/jump target
+- New migration `2026xxxx_notification_metadata_deeplink.sql` — extend the 4 fanout functions from `20260709155343_*.sql` to write `metadata.tab`, `metadata.entity_id`, `metadata.entity_type`, and (for basecamp) `metadata.channel_type`
+- `src/__tests__/notificationPreferences.integration.test.ts` (new)
+- `docs/qa/notifications-toggle-matrix.md` (new)
 
-```
-supabase/migrations/<new>_notify_on_activity_fanout.sql   (new)
-src/services/paymentService.ts                            (emit paymentRecorded)
-src/hooks/usePayments.ts                                  (emit paymentSettled on settle)
-src/components/payments/PaymentsTab.tsx                   (only if settle handler lives here)
-src/services/__tests__/systemMessageService.stream.test.ts (payment cases)
-```
+## Out of scope
+- Push/VAPID delivery changes
+- New notification categories
+- Redesign of the Alerts panel visuals
+- Per-trip mute overrides (already covered by `TripActivitySettings`)
 
-## Rollback
-
-- Migration: `DROP TRIGGER` + `DROP FUNCTION` for the four new triggers.
-- Client: revert the payment emit lines (2–4 lines each). Zero schema coupling.
+## Risk
+LOW-MEDIUM. The dedupe change touches task creation — will add a regression test. The deep-link migration re-creates existing trigger functions (safe via `CREATE OR REPLACE`).

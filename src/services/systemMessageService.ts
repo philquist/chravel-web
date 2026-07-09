@@ -28,6 +28,26 @@ class SystemMessageService {
   private BATCH_DELAY_MS = 30000; // 30 second batching window for uploads
   private TRIP_TYPE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
   private tripTypeCache: Map<string, CachedTripType> = new Map();
+  // Short-lived dedupe set to prevent double inline posts from React StrictMode
+  // double-invokes, network retries, or duplicate onSuccess callbacks.
+  private DEDUPE_TTL_MS = 60 * 1000;
+  private dedupeKeys: Map<string, number> = new Map();
+
+  private isDuplicateDedupeKey(key?: string): boolean {
+    if (!key) return false;
+    const now = Date.now();
+    // GC expired entries opportunistically
+    if (this.dedupeKeys.size > 200) {
+      for (const [k, expiresAt] of this.dedupeKeys) {
+        if (expiresAt <= now) this.dedupeKeys.delete(k);
+      }
+    }
+    const existing = this.dedupeKeys.get(key);
+    if (existing && existing > now) return true;
+    this.dedupeKeys.set(key, now + this.DEDUPE_TTL_MS);
+    return false;
+  }
+
 
   /**
    * Resolve a trip's tier with a short-lived cache. Returns 'consumer' for
@@ -77,7 +97,15 @@ class SystemMessageService {
     eventType: SystemEventType,
     body: string,
     payload?: SystemMessagePayload,
+    dedupeKey?: string,
   ): Promise<boolean> {
+    if (this.isDuplicateDedupeKey(dedupeKey)) {
+      if (import.meta.env.DEV) {
+        console.log('[SystemMessage] Deduped:', dedupeKey);
+      }
+      return false;
+    }
+
     const tripType = await this.getTripType(tripId);
     if (!this.isTripTypeEligibleForInlineActivity(tripType)) {
       return false;
@@ -111,6 +139,7 @@ class SystemMessageService {
       return false;
     }
   }
+
 
   /**
    * Create a batched upload system message
@@ -204,11 +233,14 @@ class SystemMessageService {
       body = `Base camp was updated`;
     }
 
-    return this.createSystemMessage(tripId, 'trip_base_camp_updated', body, {
-      actorName,
-      previousAddress,
-      newAddress,
-    });
+    return this.createSystemMessage(
+      tripId,
+      'trip_base_camp_updated',
+      body,
+      { actorName, previousAddress, newAddress },
+      `basecamp_updated:${tripId}:${newAddress ?? previousAddress ?? 'unknown'}`,
+    );
+
   }
 
   async personalBaseCampUpdated(
@@ -236,11 +268,8 @@ class SystemMessageService {
       tripId,
       'poll_created',
       `${actorName} created a poll: "${question}"`,
-      {
-        actorName,
-        pollId,
-        pollQuestion: question,
-      },
+      { actorName, pollId, pollQuestion: question },
+      `poll_created:${tripId}:${pollId}`,
     );
   }
 
@@ -252,11 +281,13 @@ class SystemMessageService {
   ): Promise<boolean> {
     const body = winningOption ? `Poll closed - "${winningOption}" won` : `A poll was closed`;
 
-    return this.createSystemMessage(tripId, 'poll_closed', body, {
-      actorName,
-      pollId,
-      winningOption,
-    });
+    return this.createSystemMessage(
+      tripId,
+      'poll_closed',
+      body,
+      { actorName, pollId, winningOption },
+      `poll_closed:${tripId}:${pollId}`,
+    );
   }
 
   async taskCreated(
@@ -269,11 +300,8 @@ class SystemMessageService {
       tripId,
       'task_created',
       `${actorName} added a task: "${taskTitle}"`,
-      {
-        actorName,
-        taskId,
-        taskTitle,
-      },
+      { actorName, taskId, taskTitle },
+      `task_created:${tripId}:${taskId}`,
     );
   }
 
@@ -287,11 +315,8 @@ class SystemMessageService {
       tripId,
       'task_completed',
       `${actorName} completed: "${taskTitle}"`,
-      {
-        actorName,
-        taskId,
-        taskTitle,
-      },
+      { actorName, taskId, taskTitle },
+      `task_completed:${tripId}:${taskId}`,
     );
   }
 
@@ -305,11 +330,8 @@ class SystemMessageService {
       tripId,
       'calendar_item_added',
       `${actorName} added "${eventTitle}" to the calendar`,
-      {
-        actorName,
-        eventId,
-        eventTitle,
-      },
+      { actorName, eventId, eventTitle },
+      `calendar_added:${tripId}:${eventId}`,
     );
   }
 
@@ -330,13 +352,8 @@ class SystemMessageService {
       tripId,
       'payment_recorded',
       `${actorName} added an expense: ${description} (${formattedAmount})`,
-      {
-        actorName,
-        paymentId,
-        amount,
-        currency,
-        description,
-      },
+      { actorName, paymentId, amount, currency, description },
+      `payment_recorded:${tripId}:${paymentId}`,
     );
   }
 
@@ -350,13 +367,11 @@ class SystemMessageService {
       tripId,
       'payment_settled',
       `${description} was marked as settled`,
-      {
-        actorName,
-        paymentId,
-        description,
-      },
+      { actorName, paymentId, description },
+      `payment_settled:${tripId}:${paymentId}`,
     );
   }
+
 
   /** Test/debug only — clears the trip-type cache. */
   _clearTripTypeCache(): void {
