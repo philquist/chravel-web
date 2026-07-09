@@ -195,7 +195,9 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
 
       <div
         className={cn(
-          'flex min-w-0 max-w-[78%] flex-col',
+          // Cap bubble width inside the chat rail; min-w-0 lets long markdown wrap
+          // instead of expanding past the Concierge window.
+          'flex min-w-0 w-full max-w-[min(100%,28rem)] flex-col sm:max-w-[78%]',
           isOwnMessage ? 'items-end' : 'items-start',
         )}
       >

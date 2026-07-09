@@ -513,6 +513,8 @@ export const MobileTripTabs = ({
               tripId={tripId}
               basecamp={basecamp}
               isDemoMode={isDemoMode}
+              // Must recompute when activeTab changes — a stale false value makes
+              // Concierge immediately close Search (and cancel conversation mode).
               isActive={activeTab === tabId}
               onTabChange={onTabChange}
             />
@@ -545,6 +547,7 @@ export const MobileTripTabs = ({
       handleLineupUpdate,
       isLoadingRoster,
       onTabChange,
+      activeTab,
     ],
   );
 

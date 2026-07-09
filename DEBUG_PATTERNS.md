@@ -489,3 +489,23 @@ Known security anti-patterns discovered during audits. Reference this before int
 **Required Tests:** Unauthenticated denied, authenticated non-member denied, member/owner allowed, caller-supplied mismatched IDs/paths ignored or rejected.
 **Regression Surfaces:** Message parsing, broadcast reactions, scheduled messages, advertiser asset uploads, search-index population, and any new service-role edge function.
 **Fixed in:** `supabase/functions/message-parser/index.ts`, `broadcasts-react`, `message-scheduler`, `populate-search-index`, `image-upload` (June 2026 P0 hardening)
+
+## Concierge Search button appears dead on mobile
+- **Status:** confirmed
+- **Subsystem:** mobile Concierge / MobileTripTabs
+- **Bug class:** stale useCallback closure over activeTab
+- **Symptom:** Tapping Search does nothing (modal never stays open); upload may still work.
+- **Root cause:** `renderTabContent` used `activeTab` for `isActive={activeTab === tabId}` but omitted `activeTab` from deps, so Concierge kept `isActive=false` and its inactive effect closed Search on open.
+- **Smallest safe fix:** Add `activeTab` to the callback deps; keep the inactive teardown effect independent of `searchOpen`.
+- **Required tests:** MobileTripTabs asserts Concierge receives `isActive=true` when selected; AIConciergeChat keeps Search open while active and closes when inactive.
+- **Fixed in:** `MobileTripTabs.tsx`, `AIConciergeChat.tsx` (July 2026)
+
+## Concierge waveform tap starts then silently dies
+- **Status:** confirmed
+- **Subsystem:** realtime voice / useRealtimeVoice
+- **Bug class:** effect teardown race on callback identity
+- **Symptom:** Waveform button click appears to do nothing; no overlay or brief flash.
+- **Root cause:** Unmount cleanup `useEffect(() => stop, [stop])` re-ran when caption helpers changed `stop` identity, aborting the session; always-mounted hook amplified the race.
+- **Smallest safe fix:** `stopRef` + empty-deps unmount cleanup; lazy-mount voice session after tap.
+- **Required tests:** RealtimeVoiceButton lazy-mount start test.
+- **Fixed in:** `useRealtimeVoice.ts`, `RealtimeVoiceButton.tsx` (July 2026)

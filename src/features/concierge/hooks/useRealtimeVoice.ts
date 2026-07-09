@@ -393,8 +393,16 @@ export function useRealtimeVoice(): UseRealtimeVoiceResult {
     tripIdRef.current = null;
   }, [cleanupStream, clearReconnectTimer, captionsStop, captionsReset]);
 
-  // Tear down on unmount so a stray socket/mic never outlives the screen.
-  useEffect(() => stop, [stop]);
+  // Tear down on unmount only. Do NOT depend on `stop` identity — caption helpers
+  // can change `stop`'s reference across renders, and re-running this effect would
+  // abort a freshly started session (waveform tap appears to do nothing).
+  const stopRef = useRef(stop);
+  stopRef.current = stop;
+  useEffect(() => {
+    return () => {
+      stopRef.current();
+    };
+  }, []);
 
   const phase: RealtimeVoicePhase = useMemo(() => {
     if (starting) return 'connecting';

@@ -194,7 +194,8 @@ export const AiChatInput = ({
   };
 
   const handleConvoToggle = useCallback(() => {
-    textareaRef.current?.focus();
+    // Do not steal focus into the textarea before SpeechRecognition.start() —
+    // focusing the field on iOS can cancel the recognition session mid-gesture.
     onConvoToggle?.();
   }, [onConvoToggle]);
 
@@ -309,11 +310,23 @@ export const AiChatInput = ({
           {onConvoToggle && (
             <button
               type="button"
-              onClick={isVoiceEligible ? handleConvoToggle : onVoiceUpgrade}
+              onClick={e => {
+                // Keep the gesture on the button — don't let the textarea steal focus first
+                // on iOS, which can cancel SpeechRecognition.start() in the same tick.
+                e.preventDefault();
+                e.stopPropagation();
+                if (isVoiceEligible) handleConvoToggle();
+                else onVoiceUpgrade?.();
+              }}
+              onPointerDown={e => {
+                // Prevent the textarea from focusing before the click handler runs.
+                e.preventDefault();
+              }}
               aria-label={isConvoActive ? 'Stop dictation' : 'Dictate a message'}
               title="Dictate"
-              className={`absolute left-3 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full transition-colors ${
-                isConvoActive ? 'text-primary animate-pulse' : 'text-white/40 hover:text-white/70'
+              data-testid="concierge-dictation-btn"
+              className={`absolute left-2 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full touch-manipulation transition-colors ${
+                isConvoActive ? 'text-primary animate-pulse' : 'text-white/50 hover:text-white/80'
               }`}
             >
               <Mic size={18} />
@@ -333,7 +346,7 @@ export const AiChatInput = ({
                 ? 'Dictation in progress. Speak to add text.'
                 : 'Message your AI Concierge'
             }
-            className={`w-full bg-white/5 border rounded-2xl py-3 pr-4 ${onConvoToggle ? 'pl-12' : 'pl-4'} text-white placeholder-neutral-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 backdrop-blur-sm resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+            className={`w-full bg-white/5 border rounded-2xl py-3 pr-4 ${onConvoToggle ? 'pl-14' : 'pl-4'} text-white placeholder-neutral-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 backdrop-blur-sm resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
               isConvoActive ? 'border-primary/30 bg-primary/5' : 'border-white/10'
             }`}
           />

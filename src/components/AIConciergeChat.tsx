@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useCallback, lazy, Suspense, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Search, ImagePlus } from 'lucide-react';
@@ -17,7 +17,7 @@ import { sanitizeConciergeContent } from '@/lib/sanitizeConciergeContent';
 import { usePendingActions } from '@/hooks/usePendingActions';
 import {
   ALLOWED_DOCUMENT_TYPES,
-  ALLOWED_IMAGE_TYPES as _ALLOWED_IMAGE_TYPES,
+  ALLOWED_IMAGE_TYPES,
   ALL_ACCEPTED_TYPES,
   MAX_DOCUMENT_SIZE_BYTES as _MAX_DOCUMENT_SIZE_BYTES,
   MAX_IMAGE_SIZE_BYTES as _MAX_IMAGE_SIZE_BYTES,
@@ -46,6 +46,23 @@ const PlusUpsellModal = lazy(() =>
 );
 
 const SEARCH_FOCUS_EVENT = 'chravel:trip-search-focus';
+
+const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif']);
+const DOCUMENT_EXTENSIONS = new Set(['.pdf', '.ics', '.csv', '.xls', '.xlsx']);
+
+function getFileExtension(file: File): string {
+  const name = file.name.toLowerCase();
+  const dot = name.lastIndexOf('.');
+  return dot >= 0 ? name.slice(dot) : '';
+}
+
+function isConciergeImageFile(file: File): boolean {
+  return ALLOWED_IMAGE_TYPES.has(file.type) || IMAGE_EXTENSIONS.has(getFileExtension(file));
+}
+
+function isConciergeDocumentFile(file: File): boolean {
+  return ALLOWED_DOCUMENT_TYPES.has(file.type) || DOCUMENT_EXTENSIONS.has(getFileExtension(file));
+}
 
 function getSearchResultTab(result: UniversalSearchResult): string {
   const metadataTab = result.metadata?.tab;
@@ -76,15 +93,24 @@ function getSearchResultTab(result: UniversalSearchResult): string {
 
 function dispatchSearchFocus(result: UniversalSearchResult) {
   const anchor =
-    typeof result.metadata?.anchor === 'string' ? result.metadata.anchor : result.deepLink.split('#')[1];
+    typeof result.metadata?.anchor === 'string'
+      ? result.metadata.anchor
+      : result.deepLink.split('#')[1];
   if (anchor) window.history.replaceState(window.history.state, '', `#${anchor}`);
   window.dispatchEvent(new CustomEvent(SEARCH_FOCUS_EVENT, { detail: result }));
   const candidateIds = [anchor, `msg-${result.id}`, result.id]
     .filter((value): value is string => typeof value === 'string' && value.length > 0)
-    .flatMap(value => [value, value.replace(/^chat-message-/, ''), value.replace(/^concierge-message-/, '')]);
+    .flatMap(value => [
+      value,
+      value.replace(/^chat-message-/, ''),
+      value.replace(/^concierge-message-/, ''),
+    ]);
   const focus = (attempt = 0) => {
     const target = candidateIds
-      .map(value => document.getElementById(value) ?? document.querySelector(`[data-message-id="${value}"]`))
+      .map(
+        value =>
+          document.getElementById(value) ?? document.querySelector(`[data-message-id="${value}"]`),
+      )
       .find((el): el is HTMLElement => el instanceof HTMLElement);
     if (!target && attempt < 8) {
       window.setTimeout(() => focus(attempt + 1), 160);
@@ -193,17 +219,12 @@ export const AIConciergeChat = ({
       const rejected: string[] = [];
 
       files.forEach(file => {
-        const lowerName = file.name.toLowerCase();
-        const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif)$/.test(lowerName);
-        const isDocument =
-          ALLOWED_DOCUMENT_TYPES.has(file.type) || /\.(pdf|ics|csv|xlsx?|xls)$/.test(lowerName);
-
-        if (isImage) {
+        if (isConciergeImageFile(file)) {
           if (file.size > _MAX_IMAGE_SIZE_BYTES) rejected.push(file.name);
           else images.push(file);
           return;
         }
-        if (isDocument) {
+        if (isConciergeDocumentFile(file)) {
           if (file.size > _MAX_DOCUMENT_SIZE_BYTES) rejected.push(file.name);
           else documents.push(file);
           return;
@@ -284,6 +305,7 @@ export const AIConciergeChat = ({
   }, [ttsError, ttsPlaybackState]);
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const uploadInputId = useId();
   const handleSendMessageRef = useRef<(messageOverride?: string) => Promise<void>>(async () =>
     Promise.resolve(),
   );
@@ -424,11 +446,13 @@ export const AIConciergeChat = ({
     },
   });
 
+  // Only tear down Search / conversation when the Concierge tab actually leaves.
+  // Do not depend on searchOpen — that would re-run on open and fight the modal.
   useEffect(() => {
     if (isActive) return;
     if (conversation.active) conversation.cancel();
-    if (searchOpen) setSearchOpen(false);
-  }, [conversation.active, conversation.cancel, isActive, searchOpen]);
+    setSearchOpen(false);
+  }, [conversation.active, conversation.cancel, isActive]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -444,7 +468,7 @@ export const AIConciergeChat = ({
         className="relative rounded-2xl border border-white/10 bg-black/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden flex flex-col flex-1"
       >
         {/* Header — single-row trip controls */}
-        <div className="border-b border-white/10 bg-black/30 px-3 py-2 flex-shrink-0">
+        <div className="relative z-20 border-b border-white/10 bg-black/30 px-3 py-2 flex-shrink-0">
           <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2">
             <button
               type="button"
@@ -452,6 +476,7 @@ export const AIConciergeChat = ({
               className={CTA_BUTTON}
               aria-label="Search trip"
               title="Search trip"
+              data-testid="header-search-btn"
             >
               <Search size={CTA_ICON_SIZE} className="text-white" />
             </button>
@@ -461,16 +486,20 @@ export const AIConciergeChat = ({
             >
               Concierge Chravel Agent
             </h3>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
+            {/*
+              Prefer <label htmlFor> over programmatic .click() — iOS Safari / WKWebView
+              often ignore synthetic clicks on file inputs unless the gesture is a real
+              label activation. Keep the input sr-only (not display:none) for the same reason.
+            */}
+            <label
+              htmlFor={uploadInputId}
               data-testid="header-upload-btn"
-              className={CTA_BUTTON}
+              className={`${CTA_BUTTON} cursor-pointer`}
               aria-label="Attach files to Concierge"
               title="Attach files to Concierge"
             >
               <ImagePlus size={CTA_ICON_SIZE} className="text-white" />
-            </button>
+            </label>
           </div>
         </div>
 
@@ -493,10 +522,10 @@ export const AIConciergeChat = ({
         {/* Hidden file input for header upload button */}
         {/*
           sr-only (not `hidden`/display:none) so iOS Safari + WKWebView will honor a
-          programmatic .click() from the header button. `display:none` inputs are
-          silently ignored by mobile Safari — the picker never opens.
+          label-associated activation. `display:none` inputs are silently ignored.
         */}
         <input
+          id={uploadInputId}
           ref={fileInputRef}
           type="file"
           accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,text/calendar,.ics,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -599,7 +628,7 @@ export const AIConciergeChat = ({
 
         {/* Input area — sticky bottom with inline voice banner above input */}
         <div
-          className="chat-composer z-10 bg-black/30 px-3 pt-2 flex-shrink-0"
+          className="chat-composer relative z-20 bg-black/30 px-3 pt-2 flex-shrink-0"
           style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)' }}
         >
           {/* Usage meter — only for plans with a finite per-trip ask limit */}
@@ -681,9 +710,7 @@ export const AIConciergeChat = ({
             showImageAttach={UPLOAD_ENABLED}
             attachedImages={UPLOAD_ENABLED ? attachedImages : []}
             onImageAttach={
-              UPLOAD_ENABLED
-                ? (files: File[]) => handleFilesSelected(files)
-                : undefined
+              UPLOAD_ENABLED ? (files: File[]) => handleFilesSelected(files) : undefined
             }
             onRemoveImage={
               UPLOAD_ENABLED
@@ -692,9 +719,7 @@ export const AIConciergeChat = ({
             }
             attachedDocuments={UPLOAD_ENABLED ? attachedDocuments : []}
             onDocumentAttach={
-              UPLOAD_ENABLED
-                ? (files: File[]) => handleFilesSelected(files)
-                : undefined
+              UPLOAD_ENABLED ? (files: File[]) => handleFilesSelected(files) : undefined
             }
             onRejectedFiles={(files: File[]) =>
               toast.error('Some files could not be attached', {

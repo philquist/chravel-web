@@ -20,6 +20,10 @@ describe('MessageRenderer mobile overflow containment', () => {
     expect(row?.className).toContain('overflow-x-hidden');
     expect(row?.className).toContain('min-w-0');
 
+    const bubbleColumn = row?.children?.[1] as HTMLElement | undefined;
+    expect(bubbleColumn?.className).toContain('min-w-0');
+    expect(bubbleColumn?.className).toMatch(/max-w-\[min\(100%,28rem\)\]|max-w-\[78%\]/);
+
     const markdown = container.querySelector('.ai-markdown-content');
     expect(markdown?.className).toContain('max-w-full');
     expect(markdown?.className).toContain('overflow-hidden');

@@ -485,3 +485,9 @@ A computer-use pass reported "hamburger menu missing at 390px" because DevTools 
 
 ### Kill-switch defaults must match product-critical shipped controls
 If a visible primary control is meant to work by default, do not gate its mounted handler behind a `false` feature-flag fallback; use the flag only as a remote kill switch so missing flag rows do not turn production UI into a no-op.
+
+### Concierge Search auto-closes when isActive is stale from tab render deps
+`renderTabContent` that computes `isActive={activeTab === tabId}` must list `activeTab` in its `useCallback` deps. Omitting it freezes Concierge at `isActive=false` after first visit, and the inactive effect immediately closes Search / cancels conversation mode — Search looks dead. *Evidence: July 2026 Concierge controls repair; MobileTripTabs.navigation regression asserts live isActive=true.*
+
+### Realtime voice unmount cleanup must not depend on stop identity
+`useEffect(() => stop, [stop])` aborts a freshly started session when caption helpers change `stop`'s reference across renders. Use a `stopRef` + empty-deps unmount cleanup, and lazy-mount `useRealtimeVoice` only after the waveform tap. *Evidence: July 2026 Concierge waveform no-op fix.*

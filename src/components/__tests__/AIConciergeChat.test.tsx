@@ -254,9 +254,44 @@ describe('AIConciergeChat', () => {
 
       const file = new File(['reservation'], 'hotel.pdf', { type: 'application/pdf' });
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      expect(input).toBeTruthy();
+      // Label association is required for reliable iOS/WKWebView file-picker activation.
+      expect(input.id).toBeTruthy();
+      const uploadLabel = screen.getByTestId('header-upload-btn');
+      expect(uploadLabel.getAttribute('for')).toBe(input.id);
       fireEvent.change(input, { target: { files: [file] } });
 
       expect(screen.getByText('hotel.pdf')).toBeInTheDocument();
+    });
+
+    it('keeps Search open while the Concierge tab remains active', () => {
+      const { rerender } = renderWithProviders(<AIConciergeChat tripId="test-trip" isActive />);
+
+      fireEvent.click(screen.getByLabelText(/search trip/i));
+      expect(screen.getByPlaceholderText(/search across trip/i)).toBeInTheDocument();
+
+      // Re-render with isActive still true must not auto-close Search.
+      rerender(
+        <QueryClientProvider client={queryClient}>
+          <AIConciergeChat tripId="test-trip" isActive />
+        </QueryClientProvider>,
+      );
+      expect(screen.getByPlaceholderText(/search across trip/i)).toBeInTheDocument();
+    });
+
+    it('closes Search when the Concierge tab becomes inactive', () => {
+      const { rerender } = renderWithProviders(<AIConciergeChat tripId="test-trip" isActive />);
+
+      fireEvent.click(screen.getByLabelText(/search trip/i));
+      expect(screen.getByPlaceholderText(/search across trip/i)).toBeInTheDocument();
+
+      rerender(
+        <QueryClientProvider client={queryClient}>
+          <AIConciergeChat tripId="test-trip" isActive={false} />
+        </QueryClientProvider>,
+      );
+
+      expect(screen.queryByPlaceholderText(/search across trip/i)).not.toBeInTheDocument();
     });
 
     it('renders the full realtime voice CTA as the composer left control by default', () => {
@@ -264,14 +299,17 @@ describe('AIConciergeChat', () => {
 
       expect(screen.getByRole('button', { name: /start voice conversation/i })).toBeInTheDocument();
       expect(screen.getByLabelText(/dictate a message/i)).toBeInTheDocument();
+      expect(screen.getByTestId('concierge-dictation-btn')).toBeInTheDocument();
     });
 
-    it('starts the realtime voice session from the waveform button', () => {
+    it('starts the realtime voice session from the waveform button', async () => {
       renderWithProviders(<AIConciergeChat tripId="test-trip" />);
 
       fireEvent.click(screen.getByRole('button', { name: /start voice conversation/i }));
 
-      expect(realtimeVoiceMock.start).toHaveBeenCalledWith('test-trip');
+      await waitFor(() => {
+        expect(realtimeVoiceMock.start).toHaveBeenCalledWith('test-trip');
+      });
     });
 
     it('removes legacy status pills from header', () => {
