@@ -280,6 +280,21 @@ export const usePayments = (tripId?: string) => {
   }> => {
     try {
       const { paymentId } = await createPaymentMutation.mutateAsync(paymentData);
+
+      // Inline chat activity so members see the payment request in the chat
+      // stream without having to open the Payments tab. Fire-and-forget; a
+      // failure here must never bubble back to the payment mutation.
+      if (tripId && !demoActive) {
+        void systemMessageService.paymentRecorded(
+          tripId,
+          resolveActorName(user),
+          paymentId,
+          paymentData.amount,
+          paymentData.currency,
+          paymentData.description,
+        );
+      }
+
       return { success: true, paymentId };
     } catch (error) {
       if (error instanceof CreatePaymentMutationError) {
