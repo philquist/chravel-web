@@ -11,6 +11,7 @@ const prefs: NotificationPreferences = {
   push_enabled: true,
   email_enabled: true,
   chat_messages: false,
+  mentions: true,
   broadcasts: true,
   calendar_events: true,
   calendar_bulk_import: true,

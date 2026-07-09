@@ -11,6 +11,7 @@
 
 export type NotificationCategory =
   | 'chat_messages'
+  | 'mentions'
   | 'broadcasts'
   | 'calendar_events'
   | 'calendar_bulk_import'
@@ -26,6 +27,7 @@ export interface NotificationPreferences {
   push_enabled: boolean;
   email_enabled: boolean;
   chat_messages: boolean;
+  mentions: boolean;
   broadcasts: boolean;
   calendar_events: boolean;
   calendar_bulk_import: boolean;
@@ -78,7 +80,11 @@ export const TYPE_TO_CATEGORY_MAP: Record<string, NotificationCategory> = {
   chat_message: 'chat_messages',
   message: 'chat_messages',
   chat: 'chat_messages',
-  mention: 'chat_messages',
+
+  // @mentions get a dedicated, non-suppressed category so they can push even
+  // though plain chat stays in-app only (see SUPPRESSED_CATEGORIES below).
+  mention: 'mentions',
+  mentions: 'mentions',
 
   broadcasts: 'broadcasts',
   broadcast: 'broadcasts',
@@ -328,6 +334,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: Omit<NotificationPreferences, 'us
   push_enabled: true,
   email_enabled: false, // Default off to avoid spam for new users
   chat_messages: false, // Permanently disabled: too high-volume for external notifications
+  mentions: true, // @mentions push by default (in-app + push on; email off — not email-eligible)
   broadcasts: true,
   calendar_events: true,
   calendar_bulk_import: true,

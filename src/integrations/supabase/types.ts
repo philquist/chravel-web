@@ -1713,6 +1713,7 @@ export type Database = {
           id: string
           join_requests: boolean | null
           last_sms_reset_date: string | null
+          mentions: boolean | null
           mentions_only: boolean | null
           payments: boolean | null
           polls: boolean | null
@@ -1739,6 +1740,7 @@ export type Database = {
           id?: string
           join_requests?: boolean | null
           last_sms_reset_date?: string | null
+          mentions?: boolean | null
           mentions_only?: boolean | null
           payments?: boolean | null
           polls?: boolean | null
@@ -1765,6 +1767,7 @@ export type Database = {
           id?: string
           join_requests?: boolean | null
           last_sms_reset_date?: string | null
+          mentions?: boolean | null
           mentions_only?: boolean | null
           payments?: boolean | null
           polls?: boolean | null
