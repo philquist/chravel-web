@@ -5,7 +5,8 @@
  * payloads (iOS `aps.badge` via FCM `apns`, web-push `data.badgeCount`).
  *
  * The badge counts ONLY: broadcasts, basecamp updates, chat messages (when the
- * recipient enabled `chat_messages`), and trip acceptance. Trip acceptance is
+ * recipient enabled `chat_messages`), @mentions, new member joins, and trip
+ * acceptance. Trip acceptance is
  * written with `type = 'success'` + `metadata.action = 'join_approved'`, so it
  * MUST be matched on metadata, not type.
  *
@@ -23,6 +24,9 @@ export const BADGE_NOTIFICATION_TYPES = [
   'basecamp',
   'basecamp_update',
   'trip_update',
+  // @mentions and new-member joins have dedicated pushable categories and badge too.
+  'mention',
+  'member_joined',
   // Trip acceptance from the alternate edge writer, which sets type='join_approved'
   // (the canonical RPC sets type='success' + metadata.action — matched separately below).
   'join_approved',

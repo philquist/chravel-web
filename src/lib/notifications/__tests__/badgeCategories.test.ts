@@ -19,6 +19,13 @@ describe('badgeCategories', () => {
       expect(isBadgeCountable({ type: 'trip_update' }, CHAT_OFF)).toBe(true);
     });
 
+    it('counts @mentions and new member joins regardless of the chat preference', () => {
+      expect(isBadgeCountable({ type: 'mention' }, CHAT_OFF)).toBe(true);
+      expect(isBadgeCountable({ type: 'mention' }, CHAT_ON)).toBe(true);
+      expect(isBadgeCountable({ type: 'member_joined' }, CHAT_OFF)).toBe(true);
+      expect(isBadgeCountable({ type: 'member_joined' }, CHAT_ON)).toBe(true);
+    });
+
     it('counts chat messages only when the chat preference is on', () => {
       expect(isBadgeCountable({ type: 'chat_message' }, CHAT_ON)).toBe(true);
       expect(isBadgeCountable({ type: 'chat_message' }, CHAT_OFF)).toBe(false);
@@ -72,5 +79,7 @@ describe('badgeCategories', () => {
     expect(BADGE_NOTIFICATION_TYPES).toContain('broadcast');
     expect(BADGE_NOTIFICATION_TYPES).toContain('chat_message');
     expect(BADGE_NOTIFICATION_TYPES).toContain('basecamp_update');
+    expect(BADGE_NOTIFICATION_TYPES).toContain('mention');
+    expect(BADGE_NOTIFICATION_TYPES).toContain('member_joined');
   });
 });

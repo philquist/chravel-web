@@ -6,6 +6,8 @@
  *   - new broadcasts
  *   - new basecamp updates
  *   - new chat messages (ONLY when the user's `chat_messages` pref is on)
+ *   - @mentions (dedicated pushable `mention` category)
+ *   - new member joins (`member_joined`)
  *   - trip acceptance ("you were accepted on a trip you requested")
  *
  * Trip acceptance is the subtle one: the `approve_join_request` RPC writes the
@@ -26,6 +28,9 @@ export const BADGE_NOTIFICATION_TYPES = [
   'basecamp',
   'basecamp_update',
   'trip_update',
+  // @mentions and new-member joins have dedicated pushable categories and badge too.
+  'mention',
+  'member_joined',
   // Trip acceptance from the alternate edge writer, which sets type='join_approved'
   // (the canonical RPC sets type='success' + metadata.action — matched separately below).
   'join_approved',
