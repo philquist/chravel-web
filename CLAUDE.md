@@ -15,7 +15,7 @@
 | DB | Postgres via Supabase | 756 RLS policies; migrations in `supabase/migrations/` |
 | Auth | Supabase Auth (email + Google OAuth) | `_shared/requireAuth.ts` on every edge function |
 | AI (text) | Gemini via `lovable-concierge` | 38 tools, 18 query classes |
-| AI (voice) | Vertex AI Live API | `gemini-live-2.5-flash-native-audio` |
+| AI (voice) | OpenAI Realtime via Vercel AI Gateway | `openai/gpt-realtime-2` (secret: `AI_GATEWAY_API_KEY`); mint-realtime-token / realtime-voice-session |
 | Payments | Stripe (web) · RevenueCat (iOS) | Don't mix |
 | iOS shell | Capacitor 8 — **NOT React Native** | Same web app |
 | Hosting | Vercel (frontend) + Render (OG unfurl proxy) | |
