@@ -193,7 +193,11 @@ export const ChatMessages = ({
         const messageWithGrounding = message as ChatMessageWithGrounding;
         const rich = message as RichChatMessage;
         return (
-          <div key={message.id} id={`msg-${message.id}`} className="space-y-2 group/msg relative">
+          <div
+            key={message.id}
+            id={`msg-${message.id}`}
+            className="space-y-2 group/msg relative min-w-0 max-w-full overflow-x-hidden"
+          >
             <MessageRenderer
               message={renderedMessage}
               showMapWidgets={showMapWidgets}
@@ -206,11 +210,11 @@ export const ChatMessages = ({
             {/* Rich place cards from function_call results (searchPlaces / getPlaceDetails) */}
             {rich.functionCallPlaces && rich.functionCallPlaces.length > 0 && (
               <div
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
+                className={`flex min-w-0 max-w-full overflow-x-hidden ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
               >
                 <PlaceResultCards
                   places={rich.functionCallPlaces}
-                  className="max-w-xs lg:max-w-md"
+                  className="min-w-0 max-w-full sm:max-w-xs lg:max-w-md"
                   onSave={onSavePlace}
                   isUrlSaved={isUrlSaved}
                   isSaving={isSaving}
@@ -221,11 +225,11 @@ export const ChatMessages = ({
             {/* Rich flight cards from function_call results (searchFlights) */}
             {rich.functionCallFlights && rich.functionCallFlights.length > 0 && (
               <div
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
+                className={`flex min-w-0 max-w-full overflow-x-hidden ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
               >
                 <FlightResultCards
                   flights={rich.functionCallFlights}
-                  className="max-w-xs lg:max-w-md"
+                  className="min-w-0 max-w-full sm:max-w-xs lg:max-w-md"
                   onSave={onSaveFlight}
                   isSaved={isUrlSaved}
                   isSaving={isSaving}
@@ -236,11 +240,11 @@ export const ChatMessages = ({
             {/* Rich hotel cards from function_call results (searchHotels) or trip_cards event */}
             {rich.functionCallHotels && rich.functionCallHotels.length > 0 && (
               <div
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
+                className={`flex min-w-0 max-w-full overflow-x-hidden ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
               >
                 <HotelResultCards
                   hotels={rich.functionCallHotels}
-                  className="max-w-xs lg:max-w-md"
+                  className="min-w-0 max-w-full sm:max-w-xs lg:max-w-md"
                   onSave={onSaveHotel}
                   isSaved={isUrlSaved}
                   isSaving={isSaving}
@@ -251,9 +255,9 @@ export const ChatMessages = ({
             {/* Concierge action result cards (createPoll, createTask, savePlace, etc.) */}
             {rich.conciergeActions && rich.conciergeActions.length > 0 && (
               <div
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
+                className={`flex min-w-0 max-w-full overflow-x-hidden ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
               >
-                <div className="max-w-xs lg:max-w-md w-full">
+                <div className="min-w-0 max-w-full sm:max-w-xs lg:max-w-md w-full">
                   <ConciergeActionCardGroup
                     actions={rich.conciergeActions}
                     onNavigate={onTabChange}
@@ -265,9 +269,9 @@ export const ChatMessages = ({
             {/* Pending AI write actions that require explicit user confirmation */}
             {rich.pendingActions && rich.pendingActions.length > 0 && (
               <div
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
+                className={`flex min-w-0 max-w-full overflow-x-hidden ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
               >
-                <div className="max-w-sm lg:max-w-md w-full space-y-2">
+                <div className="min-w-0 max-w-full sm:max-w-sm lg:max-w-md w-full space-y-2">
                   {rich.pendingActions.map(action => (
                     <PendingActionCard
                       key={action.id}
@@ -299,9 +303,9 @@ export const ChatMessages = ({
             {/* Reservation draft cards */}
             {rich.reservationDrafts && rich.reservationDrafts.length > 0 && (
               <div
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
+                className={`flex min-w-0 max-w-full overflow-x-hidden ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
               >
-                <div className="space-y-2">
+                <div className="min-w-0 max-w-full space-y-2">
                   {rich.reservationDrafts.map(draft => (
                     <ReservationDraftCard key={draft.id} draft={draft} onEdit={onEditReservation} />
                   ))}
@@ -312,10 +316,10 @@ export const ChatMessages = ({
             {/* Smart Import status indicator (shown during parsing/extraction) */}
             {rich.smartImportStatus && !rich.smartImportPreview && (
               <div
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
+                className={`flex min-w-0 max-w-full overflow-x-hidden ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
               >
                 <div
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl max-w-sm ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl min-w-0 max-w-full sm:max-w-sm ${
                     rich.smartImportStatus.status === 'failed'
                       ? 'border border-red-500/30 bg-red-500/10'
                       : 'border border-[#c49746]/20 bg-[#c49746]/5'
@@ -340,9 +344,9 @@ export const ChatMessages = ({
             {/* Smart Import preview card */}
             {rich.smartImportPreview && rich.smartImportPreview.previewEvents.length > 0 && (
               <div
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
+                className={`flex min-w-0 max-w-full overflow-x-hidden ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
               >
-                <div className="max-w-sm lg:max-w-md w-full">
+                <div className="min-w-0 max-w-full sm:max-w-sm lg:max-w-md w-full">
                   <SmartImportPreviewCard
                     previewEvents={rich.smartImportPreview.previewEvents}
                     tripId={rich.smartImportPreview.tripId}
@@ -361,9 +365,9 @@ export const ChatMessages = ({
             {/* Bulk Delete preview card */}
             {rich.bulkDeletePreview && rich.bulkDeletePreview.previewEvents.length > 0 && (
               <div
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
+                className={`flex min-w-0 max-w-full overflow-x-hidden ${message.type === 'user' ? 'justify-end' : 'justify-start'} ${message.type !== 'user' ? 'pl-10' : ''}`}
               >
-                <div className="max-w-sm lg:max-w-md w-full">
+                <div className="min-w-0 max-w-full sm:max-w-sm lg:max-w-md w-full">
                   <SmartImportPreviewCard
                     mode="delete"
                     previewEvents={rich.bulkDeletePreview.previewEvents}
@@ -409,7 +413,7 @@ export const ChatMessages = ({
                 (messageWithGrounding.googleMapsWidget &&
                   !messageWithGrounding.googleMapsWidget.trimStart().startsWith('<'))) && (
                 <div
-                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex min-w-0 max-w-full overflow-x-hidden ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <GoogleMapsWidget
                     widgetToken={
@@ -422,8 +426,10 @@ export const ChatMessages = ({
 
             {/* 🆕 Enhanced: Show grounding sources with badge */}
             {messageWithGrounding.sources && messageWithGrounding.sources.length > 0 && (
-              <div className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className="space-y-1.5 px-2 max-w-xs lg:max-w-md">
+              <div
+                className={`flex min-w-0 max-w-full overflow-x-hidden ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div className="space-y-1.5 px-2 min-w-0 max-w-full sm:max-w-xs lg:max-w-md">
                   <div className="text-xs font-medium text-gray-400 flex items-center gap-2">
                     <span>Sources:</span>
                     {messageWithGrounding.sources.some(

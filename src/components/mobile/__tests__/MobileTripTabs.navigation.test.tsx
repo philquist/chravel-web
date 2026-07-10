@@ -49,7 +49,18 @@ vi.mock('../MobileTripTasks', () => ({ MobileTripTasks: () => <div>Tasks tab</di
 vi.mock('../../CommentsWall', () => ({ CommentsWall: () => <div>Polls tab</div> }));
 vi.mock('../MobileUnifiedMediaHub', () => ({ MobileUnifiedMediaHub: () => <div>Media tab</div> }));
 vi.mock('../../PlacesSection', () => ({ PlacesSection: () => <div>Places tab</div> }));
-vi.mock('../../AIConciergeChat', () => ({ AIConciergeChat: () => <div>Concierge tab</div> }));
+const conciergePropsSpy = vi.hoisted(() => ({ last: null as { isActive?: boolean } | null }));
+
+vi.mock('../../AIConciergeChat', () => ({
+  AIConciergeChat: (props: { isActive?: boolean }) => {
+    conciergePropsSpy.last = { isActive: props.isActive };
+    return (
+      <div data-testid="concierge-tab" data-active={String(props.isActive)}>
+        Concierge tab
+      </div>
+    );
+  },
+}));
 vi.mock('../MobileTripPayments', () => ({ MobileTripPayments: () => <div>Payments tab</div> }));
 vi.mock('../../events/EnhancedAgendaTab', () => ({
   EnhancedAgendaTab: () => <div>Agenda tab</div>,
@@ -74,7 +85,39 @@ import { MobileTripTabs } from '../MobileTripTabs';
 describe('MobileTripTabs tab navigation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    conciergePropsSpy.last = null;
     Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  it('passes a live isActive=true to Concierge while that tab is selected', async () => {
+    // Regression: renderTabContent omitted activeTab from useCallback deps, so
+    // Concierge stayed isActive=false after the first visit and Search auto-closed.
+    const { rerender } = render(
+      <MobileTripTabs
+        activeTab="chat"
+        onTabChange={vi.fn()}
+        tripId="trip-1"
+        basecamp={{ name: 'Hotel', address: 'Tokyo' }}
+        variant="pro"
+        tripData={{ enabled_features: ['chat', 'calendar', 'concierge', 'media', 'payments'] }}
+      />,
+    );
+
+    expect(conciergePropsSpy.last).toBeNull();
+
+    rerender(
+      <MobileTripTabs
+        activeTab="concierge"
+        onTabChange={vi.fn()}
+        tripId="trip-1"
+        basecamp={{ name: 'Hotel', address: 'Tokyo' }}
+        variant="pro"
+        tripData={{ enabled_features: ['chat', 'calendar', 'concierge', 'media', 'payments'] }}
+      />,
+    );
+
+    expect(await screen.findByTestId('concierge-tab')).toHaveAttribute('data-active', 'true');
+    expect(conciergePropsSpy.last?.isActive).toBe(true);
   });
 
   it('lets users leave Concierge for Payments without the content pane taking horizontal gestures', async () => {

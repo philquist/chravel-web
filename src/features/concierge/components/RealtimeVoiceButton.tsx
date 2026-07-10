@@ -5,8 +5,13 @@
  * `concierge_realtime_voice` kill switch is checked by the parent (AIConciergeChat)
  * so this component never renders when the flag is off — do NOT double-check it here
  * (a second useFeatureFlag caused hydration flicker + unmount races mid-session).
+ *
+ * The heavy `useRealtimeVoice` hook (AI SDK realtime + mic + captions) is only mounted
+ * after the user taps Start. Keeping it always-mounted caused teardown races: the hook's
+ * unmount cleanup depends on a `stop` callback that can change identity when caption
+ * helpers re-render, which silently aborted sessions right after start.
  */
-import { type RefObject, useCallback } from 'react';
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { AudioLines, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -30,6 +35,51 @@ interface RealtimeVoiceButtonProps {
   disabled?: boolean;
 }
 
+interface RealtimeVoiceSessionProps {
+  tripId: string;
+  containerRef?: RefObject<HTMLElement | null>;
+  onEnd: () => void;
+}
+
+function RealtimeVoiceSession({ tripId, containerRef, onEnd }: RealtimeVoiceSessionProps) {
+  const voice = useRealtimeVoice();
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    void voice.start(tripId).catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : 'Could not start voice session.';
+      toast.error('Voice failed to start', { description: message });
+      onEnd();
+    });
+  }, [tripId, voice, onEnd]);
+
+  const handleEnd = useCallback(() => {
+    voice.stop();
+    onEnd();
+  }, [voice, onEnd]);
+
+  // Keep the overlay mounted while connecting / live / error so failures don't flash-vanish.
+  if (!voice.isActive && voice.phase === 'idle') return null;
+
+  return (
+    <RealtimeVoiceOverlay
+      phase={voice.phase}
+      turns={voice.turns}
+      isCapturing={voice.isCapturing}
+      isPlaying={voice.isPlaying}
+      errorMessage={voice.errorMessage}
+      micPermission={voice.micPermission}
+      isRecording={voice.isRecording}
+      latestUserText={voice.latestUserText}
+      latestAssistantText={voice.latestAssistantText}
+      onEnd={handleEnd}
+      containerRef={containerRef}
+    />
+  );
+}
+
 export function RealtimeVoiceButton({
   tripId,
   className,
@@ -37,9 +87,7 @@ export function RealtimeVoiceButton({
   containerRef,
   disabled = false,
 }: RealtimeVoiceButtonProps) {
-  const voice = useRealtimeVoice();
-  const isConnecting = voice.phase === 'connecting';
-  const isSessionLive = voice.isActive; // connecting/listening/speaking/error
+  const [sessionRequested, setSessionRequested] = useState(false);
 
   const handleStart = useCallback(() => {
     if (!tripId) {
@@ -52,55 +100,40 @@ export function RealtimeVoiceButton({
       });
       return;
     }
-    if (isSessionLive) return;
+    if (sessionRequested) return;
     onSessionStart?.();
-    void voice.start(tripId).catch((err: unknown) => {
-      const message = err instanceof Error ? err.message : 'Could not start voice session.';
-      toast.error('Voice failed to start', { description: message });
-    });
-  }, [tripId, disabled, isSessionLive, onSessionStart, voice]);
+    setSessionRequested(true);
+  }, [tripId, disabled, sessionRequested, onSessionStart]);
 
-  const label = isConnecting
-    ? 'Connecting voice…'
-    : isSessionLive
-      ? 'Voice session active'
-      : 'Start voice conversation';
+  const handleEnd = useCallback(() => {
+    setSessionRequested(false);
+  }, []);
+
+  const label = sessionRequested ? 'Voice session active' : 'Start voice conversation';
 
   return (
     <>
       <button
         type="button"
         onClick={handleStart}
-        // Only actually disable the DOM element when a session is already live —
-        // usage-limit gating happens inside handleStart so we can toast the reason.
-        disabled={isSessionLive}
+        // Only disable the DOM element while a session is requested — usage-limit
+        // gating happens inside handleStart so we can toast the reason.
+        disabled={sessionRequested}
         aria-label={label}
-        aria-busy={isConnecting}
+        aria-busy={sessionRequested}
         title={label}
         className={cn(CTA_BUTTON, className)}
         data-testid="realtime-voice-button"
       >
-        {isConnecting ? (
+        {sessionRequested ? (
           <Loader2 size={CTA_ICON_SIZE} className="text-white animate-spin" />
         ) : (
           <AudioLines size={CTA_ICON_SIZE} className="text-white" />
         )}
       </button>
 
-      {voice.isActive && (
-        <RealtimeVoiceOverlay
-          phase={voice.phase}
-          turns={voice.turns}
-          isCapturing={voice.isCapturing}
-          isPlaying={voice.isPlaying}
-          errorMessage={voice.errorMessage}
-          micPermission={voice.micPermission}
-          isRecording={voice.isRecording}
-          latestUserText={voice.latestUserText}
-          latestAssistantText={voice.latestAssistantText}
-          onEnd={voice.stop}
-          containerRef={containerRef}
-        />
+      {sessionRequested && (
+        <RealtimeVoiceSession tripId={tripId} containerRef={containerRef} onEnd={handleEnd} />
       )}
     </>
   );

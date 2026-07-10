@@ -119,3 +119,8 @@
 - Fixed the chat message search overlay escape path so tapping outside the dialog or the visible 44px "Back to chat" control closes search, preventing the mobile search modal from trapping users.
 - Replaced dark-only overlay text/icon classes with semantic card/foreground/muted tokens so the search header, close affordance, empty state, and results stay visible in light mode.
 - Added regression coverage for the accessible mobile back control; typecheck and targeted ESLint pass. Full chat-search Vitest command timed out in this environment without reporting test results, and repo-wide lint remains blocked by a pre-existing prefer-const error in `src/utils/calendarImportParsers.ts`.
+
+2026-07-09 — Concierge Search/voice/upload/dictation/overflow repair
+- Root cause for dead Search: MobileTripTabs renderTabContent omitted activeTab from useCallback deps, so Concierge stayed isActive=false and immediately closed Search.
+- Hardened upload via label htmlFor + sr-only input; enlarged in-field dictation hit target and stopped focus-before-STT; lazy-mounted realtime voice + stopRef unmount cleanup so waveform taps start sessions.
+- Contained Concierge message/card overflow with min-w-0/max-w clamps. Verification: typecheck, lint:check (0 errors), build pass; RealtimeVoiceButton + MessageRenderer overflow tests pass; AIConciergeChat/MobileTripTabs suites still OOM in this environment.
