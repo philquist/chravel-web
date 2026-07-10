@@ -148,6 +148,9 @@ const requiredIdKeys = parseRequiredIds();
 // -------- ASC snapshot ------------------------------------------------------
 const ascIds = new Set(JSON.parse(readSrc('appstore/asc-products.json')));
 
+// -------- Google Play snapshot ---------------------------------------------
+const playIds = new Set(JSON.parse(readSrc('playstore/play-products.json')));
+
 // -------- Assertions --------------------------------------------------------
 const errors = [];
 const err = (msg) => errors.push(msg);
@@ -240,6 +243,26 @@ for (const id of ascIds) {
     err(`ASC snapshot has "${id}" but REQUIRED_IOS_PRODUCT_IDS does not reference it`);
 }
 
+// (f) Google Play snapshot mirrors ASC exactly (Play IDs == Apple IDs 1:1)
+for (const id of requiredIdValues) {
+  if (!playIds.has(id))
+    err(`Required IAP "${id}" is missing from playstore/play-products.json`);
+}
+for (const id of playIds) {
+  if (!requiredIdValues.has(id))
+    err(`Play snapshot has "${id}" but REQUIRED_IOS_PRODUCT_IDS does not reference it`);
+}
+// (g) Play snapshot equals ASC snapshot (naming parity across stores)
+for (const id of ascIds) {
+  if (!playIds.has(id))
+    err(`ASC has "${id}" but Google Play snapshot does not — cross-store drift`);
+}
+for (const id of playIds) {
+  if (!ascIds.has(id))
+    err(`Google Play has "${id}" but ASC snapshot does not — cross-store drift`);
+}
+
+
 // -------- Output ------------------------------------------------------------
 if (jsonOut) {
   console.log(JSON.stringify({ ok: errors.length === 0, errors }, null, 2));
@@ -247,9 +270,9 @@ if (jsonOut) {
 }
 
 const c = (n, s) => `\x1b[${n}m${s}\x1b[0m`;
-console.log(c(1, '\nIAP Parity Check (code ↔ RevenueCat ↔ ASC)\n'));
+console.log(c(1, '\nIAP Parity Check (code ↔ RevenueCat ↔ ASC ↔ Google Play)\n'));
 if (errors.length === 0) {
-  console.log(c(32, '  ✓ All Apple IDs, entitlements, prices, and ASC snapshot are in sync.\n'));
+  console.log(c(32, '  ✓ All Apple/Google IDs, entitlements, prices, and store snapshots are in sync.\n'));
   process.exit(0);
 }
 console.log(c(31, `  ✗ ${errors.length} parity error(s):\n`));

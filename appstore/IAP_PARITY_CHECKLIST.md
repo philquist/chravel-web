@@ -38,14 +38,23 @@ For each row above, tick all three:
   - [ ] Attached to the Entitlement listed above.
   - [ ] Included in the current (default) Offering.
   - [ ] For Trip Passes: non-consumable / non-renewing type with the 45-day / 90-day grant configured.
+- [ ] **Google Play Console** (see `docs/agentic/google-play-console-iap-parity-refresh.md`)
+  - [ ] Product exists with the exact Product ID string above (case-sensitive, immutable — Google IDs mirror Apple IDs 1:1).
+  - [ ] For IDs 1–6: Subscription with monthly or yearly base plan matching the Duration column, USD price matching, offer active.
+  - [ ] For IDs 7–8 (Trip Passes): Managed **In-app product** (Play has no "non-renewing subscription" — the 45/90-day grant is enforced by the backend via `TRIP_PASS_PRODUCTS[*].durationDays`).
+  - [ ] Product name + description match the copy in the agentic doc.
+  - [ ] RevenueCat Play (Android) app has this product ID attached to the same entitlement as its Apple twin, in the same default offering.
 
 ## Global checks
 
 - [ ] RevenueCat iOS app **Bundle ID** matches the ASC app record's Bundle ID.
+- [ ] RevenueCat Android app **Package Name** matches the Play Console app package name.
 - [ ] App Store Server Notifications URL in ASC points at RevenueCat (not a stale endpoint).
+- [ ] Google Play Real-time Developer Notifications topic in Play Console points at RevenueCat.
 - [ ] Paid Apps Agreement is active in ASC (required for any IAP payout).
-- [ ] `appstore/asc-products.json` in the repo matches the ASC list exactly (parity test enforces this).
-- [ ] No orphan products in ASC or RevenueCat that aren't in the canonical set above.
+- [ ] Google Play merchant account is active with payout method configured.
+- [ ] `appstore/asc-products.json` and `playstore/play-products.json` in the repo match the store lists exactly (parity test enforces both).
+- [ ] No orphan products in ASC, Play, or RevenueCat that aren't in the canonical set above.
 
 ## When any row fails
 

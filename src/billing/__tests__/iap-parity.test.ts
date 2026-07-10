@@ -101,4 +101,48 @@ describe('IAP parity — billing/config.ts ↔ constants/revenuecat.ts', () => {
     expect(missingInAsc, 'required IAPs missing from ASC snapshot').toEqual([]);
     expect(orphanInAsc, 'ASC snapshot has products not required by code').toEqual([]);
   });
+
+  it('every Google Play product ID in BILLING_PRODUCTS is present in the Play snapshot', () => {
+    const playPath = resolve(process.cwd(), 'playstore/play-products.json');
+    const play = new Set<string>(JSON.parse(readFileSync(playPath, 'utf8')));
+    const missing: string[] = [];
+    for (const [key, p] of Object.entries(BILLING_PRODUCTS)) {
+      if (p.googleProductIdMonthly && !play.has(p.googleProductIdMonthly))
+        missing.push(`${key}.monthly=${p.googleProductIdMonthly}`);
+      if (
+        p.googleProductIdAnnual &&
+        (key === 'consumer-explorer' || key === 'consumer-frequent-chraveler') &&
+        !play.has(p.googleProductIdAnnual)
+      )
+        missing.push(`${key}.annual=${p.googleProductIdAnnual}`);
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it('every Trip Pass Google product ID is present in the Play snapshot', () => {
+    const playPath = resolve(process.cwd(), 'playstore/play-products.json');
+    const play = new Set<string>(JSON.parse(readFileSync(playPath, 'utf8')));
+    for (const [key, p] of Object.entries(TRIP_PASS_PRODUCTS)) {
+      expect(play.has(p.googleProductId), `${key} → ${p.googleProductId}`).toBe(true);
+    }
+  });
+
+  it('Play snapshot equals ASC snapshot 1:1 (cross-store naming parity)', () => {
+    const asc = new Set<string>(
+      JSON.parse(readFileSync(resolve(process.cwd(), 'appstore/asc-products.json'), 'utf8')),
+    );
+    const play = new Set<string>(
+      JSON.parse(readFileSync(resolve(process.cwd(), 'playstore/play-products.json'), 'utf8')),
+    );
+    const missingInPlay = [...asc].filter((x) => !play.has(x));
+    const orphanInPlay = [...play].filter((x) => !asc.has(x));
+    expect(missingInPlay, 'IDs in ASC but missing from Play').toEqual([]);
+    expect(orphanInPlay, 'IDs in Play but missing from ASC').toEqual([]);
+  });
+
+  it('Trip Pass Apple and Google product IDs are identical (single ID per pass)', () => {
+    for (const [key, p] of Object.entries(TRIP_PASS_PRODUCTS)) {
+      expect(p.googleProductId, `${key} apple/google must match`).toBe(p.appleProductId);
+    }
+  });
 });
