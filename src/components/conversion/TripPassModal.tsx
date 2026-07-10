@@ -27,8 +27,9 @@ const passes = [
     duration: `${TRIP_PASS_DISPLAY.explorer.durationDays} days`,
     price: TRIP_PASS_DISPLAY.explorer.price,
     icon: <Globe size={24} />,
-    description: 'Full Explorer features for one trip window',
+    description: 'One trip, done — no subscription, no cancel reminders.',
     features: [
+      'One-time purchase — no auto-renew',
       'Unlimited saved trips + restore archived',
       '25 AI queries per user per trip',
       'Unlimited PDF exports',
@@ -37,7 +38,7 @@ const passes = [
       'Location-aware AI recommendations',
       'Search past trips and memories',
     ],
-    nudge: `Annual Explorer (${CONSUMER_PRICE_DISPLAY.explorer.annual}/yr) pays for itself after ~3 trips`,
+    nudge: `Travel monthly? Annual Explorer (${CONSUMER_PRICE_DISPLAY.explorer.annual}/yr) pays for itself after ~3 trips.`,
   },
   {
     id: 'pass-frequent-90',
@@ -46,8 +47,9 @@ const passes = [
     duration: `${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays} days`,
     price: TRIP_PASS_DISPLAY['frequent-chraveler'].price,
     icon: <Crown size={24} />,
-    description: 'Full Frequent Chraveler features for multi-city trips',
+    description: 'Double the window, more features, best value per day.',
     features: [
+      'One-time purchase — no auto-renew',
       'Everything in Explorer Trip Pass',
       'Unlimited AI queries (24/7 concierge)',
       'Smart Import (Calendar, Agenda, Line-up from URL, paste, or file)',
@@ -55,7 +57,7 @@ const passes = [
       'Custom trip categories',
       'Early feature access',
     ],
-    nudge: `Annual Frequent (${CONSUMER_PRICE_DISPLAY['frequent-chraveler'].annual}/yr) pays for itself after ~3 trips`,
+    nudge: `Travel monthly? Annual Frequent (${CONSUMER_PRICE_DISPLAY['frequent-chraveler'].annual}/yr) pays for itself after ~3 trips.`,
   },
 ];
 
@@ -125,8 +127,8 @@ export const TripPassModal: React.FC<TripPassModalProps> = ({ open, onOpenChange
             Trip Pass
           </DialogTitle>
           <DialogDescription className="text-center text-base">
-            Full premium features for one trip — planning through post-trip. No commitment. Keep
-            your exports forever.
+            One-time purchase. Full premium features for the whole trip window — no auto-renew, no
+            card kept on file. Your exports stay forever.
           </DialogDescription>
         </DialogHeader>
 

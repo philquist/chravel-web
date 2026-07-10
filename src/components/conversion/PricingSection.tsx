@@ -276,9 +276,9 @@ const _faqItems = [
       "Unlike your current stack where texts don't know what's in your emails, and your spreadsheet doesn't know what's in your group chat—ChravelApp's 8 tabs are fully interconnected. Your AI concierge can search your calendar, polls, and outstanding tasks, and more. One context-aware trip brain instead of 8 disconnected apps.",
   },
   {
-    question: 'What is a Trip Pass?',
+    question: 'Why buy a Trip Pass instead of subscribing monthly?',
     answer:
-      'A Trip Pass gives you full premium access for a fixed window — 45 days (Explorer) or 90 days (Frequent Chraveler). Perfect for one-off trips without a monthly commitment. Your exports and trip data stay forever, even after the pass expires. If you travel often, Annual is the better deal.',
+      "Trip Passes are one-time purchases — no auto-renew, no cancel reminders, no card kept on file after checkout. Buy once, use it for the whole trip window (45 or 90 days), and you're done. Perfect for people who take a few trips a year and don't want a subscription running in the background. Your exports and trip data stay forever, even after the pass expires. If you travel every month, a monthly or annual subscription is the better deal.",
   },
 ];
 
@@ -365,10 +365,11 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
       id: 'pass-explorer-45',
       name: 'Explorer Trip Pass',
       price: TRIP_PASS_DISPLAY.explorer.price,
-      description: `Full Explorer features for ${TRIP_PASS_DISPLAY.explorer.durationDays} days — one trip, no commitment.`,
+      description: `One trip, done. ${TRIP_PASS_DISPLAY.explorer.durationDays} days of Explorer features — no subscription, no cancel reminders, no card kept on file.`,
       icon: <Globe size={24} />,
       features: [
         `${TRIP_PASS_DISPLAY.explorer.durationDays}-day access window`,
+        'One-time purchase — no auto-renew',
         'Unlimited saved trips + restore archived',
         '25 AI queries per user per trip',
         'More PDF Recap exports',
@@ -378,17 +379,18 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
       ],
       cta: passLoading === 'pass-explorer-45' ? 'Starting checkout…' : 'Get Explorer Pass',
       category: 'consumer',
-      badge: 'One-time',
+      badge: 'One-time · No renewal',
       ctaAction: () => handlePassPurchase('pass-explorer-45'),
     },
     {
       id: 'pass-frequent-90',
       name: 'Frequent Chraveler Trip Pass',
       price: TRIP_PASS_DISPLAY['frequent-chraveler'].price,
-      description: `Full Frequent Chraveler features for ${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays} days — multi-city trips covered.`,
+      description: `${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays} days of the full Frequent Chraveler experience. Double the window, more features, less than double the price of the Explorer pass.`,
       icon: <Crown size={24} />,
       features: [
-        `${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays}-day access window`,
+        `${TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays}-day access window (best value per day)`,
+        'One-time purchase — no auto-renew',
         'Everything in Explorer Trip Pass',
         'Unlimited AI queries (24/7 concierge)',
         'Smart Import (URL, paste, or file)',
@@ -399,7 +401,7 @@ export const PricingSection = ({ onSignUp }: PricingSectionProps = {}) => {
       cta: passLoading === 'pass-frequent-90' ? 'Starting checkout…' : 'Get Frequent Pass',
       category: 'consumer',
       popular: true,
-      badge: 'Best for multi-city',
+      badge: 'Best value · Multi-city',
       ctaAction: () => handlePassPurchase('pass-frequent-90'),
     },
   ];
