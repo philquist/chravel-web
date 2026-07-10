@@ -160,11 +160,15 @@ serve(async (req: Request) => {
       });
     }
 
-    // Resolve plan + the premium-preferences kill switch in parallel (flag is
-    // fail-open so it adds no latency and never blocks a paid user's session).
+    // Resolve plan + the premium-preferences kill switch in parallel. The flag
+    // fails CLOSED: if the flag store is unreachable we skip preference grounding
+    // rather than override an operator's disable. This never blocks the session
+    // (voice still works) — it only drops premium grounding, which during a DB
+    // outage would degrade anyway since resolveUsagePlanForUser / the preferences
+    // fetch read the same database.
     const [planResolution, premiumPreferencesEnabled] = await Promise.all([
       resolveUsagePlanForUser(supabase, userId),
-      isFeatureEnabled('concierge_premium_preferences', true),
+      isFeatureEnabled('concierge_premium_preferences', false),
     ]);
     const isPaidUser = planResolution.usagePlan !== 'free' || isSuperAdminEmail(user.email ?? null);
     // Preference grounding is premium-only AND kill-switchable (mirrors lovable-concierge).

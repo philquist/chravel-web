@@ -323,7 +323,16 @@ serve(async req => {
 
     if (rateError) {
       logStep('Rate limit check failed', { error: rateError.message });
-      // Fail open - allow if rate limit check fails
+      // Fail closed: if the limiter cannot be evaluated, refuse rather than allow an
+      // unthrottled full-account export (security/abuse control over availability).
+      return new Response(
+        JSON.stringify({
+          error: 'Rate limit temporarily unavailable',
+          message: 'Please try again in a little while.',
+          retryAfter: RATE_LIMIT_WINDOW_SECONDS,
+        }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     } else if (rateData && rateData.length > 0 && !rateData[0].allowed) {
       logStep('Rate limited', { userId });
       return new Response(

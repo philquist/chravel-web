@@ -420,6 +420,19 @@ serve(async req => {
   const auth = await requireAuth(req, headers);
   if (auth.response) return auth.response;
 
+  // Authorization gate: this function performs destructive, cross-tenant writes
+  // (it deletes and reseeds the chat/polls/files of a caller-supplied trip id). It
+  // must be restricted to super admins, matching the seed-carlton-* seeders. A valid
+  // login is NOT sufficient — otherwise any authenticated user could wipe any trip.
+  const { isSuperAdminEmail } = await import('../_shared/superAdmins.ts');
+  if (!isSuperAdminEmail(auth.user?.email)) {
+    console.log('[SEED-DEMO] Blocked: caller is not a super admin');
+    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+      status: 403,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
+  }
+
   // Disable demo seeding in production environment
   const environment = Deno.env.get('ENVIRONMENT') || Deno.env.get('DENO_ENV') || 'production';
   if (environment === 'production') {

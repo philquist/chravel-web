@@ -34,32 +34,35 @@ const ALLOWED_ORIGINS = [
   // Do NOT add wildcard subdomain matchers like '.vercel.app' here.
 ];
 
+// SECURITY: `ADDITIONAL_ALLOWED_ORIGINS` is exact-match only. Any '.'-prefixed
+// entry (a wildcard subdomain matcher like '.vercel.app') is rejected so a broad
+// env value can never widen CORS to an entire hosting platform — especially since
+// responses are sent with `Access-Control-Allow-Credentials: true`.
 const ENV_ALLOWED_ORIGINS = (Deno.env.get('ADDITIONAL_ALLOWED_ORIGINS') || '')
   .split(',')
   .map(origin => origin.trim())
-  .filter(Boolean);
+  .filter(Boolean)
+  .filter(origin => {
+    if (origin.startsWith('.')) {
+      console.warn(
+        `[CORS] Ignoring wildcard-subdomain entry in ADDITIONAL_ALLOWED_ORIGINS: "${origin}". Use an exact origin.`,
+      );
+      return false;
+    }
+    return true;
+  });
 
 /**
  * Validates if an origin is allowed to make requests to Edge Functions.
- * Supports exact matches and suffix matches for subdomains.
+ * Exact-match only — wildcard subdomain matchers are intentionally NOT supported
+ * because CORS responses are credentialed (see getCorsHeaders).
  */
 export function isOriginAllowed(origin: string | null): boolean {
   if (!origin) return false;
 
   const allowlist = [...ALLOWED_ORIGINS, ...ENV_ALLOWED_ORIGINS];
 
-  return allowlist.some(allowed => {
-    // Suffix match for subdomains (e.g., '.supabase.co' matches 'xyz.supabase.co')
-    if (allowed.startsWith('.')) {
-      return (
-        origin.endsWith(allowed) ||
-        origin === `https://${allowed.slice(1)}` ||
-        origin === `http://${allowed.slice(1)}`
-      );
-    }
-    // Exact match
-    return origin === allowed;
-  });
+  return allowlist.includes(origin);
 }
 
 /**

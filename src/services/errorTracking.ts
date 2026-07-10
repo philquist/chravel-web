@@ -30,6 +30,47 @@ type SentryModule = typeof SentryTypes;
 // flushed in order once it loads, so early boot failures are not lost.
 const MAX_PENDING_EVENTS = 20;
 
+// Redact PII before events leave the browser (CWE-359 — exposure to a subprocessor).
+const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+const redactPii = (value: unknown): unknown =>
+  typeof value === 'string' ? value.replace(EMAIL_RE, '[redacted-email]') : value;
+
+/**
+ * Sentry `beforeSend` scrubber. Restricts user context to a non-PII id, redacts
+ * email-like substrings in messages/exceptions, and strips cookies/auth headers.
+ * Typed as `any` because @sentry/react is a type-only import here and the Event
+ * shape is broad; scrubbing is best-effort and must never throw (that would drop
+ * the event entirely).
+ */
+function scrubSentryEvent(event: any): any {
+  try {
+    if (event?.user) {
+      event.user = event.user.id ? { id: event.user.id } : undefined;
+    }
+    if (typeof event?.message === 'string') {
+      event.message = redactPii(event.message);
+    }
+    const values = event?.exception?.values;
+    if (Array.isArray(values)) {
+      for (const v of values) {
+        if (v && typeof v.value === 'string') v.value = redactPii(v.value);
+      }
+    }
+    if (event?.request) {
+      delete event.request.cookies;
+      const headers = event.request.headers;
+      if (headers) {
+        for (const k of ['Authorization', 'authorization', 'Cookie', 'cookie']) {
+          delete headers[k];
+        }
+      }
+    }
+  } catch {
+    // never let scrubbing throw
+  }
+  return event;
+}
+
 export interface ErrorContext {
   userId?: string;
   tripId?: string;
@@ -83,6 +124,10 @@ class ErrorTrackingService {
         Sentry.init({
           dsn,
           environment,
+          // Do not attach IP/cookies/headers automatically, and scrub PII from every
+          // event before it is sent (privacy — CWE-359).
+          sendDefaultPii: false,
+          beforeSend: scrubSentryEvent,
           // Sample 100% of errors, 20% of transactions in production
           tracesSampleRate: import.meta.env.PROD ? 0.2 : 1.0,
           // Only send errors in production/staging

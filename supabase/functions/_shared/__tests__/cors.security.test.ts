@@ -138,6 +138,14 @@ describe('CORS Security Tests', () => {
       const isOriginAllowed = await getIsOriginAllowed();
       expect(isOriginAllowed('https://other-site.vercel.app')).toBe(false);
     });
+
+    it('should ignore a wildcard-subdomain entry (.vercel.app) supplied via env', async () => {
+      // A '.'-prefixed entry must NOT open the whole platform, even with credentialed CORS.
+      envMap.set('ADDITIONAL_ALLOWED_ORIGINS', '.vercel.app');
+      const isOriginAllowed = await getIsOriginAllowed();
+      expect(isOriginAllowed('https://evil-site.vercel.app')).toBe(false);
+      expect(isOriginAllowed('https://vercel.app')).toBe(false);
+    });
   });
 
   describe('getCorsHeaders', () => {

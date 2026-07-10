@@ -11,6 +11,10 @@ import {
   getOgSecurityHeaders,
 } from '../_shared/ogUtils.ts';
 import type { DemoTrip } from '../_shared/ogUtils.ts';
+import { checkRateLimit, getClientIp } from '../_shared/security.ts';
+
+const INVITE_PREVIEW_RATE_LIMIT_MAX_REQUESTS = 60;
+const INVITE_PREVIEW_RATE_LIMIT_WINDOW_SECONDS = 60;
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -312,6 +316,23 @@ serve(async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Per-IP rate limit: unauthenticated endpoint that resolves invite codes to trip
+    // previews via the service role — throttle to blunt invite-code enumeration.
+    // (Mirrors the limit already applied by the sibling get-invite-preview function.)
+    const clientIp = getClientIp(req);
+    const rateLimit = await checkRateLimit(
+      supabase,
+      `invite-preview:${clientIp}`,
+      INVITE_PREVIEW_RATE_LIMIT_MAX_REQUESTS,
+      INVITE_PREVIEW_RATE_LIMIT_WINDOW_SECONDS,
+    );
+    if (!rateLimit.allowed) {
+      return new Response('Too many requests. Please try again shortly.', {
+        status: 429,
+        headers: { ...corsHeaders, ...getOgSecurityHeaders(), 'Content-Type': 'text/plain' },
+      });
+    }
 
     // Look up the invite code
     const { data: invite, error: inviteError } = await supabase

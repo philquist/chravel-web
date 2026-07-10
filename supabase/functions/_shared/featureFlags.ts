@@ -16,11 +16,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 /**
  * Check if a feature flag is enabled.
- * Returns `defaultValue` if the table is unreachable (fail-open by default).
+ *
+ * Returns `defaultValue` if the flag table is unreachable. The default is now
+ * `false` (fail CLOSED): a kill switch must not silently re-enable a feature when
+ * the flag store is unavailable, otherwise an operator's "disable" cannot be
+ * relied upon during a database incident (CWE-636). Callers that genuinely prefer
+ * availability over the security posture for a non-security flag may pass
+ * `defaultValue = true` explicitly.
  */
 export async function isFeatureEnabled(
   key: string,
-  defaultValue: boolean = true,
+  defaultValue: boolean = false,
 ): Promise<boolean> {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');

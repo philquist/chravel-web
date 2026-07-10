@@ -11,6 +11,10 @@ import {
   getOgSecurityHeaders,
 } from '../_shared/ogUtils.ts';
 import type { DemoTrip } from '../_shared/ogUtils.ts';
+import { checkRateLimit, getClientIp } from '../_shared/security.ts';
+
+const TRIP_PREVIEW_RATE_LIMIT_MAX_REQUESTS = 60;
+const TRIP_PREVIEW_RATE_LIMIT_WINDOW_SECONDS = 60;
 
 function generateHTML(
   trip: {
@@ -243,6 +247,22 @@ serve(async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Per-IP rate limit: this endpoint is unauthenticated and reads trip metadata by
+    // id via the service role, so throttle to blunt enumeration of trips by id.
+    const clientIp = getClientIp(req);
+    const rateLimit = await checkRateLimit(
+      supabase,
+      `trip-preview:${clientIp}`,
+      TRIP_PREVIEW_RATE_LIMIT_MAX_REQUESTS,
+      TRIP_PREVIEW_RATE_LIMIT_WINDOW_SECONDS,
+    );
+    if (!rateLimit.allowed) {
+      return new Response('Too many requests. Please try again shortly.', {
+        status: 429,
+        headers: { ...corsHeaders, ...getOgSecurityHeaders(), 'Content-Type': 'text/plain' },
+      });
+    }
 
     const { data: trip, error } = await supabase
       .from('trips')

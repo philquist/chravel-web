@@ -46,6 +46,17 @@ serve(async req => {
   const auth = await requireAuth(req, headers);
   if (auth.response) return auth.response;
 
+  // Authorization gate: this seeder deletes and reseeds the global mock_messages
+  // table. Restrict to super admins (consistent with seed-carlton-* / seed-demo-data);
+  // a valid login alone must not allow reseeding shared demo data.
+  const { isSuperAdminEmail } = await import('../_shared/superAdmins.ts');
+  if (!isSuperAdminEmail(auth.user?.email)) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+      status: 403,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     // Clear existing Pro trip mock messages
     await supabase

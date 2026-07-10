@@ -19,6 +19,23 @@ interface RevenueCatWebhookPayload {
   api_version: string;
 }
 
+/**
+ * Constant-time comparison of the shared webhook secret to avoid leaking it via a
+ * timing side-channel (CWE-208). RevenueCat authenticates webhooks with a verbatim
+ * Authorization header (no body HMAC), so a timing-safe compare is the correct
+ * hardening here. Runs O(len(expected)) work regardless of length mismatch.
+ */
+function timingSafeEqualStr(received: string, expected: string): boolean {
+  const enc = new TextEncoder();
+  const a = enc.encode(received);
+  const b = enc.encode(expected);
+  let mismatch = a.length === b.length ? 0 : 1;
+  for (let i = 0; i < b.length; i++) {
+    mismatch |= (a[i] ?? 0) ^ b[i];
+  }
+  return mismatch === 0;
+}
+
 serve(async req => {
   // Only accept POST
   if (req.method !== 'POST') {
@@ -35,7 +52,7 @@ serve(async req => {
   // RevenueCat authentication: dashboard-configured Authorization header sent verbatim.
   // Docs: https://www.revenuecat.com/docs/integrations/webhooks/overview#security
   const authHeader = req.headers.get('Authorization');
-  if (!authHeader || authHeader !== REVENUECAT_WEBHOOK_SECRET) {
+  if (!authHeader || !timingSafeEqualStr(authHeader, REVENUECAT_WEBHOOK_SECRET)) {
     console.error('[rc-webhook] Invalid or missing Authorization header');
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   }
