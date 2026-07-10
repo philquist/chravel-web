@@ -167,9 +167,12 @@ break the signed-URL happy path."*
    `20260710161000` were applied directly to the ChravelApp project (`jmjiyekmxwsxkfnqwyaa`).
    Verified: the repo-wide sweep
    `SELECT count(*) FROM pg_policies WHERE (qual LIKE '%is_trip_member(%' OR with_check LIKE '%is_trip_member(%') AND coalesce(qual,'') NOT LIKE '%is_active%' AND coalesce(with_check,'') NOT LIKE '%is_active%'`
-   returns **0**. Supabase tracks migrations by version, so CI will not re-run the matching
-   committed files on merge. Rollback: `DROP/CREATE` policies; reverting reopens the leak (not
-   recommended).
+   returns **0**. Note: the direct apply recorded these under generated version stamps
+   (`20260710214712` / `20260710215001`), which differ from the committed file versions
+   (`20260710160000` / `20260710161000`). So on merge, CI **will** re-apply the committed files —
+   this is safe and intentional: every statement is idempotent (`DROP POLICY IF EXISTS` before each
+   `CREATE`), so the re-run lands the identical end state with no error. Rollback: `DROP/CREATE`
+   policies; reverting reopens the leak (not recommended).
 2. **Deploy changed edge functions — automatic on merge to `main`.** `.github/workflows/deploy-functions.yml`
    deploys on push to `main` when `supabase/functions/**` changes (Supabase CLI bundles all shared
    deps). Affected: `execute-concierge-tool` + `lovable-concierge` + `realtime-voice-session` (via
