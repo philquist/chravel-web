@@ -148,6 +148,9 @@ const requiredIdKeys = parseRequiredIds();
 // -------- ASC snapshot ------------------------------------------------------
 const ascIds = new Set(JSON.parse(readSrc('appstore/asc-products.json')));
 
+// -------- Google Play snapshot ---------------------------------------------
+const playIds = new Set(JSON.parse(readSrc('playstore/play-products.json')));
+
 // -------- Assertions --------------------------------------------------------
 const errors = [];
 const err = (msg) => errors.push(msg);
