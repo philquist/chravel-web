@@ -243,6 +243,26 @@ for (const id of ascIds) {
     err(`ASC snapshot has "${id}" but REQUIRED_IOS_PRODUCT_IDS does not reference it`);
 }
 
+// (f) Google Play snapshot mirrors ASC exactly (Play IDs == Apple IDs 1:1)
+for (const id of requiredIdValues) {
+  if (!playIds.has(id))
+    err(`Required IAP "${id}" is missing from playstore/play-products.json`);
+}
+for (const id of playIds) {
+  if (!requiredIdValues.has(id))
+    err(`Play snapshot has "${id}" but REQUIRED_IOS_PRODUCT_IDS does not reference it`);
+}
+// (g) Play snapshot equals ASC snapshot (naming parity across stores)
+for (const id of ascIds) {
+  if (!playIds.has(id))
+    err(`ASC has "${id}" but Google Play snapshot does not — cross-store drift`);
+}
+for (const id of playIds) {
+  if (!ascIds.has(id))
+    err(`Google Play has "${id}" but ASC snapshot does not — cross-store drift`);
+}
+
+
 // -------- Output ------------------------------------------------------------
 if (jsonOut) {
   console.log(JSON.stringify({ ok: errors.length === 0, errors }, null, 2));
