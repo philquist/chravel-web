@@ -12,6 +12,24 @@ interface UseEventAgendaOptions {
   enabled?: boolean;
 }
 
+/**
+ * True when an agenda update failed because another organizer changed the row first
+ * (the update_agenda_item_with_version RPC raises SQLSTATE P0001 on a version mismatch).
+ * Exported for direct unit testing without the full hook harness.
+ */
+export function isAgendaVersionConflict(
+  error: {
+    code?: string;
+    message?: string;
+  } | null,
+): boolean {
+  if (!error) return false;
+  return error.code === 'P0001' || /modified by another user/i.test(error.message ?? '');
+}
+
+export const AGENDA_VERSION_CONFLICT_MESSAGE =
+  'This session was just updated by another organizer. Your view has been refreshed — please reapply your change.';
+
 export function useEventAgenda({
   eventId,
   initialSessions = [],
@@ -154,21 +172,34 @@ export function useEventAgenda({
     mutationFn: async (session: EventAgendaItem) => {
       if (isDemoMode) return session;
 
-      const { error } = await supabase
-        .from('event_agenda_items')
-        .update({
-          title: session.title,
-          description: session.description || null,
-          session_date: session.session_date || null,
-          start_time: session.start_time || null,
-          end_time: session.end_time || null,
-          location: session.location || null,
-          speakers: session.speakers || null,
-        })
-        .eq('id', session.id);
+      // Optimistic concurrency: route through update_agenda_item_with_version so two
+      // organizers editing the same session can't silently overwrite each other. The
+      // RPC re-checks admin authz, compares the expected version, bumps it, and returns
+      // the new row. `(supabase as any).rpc` mirrors the codebase's untyped-RPC pattern
+      // (the RPC is applied to the DB but not in generated types on this branch).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).rpc('update_agenda_item_with_version', {
+        p_item_id: session.id,
+        p_current_version: session.version ?? 1,
+        p_title: session.title,
+        p_description: session.description || null,
+        p_session_date: session.session_date || null,
+        p_start_time: session.start_time || null,
+        p_end_time: session.end_time || null,
+        p_location: session.location || null,
+        p_speakers: session.speakers || null,
+      });
 
-      if (error) throw error;
-      return session;
+      if (error) {
+        // P0001 is the version-conflict signal — surface a clear, non-destructive message.
+        if (isAgendaVersionConflict(error)) {
+          throw new Error(AGENDA_VERSION_CONFLICT_MESSAGE);
+        }
+        throw error;
+      }
+
+      const updated = Array.isArray(data) ? data[0] : data;
+      return (updated as EventAgendaItem) ?? session;
     },
     onMutate: async session => {
       if (isDemoMode) return;
