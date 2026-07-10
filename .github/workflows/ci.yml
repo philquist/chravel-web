@@ -19,6 +19,11 @@ permissions:
 env:
   CI: true
   NODE_VERSION: '20.19.0'
+  # Heavy Concierge / MobileTripTabs specs allocate well past Node's default ~2GB
+  # heap on jsdom+forks workers (local cloud agents OOM even at 8–12GB when the
+  # full suite mounts). Give CI shards headroom so Search/isActive + waveform
+  # regressions can finish instead of dying mid-import.
+  NODE_OPTIONS: '--max-old-space-size=8192'
   VITE_SUPABASE_URL: 'https://ci-placeholder.supabase.co'
   VITE_SUPABASE_ANON_KEY: 'sb_publishable_ci_placeholder'
   VITE_GOOGLE_MAPS_API_KEY: 'STUB_MAPS_KEY_CI'
