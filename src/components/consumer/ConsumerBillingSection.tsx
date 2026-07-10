@@ -677,8 +677,10 @@ const tripPasses = [
     priceLabel: TRIP_PASS_DISPLAY.explorer.price,
     durationDays: TRIP_PASS_DISPLAY.explorer.durationDays,
     icon: Ticket,
-    description: 'All Explorer premium features for a single trip window.',
+    description:
+      'One trip, done. All Explorer premium features for a single trip window — no auto-renew.',
     features: [
+      'One-time purchase — no subscription',
       'Unlimited saved trips + restore archived',
       '25 AI Concierge queries per user per trip',
       'Unlimited photos, videos & extended storage',
@@ -695,8 +697,9 @@ const tripPasses = [
     durationDays: TRIP_PASS_DISPLAY['frequent-chraveler'].durationDays,
     icon: Ticket,
     description:
-      'All Frequent Chraveler premium features for multi-city trips — best for longer travel.',
+      'Double the window, more features, best value per day. Full Frequent Chraveler for a season of trips.',
     features: [
+      'One-time purchase — no subscription',
       'Everything in Explorer Trip Pass',
       'Unlimited AI Concierge queries',
       'Unlimited storage & payment splits',
