@@ -69,7 +69,11 @@ export const useRoleAssignments = ({ tripId, enabled = true }: UseRoleAssignment
   // into Stream immediately — the contract validator only *detects* drift. Ask
   // the trip-scoped reconciler to add newly-eligible members and prune revoked
   // ones now, instead of waiting up to 15 min for the cron or the next channel
-  // open. Failure is non-fatal: the cron / open-time self-heal still converge.
+  // open. Fire-and-forget: this reconciles every channel in the trip (several
+  // Stream round-trips), so callers must NOT await it in the mutation's critical
+  // path — the success toast and list refresh should not wait on it. Failure is
+  // non-fatal: the cron / open-time self-heal still converge. Errors are
+  // swallowed internally so the detached promise never rejects unhandled.
   const syncStreamMembership = useCallback(async () => {
     if (isDemoMode || !tripId) return;
     try {
@@ -248,7 +252,7 @@ export const useRoleAssignments = ({ tripId, enabled = true }: UseRoleAssignment
         }
 
         await validateContract('assign', userId, roleId);
-        await syncStreamMembership();
+        void syncStreamMembership();
         toast.success('✅ Role assigned successfully');
         await fetchAssignments();
 
@@ -300,7 +304,7 @@ export const useRoleAssignments = ({ tripId, enabled = true }: UseRoleAssignment
         }
 
         await validateContract('revoke', userId, roleId);
-        await syncStreamMembership();
+        void syncStreamMembership();
         toast.success('Role removed successfully');
         await fetchAssignments();
 
@@ -356,7 +360,7 @@ export const useRoleAssignments = ({ tripId, enabled = true }: UseRoleAssignment
           throw new Error(result.message);
         }
 
-        await syncStreamMembership();
+        void syncStreamMembership();
         toast.success('Left the channel successfully');
         await fetchAssignments();
 

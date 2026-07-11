@@ -177,7 +177,7 @@ export async function connectStreamClient(): Promise<StreamChat | null> {
           // attempt re-mints from the edge function.
           clearStreamTokenCache();
           if (attempt < MAX_CONNECT_ATTEMPTS) {
-            await delay(CONNECT_BACKOFF_MS[attempt - 1] ?? 4000);
+            await delay(CONNECT_BACKOFF_MS[attempt - 1]);
           }
           // Final attempt: fall through. Don't throw — Stream is optional, the
           // app should still work without it.
