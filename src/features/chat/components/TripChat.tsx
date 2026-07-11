@@ -7,7 +7,7 @@ import type { Channel } from 'stream-chat';
 import { demoModeService } from '@/services/demoModeService';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { useChatComposer } from '../hooks/useChatComposer';
-import { useBroadcastHistory } from '../hooks/useBroadcastHistory';
+import { useBroadcastHistory, usePinnedHistory } from '../hooks/useBroadcastHistory';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { ChatInput } from './ChatInput';
@@ -850,7 +850,29 @@ export const TripChat = React.memo(
         currentUserId: user?.id,
       });
     }, [broadcastHistory, tripMembers, user?.id]);
+    // Pinned tab: same off-window gap — fetch pins via Stream's native
+    // pinned-messages endpoint while the tab is active.
+    const pinnedHistory = usePinnedHistory(
+      resolvedTripId,
+      messageFilter === 'pinned' && !demoMode.isDemoMode && !shouldSkipLiveChat,
+    );
+    const pinnedHistoryModels = useMemo(() => {
+      if (pinnedHistory.length === 0) return [];
+      return buildStreamMessageViewModels({
+        messages: pinnedHistory,
+        tripMembers,
+        currentUserId: user?.id,
+      });
+    }, [pinnedHistory, tripMembers, user?.id]);
+
     const filteredWithBroadcastHistory = useMemo(() => {
+      // Pinned merge: derivePinnedMessages dedupes by id with LATER entries
+      // winning and drops ids a later snapshot marks unpinned — so listing
+      // history first means fresh live state (reactions, just-unpinned)
+      // always overrides the fetched snapshot.
+      if (messageFilter === 'pinned' && pinnedHistoryModels.length > 0) {
+        return derivePinnedMessages([...pinnedHistoryModels, ...filteredMessages] as any);
+      }
       if (messageFilter !== 'broadcasts' || broadcastHistoryModels.length === 0) {
         return filteredMessages;
       }
@@ -860,7 +882,7 @@ export const TripChat = React.memo(
       return [...older, ...filteredMessages].sort(
         (a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
-    }, [messageFilter, broadcastHistoryModels, filteredMessages]);
+    }, [messageFilter, broadcastHistoryModels, pinnedHistoryModels, filteredMessages]);
 
     const visibleMessages = useMemo(() => {
       if (blockedUserIds.length === 0) return filteredWithBroadcastHistory;
@@ -938,8 +960,10 @@ export const TripChat = React.memo(
     }, [messagesWithPreviewFallbacks]);
 
     const pinnedMessages = useMemo(
-      () => derivePinnedMessages(liveFormattedMessages as any),
-      [liveFormattedMessages],
+      // History first so live snapshots win (and live unpins delete stale
+      // history entries — derivePinnedMessages handles both).
+      () => derivePinnedMessages([...pinnedHistoryModels, ...liveFormattedMessages] as any),
+      [pinnedHistoryModels, liveFormattedMessages],
     );
     const readStatusesByMessage = useMemo(() => {
       try {

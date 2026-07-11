@@ -132,6 +132,33 @@ export async function fetchTripBroadcastHistory(params: {
   }
 }
 
+/**
+ * Fetch the trip channel's pinned messages via Stream's native pinned-messages
+ * endpoint, independent of the bounded timeline window (same off-window gap as
+ * broadcasts: a message pinned long ago fell out of the loaded window and
+ * disappeared from the Pinned tab). Returns [] on any failure so callers fall
+ * back to window-derived pins.
+ */
+export async function fetchTripPinnedHistory(params: {
+  tripId: string;
+  limit?: number;
+}): Promise<MessageResponse[]> {
+  const { tripId, limit = 100 } = params;
+  const client = getStreamClient();
+  if (!client?.userID) return [];
+
+  try {
+    const channel = client.channel(CHANNEL_TYPE_TRIP, tripChannelId(tripId));
+    const result = await channel.getPinnedMessages({ limit }, { pinned_at: -1 });
+    return (result.messages || []) as MessageResponse[];
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.error('[StreamMessageSearch] Pinned history fetch failed:', error);
+    }
+    return [];
+  }
+}
+
 export async function searchMessagesAcrossTripChannels({
   query,
   tripIds,

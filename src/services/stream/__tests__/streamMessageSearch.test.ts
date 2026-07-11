@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchTripBroadcastHistory,
+  fetchTripPinnedHistory,
   searchMessagesAcrossTripChannels,
   searchTripChannelMessages,
 } from '../streamMessageSearch';
@@ -107,6 +108,31 @@ describe('streamMessageSearch', () => {
     getStreamClientMock.mockReturnValue(null);
 
     await expect(fetchTripBroadcastHistory({ tripId: 'trip-1' })).resolves.toEqual([]);
+  });
+
+  it('fetches pinned history via the native pinned-messages endpoint', async () => {
+    const getPinnedMessages = vi.fn().mockResolvedValue({
+      messages: [
+        { id: 'p-2', text: 'newest pin', pinned: true },
+        { id: 'p-1', text: 'older pin', pinned: true },
+      ],
+    });
+    const channel = vi.fn().mockReturnValue({ getPinnedMessages });
+    getStreamClientMock.mockReturnValue({ userID: 'stream-user', channel });
+
+    const results = await fetchTripPinnedHistory({ tripId: 'trip-1', limit: 25 });
+
+    expect(channel).toHaveBeenCalledWith('chravel-trip', 'trip-trip-1');
+    expect(getPinnedMessages).toHaveBeenCalledWith({ limit: 25 }, { pinned_at: -1 });
+    expect(results.map(m => m.id)).toEqual(['p-2', 'p-1']);
+  });
+
+  it('returns [] when pinned history fetch fails (graceful fallback to window pins)', async () => {
+    const getPinnedMessages = vi.fn().mockRejectedValue(new Error('endpoint unavailable'));
+    const channel = vi.fn().mockReturnValue({ getPinnedMessages });
+    getStreamClientMock.mockReturnValue({ userID: 'stream-user', channel });
+
+    await expect(fetchTripPinnedHistory({ tripId: 'trip-1' })).resolves.toEqual([]);
   });
 
   it('enforces aggregated multi-channel result limits', async () => {
