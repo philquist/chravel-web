@@ -11,6 +11,19 @@
 -- reconciles up to batchSize trips (all channel types) and issues Stream API calls per
 -- channel. batchSize=100 covers the current base in one run; at larger scale, page via the
 -- function's cursor/nextCursor and/or lower the frequency to stay within Stream rate limits.
+--
+-- ⚠️ OPERATOR PREREQUISITE (cron auth): this job authenticates with a service-role bearer
+-- read from `current_setting('app.settings.service_role_key', true)`, matching the existing
+-- chravel-process-account-deletions job. As of 2026-07-11 that GUC is NOT configured in this
+-- project (no database-, role-, or vault-level setting), so the bearer resolves empty and the
+-- reconciler's GET is rejected 401 by verifyCronAuth — the SAME latent failure that silently
+-- breaks every other edge-function cron here. This backstop therefore stays dormant until an
+-- operator provisions the secret ONCE (never commit the key), e.g.:
+--     ALTER DATABASE postgres SET app.settings.service_role_key = '<service-role-key>';
+--   -- or store it in Vault and read it via vault.decrypted_secrets.
+-- Until then, Stream membership still converges via the two client-side provisioning paths
+-- (useStreamProChannel open-time self-heal + useRoleAssignments post-mutation reconcile),
+-- which invoke the function with the user's JWT and do NOT depend on this cron.
 
 DO $$
 BEGIN
