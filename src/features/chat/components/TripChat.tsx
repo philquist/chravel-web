@@ -240,6 +240,11 @@ export const TripChat = React.memo(
       chatModeUserRole === 'owner';
     const canManagePins =
       isUserAdmin || chatModeUserRole === 'moderator' || chatModeUserRole === 'mod';
+    // Broadcast composing follows the trip-type permission model: consumer trips
+    // are open to all members; pro/event trips gate announcements to
+    // admins/organizers/owners. UI-layer gate — ChatInput hides the toggle and
+    // strips the flag at send time.
+    const canSendBroadcast = (!isPro && !isEvent) || isUserAdmin;
 
     // Role channels for pro trips
     const {
@@ -1321,6 +1326,7 @@ export const TripChat = React.memo(
                 disableFileUpload={!canUploadMedia}
                 safeAreaBottom={false}
                 onTypingChange={handleTypingChange}
+                canSendBroadcast={canSendBroadcast}
               />
             </div>
           </div>

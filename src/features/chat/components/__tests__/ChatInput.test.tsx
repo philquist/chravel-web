@@ -99,6 +99,48 @@ describe('ChatInput send behavior', () => {
     expect(onSendMessage).toHaveBeenCalledTimes(1);
   });
 
+  it('hides the Broadcast option when the user may not compose broadcasts', () => {
+    render(<ChatInput {...baseProps} canSendBroadcast={false} />);
+
+    expect(screen.queryByText('Broadcast')).not.toBeInTheDocument();
+  });
+
+  it('shows the Broadcast option by default (consumer-open model)', () => {
+    render(<ChatInput {...baseProps} />);
+
+    expect(screen.getByText('Broadcast')).toBeInTheDocument();
+  });
+
+  it('never sends the broadcast flag when broadcast permission is revoked mid-compose', async () => {
+    // Role resolves async: user arms broadcast mode, then permission resolves
+    // to false. The armed mode must disarm and the send must go out as a
+    // normal message, not a broadcast.
+    const user = userEvent.setup();
+    const onSendMessage = vi.fn();
+
+    const { rerender } = render(
+      <ChatInput {...baseProps} inputMessage="big news" onSendMessage={onSendMessage} />,
+    );
+    await user.click(screen.getByText('Broadcast'));
+
+    rerender(
+      <ChatInput
+        {...baseProps}
+        inputMessage="big news"
+        onSendMessage={onSendMessage}
+        canSendBroadcast={false}
+      />,
+    );
+
+    const textbox = screen.getByPlaceholderText('Type @ to mention someone…');
+    await user.type(textbox, '{enter}');
+
+    await waitFor(() => {
+      expect(onSendMessage).toHaveBeenCalledTimes(1);
+    });
+    expect(onSendMessage.mock.calls[0][0]).toBe(false);
+  });
+
   it('send button triggers the same send path', async () => {
     const user = userEvent.setup();
     const onSendMessage = vi.fn();
