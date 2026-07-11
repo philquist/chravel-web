@@ -101,8 +101,16 @@ export function buildTripStreamMessagePayload(
 ): BuildTripStreamPayloadResult | BuildTripStreamPayloadError {
   const normalizedContent = input.content.trim();
 
-  if (!normalizedContent) return { ok: false, error: 'empty_content' };
   if (normalizedContent.length > 4000) return { ok: false, error: 'content_too_long' };
+
+  // Build attachments FIRST: a photo/video/document (or a link preview) can be sent with no
+  // caption. Previously empty content was rejected before attachments were considered, so
+  // caption-less media uploaded to storage but never posted a chat message and the user saw
+  // a misleading "connection unavailable" error. Only reject when there is nothing to send.
+  const attachments = buildAttachments(input);
+  if (!normalizedContent && attachments.length === 0) {
+    return { ok: false, error: 'empty_content' };
+  }
 
   const payload: Record<string, unknown> = {
     text: normalizedContent,
@@ -132,7 +140,6 @@ export function buildTripStreamMessagePayload(
     payload.idempotency_key = input.idempotencyKey;
   }
 
-  const attachments = buildAttachments(input);
   if (attachments.length > 0) {
     payload.attachments = attachments;
   }
