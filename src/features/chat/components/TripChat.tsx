@@ -1127,7 +1127,11 @@ export const TripChat = React.memo(
               />
             ) : (
               <>
-                {chatError && !isLoading ? (
+                {/* Only replace the whole timeline with an error/initializing card when
+                    there is NO loaded history to show. If history is already on screen,
+                    a transient error must NOT blank it — surface a slim retry banner
+                    above the preserved messages instead (see the banner below). */}
+                {chatError && !isLoading && messagesToShow.length === 0 ? (
                   <div className="flex-1 flex items-center justify-center p-6">
                     <div className="text-center space-y-3">
                       {getStreamApiKey() || chatError.message.includes('Timed out') ? (
@@ -1155,12 +1159,29 @@ export const TripChat = React.memo(
                       )}
                     </div>
                   </div>
-                ) : isLoading ? (
+                ) : isLoading && messagesToShow.length === 0 ? (
                   <div className="flex-1 overflow-y-auto p-4">
                     <MessageSkeleton />
                   </div>
                 ) : (
                   <>
+                    {/* Non-blocking retry banner: history stays visible under a transient
+                        error / reconnect instead of being replaced by a full-screen card. */}
+                    {chatError && messagesToShow.length > 0 && (
+                      <div className="mx-3 mt-3 mb-1 flex items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                        <p className="text-xs text-amber-100">
+                          Reconnecting to chat — showing your recent messages.
+                        </p>
+                        <button
+                          onClick={() => {
+                            reload?.();
+                          }}
+                          className="flex-shrink-0 text-xs font-medium text-amber-200 underline hover:no-underline"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    )}
                     {messageFilter === 'pinned' && pinnedMessages.length > 0 && (
                       <div className="mx-3 mt-3 mb-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2">
                         <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-amber-200">

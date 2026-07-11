@@ -37,22 +37,24 @@ vi.mock('@/hooks/useTripMembers', () => ({
 }));
 
 let mockTripChatError: Error | null = null;
+const defaultMockMessages = [
+  {
+    id: 'msg-1',
+    text: 'hello',
+    user: { id: 'user-1', name: 'User One' },
+    created_at: '2026-01-01T00:00:00.000Z',
+    reactions: { fromMessage: { count: 1, userReacted: true, users: ['user-1'] } },
+    readStatuses: [{ user_id: 'user-2', read_at: '2026-01-01T00:01:00.000Z' }],
+    pinned: true,
+    pinned_at: '2026-01-01T00:02:00.000Z',
+    messageType: 'broadcast',
+  },
+];
+let mockMessages: typeof defaultMockMessages = defaultMockMessages;
 
 vi.mock('../../hooks/useTripChat', () => ({
   useTripChat: () => ({
-    messages: [
-      {
-        id: 'msg-1',
-        text: 'hello',
-        user: { id: 'user-1', name: 'User One' },
-        created_at: '2026-01-01T00:00:00.000Z',
-        reactions: { fromMessage: { count: 1, userReacted: true, users: ['user-1'] } },
-        readStatuses: [{ user_id: 'user-2', read_at: '2026-01-01T00:01:00.000Z' }],
-        pinned: true,
-        pinned_at: '2026-01-01T00:02:00.000Z',
-        messageType: 'broadcast',
-      },
-    ],
+    messages: mockMessages,
     isLoading: false,
     error: mockTripChatError,
     sendMessageAsync: vi.fn(),
@@ -174,6 +176,7 @@ vi.mock('@/services/hapticService', () => ({ hapticService: { light: vi.fn() } }
 vi.mock('@/services/chatContentParser', () => ({ parseMessage: vi.fn() }));
 vi.mock('@/services/stream/streamClient', () => ({
   getStreamClient: () => null,
+  getStreamApiKey: () => 'test-stream-api-key',
   onStreamClientConnected: vi.fn(() => () => {}),
 }));
 
@@ -202,6 +205,7 @@ describe('TripChat render path', () => {
     vi.clearAllMocks();
     mockTripChatError = null;
     mockMessageFilter = 'all';
+    mockMessages = defaultMockMessages;
   });
 
   const renderSubject = (props?: React.ComponentProps<typeof TripChat>) => {
@@ -314,9 +318,10 @@ describe('TripChat render path', () => {
     expect(screen.getByTestId('message-item-msg-1')).toBeInTheDocument();
   });
 
-  it('logs technical chat error details but only renders a generic user-facing message', () => {
+  it('logs technical chat error details but only renders a generic user-facing message when no history is loaded', () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     mockTripChatError = new Error('upstream stacktrace details');
+    mockMessages = [];
 
     renderSubject();
 
@@ -329,5 +334,22 @@ describe('TripChat render path', () => {
 
     mockTripChatError = null;
     consoleErrorSpy.mockRestore();
+  });
+
+  it('keeps loaded history visible behind a retry banner instead of blanking it on error', () => {
+    // Regression: a transient chat error used to replace the ENTIRE timeline with a
+    // full-screen "Something went wrong" card, hiding already-loaded messages/broadcasts
+    // that were fine. History must stay visible; only a slim retry banner appears.
+    mockTripChatError = new Error('reconnect blip');
+
+    renderSubject();
+
+    expect(screen.getByTestId('message-item-msg-1')).toBeInTheDocument();
+    expect(screen.queryByText('Something went wrong in Chat')).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Reconnecting to chat — showing your recent messages.'),
+    ).toBeInTheDocument();
+
+    mockTripChatError = null;
   });
 });

@@ -89,6 +89,36 @@ describe('buildStreamMessageViewModels', () => {
     });
   });
 
+  it('marks a message_type=broadcast message as a broadcast', () => {
+    const results = buildStreamMessageViewModels({
+      messages: [baseMessage({ message_type: 'broadcast' } as unknown as MessageResponse)],
+      tripMembers: members,
+    });
+
+    expect(results[0].isBroadcast).toBe(true);
+  });
+
+  it('marks a privacy_mode=broadcast message as a broadcast (matches the unread badge)', () => {
+    // Regression: the Broadcasts tab filter reads isBroadcast, but the badge count
+    // (useUnreadCounts) also treats privacy_mode==='broadcast' as a broadcast. When
+    // isBroadcast ignored privacy_mode, the badge showed a count while the tab was empty.
+    const results = buildStreamMessageViewModels({
+      messages: [baseMessage({ privacy_mode: 'broadcast' } as unknown as MessageResponse)],
+      tripMembers: members,
+    });
+
+    expect(results[0].isBroadcast).toBe(true);
+  });
+
+  it('does not mark a standard-privacy message as a broadcast', () => {
+    const results = buildStreamMessageViewModels({
+      messages: [baseMessage({ privacy_mode: 'standard' } as unknown as MessageResponse)],
+      tripMembers: members,
+    });
+
+    expect(results[0].isBroadcast).toBe(false);
+  });
+
   it('maps pinned=true state and pinned_at timestamp', () => {
     const results = buildStreamMessageViewModels({
       messages: [
