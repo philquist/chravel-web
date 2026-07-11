@@ -291,9 +291,33 @@ describe('AIConciergeChat controls (lean)', () => {
 
     expect(screen.queryByTestId('realtime-voice-button')).not.toBeInTheDocument();
     expect(screen.queryByTestId('concierge-dictation-btn')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('realtime-voice-overlay')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('concierge-waveform-dictation-btn'));
     expect(conciergeVoiceMock.handleConvoToggle).toHaveBeenCalledTimes(1);
+    expect(realtimeVoiceMock.start).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('realtime-voice-overlay')).not.toBeInTheDocument();
+  });
+
+  it('keeps Search, Attach, waveform Dictate, and Send available together', () => {
+    renderChat();
+
+    expect(screen.getByTestId('header-search-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('header-upload-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('concierge-waveform-dictation-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('concierge-send-btn')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('header-search-btn'));
+    expect(screen.getByPlaceholderText(/search across trip/i)).toBeInTheDocument();
+  });
+
+  it('never shows the realtime overlay while concierge_realtime_voice is off', () => {
+    featureFlagState.realtimeVoiceEnabled = false;
+    renderChat();
+
+    fireEvent.click(screen.getByTestId('concierge-waveform-dictation-btn'));
+    expect(screen.queryByTestId('realtime-voice-overlay')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('realtime-voice-button')).not.toBeInTheDocument();
     expect(realtimeVoiceMock.start).not.toHaveBeenCalled();
   });
 
