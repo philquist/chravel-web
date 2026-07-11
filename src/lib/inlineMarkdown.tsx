@@ -22,7 +22,5 @@ export function renderInlineMarkdown(text: string): ReactNode {
 /** Strip inline markdown delimiters for plain-text contexts (JSON-LD, meta). */
 export function stripInlineMarkdown(text: string): string {
   if (!text) return text;
-  return text
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/\*([^*]+)\*/g, '$1');
+  return text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1');
 }

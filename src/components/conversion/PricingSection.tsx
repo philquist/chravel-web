@@ -179,7 +179,6 @@ const proTiers: PricingTier[] = [
   },
 ];
 
-
 const valuePropItems = [
   {
     icon: <Heart size={20} />,

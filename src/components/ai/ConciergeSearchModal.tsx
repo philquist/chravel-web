@@ -35,7 +35,17 @@ export const ConciergeSearchModal = ({
   const [expandedCategories, setExpandedCategories] = useState<Set<ContentType>>(new Set());
 
   const contentTypes: ContentType[] = useMemo(
-    () => ['messages', 'concierge', 'calendar', 'task', 'poll', 'payment', 'place', 'link', 'media'],
+    () => [
+      'messages',
+      'concierge',
+      'calendar',
+      'task',
+      'poll',
+      'payment',
+      'place',
+      'link',
+      'media',
+    ],
     [],
   );
 

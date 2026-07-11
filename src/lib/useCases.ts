@@ -96,15 +96,36 @@ export const USE_CASES: Array<UseCaseSummary | UseCaseDetail> = [
       'ChravelApp also helps you standardize operations. Build a repeatable shape for honeymoons, family vacations, ski weeks, milestone birthdays, retreats, and VIP travel — every trip carrying the same Calendar, Tasks, Attachments, Base Camps, Places, and shared Media surfaces. Your whole team can run client trips at the same standard, with the right access, without living in one person’s inbox.',
     ],
     featureMap: [
-      { pain: 'Planners need access to logistics — not private client chats', solution: 'Coordinator Access (logistics-only scope)' },
-      { pain: 'Trip details scattered across email, texts, PDFs, and Drive', solution: 'One shared trip workspace' },
-      { pain: 'Confirmations arrive as forwarded emails and PDFs', solution: 'Smart Import + Attachments' },
-      { pain: 'Clients forget reservation times or where to meet', solution: 'Calendar + Base Camps' },
-      { pain: 'Families ask the same questions over and over', solution: 'Broadcasts + centralized details' },
+      {
+        pain: 'Planners need access to logistics — not private client chats',
+        solution: 'Coordinator Access (logistics-only scope)',
+      },
+      {
+        pain: 'Trip details scattered across email, texts, PDFs, and Drive',
+        solution: 'One shared trip workspace',
+      },
+      {
+        pain: 'Confirmations arrive as forwarded emails and PDFs',
+        solution: 'Smart Import + Attachments',
+      },
+      {
+        pain: 'Clients forget reservation times or where to meet',
+        solution: 'Calendar + Base Camps',
+      },
+      {
+        pain: 'Families ask the same questions over and over',
+        solution: 'Broadcasts + centralized details',
+      },
       { pain: 'Clients need to complete items before they travel', solution: 'Tasks' },
-      { pain: 'Clients want vetted recommendations on the ground', solution: 'Places (curated locations & links)' },
+      {
+        pain: 'Clients want vetted recommendations on the ground',
+        solution: 'Places (curated locations & links)',
+      },
       { pain: 'Splitting costs or collecting balances', solution: 'Payments' },
-      { pain: 'Families want to keep the memories afterward', solution: 'Shared Media album (client-controlled)' },
+      {
+        pain: 'Families want to keep the memories afterward',
+        solution: 'Shared Media album (client-controlled)',
+      },
     ],
     workflow: {
       heading: 'Set up a client trip in minutes',
@@ -184,15 +205,30 @@ export const USE_CASES: Array<UseCaseSummary | UseCaseDetail> = [
       'For destination weddings it earns its keep twice over — guests aren’t just attending a ceremony, they’re traveling, switching hotels, and following a multi-day itinerary. Replace scattered WhatsApp threads, lost links, and repeated questions with one shared wedding hub. Everyone gets the schedule, the dress code, the locations, and the photo album in their pocket.',
     ],
     featureMap: [
-      { pain: 'Bride’s side, groom’s side, and vendors need separate threads', solution: 'Pro Trip channels per audience' },
-      { pain: 'Your planner needs logistics access without reading family chats', solution: 'Coordinator Access' },
+      {
+        pain: 'Bride’s side, groom’s side, and vendors need separate threads',
+        solution: 'Pro Trip channels per audience',
+      },
+      {
+        pain: 'Your planner needs logistics access without reading family chats',
+        solution: 'Coordinator Access',
+      },
       { pain: 'Guests lose track of weekend events', solution: 'Shared Calendar' },
-      { pain: '“What’s the dress code?” asked on repeat', solution: 'Attachments (lookbooks & notes)' },
-      { pain: 'Guests ask the same logistics questions', solution: 'Broadcasts + centralized details' },
+      {
+        pain: '“What’s the dress code?” asked on repeat',
+        solution: 'Attachments (lookbooks & notes)',
+      },
+      {
+        pain: 'Guests ask the same logistics questions',
+        solution: 'Broadcasts + centralized details',
+      },
       { pain: 'The wedding party needs accountability', solution: 'Tasks' },
       { pain: 'Ceremony, reception, and hotel are scattered', solution: 'Base Camps + Places' },
       { pain: 'Guest photos trapped across phones', solution: 'Shared Media album' },
-      { pain: 'Destination guests juggling travel', solution: 'Calendar + Attachments + locations' },
+      {
+        pain: 'Destination guests juggling travel',
+        solution: 'Calendar + Attachments + locations',
+      },
     ],
     workflow: {
       heading: 'Set up your wedding weekend',

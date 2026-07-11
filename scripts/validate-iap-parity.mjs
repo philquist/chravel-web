@@ -24,7 +24,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, '..');
 const jsonOut = process.argv.includes('--json');
 
-const readSrc = (p) => readFileSync(resolve(REPO, p), 'utf8');
+const readSrc = p => readFileSync(resolve(REPO, p), 'utf8');
 
 // -------- Extract from src/billing/config.ts --------------------------------
 const billingSrc = readSrc('src/billing/config.ts');
@@ -47,12 +47,12 @@ function parseBillingProducts() {
   while ((m = blockRe.exec(billingSrc)) !== null) {
     const key = m[1];
     const body = m[2];
-    const pick = (field) => {
+    const pick = field => {
       const rx = new RegExp(`${field}:\\s*['"]([^'"]+)['"]`);
       const r = body.match(rx);
       return r ? r[1] : null;
     };
-    const pickNum = (field) => {
+    const pickNum = field => {
       const rx = new RegExp(`${field}:\\s*([0-9.]+)`);
       const r = body.match(rx);
       return r ? Number(r[1]) : null;
@@ -107,7 +107,7 @@ function parseRcPricing() {
   const block = rcSrc.match(/REVENUECAT_PRICING\s*=\s*\{([\s\S]*?)\n\}\s*as const;/);
   if (!block) return {};
   const body = block[1];
-  const grab = (label) => {
+  const grab = label => {
     const rx = new RegExp(`${label}:\\s*\\{([^}]+)\\}`);
     const m = body.match(rx);
     if (!m) return null;
@@ -137,7 +137,7 @@ function parseRcPricing() {
 function parseRequiredIds() {
   const block = rcSrc.match(/REQUIRED_IOS_PRODUCT_IDS\s*=\s*\[([\s\S]*?)\]\s*as const;/);
   if (!block) return [];
-  return [...block[1].matchAll(/REVENUECAT_PRODUCTS\.(\w+)/g)].map((m) => m[1]);
+  return [...block[1].matchAll(/REVENUECAT_PRODUCTS\.(\w+)/g)].map(m => m[1]);
 }
 
 const rcProducts = parseRcProducts();
@@ -153,7 +153,7 @@ const playIds = new Set(JSON.parse(readSrc('playstore/play-products.json')));
 
 // -------- Assertions --------------------------------------------------------
 const errors = [];
-const err = (msg) => errors.push(msg);
+const err = msg => errors.push(msg);
 
 // (a) Every Apple ID in billing/config.ts appears in REVENUECAT_PRODUCTS
 const rcValues = new Set(Object.values(rcProducts));
@@ -161,7 +161,12 @@ const collectBillingAppleIds = () => {
   const ids = [];
   for (const [k, v] of Object.entries(billingSubs)) {
     if (v.appleProductIdMonthly) ids.push([`${k}.monthly`, v.appleProductIdMonthly]);
-    if (v.appleProductIdAnnual && k !== 'pro-starter' && k !== 'pro-growth' && k !== 'pro-enterprise')
+    if (
+      v.appleProductIdAnnual &&
+      k !== 'pro-starter' &&
+      k !== 'pro-growth' &&
+      k !== 'pro-enterprise'
+    )
       ids.push([`${k}.annual`, v.appleProductIdAnnual]);
   }
   for (const [k, v] of Object.entries(tripPasses)) {
@@ -170,8 +175,7 @@ const collectBillingAppleIds = () => {
   return ids;
 };
 for (const [label, id] of collectBillingAppleIds()) {
-  if (!rcValues.has(id))
-    err(`Apple ID for ${label} ("${id}") not present in REVENUECAT_PRODUCTS`);
+  if (!rcValues.has(id)) err(`Apple ID for ${label} ("${id}") not present in REVENUECAT_PRODUCTS`);
 }
 
 // (b) Every REQUIRED_IOS_PRODUCT_IDS entry maps back to a billing product
@@ -187,8 +191,16 @@ for (const key of requiredIdKeys) {
 const expect = (label, a, b) => {
   if (a !== b) err(`Price mismatch — ${label}: billing=${a} revenuecat=${b}`);
 };
-expect('Explorer monthly', billingSubs['consumer-explorer']?.priceMonthly, rcPricing.explorer?.monthly);
-expect('Explorer annual', billingSubs['consumer-explorer']?.priceAnnual, rcPricing.explorer?.annual);
+expect(
+  'Explorer monthly',
+  billingSubs['consumer-explorer']?.priceMonthly,
+  rcPricing.explorer?.monthly,
+);
+expect(
+  'Explorer annual',
+  billingSubs['consumer-explorer']?.priceAnnual,
+  rcPricing.explorer?.annual,
+);
 expect(
   'FC monthly',
   billingSubs['consumer-frequent-chraveler']?.priceMonthly,
@@ -234,7 +246,7 @@ for (const eid of requiredEntitlementIds) {
 }
 
 // (e) ASC snapshot matches REQUIRED_IOS_PRODUCT_IDS exactly
-const requiredIdValues = new Set(requiredIdKeys.map((k) => rcProducts[k]).filter(Boolean));
+const requiredIdValues = new Set(requiredIdKeys.map(k => rcProducts[k]).filter(Boolean));
 for (const id of requiredIdValues) {
   if (!ascIds.has(id)) err(`Required IAP "${id}" is missing from appstore/asc-products.json`);
 }
@@ -245,8 +257,7 @@ for (const id of ascIds) {
 
 // (f) Google Play snapshot mirrors ASC exactly (Play IDs == Apple IDs 1:1)
 for (const id of requiredIdValues) {
-  if (!playIds.has(id))
-    err(`Required IAP "${id}" is missing from playstore/play-products.json`);
+  if (!playIds.has(id)) err(`Required IAP "${id}" is missing from playstore/play-products.json`);
 }
 for (const id of playIds) {
   if (!requiredIdValues.has(id))
@@ -258,10 +269,8 @@ for (const id of ascIds) {
     err(`ASC has "${id}" but Google Play snapshot does not — cross-store drift`);
 }
 for (const id of playIds) {
-  if (!ascIds.has(id))
-    err(`Google Play has "${id}" but ASC snapshot does not — cross-store drift`);
+  if (!ascIds.has(id)) err(`Google Play has "${id}" but ASC snapshot does not — cross-store drift`);
 }
-
 
 // -------- Output ------------------------------------------------------------
 if (jsonOut) {
@@ -272,7 +281,9 @@ if (jsonOut) {
 const c = (n, s) => `\x1b[${n}m${s}\x1b[0m`;
 console.log(c(1, '\nIAP Parity Check (code ↔ RevenueCat ↔ ASC ↔ Google Play)\n'));
 if (errors.length === 0) {
-  console.log(c(32, '  ✓ All Apple/Google IDs, entitlements, prices, and store snapshots are in sync.\n'));
+  console.log(
+    c(32, '  ✓ All Apple/Google IDs, entitlements, prices, and store snapshots are in sync.\n'),
+  );
   process.exit(0);
 }
 console.log(c(31, `  ✗ ${errors.length} parity error(s):\n`));

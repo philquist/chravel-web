@@ -48,7 +48,6 @@ class SystemMessageService {
     return false;
   }
 
-
   /**
    * Resolve a trip's tier with a short-lived cache. Returns 'consumer' for
    * seeded mock IDs without a fetch. Falls back to a single supabase query
@@ -139,7 +138,6 @@ class SystemMessageService {
       return false;
     }
   }
-
 
   /**
    * Create a batched upload system message
@@ -240,7 +238,6 @@ class SystemMessageService {
       { actorName, previousAddress, newAddress },
       `basecamp_updated:${tripId}:${newAddress ?? previousAddress ?? 'unknown'}`,
     );
-
   }
 
   async personalBaseCampUpdated(
@@ -371,7 +368,6 @@ class SystemMessageService {
       `payment_settled:${tripId}:${paymentId}`,
     );
   }
-
 
   /** Test/debug only — clears the trip-type cache. */
   _clearTripTypeCache(): void {

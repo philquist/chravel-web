@@ -169,9 +169,7 @@ function ReviewProductCard({ card }: { card: ReviewCard }) {
     >
       <div className="text-center mb-4">
         <h1 className="text-xl font-bold text-white">Billing</h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          In-App Purchase preview · App Review
-        </p>
+        <p className="text-xs text-muted-foreground mt-1">In-App Purchase preview · App Review</p>
       </div>
 
       <div className="rounded-2xl border border-border/60 bg-card/80 shadow-xl p-6 flex flex-col gap-4">

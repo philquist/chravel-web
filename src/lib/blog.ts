@@ -640,7 +640,10 @@ export const BLOG_POSTS: BlogPost[] = [
         label: 'Why WhatsApp and Google Drive aren’t enough for luxury travel',
         to: '/blog/why-whatsapp-google-drive-not-enough-luxury-travel-planning',
       },
-      { label: 'Wedding guest coordination in ChravelApp', to: '/use-cases/wedding-guest-coordination-app' },
+      {
+        label: 'Wedding guest coordination in ChravelApp',
+        to: '/use-cases/wedding-guest-coordination-app',
+      },
       { label: 'All ChravelApp use cases', to: '/use-cases' },
     ],
     cta: {
