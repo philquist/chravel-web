@@ -16,11 +16,12 @@ import {
 } from '@/services/stream/streamClient';
 import { CHANNEL_TYPE_CHANNEL, proChannelId } from '@/services/stream/streamChannelFactory';
 import type { StreamQuotedReferenceInput } from '@/services/stream/streamMessagePayload';
+import { supabase } from '@/integrations/supabase/client';
 import type { Channel, MessageResponse } from 'stream-chat';
 
 const PAGE_SIZE = 30;
 
-export function useStreamProChannel(channelId: string | null) {
+export function useStreamProChannel(channelId: string | null, tripId?: string | null) {
   const [messages, setMessages] = useState<MessageResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -29,6 +30,8 @@ export function useStreamProChannel(channelId: string | null) {
 
   const channelRef = useRef<Channel | null>(null);
   const [activeStreamChannel, setActiveStreamChannel] = useState<Channel | null>(null);
+  // Guard so a persistently failing channel doesn't loop the self-heal each retry.
+  const membershipRecoveryAttemptedRef = useRef(false);
 
   useEffect(() => {
     const unsubscribeConnected = onStreamClientConnected(() => {
@@ -63,14 +66,43 @@ export function useStreamProChannel(channelId: string | null) {
 
     let cancelled = false;
     setIsLoading(true);
+    // One self-heal attempt per (channelId, streamReady) activation.
+    membershipRecoveryAttemptedRef.current = false;
+
+    const watchChannel = async () => {
+      const channel = client.channel(CHANNEL_TYPE_CHANNEL, proChannelId(channelId));
+      const state = await channel.watch({ state: true, messages: { limit: PAGE_SIZE } });
+      return { channel, state };
+    };
+
+    // Self-heal: if watch fails because our Stream membership was never
+    // provisioned (role assigned but not projected into the Stream channel),
+    // ask the server to ensure membership, then re-watch once. Mirrors the
+    // recovery path in useStreamTripChat.
+    const attemptMembershipRecovery = async () => {
+      if (membershipRecoveryAttemptedRef.current || !tripId) return null;
+      membershipRecoveryAttemptedRef.current = true;
+      const response = await supabase.functions.invoke('stream-ensure-membership', {
+        body: { tripId, channelId },
+      });
+      if (response.error) return null;
+      return watchChannel();
+    };
 
     const init = async () => {
       try {
-        const channel = client.channel(CHANNEL_TYPE_CHANNEL, proChannelId(channelId));
-        const state = await channel.watch({ state: true, messages: { limit: PAGE_SIZE } });
+        let result: Awaited<ReturnType<typeof watchChannel>> | null = null;
+        try {
+          result = await watchChannel();
+        } catch (watchError) {
+          if (cancelled) return;
+          result = await attemptMembershipRecovery();
+          if (!result) throw watchError;
+        }
 
         if (cancelled) return;
 
+        const { channel, state } = result;
         channelRef.current = channel;
         setActiveStreamChannel(channel);
 
@@ -94,7 +126,7 @@ export function useStreamProChannel(channelId: string | null) {
         setActiveStreamChannel(null);
       }
     };
-  }, [channelId, streamReady]);
+  }, [channelId, streamReady, tripId]);
 
   // Realtime events
   useEffect(() => {

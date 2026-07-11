@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MoreVertical, Info } from 'lucide-react';
 import { MobileTripTabs } from '../components/mobile/MobileTripTabs';
 import { MobileErrorBoundary } from '../components/mobile/MobileErrorBoundary';
+import { toStableTripId } from '../utils/tripId';
 import { MobileTripInfoDrawer } from '../components/mobile/MobileTripInfoDrawer';
 import { MobileHeaderOptionsSheet } from '../components/mobile/MobileHeaderOptionsSheet';
 import { DemoTripBar } from '../components/demo/DemoTripBar';
@@ -409,7 +410,11 @@ export const MobileProTripDetail = () => {
   }
 
   const trip = {
-    id: parseInt(tripData.id) || 0, // Fallback for numeric ID
+    // Trip IDs are UUIDs. The old `parseInt(tripData.id) || 0` yielded 0 for a UUID and
+    // corrupted the id passed to the Trip Details drawer's TripHeader — its child hooks
+    // (useTripMembers, cover upload, join requests) then queried trip_id "0" and showed
+    // "0 members" / broke cover upload for every pro trip. Keep the real string id.
+    id: toStableTripId(tripData.id),
     title: tripData.title,
     location: tripData.location,
     dateRange: tripData.dateRange,

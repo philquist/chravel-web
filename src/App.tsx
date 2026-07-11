@@ -44,6 +44,7 @@ import { retryImport } from '@/lib/retryImport';
 import { importAuthPage } from '@/lib/routeChunks';
 import { getPublicSeoRoute, SEO_LANDING_CONTENT } from '@/lib/seo';
 import { syncRobotsAndCanonical } from '@/components/seo/SeoHead';
+import { NativePushRouter } from '@/components/notifications/NativePushRouter';
 
 // Lazy load pages for better performance
 const Index = lazy(() => retryImport(() => import('./pages/Index')));
@@ -199,6 +200,16 @@ const RouteHeadPolicySync = () => {
   return null;
 };
 
+// Per-route error isolation. Keyed by pathname so a render error in one of the ~25 lazy
+// routes shows the boundary fallback for THAT route only — the app shell/nav (rendered by
+// MobileAppLayout, outside this boundary) stays interactive — and navigating to another
+// route remounts the boundary and clears the error. Without the key, the top-level
+// ErrorBoundary keeps the whole app blanked until a full reload.
+const RouteErrorBoundary = ({ children }: { children: React.ReactNode }) => {
+  const { pathname } = useLocation();
+  return <ErrorBoundary key={pathname}>{children}</ErrorBoundary>;
+};
+
 const App = () => {
   // ⚡ PERFORMANCE: Initialize demo mode synchronously on first render (not at module load)
   // Moving this inside the component prevents "dispatcher.useState" errors on some platforms
@@ -322,499 +333,504 @@ const App = () => {
                 <Router>
                   <PageViewTracker />
                   <RouteHeadPolicySync />
+                  <NativePushRouter />
                   <ExitDemoButtonWithNav />
                   <OfflineIndicatorGate />
                   <MobileAppLayout>
-                    <Routes>
-                      <Route
-                        path="/"
-                        element={
-                          <LazyRoute fallback={<BootHydrationFallback />}>
-                            <Index />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/api/gmail/oauth/callback"
-                        element={
-                          <LazyRoute>
-                            <GmailCallbackPage />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/.lovable/oauth/consent"
-                        element={
-                          <LazyRoute>
-                            <OAuthConsent />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/trip/:tripId"
-                        element={
-                          <LazyRoute fallback={<BootHydrationFallback variant="trip" />}>
-                            <TripDetail />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/trip/:tripId/preview"
-                        element={
-                          <LazyRoute>
-                            <TripPreview />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/t/:tripId"
-                        element={
-                          <LazyRoute>
-                            <TripPreview />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/demo/trip/:demoTripId"
-                        element={
-                          <LazyRoute>
-                            <DemoTripGate />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/demo"
-                        element={
-                          <LazyRoute>
-                            <DemoEntry />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/auth"
-                        element={
-                          <LazyRoute>
-                            <AuthPage />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/auth-callback"
-                        element={
-                          <LazyRoute>
-                            <AuthCallbackPage />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/reset-password"
-                        element={
-                          <LazyRoute>
-                            <ResetPasswordPage />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/join/:token"
-                        element={
-                          <LazyRoute>
-                            <JoinTrip />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/j/:token"
-                        element={
-                          <LazyRoute>
-                            <InviteSlugRedirect />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/tour/pro/:proTripId"
-                        element={
-                          <LazyRoute>
-                            <ProTripDetail />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/tour/pro-:proTripId"
-                        element={
-                          <LazyRoute>
-                            <LegacyProTripRedirect />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/event/:eventId"
-                        element={
-                          <LazyRoute>
-                            <EventDetail />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/trip-planner"
-                        element={
-                          <LazyRoute>
-                            {(() => {
-                              const config = getPublicSeoRoute('/trip-planner');
-                              if (!config) return null;
-                              return (
-                                <SeoLandingPage
-                                  config={config}
-                                  h1={SEO_LANDING_CONTENT['/trip-planner'].h1}
-                                  intro={SEO_LANDING_CONTENT['/trip-planner'].intro}
-                                  faq={[
-                                    {
-                                      q: 'Can ChravelApp replace multiple planning tools?',
-                                      a: 'ChravelApp centralizes communication, itinerary, tasks, and group coordination so teams rely less on disconnected apps.',
-                                    },
-                                    {
-                                      q: 'Is ChravelApp only for leisure travel?',
-                                      a: 'No. ChravelApp supports friend trips, events, and pro travel workflows where logistics and visibility matter.',
-                                    },
-                                  ]}
-                                />
-                              );
-                            })()}
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/group-trip-planner"
-                        element={
-                          <LazyRoute>
-                            {(() => {
-                              const config = getPublicSeoRoute('/group-trip-planner');
-                              if (!config) return null;
-                              return (
-                                <SeoLandingPage
-                                  config={config}
-                                  h1={SEO_LANDING_CONTENT['/group-trip-planner'].h1}
-                                  intro={SEO_LANDING_CONTENT['/group-trip-planner'].intro}
-                                  faq={[
-                                    {
-                                      q: 'Can ChravelApp replace multiple planning tools?',
-                                      a: 'ChravelApp centralizes communication, itinerary, tasks, and group coordination so teams rely less on disconnected apps.',
-                                    },
-                                    {
-                                      q: 'Is ChravelApp only for leisure travel?',
-                                      a: 'No. ChravelApp supports friend trips, events, and pro travel workflows where logistics and visibility matter.',
-                                    },
-                                  ]}
-                                />
-                              );
-                            })()}
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/group-travel"
-                        element={
-                          <LazyRoute>
-                            {(() => {
-                              const config = getPublicSeoRoute('/group-travel');
-                              if (!config) return null;
-                              return (
-                                <SeoLandingPage
-                                  config={config}
-                                  h1={SEO_LANDING_CONTENT['/group-travel'].h1}
-                                  intro={SEO_LANDING_CONTENT['/group-travel'].intro}
-                                  faq={[
-                                    {
-                                      q: 'Can ChravelApp replace multiple planning tools?',
-                                      a: 'ChravelApp centralizes communication, itinerary, tasks, and group coordination so teams rely less on disconnected apps.',
-                                    },
-                                    {
-                                      q: 'Is ChravelApp only for leisure travel?',
-                                      a: 'No. ChravelApp supports friend trips, events, and pro travel workflows where logistics and visibility matter.',
-                                    },
-                                  ]}
-                                />
-                              );
-                            })()}
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/how-to-plan-a-trip-with-friends"
-                        element={
-                          <LazyRoute>
-                            {(() => {
-                              const config = getPublicSeoRoute('/how-to-plan-a-trip-with-friends');
-                              if (!config) return null;
-                              return (
-                                <SeoLandingPage
-                                  config={config}
-                                  h1={SEO_LANDING_CONTENT['/how-to-plan-a-trip-with-friends'].h1}
-                                  intro={
-                                    SEO_LANDING_CONTENT['/how-to-plan-a-trip-with-friends'].intro
-                                  }
-                                  faq={[
-                                    {
-                                      q: 'Can ChravelApp replace multiple planning tools?',
-                                      a: 'ChravelApp centralizes communication, itinerary, tasks, and group coordination so teams rely less on disconnected apps.',
-                                    },
-                                    {
-                                      q: 'Is ChravelApp only for leisure travel?',
-                                      a: 'No. ChravelApp supports friend trips, events, and pro travel workflows where logistics and visibility matter.',
-                                    },
-                                  ]}
-                                />
-                              );
-                            })()}
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/group-travel-planning-app"
-                        element={
-                          <LazyRoute>
-                            {(() => {
-                              const config = getPublicSeoRoute('/group-travel-planning-app');
-                              if (!config) return null;
-                              return (
-                                <SeoLandingPage
-                                  config={config}
-                                  h1={SEO_LANDING_CONTENT['/group-travel-planning-app'].h1}
-                                  intro={SEO_LANDING_CONTENT['/group-travel-planning-app'].intro}
-                                  faq={[
-                                    {
-                                      q: 'How is ChravelApp different from Wanderlog or TripIt?',
-                                      a: 'Wanderlog and TripIt focus on itinerary storage. ChravelApp adds a real group chat, polls, tasks, shared places, and split payments — so coordination and conversation live in the same place.',
-                                    },
-                                    {
-                                      q: 'Is there a free plan for group travel planning?',
-                                      a: 'Yes. ChravelApp is free for small groups, with paid tiers for larger trips, pro touring teams, and events.',
-                                    },
-                                    {
-                                      q: 'Does it work on iPhone, Android, and web?',
-                                      a: 'Yes — ChravelApp runs as a web app and an installable PWA on iOS and Android, with full feature parity for group trip planning.',
-                                    },
-                                  ]}
-                                />
-                              );
-                            })()}
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/use-cases"
-                        element={
-                          <LazyRoute>
-                            <UseCasesHub />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/use-cases/:slug"
-                        element={
-                          <LazyRoute>
-                            <UseCasePage />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/blog"
-                        element={
-                          <LazyRoute>
-                            <BlogIndex />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/blog/:slug"
-                        element={
-                          <LazyRoute>
-                            <BlogPost />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/teams"
-                        element={
-                          <LazyRoute>
-                            <ForTeams />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/recs"
-                        element={
-                          <LazyRoute>
-                            <InternalAdminRoute allowDemoPreview>
-                              <ChravelRecsPage />
-                            </InternalAdminRoute>
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/advertiser"
-                        element={
-                          <LazyRoute>
-                            <InternalAdminRoute allowDemoPreview>
-                              <AdvertiserDashboard />
-                            </InternalAdminRoute>
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/healthz"
-                        element={
-                          <LazyRoute>
-                            <Healthz />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/privacy"
-                        element={
-                          <LazyRoute>
-                            <PrivacyPolicy />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/support"
-                        element={
-                          <LazyRoute>
-                            <SupportPage />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/terms"
-                        element={
-                          <LazyRoute>
-                            <TermsOfService />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/delete-account"
-                        element={
-                          <LazyRoute>
-                            <DeleteAccountPage />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/profile"
-                        element={
-                          <LazyRoute>
-                            <ProtectedRoute>
-                              <ProfilePage />
-                            </ProtectedRoute>
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/settings"
-                        element={
-                          <LazyRoute>
-                            <ProtectedRoute>
-                              <SettingsPage />
-                            </ProtectedRoute>
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/archive"
-                        element={
-                          <LazyRoute>
-                            <ProtectedRoute>
-                              <ArchivePage />
-                            </ProtectedRoute>
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/dev/billing-preview"
-                        element={
-                          <LazyRoute>
-                            <DevBillingPreview />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/settings/subscription"
-                        element={
-                          <ProtectedRoute>
-                            <LazyRoute>
-                              <SubscriptionStatus />
-                            </LazyRoute>
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/admin/scheduled-messages"
-                        element={
-                          <LazyRoute>
-                            <InternalAdminRoute>
-                              <AdminDashboard />
-                            </InternalAdminRoute>
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/admin/seo"
-                        element={
-                          <LazyRoute>
-                            <InternalAdminRoute>
-                              <SeoDashboard />
-                            </InternalAdminRoute>
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/organizations"
-                        element={
-                          <LazyRoute>
-                            <ProtectedRoute>
-                              <OrganizationsHub />
-                            </ProtectedRoute>
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/organization/:orgId"
-                        element={
-                          <LazyRoute>
-                            <ProtectedRoute>
-                              <OrganizationDashboard />
-                            </ProtectedRoute>
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/accept-invite/:token"
-                        element={
-                          <LazyRoute>
-                            <AcceptOrganizationInvite />
-                          </LazyRoute>
-                        }
-                      />
-                      {import.meta.env.DEV && (
+                    <RouteErrorBoundary>
+                      <Routes>
                         <Route
-                          path="/dev/device-matrix"
+                          path="/"
                           element={
-                            <LazyRoute>
-                              <DeviceTestMatrix />
+                            <LazyRoute fallback={<BootHydrationFallback />}>
+                              <Index />
                             </LazyRoute>
                           }
                         />
-                      )}
-                      <Route
-                        path="*"
-                        element={
-                          <LazyRoute>
-                            <NotFound />
-                          </LazyRoute>
-                        }
-                      />
-                    </Routes>
+                        <Route
+                          path="/api/gmail/oauth/callback"
+                          element={
+                            <LazyRoute>
+                              <GmailCallbackPage />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/.lovable/oauth/consent"
+                          element={
+                            <LazyRoute>
+                              <OAuthConsent />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/trip/:tripId"
+                          element={
+                            <LazyRoute fallback={<BootHydrationFallback variant="trip" />}>
+                              <TripDetail />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/trip/:tripId/preview"
+                          element={
+                            <LazyRoute>
+                              <TripPreview />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/t/:tripId"
+                          element={
+                            <LazyRoute>
+                              <TripPreview />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/demo/trip/:demoTripId"
+                          element={
+                            <LazyRoute>
+                              <DemoTripGate />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/demo"
+                          element={
+                            <LazyRoute>
+                              <DemoEntry />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/auth"
+                          element={
+                            <LazyRoute>
+                              <AuthPage />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/auth-callback"
+                          element={
+                            <LazyRoute>
+                              <AuthCallbackPage />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/reset-password"
+                          element={
+                            <LazyRoute>
+                              <ResetPasswordPage />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/join/:token"
+                          element={
+                            <LazyRoute>
+                              <JoinTrip />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/j/:token"
+                          element={
+                            <LazyRoute>
+                              <InviteSlugRedirect />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/tour/pro/:proTripId"
+                          element={
+                            <LazyRoute>
+                              <ProTripDetail />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/tour/pro-:proTripId"
+                          element={
+                            <LazyRoute>
+                              <LegacyProTripRedirect />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/event/:eventId"
+                          element={
+                            <LazyRoute>
+                              <EventDetail />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/trip-planner"
+                          element={
+                            <LazyRoute>
+                              {(() => {
+                                const config = getPublicSeoRoute('/trip-planner');
+                                if (!config) return null;
+                                return (
+                                  <SeoLandingPage
+                                    config={config}
+                                    h1={SEO_LANDING_CONTENT['/trip-planner'].h1}
+                                    intro={SEO_LANDING_CONTENT['/trip-planner'].intro}
+                                    faq={[
+                                      {
+                                        q: 'Can ChravelApp replace multiple planning tools?',
+                                        a: 'ChravelApp centralizes communication, itinerary, tasks, and group coordination so teams rely less on disconnected apps.',
+                                      },
+                                      {
+                                        q: 'Is ChravelApp only for leisure travel?',
+                                        a: 'No. ChravelApp supports friend trips, events, and pro travel workflows where logistics and visibility matter.',
+                                      },
+                                    ]}
+                                  />
+                                );
+                              })()}
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/group-trip-planner"
+                          element={
+                            <LazyRoute>
+                              {(() => {
+                                const config = getPublicSeoRoute('/group-trip-planner');
+                                if (!config) return null;
+                                return (
+                                  <SeoLandingPage
+                                    config={config}
+                                    h1={SEO_LANDING_CONTENT['/group-trip-planner'].h1}
+                                    intro={SEO_LANDING_CONTENT['/group-trip-planner'].intro}
+                                    faq={[
+                                      {
+                                        q: 'Can ChravelApp replace multiple planning tools?',
+                                        a: 'ChravelApp centralizes communication, itinerary, tasks, and group coordination so teams rely less on disconnected apps.',
+                                      },
+                                      {
+                                        q: 'Is ChravelApp only for leisure travel?',
+                                        a: 'No. ChravelApp supports friend trips, events, and pro travel workflows where logistics and visibility matter.',
+                                      },
+                                    ]}
+                                  />
+                                );
+                              })()}
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/group-travel"
+                          element={
+                            <LazyRoute>
+                              {(() => {
+                                const config = getPublicSeoRoute('/group-travel');
+                                if (!config) return null;
+                                return (
+                                  <SeoLandingPage
+                                    config={config}
+                                    h1={SEO_LANDING_CONTENT['/group-travel'].h1}
+                                    intro={SEO_LANDING_CONTENT['/group-travel'].intro}
+                                    faq={[
+                                      {
+                                        q: 'Can ChravelApp replace multiple planning tools?',
+                                        a: 'ChravelApp centralizes communication, itinerary, tasks, and group coordination so teams rely less on disconnected apps.',
+                                      },
+                                      {
+                                        q: 'Is ChravelApp only for leisure travel?',
+                                        a: 'No. ChravelApp supports friend trips, events, and pro travel workflows where logistics and visibility matter.',
+                                      },
+                                    ]}
+                                  />
+                                );
+                              })()}
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/how-to-plan-a-trip-with-friends"
+                          element={
+                            <LazyRoute>
+                              {(() => {
+                                const config = getPublicSeoRoute(
+                                  '/how-to-plan-a-trip-with-friends',
+                                );
+                                if (!config) return null;
+                                return (
+                                  <SeoLandingPage
+                                    config={config}
+                                    h1={SEO_LANDING_CONTENT['/how-to-plan-a-trip-with-friends'].h1}
+                                    intro={
+                                      SEO_LANDING_CONTENT['/how-to-plan-a-trip-with-friends'].intro
+                                    }
+                                    faq={[
+                                      {
+                                        q: 'Can ChravelApp replace multiple planning tools?',
+                                        a: 'ChravelApp centralizes communication, itinerary, tasks, and group coordination so teams rely less on disconnected apps.',
+                                      },
+                                      {
+                                        q: 'Is ChravelApp only for leisure travel?',
+                                        a: 'No. ChravelApp supports friend trips, events, and pro travel workflows where logistics and visibility matter.',
+                                      },
+                                    ]}
+                                  />
+                                );
+                              })()}
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/group-travel-planning-app"
+                          element={
+                            <LazyRoute>
+                              {(() => {
+                                const config = getPublicSeoRoute('/group-travel-planning-app');
+                                if (!config) return null;
+                                return (
+                                  <SeoLandingPage
+                                    config={config}
+                                    h1={SEO_LANDING_CONTENT['/group-travel-planning-app'].h1}
+                                    intro={SEO_LANDING_CONTENT['/group-travel-planning-app'].intro}
+                                    faq={[
+                                      {
+                                        q: 'How is ChravelApp different from Wanderlog or TripIt?',
+                                        a: 'Wanderlog and TripIt focus on itinerary storage. ChravelApp adds a real group chat, polls, tasks, shared places, and split payments — so coordination and conversation live in the same place.',
+                                      },
+                                      {
+                                        q: 'Is there a free plan for group travel planning?',
+                                        a: 'Yes. ChravelApp is free for small groups, with paid tiers for larger trips, pro touring teams, and events.',
+                                      },
+                                      {
+                                        q: 'Does it work on iPhone, Android, and web?',
+                                        a: 'Yes — ChravelApp runs as a web app and an installable PWA on iOS and Android, with full feature parity for group trip planning.',
+                                      },
+                                    ]}
+                                  />
+                                );
+                              })()}
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/use-cases"
+                          element={
+                            <LazyRoute>
+                              <UseCasesHub />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/use-cases/:slug"
+                          element={
+                            <LazyRoute>
+                              <UseCasePage />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/blog"
+                          element={
+                            <LazyRoute>
+                              <BlogIndex />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/blog/:slug"
+                          element={
+                            <LazyRoute>
+                              <BlogPost />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/teams"
+                          element={
+                            <LazyRoute>
+                              <ForTeams />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/recs"
+                          element={
+                            <LazyRoute>
+                              <InternalAdminRoute allowDemoPreview>
+                                <ChravelRecsPage />
+                              </InternalAdminRoute>
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/advertiser"
+                          element={
+                            <LazyRoute>
+                              <InternalAdminRoute allowDemoPreview>
+                                <AdvertiserDashboard />
+                              </InternalAdminRoute>
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/healthz"
+                          element={
+                            <LazyRoute>
+                              <Healthz />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/privacy"
+                          element={
+                            <LazyRoute>
+                              <PrivacyPolicy />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/support"
+                          element={
+                            <LazyRoute>
+                              <SupportPage />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/terms"
+                          element={
+                            <LazyRoute>
+                              <TermsOfService />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/delete-account"
+                          element={
+                            <LazyRoute>
+                              <DeleteAccountPage />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/profile"
+                          element={
+                            <LazyRoute>
+                              <ProtectedRoute>
+                                <ProfilePage />
+                              </ProtectedRoute>
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/settings"
+                          element={
+                            <LazyRoute>
+                              <ProtectedRoute>
+                                <SettingsPage />
+                              </ProtectedRoute>
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/archive"
+                          element={
+                            <LazyRoute>
+                              <ProtectedRoute>
+                                <ArchivePage />
+                              </ProtectedRoute>
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/dev/billing-preview"
+                          element={
+                            <LazyRoute>
+                              <DevBillingPreview />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/settings/subscription"
+                          element={
+                            <ProtectedRoute>
+                              <LazyRoute>
+                                <SubscriptionStatus />
+                              </LazyRoute>
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin/scheduled-messages"
+                          element={
+                            <LazyRoute>
+                              <InternalAdminRoute>
+                                <AdminDashboard />
+                              </InternalAdminRoute>
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin/seo"
+                          element={
+                            <LazyRoute>
+                              <InternalAdminRoute>
+                                <SeoDashboard />
+                              </InternalAdminRoute>
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/organizations"
+                          element={
+                            <LazyRoute>
+                              <ProtectedRoute>
+                                <OrganizationsHub />
+                              </ProtectedRoute>
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/organization/:orgId"
+                          element={
+                            <LazyRoute>
+                              <ProtectedRoute>
+                                <OrganizationDashboard />
+                              </ProtectedRoute>
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="/accept-invite/:token"
+                          element={
+                            <LazyRoute>
+                              <AcceptOrganizationInvite />
+                            </LazyRoute>
+                          }
+                        />
+                        {import.meta.env.DEV && (
+                          <Route
+                            path="/dev/device-matrix"
+                            element={
+                              <LazyRoute>
+                                <DeviceTestMatrix />
+                              </LazyRoute>
+                            }
+                          />
+                        )}
+                        <Route
+                          path="*"
+                          element={
+                            <LazyRoute>
+                              <NotFound />
+                            </LazyRoute>
+                          }
+                        />
+                      </Routes>
+                    </RouteErrorBoundary>
                   </MobileAppLayout>
                 </Router>
               </TooltipProvider>

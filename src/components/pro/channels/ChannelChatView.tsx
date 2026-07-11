@@ -85,7 +85,10 @@ export const ChannelChatView = ({
   const isDemoChannel = isDemoChannelTripId(channel.tripId);
 
   const useStreamTransport = !isDemoChannel;
-  const streamProChannel = useStreamProChannel(useStreamTransport ? channel.id : null);
+  const streamProChannel = useStreamProChannel(
+    useStreamTransport ? channel.id : null,
+    channel.tripId,
+  );
 
   // Handle user leaving the channel/role (self-service)
   const handleLeaveChannel = async () => {
@@ -587,19 +590,31 @@ export const ChannelChatView = ({
         if (!error && count !== null && count > 0) {
           setMemberCount(count);
         } else {
-          // Also count role-based members via user_trip_roles + channel_role_access
-          const { data: roleAccessData } = await supabase
-            .from('channel_role_access')
-            .select('role_id')
-            .eq('channel_id', channel.id);
+          // Fall back to role-based access. Two role sources coexist and BOTH must be
+          // honored: the `channel_role_access` junction (new) AND the legacy
+          // `required_role_id` on trip_channels — which is the ONLY one populated for
+          // most existing pro channels. Ignoring required_role_id (the previous bug) made
+          // channels with real members report "0 members".
+          const [{ data: roleAccessData }, { data: channelRow }] = await Promise.all([
+            supabase.from('channel_role_access').select('role_id').eq('channel_id', channel.id),
+            supabase
+              .from('trip_channels')
+              .select('required_role_id')
+              .eq('id', channel.id)
+              .maybeSingle(),
+          ]);
 
-          if (roleAccessData && roleAccessData.length > 0) {
-            const roleIds = roleAccessData.map(r => r.role_id);
+          const roleIds = new Set<string>(
+            (roleAccessData ?? []).map(r => r.role_id).filter((id): id is string => Boolean(id)),
+          );
+          if (channelRow?.required_role_id) roleIds.add(channelRow.required_role_id);
+
+          if (roleIds.size > 0) {
             const { data: roleMembers } = await supabase
               .from('user_trip_roles')
               .select('user_id')
               .eq('trip_id', channel.tripId)
-              .in('role_id', roleIds);
+              .in('role_id', Array.from(roleIds));
 
             if (roleMembers) {
               const uniqueUsers = new Set(roleMembers.map(r => r.user_id));

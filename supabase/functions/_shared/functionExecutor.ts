@@ -2259,31 +2259,13 @@ async function _executeImpl(
     // ========== NOTIFICATION TOOL ==========
 
     case 'createNotification': {
-      const { title, message, targetUserIds, type } = args;
+      const { title, message } = args;
       const notifTitle = String(title || '').trim();
       const notifMessage = String(message || '').trim();
       if (!notifTitle || !notifMessage) {
         return { error: 'Both title and message are required' };
       }
       if (!userId) return { error: 'Authentication required to send notifications' };
-
-      // Resolve recipient list up-front so we can store it in the pending payload.
-      let userIds: string[] = [];
-      if (Array.isArray(targetUserIds) && targetUserIds.length > 0) {
-        userIds = targetUserIds.map(String);
-      } else {
-        const { data: members } = await supabase
-          .from('trip_members')
-          .select('user_id')
-          .eq('trip_id', tripId);
-        userIds = (members || []).map((m: { user_id: string }) => m.user_id);
-      }
-
-      if (userIds.length === 0) {
-        return { error: 'No target users found' };
-      }
-
-      const safeType = String(type || 'concierge');
 
       // Audit + recoverable confirm row -- same shape as addExpense / createBroadcast.
       const { data: pending, error: pendingError } = await supabase
@@ -2295,8 +2277,6 @@ async function _executeImpl(
           payload: {
             title: notifTitle,
             message: notifMessage,
-            type: safeType,
-            target_user_ids: userIds,
             created_by: userId,
             trip_id: tripId,
           },
@@ -2306,24 +2286,33 @@ async function _executeImpl(
         .single();
       if (pendingError) throw pendingError;
 
-      const notifications = userIds.map((uid: string) => ({
-        user_id: uid,
-        trip_id: tripId,
-        title: notifTitle,
-        message: notifMessage,
-        type: safeType,
-        metadata: { source: 'ai_concierge', created_by: userId },
-      }));
-
+      // Deliver through the canonical create-notification edge function. That path runs
+      // the fan-out under the service role AFTER re-verifying (with the caller's JWT) that
+      // the requester is a trip organizer/admin, scopes recipients to real trip members
+      // (excluding the requester), and applies category preference + quiet-hours gating.
+      // A direct insert here is wrong on two counts: notifications rows target OTHER users
+      // (correctly denied by the notifications RLS to the executor's user-JWT client), and
+      // the previous code trusted a client/model-supplied targetUserIds list with no
+      // membership check. Concierge announcements map to the 'broadcasts' category
+      // (organizer-authored, respects the recipient's broadcast preference toggle).
       let promoted = false;
-      const { error: insertErr } = await supabase.from('notifications').insert(notifications);
-      if (!insertErr) {
+      const { error: deliverErr } = await supabase.functions.invoke('create-notification', {
+        body: {
+          tripId,
+          type: 'broadcasts',
+          title: notifTitle,
+          message: notifMessage,
+          metadata: { source: 'ai_concierge', created_by: userId },
+          excludeUserId: userId,
+        },
+      });
+      if (!deliverErr) {
         promoted = true;
         await markPendingConfirmed(supabase, pending.id, userId);
       } else {
         console.warn(
-          '[Tool] createNotification fast-path failed, falling back:',
-          insertErr.message,
+          '[Tool] createNotification delivery failed (left pending):',
+          deliverErr.message,
         );
       }
 
@@ -2332,11 +2321,10 @@ async function _executeImpl(
         pending: !promoted,
         promoted,
         pendingActionId: pending.id,
-        recipientCount: userIds.length,
         actionType: 'create_notification',
         message: promoted
-          ? `Notification sent to ${userIds.length} member(s): "${notifTitle}"`
-          : `I'd like to notify ${userIds.length} member(s): "${notifTitle}". Please confirm in the trip chat.`,
+          ? `Notification sent to the trip: "${notifTitle}"`
+          : `I couldn't send that notification — trip-wide announcements are limited to organizers. It needs confirmation in the trip chat.`,
       };
     }
 

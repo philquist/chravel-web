@@ -87,6 +87,8 @@ export interface EventAgendaItem {
   location?: string;
   track?: string;
   speakers?: string[];
+  /** Optimistic-concurrency version; bumped by update_agenda_item_with_version. */
+  version?: number;
 }
 
 // Task for attendees

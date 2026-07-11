@@ -232,7 +232,7 @@ serve(async req => {
     // Resolves: fileId → trip_id → trip membership for the authenticated user.
     const { data: fileRow, error: fileError } = await supabase
       .from('trip_files')
-      .select('trip_id')
+      .select('trip_id, file_url')
       .eq('id', fileId)
       .maybeSingle();
 
@@ -242,6 +242,31 @@ serve(async req => {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Bind the URL we extract from to the stored file row. Previously the handler
+    // trusted the client-supplied `fileUrl` verbatim while only checking `fileId` for
+    // membership, so an authenticated member could submit a valid `fileId` from their
+    // own trip plus an arbitrary external `fileUrl` and use this endpoint as an
+    // authenticated AI-backed URL extractor (results cached under their own file).
+    // When the row has a stored `file_url`, require the submitted URL to point at the
+    // SAME storage object. Compare by pathname so a signed URL (?token=…) and the
+    // stored unsigned URL for the same object still match, while a different host/path
+    // is rejected. Rows with no stored URL keep the SSRF-validated client value.
+    if (fileRow.file_url) {
+      let sameObject = false;
+      try {
+        sameObject = new URL(fileUrl).pathname === new URL(fileRow.file_url).pathname;
+      } catch {
+        sameObject = false;
+      }
+      if (!sameObject) {
+        console.warn('[file-ai-parser] fileUrl does not match stored file for', fileId);
+        return new Response(JSON.stringify({ error: 'fileUrl does not match the stored file' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     const { data: membership } = await supabase

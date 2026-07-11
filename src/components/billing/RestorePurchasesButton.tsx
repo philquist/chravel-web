@@ -9,9 +9,10 @@ interface RestorePurchasesButtonProps {
    * Called after a successful restore so the surrounding screen can
    * re-read entitlements from the server (e.g. `checkSubscription()`).
    */
-  onRestored?: (
-    payload: { customerInfo: RevenueCatCustomerInfo; plan: DerivedPlan },
-  ) => void | Promise<void>;
+  onRestored?: (payload: {
+    customerInfo: RevenueCatCustomerInfo;
+    plan: DerivedPlan;
+  }) => void | Promise<void>;
   className?: string;
   variant?: 'inline' | 'block';
   /** Show a persistent inline status card under the button. Default true. */
@@ -68,10 +69,7 @@ export const RestorePurchasesButton: React.FC<RestorePurchasesButtonProps> = ({
 };
 
 const RestoreStatusCard: React.FC<{
-  state: Extract<
-    ReturnType<typeof useRestorePurchases>['state'],
-    { status: 'success' | 'error' }
-  >;
+  state: Extract<ReturnType<typeof useRestorePurchases>['state'], { status: 'success' | 'error' }>;
   onRetry: () => void;
 }> = ({ state, onRetry }) => {
   if (state.status === 'error') {

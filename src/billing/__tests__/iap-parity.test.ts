@@ -96,8 +96,8 @@ describe('IAP parity — billing/config.ts ↔ constants/revenuecat.ts', () => {
     const ascPath = resolve(process.cwd(), 'appstore/asc-products.json');
     const asc = new Set<string>(JSON.parse(readFileSync(ascPath, 'utf8')));
     const required = new Set<string>(REQUIRED_IOS_PRODUCT_IDS);
-    const missingInAsc = [...required].filter((x) => !asc.has(x));
-    const orphanInAsc = [...asc].filter((x) => !required.has(x));
+    const missingInAsc = [...required].filter(x => !asc.has(x));
+    const orphanInAsc = [...asc].filter(x => !required.has(x));
     expect(missingInAsc, 'required IAPs missing from ASC snapshot').toEqual([]);
     expect(orphanInAsc, 'ASC snapshot has products not required by code').toEqual([]);
   });
@@ -134,8 +134,8 @@ describe('IAP parity — billing/config.ts ↔ constants/revenuecat.ts', () => {
     const play = new Set<string>(
       JSON.parse(readFileSync(resolve(process.cwd(), 'playstore/play-products.json'), 'utf8')),
     );
-    const missingInPlay = [...asc].filter((x) => !play.has(x));
-    const orphanInPlay = [...play].filter((x) => !asc.has(x));
+    const missingInPlay = [...asc].filter(x => !play.has(x));
+    const orphanInPlay = [...play].filter(x => !asc.has(x));
     expect(missingInPlay, 'IDs in ASC but missing from Play').toEqual([]);
     expect(orphanInPlay, 'IDs in Play but missing from ASC').toEqual([]);
   });

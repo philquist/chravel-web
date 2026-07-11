@@ -113,8 +113,17 @@ serve(async req => {
       console.log(`[rc-webhook] Duplicate event skipped (idempotency): ${idempotencyKey}`);
       return new Response(JSON.stringify({ success: true, duplicate: true }), { status: 200 });
     }
-    // Any other DB error — log and continue (don't silently drop real events).
-    console.warn('[rc-webhook] Idempotency insert failed:', idempotencyError.message);
+    // Any other DB error — fail CLOSED. Processing the entitlement change without a
+    // durable idempotency marker means a concurrent redelivery could double-apply it.
+    // Return 500 so RevenueCat retries (with backoff); a retried event is safe, a
+    // double-processed billing event is not.
+    console.error(
+      '[rc-webhook] Idempotency insert failed — failing closed:',
+      idempotencyError.message,
+    );
+    return new Response(JSON.stringify({ error: 'Idempotency check unavailable, retry' }), {
+      status: 500,
+    });
   }
 
   const releaseIdempotency = async () => {

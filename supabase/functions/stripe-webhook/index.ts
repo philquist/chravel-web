@@ -212,14 +212,21 @@ serve(async req => {
         await resolveWebhookFailure(supabaseClient, event.id);
         return createSecureResponse({ received: true, duplicate: true, eventType: event.type });
       }
-      // Any other DB error — log and continue (don't silently drop real events)
-      console.warn('[STRIPE-WEBHOOK] Idempotency insert failed:', idempotencyError.message);
+      // Any other DB error — fail CLOSED. Processing without a durable idempotency
+      // marker means a concurrent redelivery could double-apply the billing change.
+      // Record the failure and return 500 so Stripe retries; a retried event is safe,
+      // a double-processed billing event is not.
+      console.error(
+        '[STRIPE-WEBHOOK] Idempotency insert failed — failing closed:',
+        idempotencyError.message,
+      );
       await upsertWebhookFailure(supabaseClient, {
         eventId: event.id,
         eventType: event.type,
         failureStage: 'idempotency_insert',
         errorMessage: idempotencyError.message,
       });
+      return createSecureResponse({ error: 'Idempotency check unavailable, retry' }, 500);
     }
 
     // Handle different event types

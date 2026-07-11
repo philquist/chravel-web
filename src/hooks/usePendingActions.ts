@@ -356,19 +356,21 @@ export function usePendingActions(tripId: string, options: UsePendingActionsOpti
         }
 
         case 'createNotification': {
-          const recipients = (payload.target_user_ids as string[]) || [];
-          if (recipients.length === 0) {
-            throw new Error('No recipients in payload');
-          }
-          const rows = recipients.map((uid: string) => ({
-            user_id: uid,
-            trip_id: action.trip_id,
-            title: payload.title as string,
-            message: payload.message as string,
-            type: (payload.type as string) || 'concierge',
-            metadata: { source: 'ai_concierge', created_by: user.id },
-          }));
-          const { error } = await (supabase as any).from('notifications').insert(rows);
+          // Deliver through the canonical create-notification edge function (service-role
+          // fan-out with organizer/admin authz + preference gating), trip-wide and excluding
+          // the requester. A direct client insert into `notifications` is intentionally
+          // blocked by RLS — those rows target OTHER users — so mirror the server executor
+          // path here. Concierge announcements map to the 'broadcasts' category.
+          const { error } = await supabase.functions.invoke('create-notification', {
+            body: {
+              tripId: action.trip_id,
+              type: 'broadcasts',
+              title: payload.title as string,
+              message: payload.message as string,
+              metadata: { source: 'ai_concierge', created_by: user.id },
+              excludeUserId: user.id,
+            },
+          });
           if (error) throw error;
           break;
         }

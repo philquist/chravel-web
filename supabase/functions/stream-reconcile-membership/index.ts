@@ -52,12 +52,12 @@ function getChannelId(channelType: ChannelType, tripId: string) {
 
 async function reconcileChannelMembership(params: {
   stream: StreamChat;
-  channelType: ChannelType;
+  channelType: string;
+  channelId: string;
   tripId: string;
   expectedUserIds: string[];
 }) {
-  const { stream, channelType, tripId, expectedUserIds } = params;
-  const channelId = getChannelId(channelType, tripId);
+  const { stream, channelType, channelId, tripId, expectedUserIds } = params;
   const channel = stream.channel(channelType, channelId, { trip_id: tripId });
   await channel.create();
 
@@ -65,7 +65,7 @@ async function reconcileChannelMembership(params: {
     {},
     { created_at: 1 },
     {
-      limit: Math.max(expectedUserIds.length + 10, 50),
+      limit: Math.max(expectedUserIds.length + 50, 100),
     },
   );
 
@@ -75,9 +75,17 @@ async function reconcileChannelMembership(params: {
       .filter((userId): userId is string => typeof userId === 'string' && userId.length > 0),
   );
 
+  const expectedSet = new Set(expectedUserIds);
   const missingMembers = expectedUserIds.filter(userId => !streamMembers.has(userId));
+  // Prune stale members: anyone on the Stream channel who is no longer an expected member
+  // (removed from the trip / role). Previously add-only, so revoked members kept access.
+  const staleMembers = Array.from(streamMembers).filter(userId => !expectedSet.has(userId));
+
   if (missingMembers.length > 0) {
     await channel.addMembers(missingMembers);
+  }
+  if (staleMembers.length > 0) {
+    await channel.removeMembers(staleMembers);
   }
 
   return {
@@ -86,6 +94,7 @@ async function reconcileChannelMembership(params: {
     expectedCount: expectedUserIds.length,
     missingBeforeRepair: missingMembers.length,
     repairedCount: missingMembers.length,
+    staleRemoved: staleMembers.length,
   };
 }
 
@@ -257,12 +266,50 @@ serve(async req => {
         .filter((userId): userId is string => typeof userId === 'string' && userId.length > 0);
 
       const tripChannelResults = [];
+      // Trip + broadcast channels: expected members = all trip_members.
       for (const channelType of CHANNEL_TYPES) {
         const channelResult = await reconcileChannelMembership({
           stream,
           channelType,
+          channelId: getChannelId(channelType, tripId),
           tripId,
           expectedUserIds,
+        });
+        repairedTotal += channelResult.repairedCount;
+        tripChannelResults.push(channelResult);
+      }
+
+      // Pro role channels (chravel-channel): expected members come from channel_members
+      // (the backfilled source of truth), NOT the whole trip. Previously these were never
+      // reconciled at all, so role-channel members were never added to Stream.
+      const { data: proChannels, error: proChannelsError } = await adminClient
+        .from('trip_channels')
+        .select('id')
+        .eq('trip_id', tripId)
+        .eq('is_archived', false);
+      if (proChannelsError) {
+        throw new Error(`Failed to load pro channels for ${tripId}`);
+      }
+
+      for (const proChannel of proChannels || []) {
+        if (typeof proChannel.id !== 'string' || proChannel.id.length === 0) continue;
+        const { data: channelMemberRows, error: channelMembersError } = await adminClient
+          .from('channel_members')
+          .select('user_id')
+          .eq('channel_id', proChannel.id);
+        if (channelMembersError) {
+          throw new Error(`Failed to load channel_members for ${proChannel.id}`);
+        }
+        const channelExpected = (channelMemberRows || [])
+          .map(row => row.user_id)
+          .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+        const channelResult = await reconcileChannelMembership({
+          stream,
+          channelType: 'chravel-channel',
+          channelId: `channel-${proChannel.id}`,
+          tripId,
+          expectedUserIds: channelExpected,
         });
         repairedTotal += channelResult.repairedCount;
         tripChannelResults.push(channelResult);

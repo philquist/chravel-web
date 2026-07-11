@@ -32,7 +32,6 @@ const HUB_FAQ = [
     q: 'Does it work on iPhone, Android, and web?',
     a: 'Yes — ChravelApp runs on the web and as an installable app on iOS and Android.',
   },
-
 ];
 
 const HUB_TITLE = 'ChravelApp Use Cases | One App for Every Group Trip and Travel Team';
@@ -230,7 +229,9 @@ export default function UseCasesHub() {
             {HUB_FAQ.map(item => (
               <div key={item.q} className="py-5">
                 <h3 className="font-semibold text-white/90">{item.q}</h3>
-                <p className="mt-1.5 leading-relaxed text-white/60">{renderInlineMarkdown(item.a)}</p>
+                <p className="mt-1.5 leading-relaxed text-white/60">
+                  {renderInlineMarkdown(item.a)}
+                </p>
               </div>
             ))}
           </div>

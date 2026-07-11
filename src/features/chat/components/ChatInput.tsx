@@ -66,6 +66,12 @@ interface ChatInputProps {
   safeAreaBottom?: boolean;
   /** When true, hides file/media upload buttons (media_upload_mode enforcement) */
   disableFileUpload?: boolean;
+  /**
+   * Whether this user may compose broadcasts. Consumer trips are open to all
+   * members; pro/event trips gate broadcasts to admins/organizers/owners.
+   * Defaults to true for backwards compatibility.
+   */
+  canSendBroadcast?: boolean;
 }
 
 export const ChatInput = ({
@@ -83,6 +89,7 @@ export const ChatInput = ({
   onTypingChange,
   safeAreaBottom = true,
   disableFileUpload = false,
+  canSendBroadcast = true,
 }: ChatInputProps) => {
   const [isBroadcastMode, setIsBroadcastMode] = useState(false);
   const [isPaymentMode, setIsPaymentMode] = useState(false);
@@ -162,6 +169,15 @@ export const ChatInput = ({
       onTypingChange(hasText);
     }
   }, [inputMessage, onTypingChange]);
+
+  // The user's role resolves asynchronously; if broadcast permission is revoked
+  // (or resolves to false) while broadcast mode is armed, disarm it so the next
+  // send can't go out flagged as a broadcast.
+  useEffect(() => {
+    if (!canSendBroadcast && isBroadcastMode) {
+      setIsBroadcastMode(false);
+    }
+  }, [canSendBroadcast, isBroadcastMode]);
 
   // Handle @ mention detection
   const handleInputChange = useCallback(
@@ -273,7 +289,13 @@ export const ChatInput = ({
         // Extract mentioned user IDs
         const mentionedUserIds = mentionedUsers.map(u => u.id);
 
-        await onSendMessage(isBroadcastMode, false, undefined, undefined, mentionedUserIds);
+        await onSendMessage(
+          isBroadcastMode && canSendBroadcast,
+          false,
+          undefined,
+          undefined,
+          mentionedUserIds,
+        );
 
         // Clear mentioned users after send
         setMentionedUsers([]);
@@ -505,14 +527,17 @@ export const ChatInput = ({
               sideOffset={8}
               className="w-52 p-1 bg-neutral-900/95 backdrop-blur-lg border border-neutral-800 rounded-xl shadow-lg animate-slide-in-right z-50"
             >
-              {/* Broadcast - Deep Crimson Styling */}
-              <DropdownMenuItem
-                onClick={() => setIsBroadcastMode(!isBroadcastMode)}
-                className="flex items-center gap-2 px-3 py-2 border border-[#B91C1C]/60 text-[#B91C1C] font-medium hover:bg-[#B91C1C] hover:text-white rounded-lg mb-1 cursor-pointer"
-              >
-                <Megaphone className="w-4 h-4" />
-                Broadcast
-              </DropdownMenuItem>
+              {/* Broadcast - Deep Crimson Styling. Hidden when the user may not
+                  compose broadcasts (pro/event trips gate to admins/organizers). */}
+              {canSendBroadcast && (
+                <DropdownMenuItem
+                  onClick={() => setIsBroadcastMode(!isBroadcastMode)}
+                  className="flex items-center gap-2 px-3 py-2 border border-[#B91C1C]/60 text-[#B91C1C] font-medium hover:bg-[#B91C1C] hover:text-white rounded-lg mb-1 cursor-pointer"
+                >
+                  <Megaphone className="w-4 h-4" />
+                  Broadcast
+                </DropdownMenuItem>
+              )}
 
               {/* File — hidden when media uploads are restricted */}
               {!disableFileUpload && (

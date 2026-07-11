@@ -53,6 +53,29 @@ export const DESTRUCTIVE_MUTATION_ALLOWLIST = new Set([
   'deleteTask',
 ]);
 
+// Non-destructive but high-blast-radius mutations whose tool descriptions in the
+// registry explicitly promise "Requires user confirmation before …". They previously
+// auto-executed (the pending-actions buffer fast-paths the real write), contradicting
+// their own contract and allowing a single message — or model misbehavior under prompt
+// injection — to change trip name/dates, log an expense, or bulk-clone/complete records
+// with no checkpoint. Gate them through the same confirmation_gate flow as destructive
+// tools so behavior matches the advertised contract.
+export const CONFIRMATION_REQUIRED_MUTATION_ALLOWLIST = new Set([
+  'updateTripDetails',
+  'addExpense',
+  'duplicateCalendarEvent',
+  'cloneActivity',
+  'bulkMarkTasksDone',
+]);
+
+/** Tools that must not mutate without an explicit confirmation_gate=true. */
+export function requiresConfirmationGate(toolName: string): boolean {
+  return (
+    DESTRUCTIVE_MUTATION_ALLOWLIST.has(toolName) ||
+    CONFIRMATION_REQUIRED_MUTATION_ALLOWLIST.has(toolName)
+  );
+}
+
 export type PromptRiskLevel = 'low' | 'medium' | 'high';
 
 export function detectPromptInjectionRisk(input: string): {

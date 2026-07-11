@@ -51,6 +51,22 @@ describe('buildTripStreamMessagePayload', () => {
     expect(result).toEqual({ ok: false, error: 'empty_content' });
   });
 
+  it('allows a caption-less media message (attachment with empty content)', () => {
+    // Regression: photo/video sent without a caption used to be rejected as empty_content
+    // before attachments were considered, so the media uploaded but never posted to chat.
+    const result = buildTripStreamMessagePayload({
+      content: '',
+      mediaType: 'image',
+      mediaUrl: 'https://cdn.example/photo.png',
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.payload.text).toBe('');
+    expect(result.payload.attachments).toEqual([
+      { type: 'image', asset_url: 'https://cdn.example/photo.png' },
+    ]);
+  });
+
   it('rejects content over 4000 chars', () => {
     const result = buildTripStreamMessagePayload({ content: 'x'.repeat(4001) });
     expect(result).toEqual({ ok: false, error: 'content_too_long' });

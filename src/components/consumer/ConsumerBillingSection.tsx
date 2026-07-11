@@ -491,7 +491,6 @@ export const ConsumerBillingSection = () => {
         </div>
       </div>
 
-
       {/* Available Plans */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
         <h4 className="text-base font-semibold text-white mb-3">Available Plans</h4>
@@ -591,79 +590,81 @@ export const ConsumerBillingSection = () => {
           {Object.entries(proPlans)
             .filter(([key]) => !(isNativeIOS && key === 'pro-enterprise'))
             .map(([key, plan]) => {
-            const PlanIcon = plan.icon;
-            const isCurrentProPlan = isSuperAdmin && key === proTier;
-            return (
-              <Collapsible
-                key={key}
-                open={expandedProPlan === key}
-                onOpenChange={() => setExpandedProPlan(expandedProPlan === key ? null : key)}
-              >
-                <CollapsibleTrigger className="w-full">
-                  <div
-                    className={`border rounded-lg p-3 transition-colors hover:bg-white/10 ${
-                      isCurrentProPlan
-                        ? 'border-gold-primary/50 bg-gold-primary/10'
-                        : 'border-white/10 bg-white/5'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="text-left flex items-center gap-3">
-                        <PlanIcon
-                          size={20}
-                          className={isCurrentProPlan ? 'text-gold-primary' : 'text-primary'}
-                        />
-                        <div>
-                          <h5 className="font-semibold text-foreground flex items-center gap-2">
-                            {plan.name}
-                          </h5>
-                          <div className="text-xl font-bold text-foreground">
-                            {typeof plan.price === 'number' ? `$${plan.price}/month` : plan.price}
+              const PlanIcon = plan.icon;
+              const isCurrentProPlan = isSuperAdmin && key === proTier;
+              return (
+                <Collapsible
+                  key={key}
+                  open={expandedProPlan === key}
+                  onOpenChange={() => setExpandedProPlan(expandedProPlan === key ? null : key)}
+                >
+                  <CollapsibleTrigger className="w-full">
+                    <div
+                      className={`border rounded-lg p-3 transition-colors hover:bg-white/10 ${
+                        isCurrentProPlan
+                          ? 'border-gold-primary/50 bg-gold-primary/10'
+                          : 'border-white/10 bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="text-left flex items-center gap-3">
+                          <PlanIcon
+                            size={20}
+                            className={isCurrentProPlan ? 'text-gold-primary' : 'text-primary'}
+                          />
+                          <div>
+                            <h5 className="font-semibold text-foreground flex items-center gap-2">
+                              {plan.name}
+                            </h5>
+                            <div className="text-xl font-bold text-foreground">
+                              {typeof plan.price === 'number' ? `$${plan.price}/month` : plan.price}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isCurrentProPlan && (
+                            <div className="text-sm text-gold-primary font-medium">
+                              Current Plan
+                            </div>
+                          )}
+                          <div className="text-muted-foreground">
+                            {expandedProPlan === key ? '−' : '+'}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {isCurrentProPlan && (
-                          <div className="text-sm text-gold-primary font-medium">Current Plan</div>
-                        )}
-                        <div className="text-muted-foreground">
-                          {expandedProPlan === key ? '−' : '+'}
-                        </div>
-                      </div>
                     </div>
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
-                  <div className="bg-white/5 rounded-lg p-3 ml-4">
-                    <h6 className="font-medium text-foreground mb-2">Features Included:</h6>
-                    <ul className="space-y-1.5 text-sm text-muted-foreground">
-                      {plan.features.map((feature, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    {!isCurrentProPlan && (
-                      <button
-                        onClick={() => handleUpgradeToProPlan(key)}
-                        disabled={isLoading}
-                        className="mt-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-                      >
-                        {isLoading
-                          ? 'Processing...'
-                          : key === 'pro-enterprise'
-                            ? 'Contact Sales'
-                            : isNativeIOS
-                            ? `Subscribe with Apple — ${plan.name}`
-                            : `Upgrade to ${plan.name}`}
-                      </button>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            );
-          })}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    <div className="bg-white/5 rounded-lg p-3 ml-4">
+                      <h6 className="font-medium text-foreground mb-2">Features Included:</h6>
+                      <ul className="space-y-1.5 text-sm text-muted-foreground">
+                        {plan.features.map((feature, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                      {!isCurrentProPlan && (
+                        <button
+                          onClick={() => handleUpgradeToProPlan(key)}
+                          disabled={isLoading}
+                          className="mt-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                        >
+                          {isLoading
+                            ? 'Processing...'
+                            : key === 'pro-enterprise'
+                              ? 'Contact Sales'
+                              : isNativeIOS
+                                ? `Subscribe with Apple — ${plan.name}`
+                                : `Upgrade to ${plan.name}`}
+                        </button>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
         </div>
       </div>
     </div>

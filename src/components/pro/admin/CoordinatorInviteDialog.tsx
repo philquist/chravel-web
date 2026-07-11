@@ -57,10 +57,7 @@ export const CoordinatorInviteDialog: React.FC<CoordinatorInviteDialogProps> = (
     return m;
   }, [roster]);
 
-  const coordinators = useMemo(
-    () => admins.filter(a => a.admin_scope === 'coordinator'),
-    [admins],
-  );
+  const coordinators = useMemo(() => admins.filter(a => a.admin_scope === 'coordinator'), [admins]);
 
   const candidates = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -114,8 +111,9 @@ export const CoordinatorInviteDialog: React.FC<CoordinatorInviteDialogProps> = (
           <DialogDescription className="text-gray-400">
             Give an outside organizer logistics-only access. Coordinators can manage the calendar,
             tasks, places, and links — they{' '}
-            <span className="text-amber-300">cannot see private chat, AI Concierge, or private
-              media.</span>
+            <span className="text-amber-300">
+              cannot see private chat, AI Concierge, or private media.
+            </span>
           </DialogDescription>
         </DialogHeader>
 
@@ -204,7 +202,6 @@ export const CoordinatorInviteDialog: React.FC<CoordinatorInviteDialogProps> = (
             </div>
           </div>
         )}
-
 
         <div className="space-y-2">
           <div className="text-xs uppercase tracking-wide text-gray-400">Add from roster</div>

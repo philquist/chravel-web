@@ -801,6 +801,10 @@ serve(async req => {
               .select('user_id')
               .eq('trip_id', tripId)
               .eq('user_id', user.id)
+              // Active membership only — a removed/left member (status = 'left') must not
+              // retain a Concierge session on the trip. Mirrors is_active_trip_member
+              // (status IS NULL OR status = 'active').
+              .or('status.is.null,status.eq.active')
               .maybeSingle()
           : Promise.resolve({ data: { user_id: 'skip' }, error: null }),
 

@@ -32,7 +32,6 @@ export interface TripAdmin {
   };
 }
 
-
 interface UseTripAdminsProps {
   tripId: string;
   enabled?: boolean;
@@ -116,7 +115,9 @@ async function fetchTripAdmins(
           can_manage_shared_files: boolCap('can_manage_shared_files', true),
           can_manage_shared_links: boolCap('can_manage_shared_links', true),
           can_invite_members:
-            scope === 'full' ? boolCap('can_invite_members', true) : boolCap('can_invite_members', false),
+            scope === 'full'
+              ? boolCap('can_invite_members', true)
+              : boolCap('can_invite_members', false),
         },
         profile: profile
           ? {
@@ -127,7 +128,6 @@ async function fetchTripAdmins(
       };
     }),
   );
-
 
   return adminsWithProfiles;
 }
@@ -186,10 +186,7 @@ export const useTripAdmins = ({ tripId, enabled = true }: UseTripAdminsProps) =>
   const [isProcessing, setIsProcessing] = useState(false);
 
   const promoteToAdmin = useCallback(
-    async (
-      targetUserId: string,
-      options: { scope?: 'full' | 'coordinator' } = {},
-    ) => {
+    async (targetUserId: string, options: { scope?: 'full' | 'coordinator' } = {}) => {
       const scope = options.scope ?? 'full';
       const successLabel =
         scope === 'coordinator' ? '✅ User added as coordinator' : '✅ User promoted to admin';
@@ -201,12 +198,15 @@ export const useTripAdmins = ({ tripId, enabled = true }: UseTripAdminsProps) =>
 
       setIsProcessing(true);
       try {
-        const { data, error } = await supabase.rpc('promote_to_admin' as const, {
-          _trip_id: tripId,
-          _target_user_id: targetUserId,
-          // intentional: extended 3rd arg not yet in generated Supabase types
-          _scope: scope,
-        } as unknown as { _trip_id: string; _target_user_id: string });
+        const { data, error } = await supabase.rpc(
+          'promote_to_admin' as const,
+          {
+            _trip_id: tripId,
+            _target_user_id: targetUserId,
+            // intentional: extended 3rd arg not yet in generated Supabase types
+            _scope: scope,
+          } as unknown as { _trip_id: string; _target_user_id: string },
+        );
 
         if (error) throw error;
 
@@ -254,7 +254,6 @@ export const useTripAdmins = ({ tripId, enabled = true }: UseTripAdminsProps) =>
     [tripId, isDemoMode, queryClient],
   );
 
-
   const demoteFromAdmin = useCallback(
     async (targetUserId: string) => {
       if (isDemoMode) {
@@ -294,4 +293,3 @@ export const useTripAdmins = ({ tripId, enabled = true }: UseTripAdminsProps) =>
     refetch,
   };
 };
-

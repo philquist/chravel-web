@@ -90,7 +90,13 @@ function json(body: unknown, status: number, corsHeaders: Record<string, string>
 }
 
 async function isMintRateLimited(jwt: string, userId: string): Promise<boolean> {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return false;
+  // Fail CLOSED: this limiter guards minting of paid AI-gateway client secrets. If the
+  // limiter cannot be evaluated (missing config, RPC error, exception), treat the request
+  // as rate-limited so a broken limiter cannot become an unbounded cost/abuse vector.
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.warn('[mint-realtime-token] rate-limit config missing — failing closed');
+    return true;
+  }
   try {
     const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_rate_limit`, {
       method: 'POST',
@@ -105,12 +111,18 @@ async function isMintRateLimited(jwt: string, userId: string): Promise<boolean> 
         window_seconds: MINT_RATE_LIMIT_WINDOW_SECONDS,
       }),
     });
-    if (!resp.ok) return false; // fail open
+    if (!resp.ok) {
+      console.warn(`[mint-realtime-token] rate-limit RPC ${resp.status} — failing closed`);
+      return true;
+    }
     const rows = (await resp.json()) as Array<{ allowed?: boolean }> | { allowed?: boolean };
     const row = Array.isArray(rows) ? rows[0] : rows;
     return row?.allowed === false;
-  } catch {
-    return false; // fail open
+  } catch (err) {
+    console.warn(
+      `[mint-realtime-token] rate-limit exception — failing closed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    return true;
   }
 }
 

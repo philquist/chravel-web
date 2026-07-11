@@ -3,6 +3,7 @@ import { executeFunctionCall } from '../functionExecutor.ts';
 import { normalizeToolResult } from '../concierge/toolResultContracts.ts';
 import {
   DESTRUCTIVE_MUTATION_ALLOWLIST,
+  requiresConfirmationGate,
   enforceToolSchema,
   redactSensitiveFields,
   toolMutationMode,
@@ -53,11 +54,15 @@ export async function executeToolSecurely(
   }
   enforcedArgs.trip_id = cap.trip_id; // Explicitly override
 
-  // Destructive writes require explicit human confirmation gate.
-  if (DESTRUCTIVE_MUTATION_ALLOWLIST.has(toolName) && enforcedArgs.confirmation_gate !== true) {
+  // Destructive writes AND non-destructive mutations whose contract promises confirmation
+  // require an explicit human confirmation gate before any write.
+  if (requiresConfirmationGate(toolName) && enforcedArgs.confirmation_gate !== true) {
+    const destructive = DESTRUCTIVE_MUTATION_ALLOWLIST.has(toolName);
     return {
       success: false,
-      error: `Tool "${toolName}" requires explicit confirmation before destructive mutation`,
+      error: destructive
+        ? `Tool "${toolName}" requires explicit confirmation before destructive mutation`
+        : `Tool "${toolName}" requires explicit user confirmation before applying changes`,
       pending_confirmation: true,
       confidence: 'low',
       fail_closed: true,

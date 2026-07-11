@@ -106,7 +106,7 @@ export const SectionHeading: React.FC<{ index?: number; children: React.ReactNod
         className="font-display text-base md:text-lg italic text-gold-primary/80 tabular-nums whitespace-pre"
         aria-hidden="true"
       >
-        {"\n"}
+        {'\n'}
       </span>
     )}
     <span>{children}</span>

@@ -142,4 +142,3 @@ export const useProTripAdmin = (tripId: string) => {
     refreshAdminStatus: checkAdminStatus,
   };
 };
-

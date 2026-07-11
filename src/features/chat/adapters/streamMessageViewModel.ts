@@ -232,6 +232,7 @@ export function mapStreamMessageToViewModel(params: {
   const createdAt = message.created_at || new Date().toISOString();
   const updatedAt = message.updated_at || createdAt;
   const messageType = (message as MessageResponse & { message_type?: string }).message_type;
+  const privacyMode = (message as MessageResponse & { privacy_mode?: string }).privacy_mode;
   const pinnedAt = (message as MessageResponse & { pinned_at?: string }).pinned_at;
   const pinnedFlag = (message as MessageResponse & { pinned?: boolean }).pinned;
   const isPinned = typeof pinnedFlag === 'boolean' ? pinnedFlag : Boolean(pinnedAt);
@@ -273,7 +274,11 @@ export function mapStreamMessageToViewModel(params: {
       userId: messageUserId,
     },
     createdAt,
-    isBroadcast: messageType === 'broadcast',
+    // Match the broadcast predicate used by the unread badge (useUnreadCounts)
+    // and readStateSelectors: a message is a broadcast if EITHER marker is set.
+    // Using message_type alone here made the Broadcasts tab render empty while
+    // the badge still counted privacy_mode-tagged broadcasts.
+    isBroadcast: messageType === 'broadcast' || privacyMode === 'broadcast',
     isPayment: messageType === 'payment',
     isPinned,
     pinnedAt: isPinned ? pinnedAt : undefined,

@@ -11,6 +11,73 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const tripChannelId = (tripId: string) => `trip-${tripId}`;
 const broadcastChannelId = (tripId: string) => `broadcast-${tripId}`;
+const proChannelId = (channelId: string) => `channel-${channelId}`;
+
+/**
+ * Verify a user may access a pro role channel before we project them into the
+ * matching Stream channel. Access resolves from three sources, in order:
+ *   1. channel_members — the backfilled source of truth (see 20260710170000).
+ *   2. channel_role_access → user_trip_roles — role-based grants.
+ *   3. trip_channels.required_role_id → user_trip_roles — legacy single-role gate.
+ * The channel must belong to the given trip. Never trust a client-supplied role.
+ */
+async function canAccessProChannel(
+  adminClient: ReturnType<typeof createClient>,
+  userId: string,
+  tripId: string,
+  channelId: string,
+): Promise<{ allowed: boolean; error: boolean }> {
+  // The channel must exist and belong to this trip.
+  const { data: channel, error: channelError } = await adminClient
+    .from('trip_channels')
+    .select('id, trip_id, required_role_id')
+    .eq('id', channelId)
+    .maybeSingle();
+
+  if (channelError) return { allowed: false, error: true };
+  if (!channel || channel.trip_id !== tripId) return { allowed: false, error: false };
+
+  // 1. Direct channel_members grant.
+  const { data: memberRow, error: memberError } = await adminClient
+    .from('channel_members')
+    .select('user_id')
+    .eq('channel_id', channelId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (memberError) return { allowed: false, error: true };
+  if (memberRow) return { allowed: true, error: false };
+
+  // Collect role ids that grant access: channel_role_access + legacy required_role_id.
+  const { data: roleAccessRows, error: roleAccessError } = await adminClient
+    .from('channel_role_access')
+    .select('role_id')
+    .eq('channel_id', channelId);
+  if (roleAccessError) return { allowed: false, error: true };
+
+  const grantingRoleIds = new Set<string>(
+    (roleAccessRows || [])
+      .map(row => row.role_id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0),
+  );
+  if (typeof channel.required_role_id === 'string' && channel.required_role_id.length > 0) {
+    grantingRoleIds.add(channel.required_role_id);
+  }
+
+  if (grantingRoleIds.size === 0) return { allowed: false, error: false };
+
+  // 2 & 3. Does the user hold any granting role on this trip?
+  const { data: userRoleRows, error: userRoleError } = await adminClient
+    .from('user_trip_roles')
+    .select('role_id')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId);
+  if (userRoleError) return { allowed: false, error: true };
+
+  const allowed = (userRoleRows || []).some(
+    row => typeof row.role_id === 'string' && grantingRoleIds.has(row.role_id),
+  );
+  return { allowed, error: false };
+}
 
 type ErrorCode =
   | 'invalid_method'
@@ -20,7 +87,9 @@ type ErrorCode =
   | 'membership_verification_failed'
   | 'membership_required'
   | 'stream_api_failure'
-  | 'broadcast_membership_projection_failed';
+  | 'broadcast_membership_projection_failed'
+  | 'pro_channel_access_check_failed'
+  | 'pro_channel_access_denied';
 
 type ReasonCode =
   | 'invalid_http_method'
@@ -31,7 +100,9 @@ type ReasonCode =
   | 'trip_membership_required'
   | 'stream_membership_sync_failed'
   | 'stream_membership_synced'
-  | 'broadcast_membership_sync_failed';
+  | 'broadcast_membership_sync_failed'
+  | 'pro_channel_access_check_failed'
+  | 'pro_channel_access_denied';
 
 function jsonResponse(
   payload: Record<string, unknown>,
@@ -109,6 +180,8 @@ serve(async req => {
 
     const body = await req.json().catch(() => ({}));
     const tripId = typeof body?.tripId === 'string' ? body.tripId.trim() : '';
+    // Optional: when present, also project the caller into this pro role channel.
+    const channelId = typeof body?.channelId === 'string' ? body.channelId.trim() : '';
 
     if (!tripId) {
       return errorResponse(
@@ -168,6 +241,35 @@ serve(async req => {
     });
 
     await stream.channel('chravel-trip', tripChannelId(tripId)).addMembers([user.id]);
+
+    // Optional pro role channel projection. Only runs when the caller passed a
+    // channelId, and only after verifying they may access it — a trip member is
+    // NOT automatically a member of every role channel in the trip. Runs before
+    // the best-effort broadcast block so the caller's explicit request is honored
+    // even if broadcast projection is skipped.
+    if (channelId) {
+      const access = await canAccessProChannel(adminClient, user.id, tripId, channelId);
+      if (access.error) {
+        return errorResponse(
+          corsHeaders,
+          500,
+          'pro_channel_access_check_failed',
+          'pro_channel_access_check_failed',
+          'Failed to verify pro channel access',
+        );
+      }
+      if (!access.allowed) {
+        return errorResponse(
+          corsHeaders,
+          403,
+          'pro_channel_access_denied',
+          'pro_channel_access_denied',
+          'User cannot access this channel',
+        );
+      }
+
+      await stream.channel('chravel-channel', proChannelId(channelId)).addMembers([user.id]);
+    }
 
     try {
       await stream.channel('chravel-broadcast', broadcastChannelId(tripId)).addMembers([user.id]);

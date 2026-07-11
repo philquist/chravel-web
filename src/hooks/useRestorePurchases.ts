@@ -25,9 +25,10 @@ interface UseRestorePurchasesOptions {
   userId: string | null | undefined;
   isDemoMode?: boolean;
   /** Called after each successful restore so callers can re-read server state. */
-  onRestored?: (
-    payload: { customerInfo: RevenueCatCustomerInfo; plan: DerivedPlan },
-  ) => void | Promise<void>;
+  onRestored?: (payload: {
+    customerInfo: RevenueCatCustomerInfo;
+    plan: DerivedPlan;
+  }) => void | Promise<void>;
   /** Max automatic retries for transient failures (NETWORK_ERROR / UNKNOWN). Default 2. */
   maxRetries?: number;
 }
@@ -84,9 +85,10 @@ export function useRestorePurchases(options: UseRestorePurchasesOptions) {
     }
 
     inFlight.current = true;
-    let lastResult:
-      | RevenueCatResult<{ customerInfo: RevenueCatCustomerInfo; plan: DerivedPlan }>
-      | null = null;
+    let lastResult: RevenueCatResult<{
+      customerInfo: RevenueCatCustomerInfo;
+      plan: DerivedPlan;
+    }> | null = null;
 
     try {
       for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
@@ -112,7 +114,9 @@ export function useRestorePurchases(options: UseRestorePurchasesOptions) {
                 subs.length + passes.length === 0
                   ? 'No active purchases were found on this Apple ID.'
                   : `Restored ${subs.length} subscription${subs.length === 1 ? '' : 's'}${
-                      passes.length ? ` and ${passes.length} trip pass${passes.length === 1 ? '' : 'es'}` : ''
+                      passes.length
+                        ? ` and ${passes.length} trip pass${passes.length === 1 ? '' : 'es'}`
+                        : ''
                     }.`,
             },
           );

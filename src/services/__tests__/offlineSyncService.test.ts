@@ -96,6 +96,42 @@ describe('offlineSyncService - Data Loss Prevention', () => {
     expect(remainingIds).not.toContain(chatQueueId);
   });
 
+  it('claims each create op exactly once across overlapping sync passes (no duplicate replay)', async () => {
+    // Regression: two overlapping processSyncQueue() passes (e.g. a flaky mobile network
+    // re-firing the `online` event mid-replay) must not both run a create handler for the
+    // same queued op — that produced duplicate tasks/calendar events. claimOperation's
+    // compare-and-swap (pending -> syncing in one IndexedDB transaction) guarantees a
+    // single winner.
+    await offlineSyncService.queueOperation('task', 'create', 'trip-123', {
+      title: 'Offline Task',
+      description: 'created while offline',
+    });
+
+    let running = 0;
+    let maxConcurrent = 0;
+    const onTaskCreate = vi.fn().mockImplementation(async () => {
+      running += 1;
+      maxConcurrent = Math.max(maxConcurrent, running);
+      await Promise.resolve();
+      running -= 1;
+      return { id: 'task-1' };
+    });
+
+    const [a, b] = await Promise.all([
+      offlineSyncService.processSyncQueue({ onTaskCreate }),
+      offlineSyncService.processSyncQueue({ onTaskCreate }),
+    ]);
+
+    // Handler ran exactly once total; the losing pass saw the op already claimed.
+    expect(onTaskCreate).toHaveBeenCalledTimes(1);
+    expect(maxConcurrent).toBe(1);
+    expect(a.processed + b.processed).toBe(1);
+
+    // The processed op is gone; nothing left duplicated in the queue.
+    const remaining = await offlineSyncService.getQueuedOperations();
+    expect(remaining.length).toBe(0);
+  });
+
   it('should process operations with matching handlers and preserve others', async () => {
     // Queue multiple operations
     const chatQueueId = await offlineSyncService.queueOperation(

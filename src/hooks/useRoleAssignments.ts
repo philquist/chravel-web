@@ -64,6 +64,32 @@ export const useRoleAssignments = ({ tripId, enabled = true }: UseRoleAssignment
     [isDemoMode, tripId],
   );
 
+  // Best-effort Stream remediation after a role change. The role RPCs update
+  // user_trip_roles + channel_members (via trigger), but nothing projects that
+  // into Stream immediately — the contract validator only *detects* drift. Ask
+  // the trip-scoped reconciler to add newly-eligible members and prune revoked
+  // ones now, instead of waiting up to 15 min for the cron or the next channel
+  // open. Fire-and-forget: this reconciles every channel in the trip (several
+  // Stream round-trips), so callers must NOT await it in the mutation's critical
+  // path — the success toast and list refresh should not wait on it. Failure is
+  // non-fatal: the cron / open-time self-heal still converge. Errors are
+  // swallowed internally so the detached promise never rejects unhandled.
+  const syncStreamMembership = useCallback(async () => {
+    if (isDemoMode || !tripId) return;
+    try {
+      const response = await supabase.functions.invoke('stream-reconcile-membership', {
+        body: { tripId },
+      });
+      if (response.error && import.meta.env.DEV) {
+        console.error('[useRoleAssignments] Stream membership sync failed', response.error);
+      }
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error('[useRoleAssignments] Stream membership sync threw', error);
+      }
+    }
+  }, [isDemoMode, tripId]);
+
   const fetchAssignments = useCallback(async () => {
     if (!enabled || !tripId) {
       setIsLoading(false);
@@ -226,6 +252,7 @@ export const useRoleAssignments = ({ tripId, enabled = true }: UseRoleAssignment
         }
 
         await validateContract('assign', userId, roleId);
+        void syncStreamMembership();
         toast.success('✅ Role assigned successfully');
         await fetchAssignments();
 
@@ -238,7 +265,7 @@ export const useRoleAssignments = ({ tripId, enabled = true }: UseRoleAssignment
         setIsProcessing(false);
       }
     },
-    [tripId, fetchAssignments, isDemoMode, user?.id, validateContract],
+    [tripId, fetchAssignments, isDemoMode, user?.id, validateContract, syncStreamMembership],
   );
 
   const removeRole = useCallback(
@@ -277,6 +304,7 @@ export const useRoleAssignments = ({ tripId, enabled = true }: UseRoleAssignment
         }
 
         await validateContract('revoke', userId, roleId);
+        void syncStreamMembership();
         toast.success('Role removed successfully');
         await fetchAssignments();
 
@@ -289,7 +317,7 @@ export const useRoleAssignments = ({ tripId, enabled = true }: UseRoleAssignment
         setIsProcessing(false);
       }
     },
-    [tripId, fetchAssignments, isDemoMode, validateContract],
+    [tripId, fetchAssignments, isDemoMode, validateContract, syncStreamMembership],
   );
 
   /**
@@ -332,6 +360,7 @@ export const useRoleAssignments = ({ tripId, enabled = true }: UseRoleAssignment
           throw new Error(result.message);
         }
 
+        void syncStreamMembership();
         toast.success('Left the channel successfully');
         await fetchAssignments();
 
@@ -344,7 +373,7 @@ export const useRoleAssignments = ({ tripId, enabled = true }: UseRoleAssignment
         setIsProcessing(false);
       }
     },
-    [tripId, fetchAssignments, isDemoMode, user?.id],
+    [tripId, fetchAssignments, isDemoMode, user?.id, syncStreamMembership],
   );
 
   return {

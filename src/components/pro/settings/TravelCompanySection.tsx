@@ -46,7 +46,6 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
   const [showCreateOrg, setShowCreateOrg] = useState(false);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
 
-
   // Load current trip↔org link
   useEffect(() => {
     let cancelled = false;
@@ -113,7 +112,6 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
     };
   }, [linkedOrgId]);
 
-
   const adminByUserId = useMemo(() => {
     const m = new Map<string, (typeof admins)[number]>();
     admins.forEach(a => m.set(a.user_id, a));
@@ -130,7 +128,6 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
     [orgMembers, user],
   );
   const currentUserAdmin = user ? adminByUserId.get(user.id) : undefined;
-
 
   const handleLinkOrg = async () => {
     if (!selectValue || selectValue === linkedOrgId) return;
@@ -285,7 +282,8 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
         {linkedOrgId && (
           <div className="flex items-center gap-2 text-xs text-emerald-300">
             <Check className="w-3.5 h-3.5" />
-            Attached to {organizations.find(o => o.id === linkedOrgId)?.display_name || 'organization'}
+            Attached to{' '}
+            {organizations.find(o => o.id === linkedOrgId)?.display_name || 'organization'}
           </div>
         )}
       </div>
@@ -320,8 +318,8 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
             <div className="min-w-0">
               <div className="text-sm text-white font-medium">Assign yourself as Coordinator</div>
               <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                Downgrade your own access on this trip so you can help with logistics without
-                seeing private family conversations.
+                Downgrade your own access on this trip so you can help with logistics without seeing
+                private family conversations.
               </p>
             </div>
             <Button
@@ -387,7 +385,6 @@ export const TravelCompanySection: React.FC<TravelCompanySectionProps> = ({ trip
             </p>
           </div>
         ) : (
-
           <div className="space-y-1.5">
             {orgMembers.map(m => {
               const existing = adminByUserId.get(m.user_id);

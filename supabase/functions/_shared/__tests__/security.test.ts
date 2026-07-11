@@ -144,6 +144,21 @@ describe('Tool Router Security Air-Lock', () => {
     expect(functionExecutor.executeFunctionCall).not.toHaveBeenCalled();
   });
 
+  it('fails closed on a confirmation-required mutation (updateTripDetails) without the gate', async () => {
+    const token = await generateCapabilityToken({
+      user_id: 'user_1',
+      trip_id: 'trip_1',
+      allowed_tools: ['updateTripDetails'],
+    });
+
+    const result = await executeToolSecurely(mockSupabase, token, 'updateTripDetails', {
+      name: 'Renamed Trip',
+    });
+    expect(result.success).toBe(false);
+    expect(result.pending_confirmation).toBe(true);
+    expect(functionExecutor.executeFunctionCall).not.toHaveBeenCalled();
+  });
+
   it('rejects malformed args before execution', async () => {
     const token = await generateCapabilityToken({
       user_id: 'user_1',

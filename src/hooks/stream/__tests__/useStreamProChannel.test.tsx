@@ -20,8 +20,17 @@ const mockChannel = {
 
 const channelFactoryMock = vi.fn(() => mockChannel);
 const getStreamClientMock = vi.fn();
+const invokeMock = vi.fn();
 let onConnectedCallback: (() => void) | null = null;
 let onConnectionStatusCallback: ((isConnected: boolean) => void) | null = null;
+
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    functions: {
+      invoke: (...args: unknown[]) => invokeMock(...args),
+    },
+  },
+}));
 
 vi.mock('@/services/stream/streamClient', () => ({
   getStreamClient: (...args: unknown[]) => getStreamClientMock(...args),
@@ -47,6 +56,7 @@ describe('useStreamProChannel', () => {
     watchMock.mockResolvedValue({ messages: [] });
     queryMock.mockResolvedValue({ messages: [] });
     sendMessageMock.mockResolvedValue({ message: { id: 'm1' } });
+    invokeMock.mockResolvedValue({ data: { success: true }, error: null });
     getStreamClientMock.mockReturnValue({
       userID: undefined,
       channel: channelFactoryMock,
@@ -110,6 +120,47 @@ describe('useStreamProChannel', () => {
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
+  });
+
+  it('self-heals membership and re-watches when the first watch is denied', async () => {
+    const recoveredMessages = [
+      { id: 'm-1', text: 'recovered', user: { id: 'user-1', name: 'User 1' } },
+    ];
+    watchMock
+      .mockRejectedValueOnce(new Error('permission denied'))
+      .mockResolvedValueOnce({ messages: recoveredMessages });
+    getStreamClientMock.mockReturnValue({
+      userID: 'user-1',
+      channel: channelFactoryMock,
+    });
+
+    const { result } = renderHook(() => useStreamProChannel('channel-1', 'trip-9'));
+
+    await waitFor(() => {
+      expect(result.current.messages).toHaveLength(1);
+    });
+
+    expect(invokeMock).toHaveBeenCalledWith('stream-ensure-membership', {
+      body: { tripId: 'trip-9', channelId: 'channel-1' },
+    });
+    expect(watchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not attempt recovery when no tripId is provided', async () => {
+    watchMock.mockRejectedValueOnce(new Error('permission denied'));
+    getStreamClientMock.mockReturnValue({
+      userID: 'user-1',
+      channel: channelFactoryMock,
+    });
+
+    const { result } = renderHook(() => useStreamProChannel('channel-1'));
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(invokeMock).not.toHaveBeenCalled();
+    expect(watchMock).toHaveBeenCalledTimes(1);
   });
 
   it('loads older messages with id_lt pagination and updates hasMore', async () => {

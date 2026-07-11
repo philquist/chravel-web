@@ -328,7 +328,6 @@ export const ForTeams = () => {
                   <span>Advanced integrations</span>
                 </li>
               </ul>
-
             </div>
 
             {/* Enterprise */}

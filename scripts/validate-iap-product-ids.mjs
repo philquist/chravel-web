@@ -50,7 +50,7 @@ const CANONICAL = [
 
 // ---- CLI parsing ------------------------------------------------------------
 const args = new Map(
-  process.argv.slice(2).map((a) => {
+  process.argv.slice(2).map(a => {
     const [k, v = 'true'] = a.replace(/^--/, '').split('=');
     return [k, v];
   }),
@@ -87,7 +87,7 @@ async function loadAscFromFile() {
     process.exit(2);
   }
   const json = JSON.parse(readFileSync(p, 'utf8'));
-  const list = Array.isArray(json) ? json : json.productIds ?? [];
+  const list = Array.isArray(json) ? json : (json.productIds ?? []);
   return new Set(list);
 }
 
@@ -152,7 +152,8 @@ async function loadAscFromApi() {
     `https://api.appstoreconnect.apple.com/v1/apps/${appId}/subscriptionGroups?limit=50`,
     { headers: { Authorization: `Bearer ${token}` } },
   );
-  if (!groupsResp.ok) throw new Error(`ASC groups ${groupsResp.status}: ${await groupsResp.text()}`);
+  if (!groupsResp.ok)
+    throw new Error(`ASC groups ${groupsResp.status}: ${await groupsResp.text()}`);
   const groups = await groupsResp.json();
   for (const g of groups.data ?? []) {
     await pageAll(
@@ -166,7 +167,7 @@ const asc = source === 'api' ? await loadAscFromApi() : await loadAscFromFile();
 
 // ---- Diff -------------------------------------------------------------------
 const canonicalSet = new Set(CANONICAL);
-const diff = (a, b) => [...a].filter((x) => !b.has(x)).sort();
+const diff = (a, b) => [...a].filter(x => !b.has(x)).sort();
 
 const report = {
   source,
@@ -188,13 +189,15 @@ if (jsonOut) {
 }
 
 const c = (color, s) => `\x1b[${color}m${s}\x1b[0m`;
-const red = (s) => c(31, s);
-const green = (s) => c(32, s);
-const yellow = (s) => c(33, s);
-const bold = (s) => c(1, s);
+const red = s => c(31, s);
+const green = s => c(32, s);
+const yellow = s => c(33, s);
+const bold = s => c(1, s);
 
 console.log(bold('\nIAP Product ID Validation'));
-console.log(`  source=${source}  canonical=${canonicalSet.size}  configured=${configured.size}  asc=${asc.size}\n`);
+console.log(
+  `  source=${source}  canonical=${canonicalSet.size}  configured=${configured.size}  asc=${asc.size}\n`,
+);
 
 function section(title, list, severity = 'block') {
   if (list.length === 0) {
@@ -208,8 +211,16 @@ function section(title, list, severity = 'block') {
 
 section('Canonical IDs missing from App Store Connect', report.canonicalMissingFromAsc, 'block');
 section('Canonical IDs missing from codebase', report.canonicalMissingFromConfigured, 'block');
-section('Codebase IDs not in canonical set (extra / legacy)', report.configuredMissingFromCanonical, 'warn');
-section('ASC IDs not in canonical set (extra / legacy in Apple)', report.ascMissingFromCanonical, 'warn');
+section(
+  'Codebase IDs not in canonical set (extra / legacy)',
+  report.configuredMissingFromCanonical,
+  'warn',
+);
+section(
+  'ASC IDs not in canonical set (extra / legacy in Apple)',
+  report.ascMissingFromCanonical,
+  'warn',
+);
 section('Codebase IDs not found in ASC', report.configuredMissingFromAsc, 'warn');
 section('ASC IDs not referenced by codebase', report.ascMissingFromConfigured, 'warn');
 

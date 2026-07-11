@@ -191,6 +191,34 @@ class OfflineSyncService {
   }
 
   /**
+   * Atomically claim a pending operation for processing (compare-and-swap inside a
+   * single IndexedDB readwrite transaction: only a row whose status is still 'pending'
+   * transitions to 'syncing'). Returns the claimed operation, or null if it was already
+   * claimed by a concurrent pass or removed.
+   *
+   * This is the real lock that `updateOperationStatus` was not: it had no precondition
+   * on the current status, so two overlapping processSyncQueue() passes (e.g. a flaky
+   * mobile network re-firing the `online` event mid-replay) both read the same 'pending'
+   * op and both ran its handler — producing duplicate tasks/calendar events for the
+   * create handlers. IndexedDB serializes readwrite transactions over the same store, so
+   * exactly one caller wins the pending -> syncing transition.
+   */
+  async claimOperation(operationId: string): Promise<QueuedSyncOperation | null> {
+    const db = await getDB();
+    const tx = db.transaction('syncQueue', 'readwrite');
+    const store = tx.store;
+    const operation = await store.get(operationId);
+    if (!operation || operation.status !== 'pending') {
+      await tx.done;
+      return null;
+    }
+    const claimed = { ...operation, status: 'syncing' } as QueuedSyncOperation;
+    await store.put(claimed);
+    await tx.done;
+    return claimed;
+  }
+
+  /**
    * Get operations ready to retry
    */
   async getReadyOperations(): Promise<QueuedSyncOperation[]> {
@@ -358,8 +386,9 @@ class OfflineSyncService {
     const { id, entityType, operationType, tripId, entityId, data } = operation;
 
     try {
-      // Atomically update status to 'syncing' - if operation was already removed, this returns null
-      const updated = await this.updateOperationStatus(id, 'syncing');
+      // Atomically claim the op (pending -> syncing). Returns null if it was already
+      // claimed by a concurrent pass or removed, so we never double-run a handler.
+      const updated = await this.claimOperation(id);
       if (!updated) {
         return 'skipped';
       }

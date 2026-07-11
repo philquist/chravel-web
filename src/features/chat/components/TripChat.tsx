@@ -7,6 +7,7 @@ import type { Channel } from 'stream-chat';
 import { demoModeService } from '@/services/demoModeService';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { useChatComposer } from '../hooks/useChatComposer';
+import { useBroadcastHistory, usePinnedHistory } from '../hooks/useBroadcastHistory';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { ChatInput } from './ChatInput';
@@ -241,6 +242,11 @@ export const TripChat = React.memo(
       chatModeUserRole === 'owner';
     const canManagePins =
       isUserAdmin || chatModeUserRole === 'moderator' || chatModeUserRole === 'mod';
+    // Broadcast composing follows the trip-type permission model: consumer trips
+    // are open to all members; pro/event trips gate announcements to
+    // admins/organizers/owners. UI-layer gate — ChatInput hides the toggle and
+    // strips the flag at send time.
+    const canSendBroadcast = (!isPro && !isEvent) || isUserAdmin;
 
     // Role channels for pro trips
     const {
@@ -834,12 +840,63 @@ export const TripChat = React.memo(
 
     const filteredMessages = filterMessages(messagesToShow as any);
 
+    // Broadcasts tab: the live timeline is a bounded window, so broadcasts older
+    // than it are missing from filteredMessages. Fetch the channel's broadcast
+    // history from Stream while the tab is active and merge in anything the
+    // window doesn't already have (live entries win — they carry fresh
+    // reactions/pins). Empty history (fetch failed / none) changes nothing.
+    const broadcastHistory = useBroadcastHistory(
+      resolvedTripId,
+      messageFilter === 'broadcasts' && !demoMode.isDemoMode && !shouldSkipLiveChat,
+    );
+    const broadcastHistoryModels = useMemo(() => {
+      if (broadcastHistory.length === 0) return [];
+      return buildStreamMessageViewModels({
+        messages: broadcastHistory,
+        tripMembers,
+        currentUserId: user?.id,
+      });
+    }, [broadcastHistory, tripMembers, user?.id]);
+    // Pinned tab: same off-window gap — fetch pins via Stream's native
+    // pinned-messages endpoint while the tab is active.
+    const pinnedHistory = usePinnedHistory(
+      resolvedTripId,
+      messageFilter === 'pinned' && !demoMode.isDemoMode && !shouldSkipLiveChat,
+    );
+    const pinnedHistoryModels = useMemo(() => {
+      if (pinnedHistory.length === 0) return [];
+      return buildStreamMessageViewModels({
+        messages: pinnedHistory,
+        tripMembers,
+        currentUserId: user?.id,
+      });
+    }, [pinnedHistory, tripMembers, user?.id]);
+
+    const filteredWithBroadcastHistory = useMemo(() => {
+      // Pinned merge: derivePinnedMessages dedupes by id with LATER entries
+      // winning and drops ids a later snapshot marks unpinned — so listing
+      // history first means fresh live state (reactions, just-unpinned)
+      // always overrides the fetched snapshot.
+      if (messageFilter === 'pinned' && pinnedHistoryModels.length > 0) {
+        return derivePinnedMessages([...pinnedHistoryModels, ...filteredMessages] as any);
+      }
+      if (messageFilter !== 'broadcasts' || broadcastHistoryModels.length === 0) {
+        return filteredMessages;
+      }
+      const liveIds = new Set(filteredMessages.map((m: any) => m.id));
+      const older = broadcastHistoryModels.filter(m => !liveIds.has(m.id));
+      if (older.length === 0) return filteredMessages;
+      return [...older, ...filteredMessages].sort(
+        (a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      );
+    }, [messageFilter, broadcastHistoryModels, pinnedHistoryModels, filteredMessages]);
+
     const visibleMessages = useMemo(() => {
-      if (blockedUserIds.length === 0) return filteredMessages;
-      return filteredMessages.filter(
+      if (blockedUserIds.length === 0) return filteredWithBroadcastHistory;
+      return filteredWithBroadcastHistory.filter(
         (msg: any) => !msg.sender?.id || !blockedUserIds.includes(msg.sender.id),
       );
-    }, [filteredMessages, blockedUserIds]);
+    }, [filteredWithBroadcastHistory, blockedUserIds]);
 
     const messagesWithFailed = useMemo(() => {
       if (failedMessages.length === 0) return visibleMessages;
@@ -910,8 +967,10 @@ export const TripChat = React.memo(
     }, [messagesWithPreviewFallbacks]);
 
     const pinnedMessages = useMemo(
-      () => derivePinnedMessages(liveFormattedMessages as any),
-      [liveFormattedMessages],
+      // History first so live snapshots win (and live unpins delete stale
+      // history entries — derivePinnedMessages handles both).
+      () => derivePinnedMessages([...pinnedHistoryModels, ...liveFormattedMessages] as any),
+      [pinnedHistoryModels, liveFormattedMessages],
     );
     const readStatusesByMessage = useMemo(() => {
       try {
@@ -1129,7 +1188,11 @@ export const TripChat = React.memo(
               />
             ) : (
               <>
-                {chatError && !isLoading ? (
+                {/* Only replace the whole timeline with an error/initializing card when
+                    there is NO loaded history to show. If history is already on screen,
+                    a transient error must NOT blank it — surface a slim retry banner
+                    above the preserved messages instead (see the banner below). */}
+                {chatError && !isLoading && messagesToShow.length === 0 ? (
                   <div className="flex-1 flex items-center justify-center p-6">
                     <div className="text-center space-y-3">
                       {getStreamApiKey() || chatError.message.includes('Timed out') ? (
@@ -1157,12 +1220,29 @@ export const TripChat = React.memo(
                       )}
                     </div>
                   </div>
-                ) : isLoading ? (
+                ) : isLoading && messagesToShow.length === 0 ? (
                   <div className="flex-1 overflow-y-auto p-4">
                     <MessageSkeleton />
                   </div>
                 ) : (
                   <>
+                    {/* Non-blocking retry banner: history stays visible under a transient
+                        error / reconnect instead of being replaced by a full-screen card. */}
+                    {chatError && messagesToShow.length > 0 && (
+                      <div className="mx-3 mt-3 mb-1 flex items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                        <p className="text-xs text-amber-100">
+                          Reconnecting to chat — showing your recent messages.
+                        </p>
+                        <button
+                          onClick={() => {
+                            reload?.();
+                          }}
+                          className="flex-shrink-0 text-xs font-medium text-amber-200 underline hover:no-underline"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    )}
                     {messageFilter === 'pinned' && pinnedMessages.length > 0 && (
                       <div className="mx-3 mt-3 mb-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2">
                         <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-amber-200">
@@ -1249,6 +1329,7 @@ export const TripChat = React.memo(
                 disableFileUpload={!canUploadMedia}
                 safeAreaBottom={false}
                 onTypingChange={handleTypingChange}
+                canSendBroadcast={canSendBroadcast}
               />
             </div>
           </div>

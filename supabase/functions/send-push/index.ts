@@ -170,7 +170,11 @@ async function sendAPNs(tokens: string[], notification: NotificationContent): Pr
   const apnsTeamId = Deno.env.get('APNS_TEAM_ID');
   const apnsPrivateKey = Deno.env.get('APNS_PRIVATE_KEY');
   const apnsBundleId = Deno.env.get('APNS_BUNDLE_ID') || 'com.chravel.app';
-  const apnsEnvironment = Deno.env.get('APNS_ENVIRONMENT') || 'development'; // 'development' or 'production'
+  // Default to 'production': the sandbox host (api.sandbox.push.apple.com) rejects
+  // production APNs device tokens as BadDeviceToken, which this function then DISABLES.
+  // A missing/misconfigured env must not silently kill live tokens. Set APNS_ENVIRONMENT
+  // explicitly to 'development' only for a sandbox/debug build.
+  const apnsEnvironment = Deno.env.get('APNS_ENVIRONMENT') || 'production'; // 'development' | 'production'
 
   if (!apnsKeyId || !apnsTeamId || !apnsPrivateKey) {
     console.warn('[send-push] APNs credentials not configured, skipping APNs delivery');
@@ -289,11 +293,14 @@ async function sendWebPush(
   //
   // Reference: https://web.dev/push-notifications-overview/
 
-  console.log(
-    `[send-push] WebPush: Would send to ${tokens.length} tokens (TODO: implement Web Push)`,
+  console.warn(
+    `[send-push] WebPush not implemented — skipping ${tokens.length} web token(s). Use web-push-send for VAPID delivery.`,
   );
 
-  return { success: [], failed: tokens };
+  // Return the tokens as neither delivered nor failed. Reporting them as `failed`
+  // would misattribute a not-implemented path as a delivery failure (and could feed a
+  // retry loop). Web push has a real implementation in the `web-push-send` function.
+  return { success: [], failed: [] };
 }
 
 // ============================================================================

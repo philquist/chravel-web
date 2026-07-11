@@ -143,6 +143,68 @@ export async function registerNativePushToken(): Promise<NativePushRegistrationR
   });
 }
 
+/**
+ * Structured routing data carried on a push payload (mirrors the edge PushPayload:
+ * see supabase/functions/send-push/index.ts). Sent as the notification `data` bag so
+ * a tap can deep-link straight to the relevant trip resource.
+ */
+export interface NativePushActionData {
+  tripId?: string;
+  threadId?: string;
+  messageId?: string;
+  eventId?: string;
+  pollId?: string;
+  taskId?: string;
+  type?: string;
+}
+
+type PushActionPerformedEvent = {
+  notification?: { data?: Record<string, unknown> | null };
+};
+
+function coerceString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+/**
+ * Register a handler invoked when the user TAPS an OS push notification. Returns a
+ * disposer that removes the listener. No-op (returns a disposer that does nothing)
+ * outside a native shell. The caller receives the normalized routing data bag.
+ */
+export async function onNativePushActionPerformed(
+  handler: (data: NativePushActionData) => void,
+): Promise<() => void> {
+  const push = getPushNotificationsPlugin();
+  if (!push) return () => {};
+
+  let listener: { remove: () => Promise<void> } | null = null;
+  try {
+    listener = await push.addListener(
+      'pushNotificationActionPerformed',
+      (payload: PushActionPerformedEvent | unknown) => {
+        const raw = (payload as PushActionPerformedEvent)?.notification?.data;
+        if (!raw || typeof raw !== 'object') return;
+        const data = raw as Record<string, unknown>;
+        handler({
+          tripId: coerceString(data.tripId) ?? coerceString(data.trip_id),
+          threadId: coerceString(data.threadId) ?? coerceString(data.thread_id),
+          messageId: coerceString(data.messageId) ?? coerceString(data.message_id),
+          eventId: coerceString(data.eventId) ?? coerceString(data.event_id),
+          pollId: coerceString(data.pollId) ?? coerceString(data.poll_id),
+          taskId: coerceString(data.taskId) ?? coerceString(data.task_id),
+          type: coerceString(data.type),
+        });
+      },
+    );
+  } catch {
+    return () => {};
+  }
+
+  return () => {
+    void listener?.remove().catch(() => {});
+  };
+}
+
 export async function unregisterNativePush(): Promise<void> {
   const push = getPushNotificationsPlugin();
   if (!push || typeof push.removeAllListeners !== 'function') return;

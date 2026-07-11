@@ -24,6 +24,13 @@ export { shouldUseLegacyChatSync };
  * - Periodically when online
  * - On app startup if online
  */
+// Serialize overlapping runs. handleOnline fires on mount AND on every `online` event,
+// and a flaky mobile connection can re-fire `online` while the previous multi-network
+// replay is still in flight. Per-op claiming (offlineSyncService.claimOperation) is the
+// hard guarantee against double-processing; this in-flight guard avoids the redundant
+// overlapping pass entirely.
+let inFlight: Promise<{ processed: number; failed: number; skipped: number }> | null = null;
+
 export async function processGlobalSyncQueue(): Promise<{
   processed: number;
   failed: number;
@@ -33,6 +40,23 @@ export async function processGlobalSyncQueue(): Promise<{
     return { processed: 0, failed: 0, skipped: 0 };
   }
 
+  if (inFlight) {
+    return inFlight;
+  }
+
+  inFlight = _processGlobalSyncQueue();
+  try {
+    return await inFlight;
+  } finally {
+    inFlight = null;
+  }
+}
+
+async function _processGlobalSyncQueue(): Promise<{
+  processed: number;
+  failed: number;
+  skipped: number;
+}> {
   // Get all operations before processing to check for skipped ones
   const allOperations = await offlineSyncService.getQueuedOperations({ status: 'pending' });
 

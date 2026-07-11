@@ -242,7 +242,6 @@ export const TripSettings = ({
               </div>
             )}
 
-
             {activeTab === 'activity' && showEventLogTab && (
               <div className="bg-white/5 backdrop-blur-md border border-white/15 rounded-2xl p-6">
                 <TripActivitySettings tripId={tripId} />

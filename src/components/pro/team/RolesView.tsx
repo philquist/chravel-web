@@ -1,5 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Users, AlertTriangle, UserPlus, Clock, Cog, LayoutGrid, Network, ShieldCheck } from 'lucide-react';
+import {
+  Users,
+  AlertTriangle,
+  UserPlus,
+  Clock,
+  Cog,
+  LayoutGrid,
+  Network,
+  ShieldCheck,
+} from 'lucide-react';
 import { ProParticipant, TeamTripContext } from '../../../types/pro';
 import { ProTripCategory, getCategoryConfig } from '../../../types/proCategories';
 import { TeamOnboardingBanner } from '../TeamOnboardingBanner';
@@ -397,7 +406,8 @@ export const RolesView = ({
               const assignedRoles = memberUserId ? memberRolesMap.get(memberUserId) || [] : [];
 
               // Combine roles: admin/coordinator first, then assigned roles sorted alphabetically
-              const allRolePills: { name: string; isAdmin: boolean; isCoordinator?: boolean }[] = [];
+              const allRolePills: { name: string; isAdmin: boolean; isCoordinator?: boolean }[] =
+                [];
 
               if (isAdminMember) {
                 allRolePills.push({ name: 'admin', isAdmin: true });
