@@ -35,8 +35,13 @@ import {
 } from '@/services/stream/streamCanary';
 import { sortMessagesWithCanonicalOrdering } from './messageEventModel';
 import { capPrependedMessages, capRetainedMessages } from '@/lib/chatMessageRetention';
+import { isDeletedStreamMessage, withTimeout } from '@/hooks/stream/streamChatUtils';
 
 const PAGE_SIZE = 30;
+// Max time to wait for the Stream client to connect, and to bound a single channel.watch()
+// call, before surfacing a terminal error + Retry instead of an infinite skeleton.
+const CONNECT_TIMEOUT_MS = 10000;
+const WATCH_TIMEOUT_MS = 15000;
 type StreamSendPayload = Parameters<Channel['sendMessage']>[0];
 const MEMBERSHIP_ERROR_MESSAGE =
   'We could not verify your trip chat access. Please refresh and try again.';
@@ -240,6 +245,10 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
   const lastConfirmedCursorRef = useRef<{ id: string; createdAt: string } | null>(null);
   const reconnectBackfillInFlightRef = useRef<Promise<void> | null>(null);
   const lastReconnectBackfillAtRef = useRef(0);
+  // Absolute connect deadline (ms epoch), armed once per trip. A reconnect flap must NOT
+  // extend it — otherwise the "waiting for connection" timeout keeps re-arming and the
+  // loading skeleton never resolves.
+  const connectDeadlineRef = useRef<number | null>(null);
   // State mirror of channelRef for triggering the event subscription effect
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
   const isMountedRef = useRef(true);
@@ -325,7 +334,16 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
     setMessages(prev => {
       if (nextMessages.length === 0) return prev;
       const byId = new Map(prev.map(message => [message.id, message]));
-      for (const message of nextMessages) byId.set(message.id, message);
+      for (const message of nextMessages) {
+        // Stream returns soft-deleted messages (deleted_at set / type 'deleted') on reload,
+        // loadMore, and reconnect backfill. Drop them so a deleted message can't reappear as
+        // an empty bubble after any refresh.
+        if (isDeletedStreamMessage(message)) {
+          byId.delete(message.id);
+        } else {
+          byId.set(message.id, message);
+        }
+      }
       return capRetainedMessages(sortMessagesWithCanonicalOrdering(Array.from(byId.values())));
     });
   }, []);
@@ -428,14 +446,26 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
   useEffect(() => {
     if (!isEnabled || !tripId) return;
 
-    if (streamClientReady && getStreamClient()?.userID) return;
+    if (streamClientReady && getStreamClient()?.userID) {
+      // Connected — clear any pending connect deadline so a later drop starts fresh.
+      connectDeadlineRef.current = null;
+      return;
+    }
+
+    // Arm the deadline ONCE; re-runs (from streamClientReady flapping) re-arm the timer
+    // against the SAME fixed deadline rather than extending it, so a reconnect flap can no
+    // longer keep the skeleton spinning forever. Total wait is bounded to CONNECT_TIMEOUT_MS
+    // from the first not-ready render.
+    if (connectDeadlineRef.current === null) {
+      connectDeadlineRef.current = Date.now() + CONNECT_TIMEOUT_MS;
+    }
+    const remaining = Math.max(0, connectDeadlineRef.current - Date.now());
 
     const timer = window.setTimeout(() => {
       if (streamClientReady || getStreamClient()?.userID) return;
-
       setError(new Error('Timed out waiting for chat connection'));
       setIsLoading(false);
-    }, 10000);
+    }, remaining);
 
     return () => window.clearTimeout(timer);
   }, [isEnabled, tripId, streamClientReady]);
@@ -452,6 +482,7 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
     lastConfirmedCursorRef.current = null;
     reconnectBackfillInFlightRef.current = null;
     lastReconnectBackfillAtRef.current = 0;
+    connectDeadlineRef.current = null;
   }, [tripId]);
 
   useEffect(() => {
@@ -564,7 +595,11 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
         if (cancelled) return null;
 
         const channel = client.channel(CHANNEL_TYPE_TRIP, tripChannelId(tripId));
-        const state = await channel.watch({ state: true, messages: { limit: PAGE_SIZE } });
+        const state = await withTimeout(
+          channel.watch({ state: true, messages: { limit: PAGE_SIZE } }),
+          WATCH_TIMEOUT_MS,
+          'channel.watch',
+        );
         return { channel, state };
       };
 
@@ -642,7 +677,9 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
         const watched = await watchChannel();
         if (!watched || cancelled) return;
 
-        const streamMessages = (watched.state.messages || []) as MessageResponse[];
+        const streamMessages = ((watched.state.messages || []) as MessageResponse[]).filter(
+          m => !isDeletedStreamMessage(m),
+        );
         const sortedMessages = [...streamMessages].sort((a, b) => {
           const aDate = new Date(a.created_at || 0).getTime();
           const bDate = new Date(b.created_at || 0).getTime();
@@ -679,8 +716,14 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
               throw mapMembershipFailureToUiError(ensured.failure);
             }
             const channel = client.channel(CHANNEL_TYPE_TRIP, tripChannelId(tripId));
-            const state = await channel.watch({ state: true, messages: { limit: PAGE_SIZE } });
-            const streamMessages = (state.messages || []) as MessageResponse[];
+            const state = await withTimeout(
+              channel.watch({ state: true, messages: { limit: PAGE_SIZE } }),
+              WATCH_TIMEOUT_MS,
+              'channel.watch',
+            );
+            const streamMessages = ((state.messages || []) as MessageResponse[]).filter(
+              m => !isDeletedStreamMessage(m),
+            );
             const sortedMessages = [...streamMessages].sort((a, b) => {
               const aDate = new Date(a.created_at || 0).getTime();
               const bDate = new Date(b.created_at || 0).getTime();
@@ -1110,6 +1153,14 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
                 'This reaction is blocked by Stream channel settings or reaction policy. Ask an admin to enable reactions for this channel type.',
               variant: 'destructive',
             });
+          } else {
+            // Previously swallowed in prod (DEV-only log): a transient/network failure left
+            // the user tapping with zero feedback. Surface it so they know to retry.
+            toast({
+              title: 'Reaction failed',
+              description: 'Could not update your reaction. Please try again.',
+              variant: 'destructive',
+            });
           }
         }
       } catch (err) {
@@ -1132,14 +1183,15 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
         messages: { limit: PAGE_SIZE, id_lt: oldestId },
       });
 
-      const olderMessages = (result.messages || []) as MessageResponse[];
+      const rawOlder = (result.messages || []) as MessageResponse[];
+      const olderMessages = rawOlder.filter(m => !isDeletedStreamMessage(m));
 
       if (olderMessages.length > 0) {
         setMessages(prev => capPrependedMessages(olderMessages, prev));
-        setHasMore(olderMessages.length === PAGE_SIZE);
-      } else {
-        setHasMore(false);
       }
+      // Paginate on the raw page length so a page full of soft-deleted messages doesn't
+      // prematurely stop "load more".
+      setHasMore(rawOlder.length === PAGE_SIZE);
     } catch {
       // Pagination failure is non-fatal
     } finally {
