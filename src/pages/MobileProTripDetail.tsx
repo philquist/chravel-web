@@ -409,7 +409,11 @@ export const MobileProTripDetail = () => {
   }
 
   const trip = {
-    id: parseInt(tripData.id) || 0, // Fallback for numeric ID
+    // Trip IDs are UUIDs. parseInt(uuid) is NaN -> 0, which was corrupting the id passed
+    // to the Trip Details drawer's TripHeader — its child hooks (useTripMembers, cover
+    // upload, join requests) then queried trip_id "0" and showed "0 members" / broke
+    // cover upload for every pro trip. Keep the real string id (TripHeader accepts string).
+    id: tripData.id,
     title: tripData.title,
     location: tripData.location,
     dateRange: tripData.dateRange,
