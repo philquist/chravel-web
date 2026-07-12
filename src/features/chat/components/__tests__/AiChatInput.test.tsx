@@ -14,10 +14,12 @@ describe('AiChatInput composer contracts', () => {
     expect(source).toMatch(/Ask anything about this trip/);
   });
 
-  it('exposes an explicit Send disabled state with aria-disabled + test id', () => {
+  it('keeps Send visually gold while blocking empty sends with aria-disabled', () => {
     expect(source).toMatch(/concierge-send-btn/);
-    expect(source).toMatch(/aria-disabled=\{sendDisabled\}/);
-    expect(source).toMatch(/const sendDisabled = !canSend \|\| isTyping \|\| disabled/);
+    expect(source).toMatch(/aria-disabled=\{sendBlocked\}/);
+    expect(source).toMatch(/const sendBlocked = !canSend \|\| isTyping \|\| disabled/);
+    expect(source).toMatch(/const sendDomDisabled = isTyping \|\| disabled/);
+    expect(source).toMatch(/if \(sendBlocked\) return/);
   });
 
   it('does not render a duplicate in-field dictation mic (waveform owns dictation)', () => {

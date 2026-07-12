@@ -186,7 +186,8 @@ vi.mock('@/lib/featureFlags', () => ({
     return defaultValue;
   },
   useFeatureFlagStatus: (key: string, defaultValue = true) => ({
-    enabled: key === 'concierge_realtime_voice' ? featureFlagState.realtimeVoiceEnabled : defaultValue,
+    enabled:
+      key === 'concierge_realtime_voice' ? featureFlagState.realtimeVoiceEnabled : defaultValue,
     isPending: false,
   }),
 }));
@@ -279,11 +280,23 @@ describe('AIConciergeChat controls (lean)', () => {
     expect(screen.queryByPlaceholderText(/search across trip/i)).not.toBeInTheDocument();
   });
 
-  it('associates the upload label with the file input for reliable activation', () => {
+  it('opens Search on a touch pointer gesture before mobile WebView can drop click', () => {
     renderChat();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+    fireEvent.pointerDown(screen.getByTestId('header-search-btn'), { pointerType: 'touch' });
+    expect(screen.getByPlaceholderText(/search across trip/i)).toBeInTheDocument();
+  });
+
+  it('keeps the upload file input as the real tappable target inside the CTA', () => {
+    renderChat();
+    const uploadLabel = screen.getByTestId('header-upload-btn');
+    const input = uploadLabel.querySelector('input[type="file"]') as HTMLInputElement | null;
+
     expect(input?.id).toBeTruthy();
-    expect(screen.getByTestId('header-upload-btn').getAttribute('for')).toBe(input.id);
+    expect(uploadLabel.getAttribute('for')).toBe(input?.id);
+    expect(input?.className).toMatch(/absolute/);
+    expect(input?.className).toMatch(/inset-0/);
+    expect(input?.className).toMatch(/opacity-0/);
   });
 
   it('toggles text dictation from the waveform button (App Store launch path)', () => {
@@ -299,13 +312,18 @@ describe('AIConciergeChat controls (lean)', () => {
     expect(screen.queryByTestId('realtime-voice-overlay')).not.toBeInTheDocument();
   });
 
-  it('keeps Search, Attach, waveform Dictate, and Send available together', () => {
+  it('keeps Search, Attach, waveform Dictate, and visually gold Send available together', () => {
     renderChat();
 
     expect(screen.getByTestId('header-search-btn')).toBeInTheDocument();
     expect(screen.getByTestId('header-upload-btn')).toBeInTheDocument();
     expect(screen.getByTestId('concierge-waveform-dictation-btn')).toBeInTheDocument();
-    expect(screen.getByTestId('concierge-send-btn')).toBeInTheDocument();
+
+    const send = screen.getByTestId('concierge-send-btn');
+    expect(send).toBeInTheDocument();
+    expect(send).not.toBeDisabled();
+    expect(send).toHaveAttribute('aria-disabled', 'true');
+    expect(send.className).toContain('cta-gold-ring');
 
     fireEvent.click(screen.getByTestId('header-search-btn'));
     expect(screen.getByPlaceholderText(/search across trip/i)).toBeInTheDocument();

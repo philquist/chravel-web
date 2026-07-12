@@ -107,7 +107,7 @@ export function normalizeToolResult(toolName: string, result: unknown): Record<s
   if (toolName === 'createTask' || toolName === 'createPoll' || toolName === 'addToCalendar') {
     return {
       success: false,
-      error: `Tool "${toolName}" must return a pending or promoted action envelope before execution`,
+      error: `Tool "${toolName}" must return a pending action envelope or promoted action envelope before execution`,
     };
   }
 

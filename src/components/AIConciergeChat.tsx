@@ -473,13 +473,21 @@ export const AIConciergeChat = ({
           <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2">
             <button
               type="button"
+              onPointerDown={event => {
+                // Mobile WebView/Safari can drop the synthetic click if a later layout
+                // change steals focus. Open on the trusted pointer gesture so Search
+                // cannot feel dead. Mouse clicks still get the normal idempotent click.
+                if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+                  setSearchOpen(true);
+                }
+              }}
               onClick={() => setSearchOpen(true)}
-              className={CTA_BUTTON}
+              className={`${CTA_BUTTON} relative z-30 pointer-events-auto`}
               aria-label="Search trip"
               title="Search trip"
               data-testid="header-search-btn"
             >
-              <Search size={CTA_ICON_SIZE} className="text-white" />
+              <Search size={CTA_ICON_SIZE} className="text-white pointer-events-none" />
             </button>
             <h3
               className="min-w-0 truncate text-center text-base font-semibold leading-tight text-white sm:text-lg"
@@ -488,18 +496,31 @@ export const AIConciergeChat = ({
               Concierge Chravel Agent
             </h3>
             {/*
-              Prefer <label htmlFor> over programmatic .click() — iOS Safari / WKWebView
-              often ignore synthetic clicks on file inputs unless the gesture is a real
-              label activation. Keep the input sr-only (not display:none) for the same reason.
+              Keep the file input as a real, transparent tap target inside the button.
+              iOS Safari / WKWebView can ignore synthetic .click() and sometimes miss
+              label-only activation when the input is visually hidden elsewhere.
             */}
             <label
               htmlFor={uploadInputId}
               data-testid="header-upload-btn"
-              className={`${CTA_BUTTON} cursor-pointer`}
+              className={`${CTA_BUTTON} relative z-30 cursor-pointer overflow-hidden pointer-events-auto`}
               aria-label="Attach files to Concierge"
               title="Attach files to Concierge"
             >
-              <ImagePlus size={CTA_ICON_SIZE} className="text-white" />
+              <ImagePlus size={CTA_ICON_SIZE} className="text-white pointer-events-none" />
+              <input
+                id={uploadInputId}
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,text/calendar,.ics,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                multiple
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                aria-label="Attach files to Concierge"
+                onChange={e => {
+                  handleFilesSelected(Array.from(e.target.files || []));
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
+              />
             </label>
           </div>
         </div>
@@ -517,26 +538,6 @@ export const AIConciergeChat = ({
               onTabChange(tab);
               window.setTimeout(() => dispatchSearchFocus(result), 120);
             }
-          }}
-        />
-
-        {/* Hidden file input for header upload button */}
-        {/*
-          sr-only (not `hidden`/display:none) so iOS Safari + WKWebView will honor a
-          label-associated activation. `display:none` inputs are silently ignored.
-        */}
-        <input
-          id={uploadInputId}
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,text/calendar,.ics,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          multiple
-          className="sr-only"
-          tabIndex={-1}
-          aria-hidden="true"
-          onChange={e => {
-            handleFilesSelected(Array.from(e.target.files || []));
-            if (fileInputRef.current) fileInputRef.current.value = '';
           }}
         />
 

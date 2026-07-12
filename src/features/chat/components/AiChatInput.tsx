@@ -172,20 +172,6 @@ export const AiChatInput = ({
     [classifyFiles],
   );
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      void onSendMessage();
-    } else {
-      onKeyPress(e);
-    }
-  };
-
-  const handleSendClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    void onSendMessage();
-  };
-
   // Dictation active state — driven by the leftAccessory waveform button
   const isConvoActive =
     isVoiceEligible && convoVoiceState !== 'idle' && convoVoiceState !== 'error';
@@ -198,9 +184,24 @@ export const AiChatInput = ({
   };
 
   const hasAttachments = attachedImages.length > 0 || attachedDocuments.length > 0;
-  const canSend =
-    Boolean(inputMessage.trim()) || attachedImages.length > 0 || attachedDocuments.length > 0;
-  const sendDisabled = !canSend || isTyping || disabled;
+  const canSend = Boolean(inputMessage.trim()) || hasAttachments;
+  const sendBlocked = !canSend || isTyping || disabled;
+  const sendDomDisabled = isTyping || disabled;
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!sendBlocked) void onSendMessage();
+    } else {
+      onKeyPress(e);
+    }
+  };
+
+  const handleSendClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (sendBlocked) return;
+    void onSendMessage();
+  };
 
   return (
     <div
@@ -322,15 +323,19 @@ export const AiChatInput = ({
           )}
         </div>
 
-        {/* Send button — gold rim; disabled opacity makes empty/unavailable state obvious */}
+        {/*
+          Send keeps the same gold-ring CTA chrome as Search / Upload / Dictation
+          even when the composer is empty. Empty taps are a no-op via handleSendClick,
+          while aria-disabled still tells assistive tech that nothing can be sent yet.
+        */}
         <button
           type="button"
           onClick={handleSendClick}
-          disabled={sendDisabled}
+          disabled={sendDomDisabled}
           aria-label="Send message"
-          aria-disabled={sendDisabled}
+          aria-disabled={sendBlocked}
           title={
-            sendDisabled
+            sendBlocked
               ? isTyping
                 ? 'Sending\u2026'
                 : 'Type a message or attach a file to send'

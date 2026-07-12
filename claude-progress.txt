@@ -1,3 +1,14 @@
+2026-07-12 — Concierge launch audit + send CTA parity
+- Kept Concierge Send visually aligned with Search/Upload/waveform by preserving gold-ring CTA chrome when the composer is empty; empty sends are now blocked in handlers + aria-disabled instead of DOM-disabled opacity.
+- Audited Concierge tool coverage and language routing: registry exposes 74 text tools plus voice parity overrides, write tools are covered by executor/invalidation/pending-action tests, and prompt assembly enforces same-message language matching with optional user-selected override.
+- Fixed a brittle tool-result contract error string so fail-closed pending-action coverage passes; no demo data or realtime/gateway paths changed.
+- Verification: focused composer/control tests, tool parity/pending/write/invalidation tests, streaming hook test, prompt/tool-result tests, typecheck pass; Playwright screenshot install remains blocked by CDN 403.
+
+2026-07-12 — Concierge header Search/Upload tap recovery
+- Hardened Concierge header controls after App Store launch QA found Search and Upload felt dead on mobile: Search now opens from the trusted touch/pen pointer gesture as well as click, and Upload now keeps the actual file input as a transparent full-size tap target inside the 44px CTA instead of relying on label activation to a hidden input.
+- Kept the App Store waveform dictation path unchanged and did not modify demo mock data or realtime/Vercel gateway code.
+- Verification: focused Concierge controls test, typecheck, lint:check (baseline warnings), and build pass; screenshot capture attempted but blocked by missing Playwright browser executable in the environment.
+
 2026-07-11 — Concierge App Store waveform → dictation
 - Waveform left control now mounts VoiceButton → useConciergeVoice Web Speech dictation; removed duplicate in-field mic from AiChatInput.
 - Gated RealtimeVoiceButton behind concierge_realtime_voice (client default false + migration applied; flag disabled in ChravelApp prod). Realtime/Gateway code retained for experimental re-enable.
