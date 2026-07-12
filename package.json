@@ -26,6 +26,7 @@
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test e2e/tests/pwa-smoke.spec.ts --project=chromium",
+    "test:e2e:concierge-device-smoke": "PLAYWRIGHT_MOBILE_SMOKE=1 playwright test e2e/specs/concierge/mobile-device-smoke.spec.ts --workers=1",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "prepare": "husky install",

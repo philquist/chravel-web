@@ -92,17 +92,25 @@ export default defineConfig({
     // Desktop browsers
     {
       name: 'chromium',
+      testIgnore: /specs\/concierge\/mobile-device-smoke\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
-    // Mobile browsers (uncomment to enable)
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
+    // Concierge production-device smoke — Android + iOS mobile viewports
+    // Opt-in via PLAYWRIGHT_MOBILE_SMOKE=1 or npm run test:e2e:concierge-device-smoke
+    ...(process.env.PLAYWRIGHT_MOBILE_SMOKE
+      ? [
+          {
+            name: 'Mobile Chrome',
+            testMatch: /specs\/concierge\/mobile-device-smoke\.spec\.ts/,
+            use: { ...devices['Pixel 5'] },
+          },
+          {
+            name: 'Mobile Safari',
+            testMatch: /specs\/concierge\/mobile-device-smoke\.spec\.ts/,
+            use: { ...devices['iPhone 12'] },
+          },
+        ]
+      : []),
 
     // RLS-specific tests (uses service role, no browser needed for some)
     {
@@ -113,14 +121,16 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: process.env.CI
-      ? ciPreviewCommand
-      : 'npm run dev -- --host 127.0.0.1 --port 8080 --strictPort',
-    url: 'http://localhost:8080',
-    reuseExistingServer: !process.env.CI,
-    timeout: 180 * 1000,
-  },
+  webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER
+    ? undefined
+    : {
+        command: process.env.CI
+          ? ciPreviewCommand
+          : 'npm run dev -- --host 127.0.0.1 --port 8080 --strictPort',
+        url: 'http://localhost:8080',
+        reuseExistingServer: !process.env.CI,
+        timeout: 180 * 1000,
+      },
 
   /* Global setup/teardown */
   // globalSetup: './e2e/global-setup.ts',
