@@ -799,6 +799,7 @@ export type Database = {
           title: string
           track: string | null
           updated_at: string | null
+          version: number
         }
         Insert: {
           created_at?: string | null
@@ -814,6 +815,7 @@ export type Database = {
           title: string
           track?: string | null
           updated_at?: string | null
+          version?: number
         }
         Update: {
           created_at?: string | null
@@ -829,6 +831,7 @@ export type Database = {
           title?: string
           track?: string | null
           updated_at?: string | null
+          version?: number
         }
         Relationships: [
           {
@@ -5703,6 +5706,41 @@ export type Database = {
           to: "organization_seats"
           isOneToOne: true
           isSetofReturn: false
+        }
+      }
+      update_agenda_item_with_version: {
+        Args: {
+          p_current_version: number
+          p_description: string
+          p_end_time: string
+          p_item_id: string
+          p_location: string
+          p_session_date: string
+          p_speakers: string[]
+          p_start_time: string
+          p_title: string
+        }
+        Returns: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          end_time: string | null
+          event_id: string
+          id: string
+          location: string | null
+          session_date: string | null
+          speakers: string[] | null
+          start_time: string | null
+          title: string
+          track: string | null
+          updated_at: string | null
+          version: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "event_agenda_items"
+          isOneToOne: false
+          isSetofReturn: true
         }
       }
       update_trip_basecamp_with_version: {
