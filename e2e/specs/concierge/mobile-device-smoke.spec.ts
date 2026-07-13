@@ -133,18 +133,20 @@ async function loginViaBrowser(page: Page, email: string): Promise<boolean> {
 }
 
 const test = base.extend<{ testAuth: { email: string; session: string; userId: string } | null }>({
-  testAuth: async ({}, use) => {
+  // Playwright requires `{}` destructuring for unused fixtures; second arg is the provider.
+  // eslint-disable-next-line no-empty-pattern -- Playwright fixture signature
+  testAuth: async ({}, provide) => {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      await use(null);
+      await provide(null);
       return;
     }
     const email = `qa-concierge-smoke-${Date.now()}@test.chravel.com`;
     try {
       const auth = await signUpTestUser(email);
-      await use(auth ? { email, ...auth } : null);
+      await provide(auth ? { email, ...auth } : null);
     } catch (err) {
       console.warn('[CONCIERGE-SMOKE] testAuth setup failed:', err);
-      await use(null);
+      await provide(null);
     }
   },
 });
