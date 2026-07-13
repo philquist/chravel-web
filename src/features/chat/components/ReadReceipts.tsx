@@ -3,7 +3,7 @@
  * Shows who has read a message
  */
 import React from 'react';
-import { Check, CheckCheck } from 'lucide-react';
+import { CheckCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/utils/avatarUtils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -42,9 +42,9 @@ export const ReadReceipts: React.FC<ReadReceiptsProps> = ({
 
   if (readCount === 0) {
     return (
-      <div className="flex items-center gap-1 text-gray-500 text-xs mt-1">
-        <Check size={12} />
-        <span>Sent</span>
+      <div className="flex items-center gap-1 text-muted-foreground text-xs mt-1">
+        <CheckCheck size={12} />
+        <span>Delivered</span>
       </div>
     );
   }
@@ -89,8 +89,9 @@ export const ReadReceipts: React.FC<ReadReceiptsProps> = ({
       </div>
 
       {/* If no other users read it yet but readCount > 0 (meaning maybe only current user read it? unlikely but possible in edge cases) */}
-      {otherReaders.length === 0 && readCount > 0 && (
-        <div className="flex items-center gap-1 text-blue-500 text-xs">
+      {/* Gold double-tick when the message has been read */}
+      {readCount > 0 && (
+        <div className="flex items-center gap-1 text-primary text-xs">
           <CheckCheck size={12} />
         </div>
       )}

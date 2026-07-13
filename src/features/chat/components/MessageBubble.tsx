@@ -715,12 +715,12 @@ export const MessageBubble = memo(
               </div>
             )}
 
-            {/* Persistent reaction badges — always visible when count > 0 */}
+            {/* Persistent reaction chips — attached to bubble corner iMessage-style */}
             {reactions && Object.keys(reactions).some(k => reactions[k].count > 0) && (
               <div
                 className={cn(
-                  'flex flex-wrap gap-1 mt-1',
-                  isOwnMessage ? 'justify-end' : 'justify-start',
+                  'flex flex-wrap gap-1 -mt-2.5 z-10 relative',
+                  isOwnMessage ? 'justify-end pr-1' : 'justify-start pl-1',
                 )}
               >
                 {Object.entries(reactions)
@@ -730,14 +730,14 @@ export const MessageBubble = memo(
                       key={reactionType}
                       onClick={() => onReaction(id, reactionType)}
                       className={cn(
-                        'flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs transition-colors',
+                        'flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] leading-none transition-colors shadow-sm ring-1 ring-background',
                         data.userReacted
-                          ? 'bg-primary/20 border border-primary/40 text-primary'
-                          : 'bg-muted/60 border border-white/10 text-white/70 hover:bg-muted/80',
+                          ? 'bg-primary/25 border border-primary/50 text-primary'
+                          : 'bg-muted border border-border/60 text-foreground/80 hover:bg-muted/80',
                       )}
                     >
                       <span>{REACTION_EMOJI_MAP[reactionType] || reactionType}</span>
-                      <span>{data.count}</span>
+                      <span className="font-medium">{data.count}</span>
                     </button>
                   ))}
               </div>
