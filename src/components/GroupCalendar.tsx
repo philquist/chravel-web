@@ -90,9 +90,9 @@ export const GroupCalendar = React.memo(({ tripId }: GroupCalendarProps) => {
 
   const handleStartBackgroundImport = useCallback(
     (url: string) => {
-      startBackgroundImport(url, handleBackgroundImportComplete);
+      startBackgroundImport(url, handleBackgroundImportComplete, { tripId });
     },
-    [startBackgroundImport, handleBackgroundImportComplete],
+    [startBackgroundImport, handleBackgroundImportComplete, tripId],
   );
 
   const handleImport = useCallback(async () => {

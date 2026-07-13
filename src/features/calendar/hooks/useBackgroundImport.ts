@@ -33,96 +33,99 @@ export function useBackgroundImport() {
   // Ref for duplicate-import guard (avoids stale closure on double-click)
   const importingRef = useRef(false);
 
-  const startImport = useCallback((url: string, onComplete?: () => void) => {
-    if (importingRef.current) {
-      toast.warning('An import is already in progress');
-      return;
-    }
-    importingRef.current = true;
+  const startImport = useCallback(
+    (url: string, onComplete?: () => void, options?: { tripId?: string }) => {
+      if (importingRef.current) {
+        toast.warning('An import is already in progress');
+        return;
+      }
+      importingRef.current = true;
 
-    // Extract domain for display
-    let domain = url;
-    try {
-      domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
-    } catch {
-      // Use raw URL as fallback
-    }
+      // Extract domain for display
+      let domain = url;
+      try {
+        domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
+      } catch {
+        // Use raw URL as fallback
+      }
 
-    // Clear any previous result
-    setState({
-      isImporting: true,
-      pendingResult: null,
-      sourceUrl: url,
-    });
+      // Clear any previous result
+      setState({
+        isImporting: true,
+        pendingResult: null,
+        sourceUrl: url,
+      });
 
-    // Create abort controller
-    const abortController = new AbortController();
-    abortRef.current = abortController;
+      // Create abort controller
+      const abortController = new AbortController();
+      abortRef.current = abortController;
 
-    // Show persistent loading toast
-    toastIdRef.current = toast.loading(`Scanning ${domain} for schedule...`, {
-      duration: Infinity,
-      description: "You can navigate away — we'll notify you when it's done.",
-    });
+      // Show persistent loading toast
+      toastIdRef.current = toast.loading(`Scanning ${domain} for schedule...`, {
+        duration: Infinity,
+        description: "You can navigate away — we'll notify you when it's done.",
+      });
 
-    // Run the import in the background (not awaited)
-    parseURLSchedule(url)
-      .then(result => {
-        if (abortController.signal.aborted) return;
+      // Run the import in the background (not awaited)
+      parseURLSchedule(url, { tripId: options?.tripId })
+        .then(result => {
+          if (abortController.signal.aborted) return;
 
-        importingRef.current = false;
-        setState({
-          isImporting: false,
-          pendingResult: result,
-          sourceUrl: url,
-        });
+          importingRef.current = false;
+          setState({
+            isImporting: false,
+            pendingResult: result,
+            sourceUrl: url,
+          });
 
-        if (toastIdRef.current) {
-          toast.dismiss(toastIdRef.current);
-        }
+          if (toastIdRef.current) {
+            toast.dismiss(toastIdRef.current);
+          }
 
-        if (result.isValid && result.events.length > 0) {
-          toast.success(
-            `Found ${result.events.length} event${result.events.length !== 1 ? 's' : ''} from ${domain}`,
-            {
-              description: 'Open the import modal to review and add them to your calendar.',
-              duration: Infinity,
-              action: onComplete
-                ? {
-                    label: 'View Events',
-                    onClick: onComplete,
-                  }
-                : undefined,
-            },
-          );
-        } else {
-          const errorMsg = result.errors[0] || 'No schedule data found on this page';
+          if (result.isValid && result.events.length > 0) {
+            toast.success(
+              `Found ${result.events.length} event${result.events.length !== 1 ? 's' : ''} from ${domain}`,
+              {
+                description: 'Open the import modal to review and add them to your calendar.',
+                duration: Infinity,
+                action: onComplete
+                  ? {
+                      label: 'View Events',
+                      onClick: onComplete,
+                    }
+                  : undefined,
+              },
+            );
+          } else {
+            const errorMsg = result.errors[0] || 'No schedule data found on this page';
+            toast.error('Import failed', {
+              description: errorMsg,
+              duration: 8000,
+            });
+          }
+        })
+        .catch(err => {
+          if (abortController.signal.aborted) return;
+
+          importingRef.current = false;
+          setState({
+            isImporting: false,
+            pendingResult: null,
+            sourceUrl: null,
+          });
+
+          if (toastIdRef.current) {
+            toast.dismiss(toastIdRef.current);
+          }
+
           toast.error('Import failed', {
-            description: errorMsg,
+            description: err instanceof Error ? err.message : 'Unknown error occurred',
             duration: 8000,
           });
-        }
-      })
-      .catch(err => {
-        if (abortController.signal.aborted) return;
-
-        importingRef.current = false;
-        setState({
-          isImporting: false,
-          pendingResult: null,
-          sourceUrl: null,
         });
-
-        if (toastIdRef.current) {
-          toast.dismiss(toastIdRef.current);
-        }
-
-        toast.error('Import failed', {
-          description: err instanceof Error ? err.message : 'Unknown error occurred',
-          duration: 8000,
-        });
-      });
-  }, []);
+    },
+    [],
+  );
 
   const clearResult = useCallback(() => {
     setState({

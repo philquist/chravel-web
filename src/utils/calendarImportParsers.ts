@@ -33,8 +33,16 @@ export interface SmartParseResult extends ICSParseResult {
   confidenceScores?: number[];
   /** Metadata from URL scrape (total found vs filtered) */
   urlMeta?: { eventsFound: number; eventsFiltered: number };
-  /** Optional per-event metadata (same length as `events` when set), e.g. Gmail-derived categories */
-  eventMeta?: Array<{ eventCategory?: string } | undefined>;
+  /** Optional per-event metadata (same length as `events` when set) */
+  eventMeta?: Array<
+    | {
+        eventCategory?: string;
+        homeAwayNeutral?: 'home' | 'away' | 'neutral' | 'unknown';
+        opponent?: string;
+        venueName?: string;
+      }
+    | undefined
+  >;
 }
 
 // ─── Column Detection Heuristics ─────────────────────────────────────────────
@@ -678,6 +686,9 @@ interface ScrapeScheduleEvent {
   confidence?: number;
   source_text?: string;
   category?: string;
+  /** Structured home/away when the source is a team schedule */
+  home_away?: 'home' | 'away' | 'neutral' | 'unknown';
+  opponent?: string;
 }
 
 interface ScrapeScheduleResponse {
@@ -690,10 +701,13 @@ interface ScrapeScheduleResponse {
   source_url?: string;
 }
 
-export async function parseURLSchedule(url: string): Promise<SmartParseResult> {
+export async function parseURLSchedule(
+  url: string,
+  options?: { tripId?: string },
+): Promise<SmartParseResult> {
   try {
     const { data, error } = await supabase.functions.invoke('scrape-schedule', {
-      body: { url },
+      body: { url, tripId: options?.tripId ?? null },
     });
     const response = (data ?? {}) as ScrapeScheduleResponse;
 
@@ -734,6 +748,8 @@ export async function parseURLSchedule(url: string): Promise<SmartParseResult> {
 
     const scheduleEvents: ScrapeScheduleEvent[] = response.events ?? [];
     const events: ICSParsedEvent[] = [];
+    const eventMeta: NonNullable<SmartParseResult['eventMeta']> = [];
+    const confidenceScores: number[] = [];
     for (let i = 0; i < scheduleEvents.length; i++) {
       const se = scheduleEvents[i];
       const startTime = parseFlexibleDate(se.date, se.start_time);
@@ -759,6 +775,14 @@ export async function parseURLSchedule(url: string): Promise<SmartParseResult> {
         description: descriptionParts.length > 0 ? descriptionParts.join('\n') : undefined,
         isAllDay: !se.start_time,
       });
+      eventMeta.push({
+        homeAwayNeutral: se.home_away,
+        opponent: se.opponent,
+        venueName: se.location,
+      });
+      if (typeof se.confidence === 'number') {
+        confidenceScores.push(se.confidence);
+      }
     }
 
     return {
@@ -766,6 +790,8 @@ export async function parseURLSchedule(url: string): Promise<SmartParseResult> {
       errors: [],
       isValid: events.length > 0,
       sourceFormat: 'url',
+      confidenceScores: confidenceScores.length === events.length ? confidenceScores : undefined,
+      eventMeta: eventMeta.length === events.length ? eventMeta : undefined,
       urlMeta: {
         eventsFound: response.events_found ?? events.length,
         eventsFiltered: response.events_filtered ?? 0,

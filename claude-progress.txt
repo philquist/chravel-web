@@ -1,3 +1,11 @@
+2026-07-13 — Smart Import hardening (calendar): batch undo, mobile UX, SSRF, home/away filters
+- Audited Calendar/Agenda/Lineup/Gmail/Concierge import paths end-to-end.
+- Added durable `calendar_import_batches` + `undo_calendar_import_batch` RPC (RLS + edit-conflict aware).
+- Mobile CalendarImportModal: stacked URL row, camera affordance, preview deselect, home/away filters, retry/undo.
+- Hardened Concierge browseWebsite SSRF; preserved bulk source_type; pass tripId into scrape-schedule.
+- Tests: homeAwayClassification, importFingerprint, CalendarImportModal, dropzone camera props. typecheck/lint/build green.
+- Branch: cursor/smart-import-hardening-62f8
+
 2026-07-13 — Mobile calendar Day/Month UX (marketing parity)
 - Redesigned MobileGroupCalendar: Day|Month segmented tabs, agenda-first Day view with event cards, height-capped mini calendar (max ~42%/48%, never flex-grows when empty).
 - Month view is distinct: compact month overview + selected-day agenda + “Open Day view”.

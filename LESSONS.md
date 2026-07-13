@@ -530,3 +530,7 @@ July 9 Search/isActive + realtime lazy-mount fixes were already on `main` and in
 
 ### Launch-critical E2E fixtures need an explicit release-gate mode
 Local Playwright runs can skip authenticated setup when staging secrets or confirmation-free auth are unavailable, but CI/App Store QA must fail instead of reporting green with skipped launch-critical coverage. Centralize the mode flag (`CHRAVEL_E2E_RELEASE_GATE=1`) and throw fixture-step errors (`[E2E fixture step failed: auth|trip creation|membership|pro trip creation] ...`) from shared fixtures so failures identify the broken setup step. *Evidence: July 2026 chat messaging E2E release-gate hardening.*
+
+### Prefer `@`/`vs` over bare `at` for home/away schedule classification
+Bare `at` matches venue phrases ("Trivia Night at Joe's"). Use `@` and `vs`/`versus` title cues (or explicit labels) so unknown events stay importable instead of being silently filtered.
+

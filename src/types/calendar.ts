@@ -60,6 +60,8 @@ export interface TripEvent {
   updated_at: string;
   version?: number;
   idempotency_key?: string | null;
+  /** Durable Smart Import batch this event was created under (if any). */
+  import_batch_id?: string | null;
 }
 
 /**
@@ -82,6 +84,8 @@ export interface CreateEventData {
   is_busy?: boolean;
   availability_status?: CalendarAvailabilityStatus;
   idempotency_key?: string;
+  /** Links this insert to a calendar_import_batches row for undo. */
+  import_batch_id?: string | null;
 }
 
 // ---------------------------------------------------------------------------
