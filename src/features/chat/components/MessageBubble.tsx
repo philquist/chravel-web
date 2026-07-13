@@ -28,6 +28,14 @@ import { useResolvedTripMediaUrl } from '@/hooks/useResolvedTripMediaUrl';
 import { hapticService } from '@/services/hapticService';
 import { getMentionClassName, MENTION_REGEX } from './messageMentions';
 import { ModerationAction } from '@/services/moderationService';
+import { VoiceNotePlayer } from './VoiceNotePlayer';
+
+const AUDIO_EXT_RE = /\.(mp3|wav|m4a|ogg|oga|webm|opus|aac|caf)(\?|$)/i;
+const isAudioAttachment = (att: { type: string; url?: string; mimeType?: string }) => {
+  if (att.type === 'audio') return true;
+  if (att.mimeType?.startsWith('audio/')) return true;
+  return !!att.url && AUDIO_EXT_RE.test(att.url);
+};
 
 export interface MessageBubbleProps {
   id: string;
