@@ -476,14 +476,29 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
         failed = result.failed;
 
         if (batchId) {
-          await finalizeCalendarImportBatch(batchId, { imported, skipped, failed });
+          try {
+            await finalizeCalendarImportBatch(batchId, { imported, skipped, failed });
+          } catch (finalizeError) {
+            toast.error('Import saved, but batch tracking failed', {
+              description:
+                finalizeError instanceof Error
+                  ? finalizeError.message
+                  : 'Undo metadata may be incomplete. Try refreshing.',
+            });
+          }
         }
       }
     } catch (error) {
       if (import.meta.env.DEV) console.error('Bulk import failed:', error);
       failed = eventsToInsert.length - imported;
       if (batchId) {
-        await finalizeCalendarImportBatch(batchId, { imported, skipped, failed });
+        try {
+          await finalizeCalendarImportBatch(batchId, { imported, skipped, failed });
+        } catch (finalizeError) {
+          if (import.meta.env.DEV) {
+            console.warn('Failed to finalize import batch after error:', finalizeError);
+          }
+        }
       }
     }
 

@@ -5262,6 +5262,15 @@ export type Database = {
       }
     }
     Functions: {
+      finalize_calendar_import_batch: {
+        Args: {
+          p_batch_id: string
+          p_imported: number
+          p_skipped: number
+          p_failed: number
+        }
+        Returns: Json
+      }
       undo_calendar_import_batch: {
         Args: {
           p_batch_id: string
