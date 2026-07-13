@@ -15,7 +15,8 @@ import {
   Trash2,
   Download,
   Upload,
-  Grid3x3,
+  CalendarDays,
+  List,
 } from 'lucide-react';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from './PullToRefreshIndicator';
@@ -51,12 +52,27 @@ interface CalendarEvent {
   title: string;
   date: Date;
   time: string;
+  endTime?: string;
   location?: string;
   participants: number;
   color: string;
+  originalEvent?: TripEvent;
 }
 
 type CalendarViewMode = 'list' | 'grid';
+
+const formatEventClock = (iso: string): string =>
+  new Date(iso).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+const formatEventTimeRange = (startIso: string, endIso?: string | null): string => {
+  const start = formatEventClock(startIso);
+  if (!endIso) return start;
+  return `${start} – ${formatEventClock(endIso)}`;
+};
 
 interface MobileGroupCalendarProps {
   tripId: string;
@@ -128,13 +144,14 @@ export const MobileGroupCalendar = ({
   // Use external view mode if provided, otherwise use internal state
   const currentViewMode = externalViewMode ?? internalViewMode;
 
-  const handleToggleView = async () => {
-    await hapticService.light();
-    if (onToggleView) {
+  const setViewMode = (mode: CalendarViewMode) => {
+    if (mode === currentViewMode) return;
+    void hapticService.light();
+    // Only toggle via parent when it also owns the controlled viewMode prop.
+    if (externalViewMode !== undefined && onToggleView) {
       onToggleView();
     } else {
-      // Toggle internal view mode if no external handler
-      setInternalViewMode(prev => (prev === 'list' ? 'grid' : 'list'));
+      setInternalViewMode(mode);
     }
   };
 
@@ -206,15 +223,12 @@ export const MobileGroupCalendar = ({
       sourceEvents = [...tripEvents, ...dynamicDemoEvents.filter(e => !existingIds.has(e.id))];
     }
     const calendarEvents = sourceEvents.map((event, index) => {
-      const calendarEvent = {
+      const calendarEvent: CalendarEvent = {
         id: event.id,
         title: event.title,
         date: new Date(event.start_time),
-        time: new Date(event.start_time).toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true,
-        }),
+        time: formatEventTimeRange(event.start_time, event.end_time),
+        endTime: event.end_time ? formatEventClock(event.end_time) : undefined,
         location: event.location || undefined,
         participants: tripMembers?.length || 0,
         color: EVENT_COLORS[index % EVENT_COLORS.length],
@@ -242,7 +256,7 @@ export const MobileGroupCalendar = ({
     setIsModalOpen(true);
   };
 
-  // Generate calendar days for the current month view
+  // Generate calendar days for the current month view (complete weeks only — no forced 6-row pad)
   const generateCalendarDays = () => {
     const start = startOfMonth(currentMonth);
     const end = endOfMonth(currentMonth);
@@ -263,8 +277,8 @@ export const MobileGroupCalendar = ({
       days.push(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i));
     }
 
-    // Add padding days for next month to complete grid (6 weeks max)
-    while (days.length < 42) {
+    // Pad only to finish the final week so short months stay visually compact
+    while (days.length % 7 !== 0) {
       const lastDate = days[days.length - 1];
       const nextDate = new Date(lastDate);
       nextDate.setDate(nextDate.getDate() + 1);
@@ -368,8 +382,155 @@ export const MobileGroupCalendar = ({
     setSelectedEvent(null);
   }, []);
 
+  const handleExportClick = async () => {
+    await hapticService.light();
+    if (onExport) {
+      onExport();
+    } else {
+      await exportTripEvents(tripEvents);
+    }
+  };
+
+  const renderDayEventCard = (event: CalendarEvent) => (
+    <button
+      key={event.id}
+      type="button"
+      onClick={() => handleEventClick(event)}
+      data-testid="calendar-day-event-card"
+      className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.98] hover:bg-white/10"
+    >
+      <div
+        className={`absolute left-0 top-0 h-full w-1 rounded-l-2xl bg-gradient-to-b ${event.color}`}
+      />
+      <div className="flex items-start justify-between gap-3 pl-2">
+        <div className="min-w-0 flex-1">
+          <h4 className="truncate text-base font-semibold text-white">{event.title}</h4>
+          <div className="mt-1.5 flex items-center gap-2 text-sm text-gray-300">
+            <Clock size={14} className="shrink-0 text-gold-primary" />
+            <span>{event.time}</span>
+          </div>
+          {event.location && (
+            <div className="mt-1 flex items-center gap-2 text-sm text-gray-400">
+              <MapPin size={14} className="shrink-0" />
+              <span className="truncate">{event.location}</span>
+            </div>
+          )}
+          <div className="mt-1.5 flex items-center gap-2 text-sm text-gray-500">
+            <Users size={14} className="shrink-0" />
+            <span>{event.participants} attending</span>
+          </div>
+        </div>
+        <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-1 text-xs font-medium text-gold-light">
+          {event.time.split(' – ')[0]}
+        </span>
+      </div>
+    </button>
+  );
+
+  const renderCompactCalendar = (opts: { density: 'day' | 'month'; showEventTitles?: boolean }) => {
+    const isDayDensity = opts.density === 'day';
+    const cellHeight = isDayDensity ? 'h-7' : 'h-9';
+    const daySize = isDayDensity ? 'size-7 text-xs' : 'size-8 text-sm';
+
+    return (
+      <div
+        data-testid={isDayDensity ? 'calendar-day-mini-grid' : 'calendar-month-grid'}
+        className={[
+          'shrink-0 overflow-hidden border-t border-white/10 bg-black/40 px-3 pb-3 pt-2',
+          // Hard cap: calendar never claims more than the bottom half of the panel
+          isDayDensity ? 'max-h-[42%]' : 'max-h-[48%]',
+        ].join(' ')}
+      >
+        <div className="mb-1 flex shrink-0 items-center justify-between py-1">
+          <button
+            type="button"
+            onClick={handlePreviousMonth}
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl hover:bg-white/10 active:scale-95"
+            aria-label="Previous month"
+          >
+            <ChevronLeft size={18} className="text-gray-400" />
+          </button>
+          <span className="text-sm font-semibold text-white">
+            {format(currentMonth, 'MMMM yyyy')}
+          </span>
+          <button
+            type="button"
+            onClick={handleNextMonth}
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl hover:bg-white/10 active:scale-95"
+            aria-label="Next month"
+          >
+            <ChevronRight size={18} className="text-gray-400" />
+          </button>
+        </div>
+
+        <div className="mb-0.5 grid grid-cols-7 gap-0.5">
+          {weekDays.map((day, index) => (
+            <div
+              key={`weekday-${opts.density}-${index}`}
+              className="py-0.5 text-center text-[10px] font-medium uppercase tracking-wide text-gray-500"
+            >
+              {day}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-0.5">
+          {calendarDays.map((date, index) => {
+            const isCurrentMonth = isSameMonth(date, currentMonth);
+            const isSelected = isSameDay(date, selectedDate);
+            const isToday = isSameDay(date, new Date());
+            const dayEvents = events.filter(e => isSameDay(e.date, date));
+            const hasEvents = dayEvents.length > 0;
+
+            return (
+              <button
+                key={`${opts.density}-day-${index}`}
+                type="button"
+                onClick={() => handleDateSelect(date)}
+                aria-label={`${format(date, 'EEEE, MMMM d')}${hasEvents ? `, ${dayEvents.length} event${dayEvents.length === 1 ? '' : 's'}` : ''}`}
+                aria-selected={isSelected}
+                className={[
+                  'relative flex w-full flex-col items-center justify-start rounded-lg transition-all duration-150 active:scale-95',
+                  cellHeight,
+                  !isSelected ? 'hover:bg-white/10' : '',
+                  opts.showEventTitles ? 'min-h-[2.75rem] py-0.5' : '',
+                ].join(' ')}
+              >
+                <span
+                  className={[
+                    'flex shrink-0 items-center justify-center rounded-full font-medium',
+                    daySize,
+                    isSelected
+                      ? 'bg-gold-primary text-primary-foreground'
+                      : !isCurrentMonth
+                        ? 'text-gray-600'
+                        : isToday
+                          ? 'bg-gold-primary/20 text-gold-light'
+                          : 'text-gray-300',
+                  ].join(' ')}
+                >
+                  {format(date, 'd')}
+                </span>
+                {opts.showEventTitles && hasEvents ? (
+                  <span className="mt-0.5 w-full truncate px-0.5 text-center text-[9px] leading-tight text-gold-light/90">
+                    {dayEvents[0].title}
+                  </span>
+                ) : (
+                  hasEvents &&
+                  !isSelected && (
+                    <span className="pointer-events-none absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-gold-primary" />
+                  )
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="flex flex-col h-full bg-black relative">
+    <div className="relative flex h-full flex-col bg-black" data-testid="mobile-group-calendar">
       <PullToRefreshIndicator
         isRefreshing={isRefreshing}
         pullDistance={pullDistance}
@@ -388,310 +549,175 @@ export const MobileGroupCalendar = ({
         />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
-          {/* Month Navigation */}
-          <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
-            <button
-              onClick={handlePreviousMonth}
-              className="p-2 hover:bg-white/10 rounded-lg active:scale-95 transition-all"
+          {/* Day / Month segmented control — makes the two modes unmistakably distinct */}
+          <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-4 py-2.5">
+            <div
+              role="tablist"
+              aria-label="Calendar view"
+              className="flex flex-1 rounded-full bg-white/5 p-1"
             >
-              <ChevronLeft size={20} className="text-white" />
-            </button>
-            <h3 className="text-lg font-semibold text-white">
-              {format(currentMonth, 'MMMM yyyy')}
-            </h3>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={currentViewMode === 'list'}
+                data-testid="calendar-view-day"
+                onClick={() => setViewMode('list')}
+                className={[
+                  'flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-full text-sm font-semibold transition-all active:scale-[0.98]',
+                  currentViewMode === 'list'
+                    ? 'bg-primary/15 text-gold-light shadow-ring-glow ring-1 ring-primary/50'
+                    : 'text-gray-400 hover:text-white',
+                ].join(' ')}
+              >
+                <List size={14} />
+                Day
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={currentViewMode === 'grid'}
+                data-testid="calendar-view-month"
+                onClick={() => setViewMode('grid')}
+                className={[
+                  'flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-full text-sm font-semibold transition-all active:scale-[0.98]',
+                  currentViewMode === 'grid'
+                    ? 'bg-primary/15 text-gold-light shadow-ring-glow ring-1 ring-primary/50'
+                    : 'text-gray-400 hover:text-white',
+                ].join(' ')}
+              >
+                <CalendarDays size={14} />
+                Month
+              </button>
+            </div>
             <button
-              onClick={handleNextMonth}
-              className="p-2 hover:bg-white/10 rounded-lg active:scale-95 transition-all"
+              type="button"
+              onClick={handleAddEvent}
+              className="flex min-h-[44px] items-center gap-1 rounded-full bg-primary px-3.5 text-sm font-semibold text-primary-foreground transition-transform active:scale-95"
+              aria-label="Add event"
             >
-              <ChevronRight size={20} className="text-white" />
+              <Plus size={16} />
+              New
             </button>
           </div>
 
-          {/* DAY VIEW (list mode): Events at TOP, compact calendar at BOTTOM */}
+          {/* Secondary actions */}
+          <div className="flex shrink-0 justify-center gap-2 border-b border-white/5 px-4 py-2">
+            <button
+              type="button"
+              onClick={handleImport}
+              className="flex min-h-[40px] items-center gap-1.5 rounded-xl bg-white/5 px-3 text-xs text-gray-300 transition-colors hover:bg-white/10 active:scale-95"
+            >
+              <Upload size={14} />
+              Import
+            </button>
+            <button
+              type="button"
+              onClick={handleExportClick}
+              className="flex min-h-[40px] items-center gap-1.5 rounded-xl bg-white/5 px-3 text-xs text-gray-300 transition-colors hover:bg-white/10 active:scale-95"
+            >
+              <Download size={14} />
+              Export
+            </button>
+          </div>
+
+          {/* DAY VIEW: agenda-first listings, mini calendar capped to bottom half */}
           {currentViewMode === 'list' && (
-            <div className="flex flex-col flex-1 min-h-0">
-              {/* Day Header + Events List — only grows when this day has events (empty state should not steal vertical space from the calendar). */}
-              <div
-                className={
-                  eventsForSelectedDate.length > 0
-                    ? 'flex-1 min-h-0 overflow-y-auto px-4 py-3'
-                    : 'shrink-0 px-4 py-3'
-                }
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-white">
-                    {format(selectedDate, 'EEEE, MMMM d')}
-                  </h3>
+            <div
+              className="flex min-h-0 flex-1 flex-col"
+              data-testid="calendar-day-view"
+              data-view="day"
+            >
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                      {format(selectedDate, 'MMMM yyyy')}
+                    </p>
+                    <h3 className="truncate text-xl font-semibold tracking-tight text-white">
+                      {format(selectedDate, 'EEEE, MMMM d')}
+                    </h3>
+                  </div>
                   <button
+                    type="button"
                     onClick={handleAddEvent}
-                    className="p-2 bg-primary rounded-lg active:scale-95 transition-transform"
+                    className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-95"
+                    aria-label="Add event for selected day"
                   >
-                    <Plus size={18} className="text-white" />
+                    <Plus size={20} />
                   </button>
                 </div>
 
                 <div className="space-y-3">
                   {eventsForSelectedDate.length === 0 ? (
-                    <div className="text-center py-3">
-                      <p className="text-gray-400 text-sm">No events for this day.</p>
+                    <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-8 text-center">
+                      <p className="text-sm text-gray-400">No events for this day.</p>
+                      <button
+                        type="button"
+                        onClick={handleAddEvent}
+                        className="mt-3 text-sm font-medium text-gold-light underline-offset-2 hover:underline"
+                      >
+                        Add your first event
+                      </button>
                     </div>
                   ) : (
-                    eventsForSelectedDate.map(event => (
-                      <button
-                        key={event.id}
-                        onClick={() => handleEventClick(event)}
-                        className="w-full bg-white/10 rounded-xl p-4 active:scale-98 transition-transform relative"
-                      >
-                        <div
-                          className={`w-1 h-full absolute left-0 top-0 rounded-l-xl bg-gradient-to-b ${event.color}`}
-                        />
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="text-white font-semibold text-left">{event.title}</h4>
-                          <span className="text-sm text-gray-400">{event.time}</span>
-                        </div>
-                        {event.location && (
-                          <div className="flex items-center gap-2 text-sm text-gray-300 mb-2">
-                            <MapPin size={14} />
-                            <span>{event.location}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
-                          <Users size={14} />
-                          <span>{event.participants} attending</span>
-                        </div>
-                      </button>
-                    ))
+                    eventsForSelectedDate.map(renderDayEventCard)
                   )}
                 </div>
               </div>
 
-              {/* Action Buttons - Middle section */}
-              <div className="flex shrink-0 justify-center gap-2 px-4 py-2 border-y border-white/10 bg-black/50">
-                <button
-                  onClick={handleImport}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-gray-300 transition-colors active:scale-95"
-                >
-                  <Upload size={14} />
-                  <span>Import</span>
-                </button>
-                <button
-                  onClick={async () => {
-                    await hapticService.light();
-                    if (onExport) {
-                      onExport();
-                    } else {
-                      await exportTripEvents(tripEvents);
-                    }
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-gray-300 transition-colors active:scale-95"
-                >
-                  <Download size={14} />
-                  <span>Export</span>
-                </button>
-                <button
-                  onClick={handleToggleView}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-gray-300 transition-colors active:scale-95"
-                >
-                  <Grid3x3 size={14} />
-                  <span>Month Grid</span>
-                </button>
-                <button
-                  onClick={handleAddEvent}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-gray-300 transition-colors active:scale-95"
-                >
-                  <Plus size={14} />
-                  <span>Add</span>
-                </button>
-              </div>
-
-              {/* Compact Mini Calendar - expands into leftover height when the selected day has no events */}
-              <div
-                className={
-                  eventsForSelectedDate.length === 0
-                    ? 'flex flex-1 min-h-0 flex-col px-4 py-2 border-t border-white/10 bg-black/30'
-                    : 'shrink-0 px-4 py-2 border-t border-white/10 bg-black/30'
-                }
-              >
-                {/* Compact Month Navigation */}
-                <div className="flex shrink-0 items-center justify-between py-1.5 mb-1">
-                  <button
-                    onClick={handlePreviousMonth}
-                    className="p-1.5 hover:bg-white/10 rounded-lg active:scale-95 transition-all"
-                  >
-                    <ChevronLeft size={16} className="text-gray-400" />
-                  </button>
-                  <span className="text-sm font-medium text-gray-300">
-                    {format(currentMonth, 'MMM yyyy')}
-                  </span>
-                  <button
-                    onClick={handleNextMonth}
-                    className="p-1.5 hover:bg-white/10 rounded-lg active:scale-95 transition-all"
-                  >
-                    <ChevronRight size={16} className="text-gray-400" />
-                  </button>
-                </div>
-
-                {/* Compact Weekday Headers */}
-                <div className="mb-1 grid shrink-0 grid-cols-7 gap-0.5">
-                  {weekDays.map(day => (
-                    <div
-                      key={`compact-${day}`}
-                      className="text-center text-[10px] font-medium text-gray-500 py-0.5"
-                    >
-                      {day}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Compact Calendar Days - 5 rows max; rows stretch when this day is empty so the grid is easier to tap */}
-                <div
-                  className={
-                    eventsForSelectedDate.length === 0
-                      ? 'grid min-h-0 flex-1 grid-cols-7 gap-0.5 pt-0.5 [grid-template-rows:repeat(5,minmax(1.875rem,1fr))]'
-                      : 'grid grid-cols-7 gap-0.5'
-                  }
-                >
-                  {calendarDays.slice(0, 35).map((date, index) => {
-                    const isCurrentMonth = isSameMonth(date, currentMonth);
-                    const isSelected = isSameDay(date, selectedDate);
-                    const isToday = isSameDay(date, new Date());
-                    const hasEvents = events.some(e => isSameDay(e.date, date));
-                    const expandDayCells = eventsForSelectedDate.length === 0;
-
-                    return (
-                      <button
-                        key={`compact-day-${index}`}
-                        type="button"
-                        onClick={() => handleDateSelect(date)}
-                        className={[
-                          'relative flex items-center justify-center',
-                          'transition-all duration-150 active:scale-95',
-                          expandDayCells ? 'h-full min-h-[1.875rem] w-full' : 'h-7 w-full',
-                          !isSelected ? 'rounded-lg hover:bg-white/10' : '',
-                        ].join(' ')}
-                      >
-                        <span
-                          className={[
-                            'flex shrink-0 items-center justify-center rounded-full text-xs font-medium',
-                            expandDayCells ? 'size-8' : 'size-7',
-                            isSelected
-                              ? 'ring-2 ring-gold-primary text-gold-light'
-                              : !isCurrentMonth
-                                ? 'text-gray-600'
-                                : isToday
-                                  ? 'bg-gold-primary/20 text-gold-light'
-                                  : 'text-gray-300',
-                          ].join(' ')}
-                        >
-                          {format(date, 'd')}
-                        </span>
-                        {hasEvents && !isSelected && (
-                          <span className="pointer-events-none absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-gold-primary" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              {renderCompactCalendar({ density: 'day' })}
             </div>
           )}
 
-          {/* MONTH GRID VIEW: Full calendar grid with inline events */}
+          {/* MONTH VIEW: capped month overview + selected-day agenda strip */}
           {currentViewMode === 'grid' && (
-            <div className="flex min-h-0 flex-1 flex-col">
-              {/* Action Buttons for Month Grid */}
-              <div className="flex shrink-0 justify-center gap-2 border-b border-white/10 px-4 py-3">
-                <button
-                  onClick={handleImport}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm text-gray-300 transition-colors active:scale-95"
-                >
-                  <Upload size={16} />
-                  <span>Import</span>
-                </button>
-                <button
-                  onClick={async () => {
-                    await hapticService.light();
-                    if (onExport) {
-                      onExport();
-                    } else {
-                      await exportTripEvents(tripEvents);
-                    }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm text-gray-300 transition-colors active:scale-95"
-                >
-                  <Download size={16} />
-                  <span>Export</span>
-                </button>
-                <button
-                  onClick={handleToggleView}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm text-gray-300 transition-colors active:scale-95"
-                >
-                  <Grid3x3 size={16} />
-                  <span>Day View</span>
-                </button>
-                <button
-                  onClick={handleAddEvent}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm text-gray-300 transition-colors active:scale-95"
-                >
-                  <Plus size={16} />
-                  <span>Add Event</span>
-                </button>
-              </div>
+            <div
+              className="flex min-h-0 flex-1 flex-col"
+              data-testid="calendar-month-view"
+              data-view="month"
+            >
+              {renderCompactCalendar({ density: 'month', showEventTitles: true })}
 
-              {/* Full Month Grid with Events */}
-              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-                <div className="grid grid-cols-7 gap-1">
-                  {/* Weekday Headers */}
-                  {weekDays.map(day => (
-                    <div
-                      key={`grid-${day}`}
-                      className="text-center text-xs font-medium text-gray-500 py-2 border-b border-white/10"
-                    >
-                      {day}
-                    </div>
-                  ))}
+              <div className="min-h-0 flex-1 overflow-y-auto border-t border-white/10 px-4 py-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <h3 className="text-base font-semibold text-white">
+                    Events for {format(selectedDate, 'EEEE, MMM d')}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('list')}
+                    className="text-xs font-medium text-gold-light underline-offset-2 hover:underline"
+                  >
+                    Open Day view
+                  </button>
+                </div>
 
-                  {/* Calendar Days with Events */}
-                  {calendarDays.map((date, index) => {
-                    const isCurrentMonth = isSameMonth(date, currentMonth);
-                    const isToday = isSameDay(date, new Date());
-                    const dayEvents = events.filter(e => isSameDay(e.date, date));
-
-                    return (
-                      <div
-                        key={`grid-day-${index}`}
-                        className={`
-                          min-h-[80px] p-1 border-b border-r border-white/5 
-                          ${isCurrentMonth ? 'bg-black' : 'bg-black/50'}
-                        `}
+                <div className="space-y-2.5">
+                  {eventsForSelectedDate.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-gray-400">
+                      No events scheduled for this day.
+                    </p>
+                  ) : (
+                    eventsForSelectedDate.map(event => (
+                      <button
+                        key={event.id}
+                        type="button"
+                        onClick={() => handleEventClick(event)}
+                        className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-left transition-colors hover:bg-white/10 active:scale-[0.99]"
                       >
-                        <div
-                          className={`
-                          text-xs font-medium mb-1 px-1
-                          ${isToday ? 'text-gold-primary' : isCurrentMonth ? 'text-white' : 'text-gray-600'}
-                        `}
-                        >
-                          {format(date, 'd')}
+                        <span
+                          className={`h-10 w-1 shrink-0 rounded-full bg-gradient-to-b ${event.color}`}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium text-white">{event.title}</p>
+                          <p className="truncate text-xs text-gray-400">
+                            {event.time}
+                            {event.location ? ` · ${event.location}` : ''}
+                          </p>
                         </div>
-                        <div className="space-y-0.5">
-                          {dayEvents.slice(0, 3).map(event => (
-                            <button
-                              key={event.id}
-                              onClick={() => handleEventClick(event)}
-                              className={`w-full text-left truncate text-[10px] px-1 py-0.5 rounded bg-gradient-to-r ${event.color} text-white`}
-                            >
-                              {event.title}
-                            </button>
-                          ))}
-                          {dayEvents.length > 3 && (
-                            <div className="text-[10px] text-gray-400 px-1">
-                              +{dayEvents.length - 3} more
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

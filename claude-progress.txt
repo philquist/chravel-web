@@ -1,3 +1,9 @@
+2026-07-13 — Mobile calendar Day/Month UX (marketing parity)
+- Redesigned MobileGroupCalendar: Day|Month segmented tabs, agenda-first Day view with event cards, height-capped mini calendar (max ~42%/48%, never flex-grows when empty).
+- Month view is distinct: compact month overview + selected-day agenda + “Open Day view”.
+- Tests: MobileGroupCalendar.layout.test.tsx + existing demoEvents suite green; typecheck/lint/build pass.
+- Branch: cursor/mobile-calendar-day-month-ux-003d
+
 2026-07-13 — Promote Trip Search follow-up: shared portal shell + CTA open gestures
 - Extracted BodyPortalOverlayShell / useBodyPortalOverlayControls / getTrustedOverlayOpenHandlers; Concierge + Chat Search both use them.
 - Chat MessageTypeBar Search now opens on trusted touch/pen pointerdown (parity with Concierge); Upload documented as in-DOM (no overlay race).

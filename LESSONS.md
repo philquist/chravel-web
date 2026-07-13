@@ -261,6 +261,12 @@ Silent failures are unfixable. Emit a typed error event even if no caller is lis
 ### Never put AI/parser enrichment ahead of chat mutation kickoff
 Enrich after the canonical write — otherwise enrichment failure blocks delivery.
 
+### Mobile Day vs Month calendar must be layout-distinct, not just a label swap
+Day = agenda-first listings with a height-capped mini grid; Month = capped month overview + selected-day agenda. A single stretched grid for both modes reads as broken UX (Jul 2026 marketing-parity fix).
+
+### Never let an empty day list `flex-1` the month grid into the leftover viewport
+Empty-state calendar expansion made Day view look identical to Month and stole >50% vertical space. Cap with `max-h-[~42%]` + `shrink-0` instead.
+
 ---
 
 ## Media, Maps & UI

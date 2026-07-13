@@ -547,3 +547,23 @@ Known security anti-patterns discovered during audits. Reference this before int
 - **Fix:** Module-level `EMPTY_DEMO_MESSAGES`; `setMessages(prev => prev.length === 0 ? prev : [])`; optional `scrollIntoView?.()` for jsdom.
 - **Evidence:** 2026-07-13 release-gate unblock; mountStability regression test.
 
+
+## Mobile calendar empty-day flex expansion
+- **Status:** fixed
+- **Subsystem:** mobile calendar (`MobileGroupCalendar`)
+- **Bug class:** layout / flex growth
+- **Symptom:** Day and Month views both looked like a giant month grid; Day event listings were squeezed or absent; calendar occupied majority of the phone screen even with no events.
+- **Root cause:** Day-view mini calendar used `flex-1` when `eventsForSelectedDate.length === 0`, stretching cells to fill leftover height. Month view used `min-h-[80px]` day cells. View toggle was a buried "Month Grid"/"Day View" label with nearly identical layouts.
+- **Smallest safe fix:** Segmented Day|Month tabs; Day = scrollable agenda + `shrink-0 max-h-[42%]` mini grid; Month = `max-h-[48%]` overview + selected-day agenda strip; never flex-grow the grid for empty days.
+- **Required tests:** `MobileGroupCalendar.layout.test.tsx` asserts Day/Month distinct panels and max-height classes; demoEvents suite still green.
+- **Fixed in:** `src/components/mobile/MobileGroupCalendar.tsx` (July 2026)
+
+## Async haptic before setState breaks Vitest sync clicks
+- **Status:** fixed
+- **Subsystem:** mobile calendar view mode (`setViewMode`)
+- **Bug class:** async handler / test timing
+- **Symptom:** `fireEvent.click` on Day/Month tabs left `aria-selected` unchanged in Vitest.
+- **Root cause:** `await hapticService.light()` before `setInternalViewMode` deferred the state update past the sync click act boundary.
+- **Smallest safe fix:** Fire haptic with `void hapticService.light()` and set state synchronously.
+- **Required tests:** layout suite Month tab click + Open Day view round-trip.
+- **Fixed in:** `MobileGroupCalendar.tsx` (July 2026)
