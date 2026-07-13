@@ -1,3 +1,9 @@
+2026-07-13 — App Store release gate script
+- Added `npm run qa:appstore-release` as the top-level release gate, backed by a timed sequential runner that stops on first failure and summarizes pass/fail state.
+- Gate order now covers env validation, guardrails, permissions/IAP checks, lint/type/test/build, mobile/chat readiness, smoke E2E, and mapped Playwright release surfaces for auth, trip creation, invite/join, payments, Concierge, events, pro trips, and media.
+- Documented required release env vars and expected known failures/missing Playwright coverage in `docs/qa/appstore-release-gate.md`.
+- Verification: script syntax check passes; full gate was attempted and correctly stopped at `validate-env` because this environment lacks release Supabase/Google Maps env vars.
+
 2026-07-12 — Concierge launch audit + send CTA parity
 - Kept Concierge Send visually aligned with Search/Upload/waveform by preserving gold-ring CTA chrome when the composer is empty; empty sends are now blocked in handlers + aria-disabled instead of DOM-disabled opacity.
 - Audited Concierge tool coverage and language routing: registry exposes 74 text tools plus voice parity overrides, write tools are covered by executor/invalidation/pending-action tests, and prompt assembly enforces same-message language matching with optional user-selected override.
