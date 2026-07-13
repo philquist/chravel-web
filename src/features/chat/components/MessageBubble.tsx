@@ -251,45 +251,74 @@ export const MessageBubble = memo(
       }
     };
 
-    // Render file attachments
+    // Render file attachments — iMessage-style image mosaic + stacked non-image files
     const renderFileAttachments = () => {
       if (!hasAttachments) return null;
 
+      const images = attachments.filter(a => a.type === 'image' && a.url);
+      const nonImages = attachments.filter(a => a.type !== 'image');
+      const visibleImages = images.slice(0, 4);
+      const overflow = images.length - visibleImages.length;
+
+      // Mosaic layout: 1 = full, 2 = side-by-side, 3 = one big + 2 stacked, 4 = 2x2
+      const mosaicClass =
+        visibleImages.length === 1
+          ? 'grid-cols-1'
+          : visibleImages.length === 2
+            ? 'grid-cols-2'
+            : 'grid-cols-2 grid-rows-2';
+
       return (
         <div className="mt-2 space-y-2">
-          {attachments.map((attachment, index) => {
-            if (attachment.type === 'image' && attachment.url) {
-              return (
-                <div key={index} className="relative group">
-                  <img
-                    src={attachment.url}
-                    alt={`Attachment ${index + 1}`}
-                    className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-95 transition-opacity"
-                    style={{ maxHeight: '300px' }}
-                    onClick={() => handleImageClick(attachment.url!)}
-                  />
+          {visibleImages.length > 0 && (
+            <div
+              className={`grid gap-0.5 rounded-2xl overflow-hidden ${mosaicClass}`}
+              style={{ maxWidth: '320px' }}
+            >
+              {visibleImages.map((attachment, index) => {
+                const isLastVisible = index === visibleImages.length - 1;
+                const showOverflow = overflow > 0 && isLastVisible;
+                // 3-image layout: first spans full height on the left
+                const spanClass =
+                  visibleImages.length === 3 && index === 0 ? 'row-span-2' : '';
+                return (
                   <button
+                    key={index}
+                    type="button"
                     onClick={() => handleImageClick(attachment.url!)}
-                    className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label="View full size"
+                    className={`relative group overflow-hidden bg-muted focus:outline-none focus:ring-2 focus:ring-primary ${spanClass}`}
+                    aria-label={`View image ${index + 1}${showOverflow ? ` and ${overflow} more` : ''}`}
                   >
-                    <Maximize2 size={16} />
+                    <img
+                      src={attachment.url}
+                      alt={`Attachment ${index + 1}`}
+                      className="w-full h-full object-cover aspect-square hover:opacity-95 transition-opacity"
+                      loading="lazy"
+                    />
+                    {showOverflow && (
+                      <div className="absolute inset-0 bg-black/55 flex items-center justify-center text-white text-xl font-semibold">
+                        +{overflow}
+                      </div>
+                    )}
                   </button>
-                </div>
-              );
-            }
+                );
+              })}
+            </div>
+          )}
+
+          {nonImages.map((attachment, index) => {
             if (attachment.type === 'file' && attachment.url) {
               return (
                 <a
-                  key={index}
+                  key={`file-${index}`}
                   href={attachment.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors"
+                  className="flex items-center gap-2 bg-muted hover:bg-muted/70 px-3 py-2 rounded-lg transition-colors border border-border/50"
                 >
-                  <FileText size={16} className="text-gray-400" />
+                  <FileText size={16} className="text-muted-foreground" />
                   <span className="text-sm truncate flex-1">{text || 'File attachment'}</span>
-                  <Download size={14} className="text-gray-400" />
+                  <Download size={14} className="text-muted-foreground" />
                 </a>
               );
             }
@@ -299,7 +328,7 @@ export const MessageBubble = memo(
       );
     };
 
-    // Render link preview
+    // Render link preview — polished iMessage-style card using semantic tokens
     const renderLinkPreview = () => {
       if (!hasLinkPreview) return null;
 
@@ -309,29 +338,37 @@ export const MessageBubble = memo(
           href={preview.url || text}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-2 block bg-gray-800 hover:bg-gray-700 rounded-lg overflow-hidden transition-colors"
+          className="mt-2 block bg-muted/60 hover:bg-muted rounded-2xl overflow-hidden transition-colors border border-border/50"
+          style={{ maxWidth: '320px' }}
         >
           {preview.image && !linkImgError && (
             <img
               src={preview.image}
               alt={preview.title || 'Link preview'}
-              className="w-full h-32 object-cover"
+              className="w-full h-40 object-cover"
+              loading="lazy"
               onError={() => setLinkImgError(true)}
             />
           )}
           <div className="p-3">
             <div className="flex items-start gap-2">
-              <Link size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
+              <Link size={14} className="text-muted-foreground mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-medium text-white truncate">
+                <h4 className="text-sm font-semibold text-foreground truncate">
                   {preview.title || preview.domain || 'Link'}
                 </h4>
                 {preview.description && (
-                  <p className="text-xs text-gray-400 mt-1 line-clamp-2">{preview.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    {preview.description}
+                  </p>
                 )}
-                {preview.domain && <p className="text-xs text-gray-500 mt-1">{preview.domain}</p>}
+                {preview.domain && (
+                  <p className="text-[11px] text-muted-foreground/80 mt-1 uppercase tracking-wide">
+                    {preview.domain}
+                  </p>
+                )}
               </div>
-              <ExternalLink size={14} className="text-gray-400 flex-shrink-0" />
+              <ExternalLink size={14} className="text-muted-foreground flex-shrink-0" />
             </div>
           </div>
         </a>
