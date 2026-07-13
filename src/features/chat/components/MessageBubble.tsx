@@ -29,6 +29,10 @@ import { hapticService } from '@/services/hapticService';
 import { getMentionClassName, MENTION_REGEX } from './messageMentions';
 import { ModerationAction } from '@/services/moderationService';
 import { VoiceNotePlayer } from './VoiceNotePlayer';
+import { BubbleTail } from './BubbleTail';
+import { PlaceMiniCard, isPlaceLinkUrl } from './PlaceMiniCard';
+import { VideoThumb, GifAutoplayImage } from './VideoThumb';
+import { useFeatureFlag } from '@/lib/featureFlags';
 
 const AUDIO_EXT_RE = /\.(mp3|wav|m4a|ogg|oga|webm|opus|aac|caf)(\?|$)/i;
 const isAudioAttachment = (att: { type: string; url?: string; mimeType?: string }) => {
@@ -67,6 +71,8 @@ export interface MessageBubbleProps {
     googleMapsWidget?: string;
     googleMapsWidgetContextToken?: string;
   };
+  /** Last bubble in a consecutive same-sender group — shows the iMessage tail. */
+  isLastInGroup?: boolean;
   // 🆕 Rich media support
   mediaType?: 'image' | 'video' | 'document' | 'audio' | 'file' | null;
   mediaUrl?: string | null;
@@ -150,6 +156,7 @@ export const MessageBubble = memo(
     onOpenThread,
     grounding,
     showSenderInfo = true,
+    isLastInGroup = true,
     mediaType,
     mediaUrl,
     linkPreview,
@@ -188,6 +195,10 @@ export const MessageBubble = memo(
     const swipeIsActive = useRef(false);
     const swipeHapticFired = useRef(false);
     const isMobilePortrait = useMobilePortrait();
+    const reactionsEnabled = useFeatureFlag('chat_reactions_v2', true);
+    const swipeReplyEnabled = useFeatureFlag('chat_swipe_reply', true);
+    const mosaicEnabled = useFeatureFlag('chat_media_mosaic', true);
+    const voiceNotesEnabled = useFeatureFlag('chat_voice_notes', true);
 
     // Check for media content
     const hasMedia = mediaType && mediaUrl;
@@ -211,18 +222,29 @@ export const MessageBubble = memo(
       if (!hasMedia || hasAttachments) return null;
 
       switch (mediaType) {
-        case 'image':
+        case 'image': {
+          const imageSrc = (resolvedMediaUrl ?? mediaUrl) as string;
+          const isGif = /\.gif(\?|$)/i.test(imageSrc);
           return (
             <div className="mt-2 relative group">
-              <img
-                src={resolvedMediaUrl ?? mediaUrl}
-                alt="Shared image"
-                className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-95 transition-opacity"
-                style={{ maxHeight: '300px' }}
-                onClick={() => handleImageClick((resolvedMediaUrl ?? mediaUrl) as string)}
-              />
+              {isGif ? (
+                <GifAutoplayImage
+                  src={imageSrc}
+                  alt="Shared GIF"
+                  className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-95 transition-opacity"
+                  onClick={() => handleImageClick(imageSrc)}
+                />
+              ) : (
+                <img
+                  src={imageSrc}
+                  alt="Shared image"
+                  className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-95 transition-opacity"
+                  style={{ maxHeight: '300px' }}
+                  onClick={() => handleImageClick(imageSrc)}
+                />
+              )}
               <button
-                onClick={() => handleImageClick((resolvedMediaUrl ?? mediaUrl) as string)}
+                onClick={() => handleImageClick(imageSrc)}
                 className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                 aria-label="View full size"
               >
@@ -230,20 +252,14 @@ export const MessageBubble = memo(
               </button>
             </div>
           );
+        }
 
         case 'video':
           return (
-            <div className="mt-2 relative">
-              <video
-                src={resolvedMediaUrl ?? mediaUrl}
-                controls
-                playsInline
-                className="rounded-lg max-w-full h-auto"
-                style={{ maxHeight: '300px' }}
-              >
-                Your browser does not support the video tag.
-              </video>
-            </div>
+            <VideoThumb
+              src={(resolvedMediaUrl ?? mediaUrl) as string}
+              className="mt-2"
+            />
           );
 
         case 'document':
@@ -271,6 +287,20 @@ export const MessageBubble = memo(
 
         case 'audio':
           if (!mediaUrl) return null;
+          if (!voiceNotesEnabled) {
+            return (
+              <a
+                href={mediaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors"
+              >
+                <FileText size={16} className="text-gray-400" />
+                <span className="text-sm truncate flex-1">Voice note</span>
+                <Download size={14} className="text-gray-400" />
+              </a>
+            );
+          }
           // Prefer attachment metadata (waveform/duration) when Stream mapped it.
           {
             const audioAttachment = attachments?.find(
@@ -302,9 +332,10 @@ export const MessageBubble = memo(
       const visibleImages = images.slice(0, 4);
       const overflow = images.length - visibleImages.length;
 
-      // Mosaic layout: 1 = full, 2 = side-by-side, 3 = one big + 2 stacked, 4 = 2x2
-      const mosaicClass =
-        visibleImages.length === 1
+      // Mosaic layout when flag is on; otherwise stack images vertically.
+      const mosaicClass = !mosaicEnabled
+        ? 'grid-cols-1'
+        : visibleImages.length === 1
           ? 'grid-cols-1'
           : visibleImages.length === 2
             ? 'grid-cols-2'
@@ -315,14 +346,16 @@ export const MessageBubble = memo(
           {visibleImages.length > 0 && (
             <div
               className={`grid gap-0.5 rounded-2xl overflow-hidden ${mosaicClass}`}
-              style={{ maxWidth: '320px' }}
+              style={{ maxWidth: mosaicEnabled ? '320px' : '280px' }}
             >
               {visibleImages.map((attachment, index) => {
                 const isLastVisible = index === visibleImages.length - 1;
-                const showOverflow = overflow > 0 && isLastVisible;
-                // 3-image layout: first spans full height on the left
+                const showOverflow = mosaicEnabled && overflow > 0 && isLastVisible;
                 const spanClass =
-                  visibleImages.length === 3 && index === 0 ? 'row-span-2' : '';
+                  mosaicEnabled && visibleImages.length === 3 && index === 0
+                    ? 'row-span-2'
+                    : '';
+                const isGif = /\.gif(\?|$)/i.test(attachment.url || '');
                 return (
                   <button
                     key={index}
@@ -334,8 +367,11 @@ export const MessageBubble = memo(
                     <img
                       src={attachment.url}
                       alt={`Attachment ${index + 1}`}
-                      className="w-full h-full object-cover aspect-square hover:opacity-95 transition-opacity"
-                      loading="lazy"
+                      className={cn(
+                        'w-full h-full object-cover hover:opacity-95 transition-opacity',
+                        mosaicEnabled ? 'aspect-square' : 'max-h-[280px]',
+                      )}
+                      loading={isGif ? 'eager' : 'lazy'}
                     />
                     {showOverflow && (
                       <div className="absolute inset-0 bg-black/55 flex items-center justify-center text-white text-xl font-semibold">
@@ -350,6 +386,21 @@ export const MessageBubble = memo(
 
           {nonImages.map((attachment, index) => {
             if (attachment.url && isAudioAttachment(attachment)) {
+              if (!voiceNotesEnabled) {
+                return (
+                  <a
+                    key={`audio-file-${index}`}
+                    href={attachment.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-muted hover:bg-muted/70 px-3 py-2 rounded-lg transition-colors border border-border/50"
+                  >
+                    <FileText size={16} className="text-muted-foreground" />
+                    <span className="text-sm truncate flex-1">Voice note</span>
+                    <Download size={14} className="text-muted-foreground" />
+                  </a>
+                );
+              }
               return (
                 <VoiceNotePlayer
                   key={`audio-${index}`}
@@ -381,14 +432,26 @@ export const MessageBubble = memo(
       );
     };
 
-    // Render link preview — polished iMessage-style card using semantic tokens
+    // Render link preview — place mini-card for Maps/Places URLs, else polished link card
     const renderLinkPreview = () => {
       if (!hasLinkPreview) return null;
 
       const preview = linkPreview;
+      const previewUrl = preview.url || text;
+      if (isPlaceLinkUrl(previewUrl) || isPlaceLinkUrl(preview.domain)) {
+        return (
+          <PlaceMiniCard
+            name={preview.title || preview.domain || 'Place'}
+            url={previewUrl}
+            image={preview.image}
+            subtitle={preview.description || preview.domain}
+          />
+        );
+      }
+
       return (
         <a
-          href={preview.url || text}
+          href={previewUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-2 block bg-muted/60 hover:bg-muted rounded-2xl overflow-hidden transition-colors border border-border/50"
@@ -486,6 +549,7 @@ export const MessageBubble = memo(
 
     const longPressHandlers = useLongPress({
       onLongPress: () => {
+        if (!reactionsEnabled) return;
         setShowReactions(true);
         // Auto-hide after 5 seconds on mobile long-press
         if (hideReactionsTimerRef.current) clearTimeout(hideReactionsTimerRef.current);
@@ -498,18 +562,18 @@ export const MessageBubble = memo(
     const SWIPE_THRESHOLD = 60;
     const handleTouchStart = useCallback(
       (e: React.TouchEvent) => {
-        if (!isMobilePortrait || !onReply) return;
+        if (!swipeReplyEnabled || !isMobilePortrait || !onReply) return;
         swipeTouchStartX.current = e.touches[0].clientX;
         swipeTouchStartY.current = e.touches[0].clientY;
         swipeIsActive.current = false;
         swipeHapticFired.current = false;
       },
-      [isMobilePortrait, onReply],
+      [swipeReplyEnabled, isMobilePortrait, onReply],
     );
 
     const handleTouchMove = useCallback(
       (e: React.TouchEvent) => {
-        if (!isMobilePortrait || !onReply) return;
+        if (!swipeReplyEnabled || !isMobilePortrait || !onReply) return;
         const dx = e.touches[0].clientX - swipeTouchStartX.current;
         const dy = e.touches[0].clientY - swipeTouchStartY.current;
         // Only activate for dominant rightward swipes
@@ -528,7 +592,7 @@ export const MessageBubble = memo(
         }
         setSwipeThresholdMet(met);
       },
-      [isMobilePortrait, onReply],
+      [swipeReplyEnabled, isMobilePortrait, onReply],
     );
 
     const handleTouchEnd = useCallback(() => {
@@ -676,7 +740,7 @@ export const MessageBubble = memo(
             </div>
             <div
               className={cn(
-                'px-3 py-2 md:px-4 md:py-2.5 rounded-2xl break-words',
+                'relative px-3 py-2 md:px-4 md:py-2.5 rounded-2xl break-words',
                 'text-sm md:text-base',
                 isOwnMessage && !isBroadcast
                   ? 'bg-chat-own text-chat-own-foreground'
@@ -689,8 +753,14 @@ export const MessageBubble = memo(
                 status === 'sending' && 'opacity-80',
                 // Adjust styling for media-only messages
                 (hasMedia || hasLinkPreview) && !text && 'p-1 bg-transparent',
+                // Soften the corner that hosts the tail (iMessage notch).
+                isLastInGroup && isOwnMessage && 'rounded-br-md',
+                isLastInGroup && !isOwnMessage && 'rounded-bl-md',
               )}
             >
+              {isLastInGroup && !((hasMedia || hasLinkPreview) && !text) && (
+                <BubbleTail isOwn={isOwnMessage} isBroadcast={isBroadcast} />
+              )}
               {/* Inline Reply Quote */}
               {replyTo && (
                 <div
@@ -806,7 +876,9 @@ export const MessageBubble = memo(
             )}
 
             {/* Persistent reaction chips — attached to bubble corner iMessage-style */}
-            {reactions && Object.keys(reactions).some(k => reactions[k].count > 0) && (
+            {reactionsEnabled &&
+              reactions &&
+              Object.keys(reactions).some(k => reactions[k].count > 0) && (
               <div
                 className={cn(
                   'flex flex-wrap gap-1 -mt-2.5 z-10 relative',
@@ -834,7 +906,7 @@ export const MessageBubble = memo(
             )}
 
             {/* Reaction picker — side attached to message to avoid hover handoff to adjacent rows */}
-            {showReactions && (
+            {reactionsEnabled && showReactions && (
               <div
                 className={cn(
                   'absolute top-0 z-20',

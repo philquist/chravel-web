@@ -56,6 +56,7 @@ Message loss between disconnect and reconnect is the most common chat bug — ba
 - Keep Stream channel state and role-channel state as separate identifiers in mixed UIs.
 - Presentation features that need `attachments[]` (mosaic, voice notes) must map the full Stream attachment list in `streamMessageViewModel` — collapsing to first `mediaUrl` silently kills multi-media UX.
 - Message grouping must resolve sender via `sender.id` (Stream view models), not only legacy `sender_id`/`user_id`.
+- Sticky overlays over virtualized lists must compare derived values by primitive (timestamp/id) before setState — `setState(new Date(sameTs))` infinite-loops because Date identity changes every render.
 
 ### Keep shared chat mutations (pin/unpin, edit, delete) inside the shared hook, not UI surfaces
 Trips/Pro Trips/Events should all call the same `togglePin` from `useStreamTripChat` — UI components should never run their own client-level Stream mutations.

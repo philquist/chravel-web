@@ -1,3 +1,8 @@
+2026-07-13 — iMessage deferred polish: tails, unread divider, flags, voice bucket
+- Implemented remaining Holy Grail deferred items: bubble tails on last-in-group, sticky date overlay, New Messages unread divider (captured once per open), 3-minute grouping window, chat_* feature-flag kill switches, swipe-up-to-lock voice recording, Places mini-cards, video duration badge + GIF in-view autoplay, and dedicated trip-voice-notes storage bucket with membership RLS.
+- Migration applied to ChravelApp prod via Supabase MCP; voice uploads now use signed URLs from trip-voice-notes.
+- Verification: focused grouping/media/unread/ChatInput/reactions tests pass; typecheck pass.
+
 2026-07-13 — iMessage chat polish Stream-sync audit + fixes
 - Audited Lovable Phases 1–4 against Stream architecture before publish; found grouping, mosaic, voice notes, and Delivered receipts were presentation-only and broken on the live Stream path.
 - Fixed Stream VM attachment mapping (incl. audio metadata), sender.id grouping, multi-image batch send, shareVoiceNote typed attachments, Delivered receipt mount, and entrance animation recycle noise.

@@ -158,9 +158,9 @@
 
 ## iMessage chat polish — mosaic / voice / receipt render paths
 - **Area:** `MessageBubble.tsx`, `VoiceNotePlayer.tsx`, `useShareAsset.ts`
-- **Why this gap matters:** Adapter unit tests now cover Stream→VM attachment mapping, but there is still no RTL test that a multi-image VM renders the mosaic grid, or that an audio attachment mounts `VoiceNotePlayer` instead of a file link.
-- **Missing coverage:** MessageBubble mosaic layout for 1/2/3/4 images + overflow; voice attachment → player; own-message Delivered mount when `readStatuses=[]`.
-- **Failure mode if untested:** Adapter could map correctly while bubble UI regresses to stacked links / missing player.
-- **Suggested tests:** MessageBubble RTL with fixture attachments; assert grid columns / VoiceNotePlayer aria-label / Delivered text.
+- **Why this gap matters:** Adapter unit tests now cover Stream→VM attachment mapping; MessageBubble RTL now covers mosaic / voice / place card / tail (July 2026). Still missing: swipe-up-to-lock gesture RTL and feature-flag OFF fallbacks.
+- **Missing coverage:** VoiceRecordButton lock gesture; MessageBubble with `chat_media_mosaic=false` / `chat_voice_notes=false`.
+- **Failure mode if untested:** Kill-switch OFF paths could crash or keep showing disabled UI.
+- **Suggested tests:** Mock useFeatureFlag per key; assert mosaic stacks and voice falls back to file link; pointer lock/send on VoiceRecordButton.
 - **Priority:** medium
-- **Provenance:** July 2026 iMessage chat audit (`cursor/imessage-chat-audit-ff9d`)
+- **Provenance:** July 2026 iMessage chat audit + deferred polish (`cursor/imessage-chat-audit-ff9d`)

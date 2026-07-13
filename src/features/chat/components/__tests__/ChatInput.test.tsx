@@ -16,6 +16,10 @@ vi.mock('@/hooks/useShareAsset', () => ({
   }),
 }));
 
+vi.mock('@/lib/featureFlags', () => ({
+  useFeatureFlag: () => true,
+}));
+
 vi.mock('@/hooks/useWebSpeechVoice', () => ({
   useWebSpeechVoice: () => ({
     voiceState: 'idle',

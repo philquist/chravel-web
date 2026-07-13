@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { uploadToStorage, insertMediaIndex, insertFileIndex } from '@/services/uploadService';
+import {
+  uploadToStorage,
+  uploadVoiceNoteToStorage,
+  insertMediaIndex,
+  insertFileIndex,
+} from '@/services/uploadService';
 import { insertLinkIndex, fetchOpenGraphData } from '@/services/linkService';
 import { sendTripMessageWithCanonicalTransport } from '@/services/stream/canonicalTripMessageTransport';
 import { autoParseContent, ParsedContent } from '@/services/chatContentParser';
@@ -365,7 +370,85 @@ export function useShareAsset(tripId: string) {
   }
 
   async function shareVoiceNote(file: File, meta: VoiceNoteShareMeta) {
-    return shareFile('file', file, undefined, meta);
+    const fileId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    setUploading(true);
+    setError(null);
+    setUploadProgress(prev => ({
+      ...prev,
+      [fileId]: {
+        fileId,
+        fileName: file.name,
+        progress: 0,
+        status: 'uploading',
+      },
+    }));
+
+    try {
+      const { publicUrl, key } = await uploadVoiceNoteToStorage(file, tripId);
+      setUploadProgress(prev => ({
+        ...prev,
+        [fileId]: {
+          fileId,
+          fileName: file.name,
+          progress: 100,
+          status: 'completed',
+        },
+      }));
+
+      const row = await insertFileIndex({
+        tripId,
+        name: file.name,
+        fileType: file.type || 'audio/webm',
+        uploadedBy: userId,
+      });
+
+      await sendMessageWithCanonicalTransport({
+        trip_id: tripId,
+        user_id: userId,
+        author_name: user?.email?.split('@')[0] || 'Former Member',
+        content: '',
+        privacy_mode: 'standard',
+        media_type: 'audio',
+        media_url: publicUrl,
+        attachments: [
+          {
+            type: 'audio',
+            ref_id: row.id,
+            url: publicUrl,
+            mime_type: file.type || 'audio/webm',
+            duration_ms: meta.durationMs,
+            waveform: meta.waveform,
+            upload_path: key,
+          },
+        ],
+      });
+
+      toast.success('Voice note sent');
+      return { type: 'audio' as const, ref: row };
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : 'Upload failed';
+      setError(errorMsg);
+      setUploadProgress(prev => ({
+        ...prev,
+        [fileId]: {
+          fileId,
+          fileName: file.name,
+          progress: 0,
+          status: 'error',
+        },
+      }));
+      toast.error(errorMsg);
+      throw e;
+    } finally {
+      setTimeout(() => {
+        setUploadProgress(prev => {
+          const updated = { ...prev };
+          delete updated[fileId];
+          return updated;
+        });
+      }, 2000);
+      setUploading(false);
+    }
   }
 
   async function shareMultipleFiles(files: FileList, type: 'image' | 'video' | 'document') {

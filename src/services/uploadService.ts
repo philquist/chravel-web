@@ -190,6 +190,38 @@ export async function uploadToStorage(
   return { key, publicUrl: pub.publicUrl };
 }
 
+/**
+ * Upload a voice note into the dedicated `trip-voice-notes` bucket.
+ * Path mirrors trip-media: {tripId}/{userId}/{uuid}.{ext}
+ */
+export async function uploadVoiceNoteToStorage(file: FileUpload, tripId: string) {
+  await enforceUploadLimits(tripId, 'files', file.size);
+
+  const id = uuid();
+  const ext = file.name.split('.').pop() ?? 'webm';
+  const { data: authData } = await supabase.auth.getUser();
+  const uploaderId = authData?.user?.id;
+  if (!uploaderId) throw new Error('You must be signed in to upload media.');
+  const key = `${tripId}/${uploaderId}/${id}.${ext}`;
+  const contentType = getUploadContentType(file) || file.type || 'audio/webm';
+
+  const { error } = await supabase.storage.from('trip-voice-notes').upload(key, file, {
+    contentType,
+    upsert: false,
+  });
+  if (error) throw error;
+
+  // Private bucket — create a long-lived signed URL for Stream attachment playback.
+  const { data: signed, error: signError } = await supabase.storage
+    .from('trip-voice-notes')
+    .createSignedUrl(key, 60 * 60 * 24 * 365); // 1 year
+  if (signError || !signed?.signedUrl) {
+    throw signError || new Error('Failed to create voice note URL');
+  }
+
+  return { key, publicUrl: signed.signedUrl };
+}
+
 export async function insertMediaIndex(params: {
   tripId: string;
   // 'document' is accepted for non-image/video assets (e.g. PDFs) that still belong in the
