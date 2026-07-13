@@ -521,3 +521,13 @@ Known security anti-patterns discovered during audits. Reference this before int
 - **Required tests:** Document provenance + manual WS check; do not rewrite July 9 control fixes.
 - **Fixed in:** `index.html` (July 2026 recovery)
 - **Also check:** TestFlight may still be stale if `chravel-mobile` bundles frozen `dist` instead of loading `https://chravel.app`.
+
+## Stream chat iMessage polish: attachments + grouping silently no-op
+- **Status:** fixed
+- **Subsystem:** chat / Stream adapters / VirtualizedMessageContainer
+- **Bug class:** field-name / adapter shortlist mismatch
+- **Symptom:** Lovable Phase 1–4 UI looked correct in isolation, but live Stream chat never grouped bubbles (always showSenderInfo), mosaics never formed (one image max / separate messages), voice notes rendered as filename text or nothing, and "Delivered" ticks never appeared.
+- **Root cause:** (1) `buildStreamMessageViewModels` collapsed Stream `attachments` to first `mediaType`/`mediaUrl` only. (2) Grouping read `sender_id`/`user_id` while Stream VMs expose `sender.id`. (3) `shareMultipleFiles` posted one message per image. (4) Voice notes uploaded as plain `file` without mime/duration/waveform. (5) `MessageBubble` only mounted `ReadReceipts` when `readStatuses.length > 0`, making Delivered unreachable.
+- **Smallest safe fix:** Map full attachments (incl. audio metadata) in the Stream VM; resolve sender via `sender.id`; batch multi-image sends; `shareVoiceNote` with typed audio attachment; mount receipts for all sent own messages; skip single-media path when attachments exist.
+- **Required tests:** streamMessageViewModel mosaic/audio/document mapping; VirtualizedMessageContainer grouping on `sender.id`; ReadReceipts Delivered vs gold; streamMessagePayload voice metadata preserve.
+- **Fixed in:** `streamMessageViewModel.ts`, `VirtualizedMessageContainer.tsx`, `useShareAsset.ts`, `MessageBubble.tsx`, `ChatInput.tsx`, `streamMessagePayload.ts` (July 2026)

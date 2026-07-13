@@ -37,6 +37,14 @@ export interface ChrravelChatMessage {
   reply_to_id?: string;
   mentioned_user_ids?: string[];
   reactions?: Record<string, { count: number; userReacted: boolean; users: string[] }>;
+  attachments?: Array<{
+    type: string;
+    ref_id: string;
+    url?: string;
+    mimeType?: string;
+    durationMs?: number;
+    waveform?: number[];
+  }>;
 }
 
 /**
@@ -49,8 +57,37 @@ export function streamMessageToChravel(msg: MessageResponse, tripId: string): Ch
   let mediaType: string | undefined;
   let mediaUrl: string | undefined;
   let linkPreview: unknown = null;
+  const mappedAttachments: Array<{
+    type: string;
+    ref_id: string;
+    url?: string;
+    mimeType?: string;
+    durationMs?: number;
+    waveform?: number[];
+  }> = [];
 
   if (msg.attachments && msg.attachments.length > 0) {
+    for (let i = 0; i < msg.attachments.length; i++) {
+      const attachment = msg.attachments[i] as Record<string, unknown>;
+      if (attachment.type === 'link' || attachment.og_scrape_url || attachment.title_link) {
+        continue;
+      }
+      const url =
+        (typeof attachment.asset_url === 'string' && attachment.asset_url) ||
+        (typeof attachment.url === 'string' && attachment.url) ||
+        (typeof attachment.image_url === 'string' && attachment.image_url) ||
+        undefined;
+      if (!url) continue;
+      mappedAttachments.push({
+        type: typeof attachment.type === 'string' ? attachment.type : 'file',
+        ref_id: typeof attachment.ref_id === 'string' ? attachment.ref_id : `att-${i}`,
+        url,
+        mimeType: typeof attachment.mime_type === 'string' ? attachment.mime_type : undefined,
+        durationMs: typeof attachment.duration_ms === 'number' ? attachment.duration_ms : undefined,
+        waveform: Array.isArray(attachment.waveform) ? (attachment.waveform as number[]) : undefined,
+      });
+    }
+
     const firstAttachment = msg.attachments[0];
     if (firstAttachment.type === 'image') {
       mediaType = 'image';
@@ -58,8 +95,11 @@ export function streamMessageToChravel(msg: MessageResponse, tripId: string): Ch
     } else if (firstAttachment.type === 'video') {
       mediaType = 'video';
       mediaUrl = firstAttachment.asset_url;
+    } else if (firstAttachment.type === 'audio') {
+      mediaType = 'audio';
+      mediaUrl = firstAttachment.asset_url;
     } else if (firstAttachment.type === 'file') {
-      mediaType = 'file';
+      mediaType = 'document';
       mediaUrl = firstAttachment.asset_url;
     }
 
@@ -141,6 +181,7 @@ export function streamMessageToChravel(msg: MessageResponse, tripId: string): Ch
     reply_to_id: msg.parent_id || undefined,
     mentioned_user_ids: msg.mentioned_users?.map((u: UserResponse) => u.id),
     reactions: Object.keys(reactions).length > 0 ? reactions : undefined,
+    attachments: mappedAttachments.length > 0 ? mappedAttachments : undefined,
   };
 }
 

@@ -24,6 +24,8 @@ interface MessageItemProps {
   onReply?: (messageId: string) => void;
   onOpenThread?: (messageId: string) => void;
   showSenderInfo?: boolean;
+  /** Last bubble in a consecutive same-sender group — drives bubble tail. */
+  isLastInGroup?: boolean;
   onRetry?: (messageId: string) => void;
   onEdit?: (messageId: string, newContent: string) => void | Promise<void>;
   onDelete?: (messageId: string) => void | Promise<void>;
@@ -70,6 +72,7 @@ export const MessageItem = memo(
     onReply,
     onOpenThread,
     showSenderInfo,
+    isLastInGroup = true,
     onRetry,
     onEdit,
     onDelete,
@@ -165,6 +168,7 @@ export const MessageItem = memo(
           onReply={onReply}
           onOpenThread={onOpenThread}
           showSenderInfo={showSenderInfo}
+          isLastInGroup={isLastInGroup}
           messageType="trip"
           transportMode={transportMode}
           onEdit={handleEdit}

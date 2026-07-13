@@ -13,6 +13,7 @@ import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { ChatInput } from './ChatInput';
 import { InlineReplyComponent } from './InlineReplyComponent';
 import { VirtualizedMessageContainer } from './VirtualizedMessageContainer';
+import { findFirstUnreadMessageId } from '../utils/findFirstUnreadMessageId';
 import { MessageItem } from './MessageItem';
 import { MessageSkeleton } from '@/components/mobile/SkeletonLoader';
 import { getMockAvatar } from '@/utils/mockAvatars';
@@ -545,6 +546,38 @@ export const TripChat = React.memo(
       user?.id,
     ]);
 
+    // Capture first unread once per chat open for the "New Messages" divider.
+    // Clears on unmount via component lifecycle — not updated as the user reads.
+    const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<string | null>(null);
+    const unreadDividerCapturedRef = useRef(false);
+    useEffect(() => {
+      if (unreadDividerCapturedRef.current) return;
+      if (demoMode.isDemoMode) {
+        unreadDividerCapturedRef.current = true;
+        setFirstUnreadMessageId(null);
+        return;
+      }
+      if (!user?.id || liveFormattedMessages.length === 0) return;
+      // Wait for channel read state to settle when Stream is active.
+      if (!streamActiveChannel) return;
+
+      const lastRead = streamActiveChannel.state?.read?.[user.id]?.last_read;
+      unreadDividerCapturedRef.current = true;
+      setFirstUnreadMessageId(
+        findFirstUnreadMessageId({
+          messages: liveFormattedMessages,
+          currentUserId: user.id,
+          lastRead,
+        }),
+      );
+    }, [demoMode.isDemoMode, liveFormattedMessages, streamActiveChannel, user?.id]);
+
+    // Reset divider capture when switching trips.
+    useEffect(() => {
+      unreadDividerCapturedRef.current = false;
+      setFirstUnreadMessageId(null);
+    }, [resolvedTripId]);
+
     const handleSendMessage = async (
       isBroadcast = false,
       isPayment = false,
@@ -1061,7 +1094,7 @@ export const TripChat = React.memo(
     }, [messageFilter]);
 
     const renderMessage = useCallback(
-      (message: any, _index: number, showSenderInfo: boolean) => (
+      (message: any, _index: number, showSenderInfo: boolean, isLastInGroup = true) => (
         <div data-message-id={message.id}>
           <MessageItem
             message={message}
@@ -1078,6 +1111,7 @@ export const TripChat = React.memo(
             tripMembers={tripMembers}
             readStatuses={message.readStatuses || readStatusesByMessage[message.id] || []}
             showSenderInfo={showSenderInfo}
+            isLastInGroup={isLastInGroup}
             reactionUserNamesById={reactionUserNamesById}
             isAdmin={isUserAdmin}
             canDeleteOwnMessage={canDeleteOwnMessage}
@@ -1275,6 +1309,7 @@ export const TripChat = React.memo(
                         restoreScroll={true}
                         scrollKey={`chat-scroll-${resolvedTripId}`}
                         scrollContainerRef={messageScrollRef}
+                        firstUnreadMessageId={firstUnreadMessageId}
                       />
                     </FeatureErrorBoundary>
                   </>
