@@ -104,50 +104,8 @@ export const ChatInput = ({
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
   const [mentionedUsers, setMentionedUsers] = useState<TripMember[]>([]);
 
-  // Emoji picker state
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  // Dictation (Web Speech API) — reuses the same hook as concierge
-  const inputMessageRef = useRef(inputMessage);
-  inputMessageRef.current = inputMessage;
 
-  const handleDictationResult = useCallback(
-    (text: string) => {
-      if (text.trim()) {
-        const prev = inputMessageRef.current;
-        const separator = prev && !prev.endsWith(' ') ? ' ' : '';
-        onInputChange(prev + separator + text.trim());
-      }
-    },
-    [onInputChange],
-  );
-
-  const { voiceState: dictationState, toggleVoice: toggleDictation } =
-    useWebSpeechVoice(handleDictationResult);
-
-  const handleEmojiSelect = useCallback(
-    (emoji: { native?: string }) => {
-      if (!emoji.native) return;
-      const textarea = textareaRef.current;
-      if (!textarea) {
-        onInputChange(inputMessage + emoji.native);
-        setShowEmojiPicker(false);
-        return;
-      }
-      const start = textarea.selectionStart ?? inputMessage.length;
-      const end = textarea.selectionEnd ?? inputMessage.length;
-      const newValue = inputMessage.slice(0, start) + emoji.native + inputMessage.slice(end);
-      onInputChange(newValue);
-      // Restore cursor after inserted emoji
-      requestAnimationFrame(() => {
-        textarea.focus();
-        const newPos = start + emoji.native.length;
-        textarea.setSelectionRange(newPos, newPos);
-      });
-      setShowEmojiPicker(false);
-    },
-    [inputMessage, onInputChange],
-  );
 
   const {
     shareLink,
