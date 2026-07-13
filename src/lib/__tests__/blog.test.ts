@@ -108,7 +108,7 @@ describe('blog registry', () => {
   });
 
   it('formats ISO dates without timezone drift', () => {
-    expect(formatBlogDate('2026-06-21')).toBe('June 21, 2026');
+    expect(formatBlogDate('2026-06-21')).toBe('June\u00a021, 2026');
   });
 
   it('sorts posts newest first', () => {

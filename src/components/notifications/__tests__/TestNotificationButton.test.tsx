@@ -34,7 +34,7 @@ describe('TestNotificationButton', () => {
     await userEvent.click(screen.getByRole('button', { name: /test notification/i }));
 
     await waitFor(() =>
-      expect(showNotification).toHaveBeenCalledWith('Chravel', expect.any(Object)),
+      expect(showNotification).toHaveBeenCalledWith('ChravelApp', expect.any(Object)),
     );
     expect(setAppBadge).toHaveBeenCalledWith(1);
     expect(toast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Test sent' }));

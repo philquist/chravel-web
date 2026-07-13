@@ -33,7 +33,7 @@ describe('UseCasePage', () => {
   it('renders a newly published page (weddings)', () => {
     renderAt('/use-cases/wedding-guest-coordination-app');
     expect(
-      screen.getByRole('heading', { level: 1, name: /wedding guest coordination/i }),
+      screen.getByRole('heading', { level: 1, name: /run the whole wedding weekend/i }),
     ).toBeInTheDocument();
   });
 });

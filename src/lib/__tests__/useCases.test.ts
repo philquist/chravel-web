@@ -12,7 +12,7 @@ describe('useCases registry', () => {
   it('resolves the travel concierge page by slug', () => {
     const uc = getUseCaseDetail('travel-concierge-client-portal');
     expect(uc).toBeDefined();
-    expect(uc?.h1).toMatch(/concierge/i);
+    expect(uc?.h1).toMatch(/client-ready trip portal/i);
     expect(uc?.body.length).toBeGreaterThan(0);
     expect(uc?.featureMap.length).toBeGreaterThan(0);
     expect(uc?.faq.length).toBeGreaterThan(0);

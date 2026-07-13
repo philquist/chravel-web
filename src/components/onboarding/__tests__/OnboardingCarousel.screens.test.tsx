@@ -28,7 +28,7 @@ const SCREEN_TITLES = [
   'Plan group trips without the chaos', // 0 Welcome
   'One trip. One chat.', // 1 Chat
   "Plans that don't drift.", // 2 Calendar
-  'Your Chravel Agent.', // 3 Concierge
+  'Your ChravelApp Agent.', // 3 Concierge
   'Every moment, together.', // 4 Media
   'Money, organized.', // 5 Payments
   'Pin your spots.', // 6 Places
