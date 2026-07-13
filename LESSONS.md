@@ -123,7 +123,10 @@ Voice model string drifts silently; assert it equals the canonical literal in CI
 
 
 ### Release gates must bound long-running suites with explicit timeouts
-Full-suite Vitest can hang without reporting failures; release gates should fail closed with a configurable timeout and require focused follow-up instead of running indefinitely. Evidence: App Store QA gate timed out `npm run test:run` at 180s on 2026-07-13 while focused feature suites passed.
+### ChatSearchOverlay default `demoMessages = []` infinite-loops Vitest
+Inline default array props are new references every render. If a `useEffect` depends on that prop and calls `setState([])` on the empty-query path, React sees a changed dependency forever and hangs the full suite (no failing assertion). Fix with a module-level `EMPTY_*` constant and functional setState that preserves empty arrays. Evidence: 2026-07-13 App Store gate hang — suite completed after fix (1898 pass).
+
+### Full-suite Vitest can hang without reporting failures; release gates should fail closed with a configurable timeout and require focused follow-up instead of running indefinitely. Evidence: App Store QA gate timed out `npm run test:run` at 180s on 2026-07-13 while focused feature suites passed.
 
 ## Auth, Permissions, Payments
 

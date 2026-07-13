@@ -300,13 +300,11 @@ test.describe('CHAT-SMOKE: UI Structure', () => {
       .first();
     await chatInput.waitFor({ state: 'visible', timeout: 15000 });
 
-    // Send button must be disabled when input is empty
+    // Empty composer shows the hold-to-record mic (iMessage-style). The send
+    // control mounts only after the user types.
+    await chatInput.fill('Hello from e2e demo test');
     const sendBtn = page.locator('[data-testid="chat-send-btn"]');
     await expect(sendBtn).toBeVisible({ timeout: 5000 });
-    await expect(sendBtn).toBeDisabled();
-
-    // After typing, send button must be enabled
-    await chatInput.fill('Hello from e2e demo test');
     await expect(sendBtn).toBeEnabled({ timeout: 3000 });
   });
 
@@ -325,9 +323,9 @@ test.describe('CHAT-SMOKE: UI Structure', () => {
     await conciergeTab.waitFor({ state: 'visible', timeout: 15000 });
     await conciergeTab.click();
 
-    // AI Concierge uses a textarea with rounded-2xl (chat uses rounded-full — different class)
-    // This scopes to the concierge input even when the chat textarea is still in the DOM (hidden).
-    const textarea = page.locator('textarea[class*="rounded-2xl"]').first();
+    const composerRail = page.getByTestId('concierge-composer-rail');
+    await expect(composerRail).toBeVisible({ timeout: 15000 });
+    const textarea = composerRail.locator('textarea').first();
     await expect(textarea).toBeVisible({ timeout: 15000 });
     await expect(textarea).toBeEnabled();
   });

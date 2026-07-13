@@ -541,3 +541,9 @@ Known security anti-patterns discovered during audits. Reference this before int
 - **Smallest Safe Fix:** Shared `BodyPortalOverlayShell` + `getTrustedOverlayOpenHandlers` / `useBodyPortalOverlayControls` — body portal at `z-[100]`, always-visible Close, ref focus, open-gesture backdrop guard. Wire Concierge + Chat Search CTAs through the same trusted open helpers (Upload stays in-DOM file input — no overlay race).
 - **Required Tests:** ConciergeSearchModal + ChatSearchOverlay backdrop guard; `bodyPortalOverlay` unit tests; MessageTypeBar + AIConciergeChat touch pointerdown open.
 - **Fixed in:** `BodyPortalOverlayShell.tsx`, `bodyPortalOverlay.ts`, `ConciergeSearchModal.tsx`, `ChatSearchOverlay.tsx`, `MessageTypeBar.tsx`, `AIConciergeChat.tsx` (July 2026)
+### Vitest suite hangs with no failing tests (ChatSearchOverlay)
+- **Symptom:** `npm run test:run` never exits; last activity may be unrelated files; workers at high CPU.
+- **Root cause:** Component default prop `demoMessages = []` + `useEffect(..., [demoMessages])` + `setMessages([])` on empty query → infinite re-render.
+- **Fix:** Module-level `EMPTY_DEMO_MESSAGES`; `setMessages(prev => prev.length === 0 ? prev : [])`; optional `scrollIntoView?.()` for jsdom.
+- **Evidence:** 2026-07-13 release-gate unblock; mountStability regression test.
+

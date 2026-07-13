@@ -1,12 +1,14 @@
 import { test, expect, devices } from '@playwright/test';
 
+const DEMO_EVENT_ID = 'netflix-joke-fest-2026';
+
 test.describe('Event recap export entry points', () => {
   test('desktop event header recap opens event export modal', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => {
       window.localStorage.setItem('TRIPS_DEMO_VIEW', 'app-preview');
     });
-    await page.goto('/event/1');
+    await page.goto(`/event/${DEMO_EVENT_ID}`);
     await page.waitForSelector('#root main', { timeout: 15000 });
 
     // Ensure the page has time to lazy load TripHeader
@@ -36,7 +38,7 @@ test.describe('Event recap export entry points', () => {
     await page.evaluate(() => {
       window.localStorage.setItem('TRIPS_DEMO_VIEW', 'app-preview');
     });
-    await page.goto(`${baseURL}/event/1`);
+    await page.goto(`${baseURL}/event/${DEMO_EVENT_ID}`);
     await page.waitForSelector('#root main', { timeout: 15000 });
 
     const detailsButton = page.getByRole('button', { name: 'View event details' });
