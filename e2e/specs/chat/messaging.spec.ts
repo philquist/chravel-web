@@ -7,23 +7,29 @@
  *   - Pro trip channels (CHAT-003)
  *   - UI structure smoke tests (CHAT-SMOKE)
  *
- * Auth strategy: Attempts anon-key signUp via env vars (SUPABASE_URL +
- * SUPABASE_ANON_KEY). If the project requires email confirmation, signUp
- * returns no session → CHAT-001/002/003 skip gracefully, CHAT-SMOKE always
- * runs. For full authenticated coverage, run against a staging project with
- * email confirmation disabled.
+ * Auth strategy: CHAT-SMOKE stays local-only/demo tolerant. Authenticated
+ * coverage has two modes:
+ *   - local-tolerant (default): fixture setup may skip with an explicit reason.
+ *   - release-gate (CHRAVEL_E2E_RELEASE_GATE=1): auth, trip creation,
+ *     membership, pro trip creation, and browser login failures throw a clear
+ *     fixture-step error instead of calling test.skip().
  */
 
 import { test as base, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import {
+  fixtureStepError,
+  isReleaseGateE2E,
+  skipLocallyOrFailRelease,
+} from '../../fixtures/e2eMode';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 // Credentials are required only for CHAT-001/002/003 authenticated tests.
 // CHAT-SMOKE tests use demo mode and require no credentials.
-// If either var is unset the fixture catches the resulting error, returns null,
-// and the authenticated tests skip gracefully.
+// Local-tolerant mode can skip authenticated tests; release-gate mode fails
+// missing/unusable fixture steps so CI/App Store QA cannot pass silently.
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
@@ -33,19 +39,27 @@ const DEFAULT_PASSWORD = 'TestPassword123!E2E';
 
 /** Sign up a fresh test user, returns session token or null if confirmation required. */
 async function signUpTestUser(email: string): Promise<{ session: string; userId: string } | null> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw fixtureStepError('auth', 'SUPABASE_URL and SUPABASE_ANON_KEY are required');
+  }
+
   const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
   const { data, error } = await client.auth.signUp({ email, password: DEFAULT_PASSWORD });
 
-  if (error) throw new Error(`signUp failed: ${error.message}`);
-  if (!data.session) return null; // email confirmation required — caller must skip
+  if (error) throw fixtureStepError('auth', `signUp failed: ${error.message}`);
+  if (!data.session) return null; // email confirmation required — caller must skip/fail by mode
   return { session: data.session.access_token, userId: data.user!.id };
 }
 
 /** Create an authenticated Supabase client from a token. */
 function makeAuthClient(accessToken: string): SupabaseClient {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw fixtureStepError('auth client', 'SUPABASE_URL and SUPABASE_ANON_KEY are required');
+  }
+
   const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
     global: { headers: { Authorization: `Bearer ${accessToken}` } },
@@ -74,7 +88,9 @@ async function createTrip(
     .single();
 
   if (error) {
-    console.warn(`[E2E] createTrip failed: ${error.message}`);
+    const step = options.tripType === 'pro' ? 'pro trip creation' : 'trip creation';
+    if (isReleaseGateE2E) throw fixtureStepError(step, error.message);
+    console.warn(`[E2E] ${step} failed: ${error.message}`);
     return null;
   }
 
@@ -87,6 +103,7 @@ async function createTrip(
   });
 
   if (memberError) {
+    if (isReleaseGateE2E) throw fixtureStepError('membership', memberError.message);
     console.warn(`[E2E] createTrip member insert failed: ${memberError.message}`);
     // Roll back the orphan trip so cleanup is not needed
     await client
@@ -165,8 +182,12 @@ const test = base.extend<E2EFixtures>({
       if (result) {
         auth = { email, session: result.session, userId: result.userId };
       }
-    } catch {
-      // signUp failed — auth stays null, tests that need it will skip
+    } catch (error) {
+      if (isReleaseGateE2E) throw error;
+      // signUp failed — auth stays null, tests that need it will skip locally
+      console.warn(
+        `[E2E] local-tolerant auth setup failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
 
     await provide(auth);
@@ -367,8 +388,8 @@ test.describe('CHAT-001: Consumer Trip Chat', () => {
 
   test('CHAT-001-TC01: Chat input is visible and enabled', async ({ page, testAuth }) => {
     if (!testAuth) {
-      test.skip(
-        true,
+      skipLocallyOrFailRelease(
+        'auth',
         'Email confirmation required — cannot auto-create users without service role key',
       );
       return;
@@ -380,13 +401,16 @@ test.describe('CHAT-001: Consumer Trip Chat', () => {
       userId: testAuth.userId,
     });
     if (!tripId) {
-      test.skip(true, 'Trip creation failed (RLS may block anon inserts)');
+      skipLocallyOrFailRelease(
+        'trip creation',
+        'Trip creation failed (RLS may block anon inserts)',
+      );
       return;
     }
 
     const loggedIn = await loginViaBrowser(page, testAuth.email);
     if (!loggedIn) {
-      test.skip(true, 'Browser login failed');
+      skipLocallyOrFailRelease('browser login', 'Browser login failed');
       return;
     }
 
@@ -401,7 +425,7 @@ test.describe('CHAT-001: Consumer Trip Chat', () => {
 
   test('CHAT-001-TC02: Sending a message delivers it to the list', async ({ page, testAuth }) => {
     if (!testAuth) {
-      test.skip(true, 'No auth available');
+      skipLocallyOrFailRelease('auth', 'No auth available');
       return;
     }
 
@@ -411,13 +435,13 @@ test.describe('CHAT-001: Consumer Trip Chat', () => {
       userId: testAuth.userId,
     });
     if (!tripId) {
-      test.skip(true, 'Trip creation failed');
+      skipLocallyOrFailRelease('trip creation', 'Trip creation failed');
       return;
     }
 
     const loggedIn = await loginViaBrowser(page, testAuth.email);
     if (!loggedIn) {
-      test.skip(true, 'Browser login failed');
+      skipLocallyOrFailRelease('browser login', 'Browser login failed');
       return;
     }
 
@@ -442,7 +466,7 @@ test.describe('CHAT-001: Consumer Trip Chat', () => {
     testAuth,
   }) => {
     if (!testAuth) {
-      test.skip(true, 'No auth available');
+      skipLocallyOrFailRelease('auth', 'No auth available');
       return;
     }
 
@@ -452,13 +476,13 @@ test.describe('CHAT-001: Consumer Trip Chat', () => {
       userId: testAuth.userId,
     });
     if (!tripId) {
-      test.skip(true, 'Trip creation failed');
+      skipLocallyOrFailRelease('trip creation', 'Trip creation failed');
       return;
     }
 
     const loggedIn = await loginViaBrowser(page, testAuth.email);
     if (!loggedIn) {
-      test.skip(true, 'Browser login failed');
+      skipLocallyOrFailRelease('browser login', 'Browser login failed');
       return;
     }
 
@@ -481,7 +505,7 @@ test.describe('CHAT-001: Consumer Trip Chat', () => {
     testAuth,
   }) => {
     if (!testAuth) {
-      test.skip(true, 'No auth available');
+      skipLocallyOrFailRelease('auth', 'No auth available');
       return;
     }
 
@@ -491,13 +515,13 @@ test.describe('CHAT-001: Consumer Trip Chat', () => {
       userId: testAuth.userId,
     });
     if (!tripId) {
-      test.skip(true, 'Trip creation failed');
+      skipLocallyOrFailRelease('trip creation', 'Trip creation failed');
       return;
     }
 
     const loggedIn = await loginViaBrowser(page, testAuth.email);
     if (!loggedIn) {
-      test.skip(true, 'Browser login failed');
+      skipLocallyOrFailRelease('browser login', 'Browser login failed');
       return;
     }
 
@@ -520,7 +544,7 @@ test.describe('CHAT-002: AI Concierge', () => {
 
   test('CHAT-002-TC01: Concierge tab loads with a textarea', async ({ page, testAuth }) => {
     if (!testAuth) {
-      test.skip(true, 'No auth available');
+      skipLocallyOrFailRelease('auth', 'No auth available');
       return;
     }
 
@@ -530,13 +554,13 @@ test.describe('CHAT-002: AI Concierge', () => {
       userId: testAuth.userId,
     });
     if (!tripId) {
-      test.skip(true, 'Trip creation failed');
+      skipLocallyOrFailRelease('trip creation', 'Trip creation failed');
       return;
     }
 
     const loggedIn = await loginViaBrowser(page, testAuth.email);
     if (!loggedIn) {
-      test.skip(true, 'Browser login failed');
+      skipLocallyOrFailRelease('browser login', 'Browser login failed');
       return;
     }
 
@@ -556,7 +580,7 @@ test.describe('CHAT-002: AI Concierge', () => {
 
   test('CHAT-002-TC02: Concierge sends a query and reacts', async ({ page, testAuth }) => {
     if (!testAuth) {
-      test.skip(true, 'No auth available');
+      skipLocallyOrFailRelease('auth', 'No auth available');
       return;
     }
 
@@ -566,13 +590,13 @@ test.describe('CHAT-002: AI Concierge', () => {
       userId: testAuth.userId,
     });
     if (!tripId) {
-      test.skip(true, 'Trip creation failed');
+      skipLocallyOrFailRelease('trip creation', 'Trip creation failed');
       return;
     }
 
     const loggedIn = await loginViaBrowser(page, testAuth.email);
     if (!loggedIn) {
-      test.skip(true, 'Browser login failed');
+      skipLocallyOrFailRelease('browser login', 'Browser login failed');
       return;
     }
 
@@ -621,7 +645,7 @@ test.describe('CHAT-003: Pro Trip Channels', () => {
     testAuth,
   }) => {
     if (!testAuth) {
-      test.skip(true, 'No auth available');
+      skipLocallyOrFailRelease('auth', 'No auth available');
       return;
     }
 
@@ -631,13 +655,13 @@ test.describe('CHAT-003: Pro Trip Channels', () => {
       userId: testAuth.userId,
     });
     if (!tripId) {
-      test.skip(true, 'Pro trip creation failed');
+      skipLocallyOrFailRelease('pro trip creation', 'Pro trip creation failed');
       return;
     }
 
     const loggedIn = await loginViaBrowser(page, testAuth.email);
     if (!loggedIn) {
-      test.skip(true, 'Browser login failed');
+      skipLocallyOrFailRelease('browser login', 'Browser login failed');
       return;
     }
 
@@ -654,7 +678,7 @@ test.describe('CHAT-003: Pro Trip Channels', () => {
     testAuth,
   }) => {
     if (!testAuth) {
-      test.skip(true, 'No auth available');
+      skipLocallyOrFailRelease('auth', 'No auth available');
       return;
     }
 
@@ -664,13 +688,13 @@ test.describe('CHAT-003: Pro Trip Channels', () => {
       userId: testAuth.userId,
     });
     if (!tripId) {
-      test.skip(true, 'Pro trip creation failed');
+      skipLocallyOrFailRelease('pro trip creation', 'Pro trip creation failed');
       return;
     }
 
     const loggedIn = await loginViaBrowser(page, testAuth.email);
     if (!loggedIn) {
-      test.skip(true, 'Browser login failed');
+      skipLocallyOrFailRelease('browser login', 'Browser login failed');
       return;
     }
 

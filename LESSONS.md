@@ -54,6 +54,9 @@ Message loss between disconnect and reconnect is the most common chat bug — ba
 - Read-receipt and reaction hooks must no-op when the channel is unavailable.
 - Unread badge splits must not override Stream's total unread when history is partial.
 - Keep Stream channel state and role-channel state as separate identifiers in mixed UIs.
+- Presentation features that need `attachments[]` (mosaic, voice notes) must map the full Stream attachment list in `streamMessageViewModel` — collapsing to first `mediaUrl` silently kills multi-media UX.
+- Message grouping must resolve sender via `sender.id` (Stream view models), not only legacy `sender_id`/`user_id`.
+- Sticky overlays over virtualized lists must compare derived values by primitive (timestamp/id) before setState — `setState(new Date(sameTs))` infinite-loops because Date identity changes every render.
 
 ### Keep shared chat mutations (pin/unpin, edit, delete) inside the shared hook, not UI surfaces
 Trips/Pro Trips/Events should all call the same `togglePin` from `useStreamTripChat` — UI components should never run their own client-level Stream mutations.
@@ -512,3 +515,6 @@ When production serves a meta CSP (and may omit the HTTP CSP header), `index.htm
 
 ### Prove TestFlight web asset provenance before rewriting Concierge controls
 July 9 Search/isActive + realtime lazy-mount fixes were already on `main` and in production `mrex8prk` chunks. Multi-control dead UI on a screenshot matching that chrome is often deployment drift (`chravel-mobile` remote vs bundled) or CSP — not a reason to re-implement working handlers. *Evidence: production chunk markers `header-search-btn` / `mint-realtime-token` present before recovery branch.*
+
+### Launch-critical E2E fixtures need an explicit release-gate mode
+Local Playwright runs can skip authenticated setup when staging secrets or confirmation-free auth are unavailable, but CI/App Store QA must fail instead of reporting green with skipped launch-critical coverage. Centralize the mode flag (`CHRAVEL_E2E_RELEASE_GATE=1`) and throw fixture-step errors (`[E2E fixture step failed: auth|trip creation|membership|pro trip creation] ...`) from shared fixtures so failures identify the broken setup step. *Evidence: July 2026 chat messaging E2E release-gate hardening.*

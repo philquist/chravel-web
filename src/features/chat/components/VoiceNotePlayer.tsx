@@ -49,9 +49,7 @@ export const VoiceNotePlayer: React.FC<VoiceNotePlayerProps> = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSec, setCurrentSec] = useState(0);
-  const [durationSec, setDurationSec] = useState(
-    durationMs ? durationMs / 1000 : 0,
-  );
+  const [durationSec, setDurationSec] = useState(durationMs ? durationMs / 1000 : 0);
   const [rateIndex, setRateIndex] = useState(0);
 
   const bars = useMemo(() => {

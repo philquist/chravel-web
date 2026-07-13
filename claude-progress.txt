@@ -3,6 +3,20 @@
 - Added App Store release-gate docs and a feature-to-test matrix covering auth, trips, invites, chat, calendar, polls, tasks, payments, media, basecamp, Explore/Recs, cover photos, Concierge, pro trips, events, notifications, PWA/mobile, billing, and compliance.
 - Hardened Concierge mobile-device smoke skips so release-gate mode fails on missing demo/auth/trip prerequisites instead of silently skipping; repaired stale chat-readiness matrix coverage after ThreadView removal; regenerated stale permission matrices.
 - Verification: guardrails, permission drift, IAP parity/validation, lint:check, typecheck, build, mobile perf, chat readiness, and 12 focused feature suites passed. Full `npm run test:run` still hangs in this environment and is now bounded by gate timeout; Playwright browser install remains blocked by CDN 403.
+2026-07-13 — iMessage deferred polish: tails, unread divider, flags, voice bucket
+- Implemented remaining Holy Grail deferred items: bubble tails on last-in-group, sticky date overlay, New Messages unread divider (captured once per open), 3-minute grouping window, chat_* feature-flag kill switches, swipe-up-to-lock voice recording, Places mini-cards, video duration badge + GIF in-view autoplay, and dedicated trip-voice-notes storage bucket with membership RLS.
+- Migration applied to ChravelApp prod via Supabase MCP; voice uploads now use signed URLs from trip-voice-notes.
+- Verification: focused grouping/media/unread/ChatInput/reactions tests pass; typecheck pass.
+
+2026-07-13 — iMessage chat polish Stream-sync audit + fixes
+- Audited Lovable Phases 1–4 against Stream architecture before publish; found grouping, mosaic, voice notes, and Delivered receipts were presentation-only and broken on the live Stream path.
+- Fixed Stream VM attachment mapping (incl. audio metadata), sender.id grouping, multi-image batch send, shareVoiceNote typed attachments, Delivered receipt mount, and entrance animation recycle noise.
+- Verification: focused streamMessageViewModel / grouping / ReadReceipts / payload / ChatInput / MessageBubble tests pass; typecheck pass; merge preflight clean vs origin/main.
+2026-07-13 — App Store release gate script
+- Added `npm run qa:appstore-release` as the top-level release gate, backed by a timed sequential runner that stops on first failure and summarizes pass/fail state.
+- Gate order now covers env validation, guardrails, permissions/IAP checks, lint/type/test/build, mobile/chat readiness, smoke E2E, and mapped Playwright release surfaces for auth, trip creation, invite/join, payments, Concierge, events, pro trips, and media.
+- Documented required release env vars and expected known failures/missing Playwright coverage in `docs/qa/appstore-release-gate.md`.
+- Verification: script syntax check passes; full gate was attempted and correctly stopped at `validate-env` because this environment lacks release Supabase/Google Maps env vars.
 
 2026-07-12 — Concierge launch audit + send CTA parity
 - Kept Concierge Send visually aligned with Search/Upload/waveform by preserving gold-ring CTA chrome when the composer is empty; empty sends are now blocked in handlers + aria-disabled instead of DOM-disabled opacity.
@@ -159,3 +173,16 @@
 - Fixed residual realtime blocker: meta CSP in `index.html` now allows `https://ai-gateway.vercel.sh` + `wss://ai-gateway.vercel.sh` (aligned with vercel.json).
 - Hardened composer hit-testing (isolate/z stacking, inactive tab `pointerEvents:none`), Ask-anything placeholder, clearer disabled Send, and stop dictation before realtime mic.
 - Docs: `docs/CONCIERGE_CONTROLS_RECOVERY_2026-07-11.md`. Physical iPhone TestFlight QA remains the DoD gate.
+
+2026-07-13 — Skipped test burn-down audit
+- Removed all skipped Vitest suites from src/ by replacing stale component-harness and brittle mock-integration skips with focused current-path coverage for auth session derivation, trip invite URLs, chat ordering, payment split math, calendar conflict logic, media search, chat service author resolution, chat content parsing, and pro-trip route/mock-data invariants.
+- Kept live/service-dependent Playwright skips isolated to e2e allowlist entries and tightened qa:skip-policy so it now catches it.skip as well as describe.skip/test.skip/test.fixme; verified a temporary unapproved skip fails the policy gate.
+- Verification: focused 14-file Vitest audit suite, qa:skip-policy, validate pass after formatting drift cleanup; full Vitest run still hangs after startup in this environment and PWA smoke remains blocked by missing Playwright Chromium executable.
+2026-07-13 — App Store launch coverage matrix
+- Added `docs/qa/appstore-feature-test-matrix.md` as a single QA launch-coverage source for App Store/TestFlight readiness across auth, trips, invites, chat, calendar, polls, tasks, payments, media, basecamp, Recs/Places, Concierge, Pro, Events, cover photos, notifications, PWA/offline, and iOS/Capacitor compliance.
+- Kept the change documentation-only; no demo mock data, app runtime code, Supabase schema, or native project files changed.
+- Verification: merge preflight attempted before edits but failed to fetch `origin/main` in this environment; markdown format check and final merge preflight run after edits.
+2026-07-13 — E2E release-gate fixture failures
+- Split chat messaging E2E setup into local-tolerant vs release-gate mode via CHRAVEL_E2E_RELEASE_GATE=1, preserving documented local skips while making launch-critical fixture failures throw explicit step errors.
+- Added shared E2E mode helpers under e2e/fixtures and tightened auth/trip fixture failures for auth, trip creation, membership, and pro trip creation.
+- Wired CI full E2E and scheduled staging/App Store QA E2E to release-gate mode; verification reached Playwright browser execution but Chromium install remains blocked by CDN 403 in this environment.

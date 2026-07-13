@@ -155,3 +155,12 @@
 - **Suggested tests:** Vitest for the hook with `@tanstack/react-query` test client + mocked `supabase`. Playwright E2E using a fresh authenticated test user and a small fixture image, asserting card rendering on `/dashboard`, `/dashboard/pro`, `/dashboard/events`.
 - **Priority:** high
 - **Provenance:** May 2026 cover photo upload definitive fix (branch `claude/fix-cover-photo-upload-RodMM`)
+
+## iMessage chat polish — mosaic / voice / receipt render paths
+- **Area:** `MessageBubble.tsx`, `VoiceNotePlayer.tsx`, `useShareAsset.ts`
+- **Why this gap matters:** Adapter unit tests now cover Stream→VM attachment mapping; MessageBubble RTL now covers mosaic / voice / place card / tail (July 2026). Still missing: swipe-up-to-lock gesture RTL and feature-flag OFF fallbacks.
+- **Missing coverage:** VoiceRecordButton lock gesture; MessageBubble with `chat_media_mosaic=false` / `chat_voice_notes=false`.
+- **Failure mode if untested:** Kill-switch OFF paths could crash or keep showing disabled UI.
+- **Suggested tests:** Mock useFeatureFlag per key; assert mosaic stacks and voice falls back to file link; pointer lock/send on VoiceRecordButton.
+- **Priority:** medium
+- **Provenance:** July 2026 iMessage chat audit + deferred polish (`cursor/imessage-chat-audit-ff9d`)

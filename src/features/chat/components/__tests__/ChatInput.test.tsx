@@ -8,11 +8,16 @@ vi.mock('@/hooks/useShareAsset', () => ({
   useShareAsset: () => ({
     shareLink: vi.fn(),
     shareMultipleFiles: vi.fn(),
+    shareVoiceNote: vi.fn(),
     isUploading: false,
     uploadProgress: {},
     parsedContent: null,
     clearParsedContent: vi.fn(),
   }),
+}));
+
+vi.mock('@/lib/featureFlags', () => ({
+  useFeatureFlag: () => true,
 }));
 
 vi.mock('@/hooks/useWebSpeechVoice', () => ({

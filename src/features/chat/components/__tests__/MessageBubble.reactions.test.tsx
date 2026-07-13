@@ -26,6 +26,10 @@ vi.mock('@/hooks/useResolvedTripMediaUrl', () => ({
   useResolvedTripMediaUrl: () => null,
 }));
 
+vi.mock('@/lib/featureFlags', () => ({
+  useFeatureFlag: () => true,
+}));
+
 vi.mock('../MessageActions', () => ({
   MessageActions: () => null,
 }));

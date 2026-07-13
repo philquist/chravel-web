@@ -133,7 +133,7 @@ async function loginViaBrowser(page: Page, email: string): Promise<boolean> {
 }
 
 const test = base.extend<{ testAuth: { email: string; session: string; userId: string } | null }>({
-  testAuth: async (_, provide) => {
+  testAuth: async (_fixtures, provide) => {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       await provide(null);
       return;

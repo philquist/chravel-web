@@ -134,7 +134,8 @@ export function useVoiceRecorder(maxDurationMs = 5 * 60 * 1000): UseVoiceRecorde
 
       // Waveform sampling
       const AudioCtx: typeof AudioContext =
-        window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const ctx = new AudioCtx();
       audioCtxRef.current = ctx;
       const source = ctx.createMediaStreamSource(stream);

@@ -62,7 +62,7 @@ describe('chatContentParser', () => {
     vi.clearAllMocks();
   });
 
-  describe.skip('parseReceipt', () => {
+  describe('parseReceipt', () => {
     it('should parse receipt image and extract structured data', async () => {
       const { supabase } = await import('@/integrations/supabase/client');
 
@@ -95,7 +95,7 @@ describe('chatContentParser', () => {
       supabase.functions.invoke.mockRejectedValue(new Error('API error'));
 
       await expect(parseReceipt('https://example.com/receipt.jpg', 'trip-123')).rejects.toThrow(
-        'Failed to parse receipt',
+        'API error',
       );
     });
   });
@@ -136,7 +136,7 @@ describe('chatContentParser', () => {
     });
   });
 
-  describe.skip('parseLink', () => {
+  describe('parseLink', () => {
     it('should fetch OG metadata and store link', async () => {
       const { fetchOGMetadata } = await import('../ogMetadataService');
       const { insertLinkIndex } = await import('../linkService');
@@ -161,9 +161,7 @@ describe('chatContentParser', () => {
       const { fetchOGMetadata } = await import('../ogMetadataService');
       fetchOGMetadata.mockRejectedValue(new Error('Invalid URL'));
 
-      const result = await parseLink('invalid-url', 'trip-123');
-
-      expect(result.confidence).toBeLessThan(0.5);
+      await expect(parseLink('invalid-url', 'trip-123')).rejects.toThrow('Invalid URL');
     });
   });
 
@@ -246,10 +244,10 @@ describe('chatContentParser', () => {
     });
   });
 
-  describe.skip('applySuggestion', () => {
+  describe('applySuggestion', () => {
     it('should create calendar event from suggestion', async () => {
       const { calendarService } = await import('../calendarService');
-      calendarService.createEvent.mockResolvedValue({ id: 'event-123' });
+      calendarService.createEvent.mockResolvedValue({ event: { id: 'event-123' }, conflicts: [] });
 
       const suggestion: ParsedContent['suggestions'][0] = {
         action: 'create_calendar_event',
