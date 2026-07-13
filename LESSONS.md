@@ -429,6 +429,9 @@ If a parser increments quota before checking whether the same file/type has alre
 ### Import workers need explicit terminal status policy
 `completed` cannot represent mixed success/failure batches. Derive final status from stats: all success -> `completed`, mixed success/error -> `completed_partial`, all error -> `failed`. *Evidence: AHS-15 added Gmail import status policy/tests and worker wiring.*
 
+### Trip search modals need body portals + explicit Close, not bare Radix autoFocus
+Concierge Trip Search froze on iOS because Radix Dialog + HTML autoFocus never reliably focused the field under `.mobile-trip-shell`; mirror `ChatSearchOverlay` (body portal, ref focus, always-visible Close, open-gesture backdrop guard).
+
 ### Mobile chat horizontal overflow must be fixed at every flex boundary
 Long assistant markdown/URLs can ignore visual `max-width` when parent flex items keep `min-width:auto`, creating page-level sideways pan and stealing tab taps. Clamp the tab pane to `overflow-x:hidden`, add `min-w-0` at chat/message flex boundaries, and force markdown links to wrap anywhere. *Evidence: May 2026 Concierge mobile fix contained long Japan itinerary responses and restored Media/Payments tab taps.*
 

@@ -531,3 +531,13 @@ Known security anti-patterns discovered during audits. Reference this before int
 - **Smallest safe fix:** Map full attachments (incl. audio metadata) in the Stream VM; resolve sender via `sender.id`; batch multi-image sends; `shareVoiceNote` with typed audio attachment; mount receipts for all sent own messages; skip single-media path when attachments exist.
 - **Required tests:** streamMessageViewModel mosaic/audio/document mapping; VirtualizedMessageContainer grouping on `sender.id`; ReadReceipts Delivered vs gold; streamMessagePayload voice metadata preserve.
 - **Fixed in:** `streamMessageViewModel.ts`, `VirtualizedMessageContainer.tsx`, `useShareAsset.ts`, `MessageBubble.tsx`, `ChatInput.tsx`, `streamMessagePayload.ts` (July 2026)
+
+## Concierge Trip Search modal: no dismiss + frozen input
+- **Status:** fixed
+- **Subsystem:** Concierge / Trip Search (`ConciergeSearchModal`)
+- **Bug class:** Radix Dialog focus trap + missing dismiss control + pointerdown-open race
+- **Symptom:** Trip Search opens from Concierge header Search with no X/Close; search field renders but rejects keystrokes on mobile (iOS WKWebView / Capacitor).
+- **Root Cause:** (1) `DialogContent showClose={false}` and the in-field X only cleared query text. (2) HTML `autoFocus` inside Radix Dialog is unreliable on iOS WKWebView when the field sits under trip-shell scroll/overflow ancestors. (3) Opening on touch `pointerdown` can land the completing `click` on the newly mounted backdrop and fight focus.
+- **Smallest Safe Fix:** Use a `createPortal(..., document.body)` overlay at `z-[100]` (same as `ChatSearchOverlay`), always-visible Close control (`min-h-11`), ref + delayed `focus()` on open, and a short backdrop-dismiss guard after open.
+- **Required Tests:** `src/components/ai/__tests__/ConciergeSearchModal.test.tsx` — type into input, Close calls `onOpenChange(false)`, backdrop ignore during open guard, Escape closes.
+- **Fixed in:** `src/components/ai/ConciergeSearchModal.tsx` (July 2026)

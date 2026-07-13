@@ -1,3 +1,7 @@
+2026-07-13 — Concierge Trip Search: Close control + unfreeze input
+- Rewrote ConciergeSearchModal off Radix Dialog onto a body-portal overlay (ChatSearchOverlay pattern) with always-visible Close, ref focus, and open-gesture backdrop dismiss guard.
+- Regression tests cover typing, Close, Escape, and backdrop guard. Branch: cursor/fix-concierge-search-modal-3d6b.
+
 2026-07-13 — App Store launch QA gate kickoff
 - Added a repo-owned `qa:appstore-release` gate that sequences env validation, guardrails, permission drift, IAP parity/validation, lint, typecheck, full Vitest, build, mobile perf, chat readiness, optional E2E smoke/device checks, and optional App Store screenshots with per-step timeout protection.
 - Added App Store release-gate docs and a feature-to-test matrix covering auth, trips, invites, chat, calendar, polls, tasks, payments, media, basecamp, Explore/Recs, cover photos, Concierge, pro trips, events, notifications, PWA/mobile, billing, and compliance.
