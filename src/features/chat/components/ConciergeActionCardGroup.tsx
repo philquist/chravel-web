@@ -4,6 +4,7 @@ import {
   OverflowSummaryCard,
   FailureSummaryCard,
   type ConciergeActionResult,
+  type ConciergeNavigateHandler,
 } from './ConciergeActionCard';
 
 /** Maximum number of individual item cards shown per action type before collapsing */
@@ -11,7 +12,7 @@ const MAX_VISIBLE_CARDS = 5;
 
 interface ConciergeActionCardGroupProps {
   actions: ConciergeActionResult[];
-  onNavigate?: (tab: string) => void;
+  onNavigate?: ConciergeNavigateHandler;
 }
 
 interface ActionGroup {

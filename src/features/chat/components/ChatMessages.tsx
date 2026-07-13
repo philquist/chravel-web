@@ -30,6 +30,7 @@ import type {
 import type { TTSPlaybackState } from '@/hooks/useConciergeReadAloud';
 import { useLinkPreviews } from '../hooks/useLinkPreviews';
 import { useLinkPreviewActivation } from '../hooks/useLinkPreviewActivation';
+import { requestPollDeepLink } from '@/lib/pollDeepLink';
 
 /** Extended message shape that may carry rich function-call data from the concierge. */
 interface RichChatMessage extends ChatMessage {
@@ -68,6 +69,7 @@ interface ChatMessagesProps {
   showMapWidgets?: boolean;
   onDeleteMessage?: (messageId: string) => void;
   onTabChange?: (tab: string) => void;
+  tripId?: string;
   onSavePlace?: (place: PlaceResult) => void;
   onSaveFlight?: (flight: FlightResult) => void;
   onSaveHotel?: (hotel: HotelResult) => void;
@@ -119,6 +121,7 @@ export const ChatMessages = ({
   showMapWidgets = false,
   onDeleteMessage,
   onTabChange,
+  tripId,
   onSavePlace,
   onSaveFlight,
   onSaveHotel,
@@ -140,6 +143,19 @@ export const ChatMessages = ({
   onTTSPlay,
   onTTSStop,
 }: ChatMessagesProps) => {
+  const handleConciergeNavigate = useCallback(
+    (tab: string, meta?: { entityId?: string; createPoll?: boolean }) => {
+      if (tab === 'polls' && tripId && (meta?.entityId || meta?.createPoll)) {
+        requestPollDeepLink(tripId, {
+          pollId: meta.entityId,
+          createPoll: meta.createPoll === true && !meta.entityId,
+        });
+      }
+      onTabChange?.(tab);
+    },
+    [onTabChange, tripId],
+  );
+
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const handleDeleteClick = useCallback((messageId: string) => {
@@ -260,7 +276,7 @@ export const ChatMessages = ({
                 <div className="min-w-0 max-w-full sm:max-w-xs lg:max-w-md w-full">
                   <ConciergeActionCardGroup
                     actions={rich.conciergeActions}
-                    onNavigate={onTabChange}
+                    onNavigate={handleConciergeNavigate}
                   />
                 </div>
               </div>

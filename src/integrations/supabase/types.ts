@@ -4259,6 +4259,44 @@ export type Database = {
         }
         Relationships: []
       }
+      poll_comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          poll_id: string
+          trip_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          poll_id: string
+          trip_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          poll_id?: string
+          trip_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_comments_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "trip_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_polls: {
         Row: {
           allow_multiple: boolean | null
@@ -5850,6 +5888,14 @@ export type Database = {
           broken_at_id: string
           reason: string
         }[]
+      }
+      append_poll_option: {
+        Args: {
+          p_current_version?: number | null
+          p_option_text: string
+          p_poll_id: string
+        }
+        Returns: Database["public"]["Tables"]["trip_polls"]["Row"]
       }
       vote_on_poll: {
         Args: {

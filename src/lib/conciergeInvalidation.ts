@@ -1,4 +1,6 @@
-export type ConciergeInvalidationQueryKey = string[];
+import { tripKeys } from '@/lib/queryKeys';
+
+export type ConciergeInvalidationQueryKey = readonly (string | boolean | undefined)[];
 
 /**
  * All concierge tools that mutate trip state.
@@ -91,7 +93,7 @@ export function getConciergeInvalidationKeys(
     // Polls
     case 'createPoll':
     case 'closePoll':
-      return [['tripPolls', tripId]];
+      return [tripKeys.polls(tripId)];
 
     // Places / Reservations / Links — also invalidate tripLinks (shared explore tab)
     case 'savePlace':

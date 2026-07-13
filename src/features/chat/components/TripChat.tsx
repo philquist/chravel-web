@@ -1108,6 +1108,7 @@ export const TripChat = React.memo(
             transportMode="stream"
             onRetry={handleRetryFailedMessage}
             systemMessagePrefs={systemMessagePrefs}
+            tripId={resolvedTripId}
             tripMembers={tripMembers}
             readStatuses={message.readStatuses || readStatusesByMessage[message.id] || []}
             showSenderInfo={showSenderInfo}
