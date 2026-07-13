@@ -75,4 +75,24 @@ describe('proChannelMessageAdapter', () => {
       users: ['u2', 'u1'],
     });
   });
+
+  it('never mutates the base reaction map (rollback must be able to revert)', () => {
+    // mapStreamReactionMap creates an entry for EVERY message, so the overlay
+    // used to write through the shallow copy into the base map's inner object.
+    // That made pending intents self-confirm against their own mutation and
+    // left phantom reactions behind after a failed Stream write.
+    const messages = [
+      { id: 'm1', reaction_counts: {}, own_reactions: [], latest_reactions: [] },
+    ] as unknown as MessageResponse[];
+    const base = mapStreamReactionMap(messages);
+
+    const overlaid = applyPendingReactionOverlay(base, { m1: { like: true } }, 'u1');
+
+    expect(overlaid.m1?.like?.userReacted).toBe(true);
+    // The base map must be untouched
+    expect(base.m1?.like).toBeUndefined();
+    // Re-running with cleared intents (the rollback path) yields no reaction
+    const reverted = applyPendingReactionOverlay(base, {}, 'u1');
+    expect(reverted.m1?.like).toBeUndefined();
+  });
 });

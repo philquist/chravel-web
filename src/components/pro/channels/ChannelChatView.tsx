@@ -9,6 +9,7 @@ import { ChatInput } from '@/features/chat/components/ChatInput';
 import { InlineReplyComponent } from '@/features/chat/components/InlineReplyComponent';
 import { useLinkPreviews } from '@/features/chat/hooks/useLinkPreviews';
 import { useLinkPreviewActivation } from '@/features/chat/hooks/useLinkPreviewActivation';
+import { useChatReadReceipts } from '@/features/chat/hooks/useChatReadReceipts';
 import { useAuth } from '@/hooks/useAuth';
 import { getMockAvatar } from '@/utils/mockAvatars';
 import { useRoleAssignments } from '@/hooks/useRoleAssignments';
@@ -71,6 +72,15 @@ export const ChannelChatView = ({
     Record<string, Record<string, boolean>>
   >({});
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  // Last failed send, kept for the inline retry banner (draft stays in the composer).
+  const [failedSend, setFailedSend] = useState<{
+    text: string;
+    options: {
+      parentId?: string;
+      isBroadcast?: boolean;
+      quotedReference?: { id: string; text: string; authorName: string };
+    };
+  } | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{
     id: string;
@@ -90,6 +100,17 @@ export const ChannelChatView = ({
     channel.tripId,
   );
 
+  // Mark the open channel read (debounced) as messages from others arrive.
+  // Without this nothing ever cleared Stream unread state for pro channels,
+  // so per-channel unread badges would seed and never reset.
+  useChatReadReceipts(
+    isDemoChannel,
+    user?.id,
+    channel.tripId,
+    useStreamTransport ? streamProChannel.messages : [],
+    useStreamTransport ? streamProChannel.activeChannel : null,
+  );
+
   // Handle user leaving the channel/role (self-service)
   const handleLeaveChannel = async () => {
     if (!user?.id || !channel.requiredRoleId) {
@@ -106,8 +127,8 @@ export const ChannelChatView = ({
       // Use leaveRole for self-service removal (no admin permission required)
       await leaveRole(channel.requiredRoleId);
       toast({
-        title: 'Left channel',
-        description: `You have left the "${channel.channelName}" channel`,
+        title: 'Left role',
+        description: `You left the "${channel.requiredRoleName || channel.channelName}" role and its channels`,
       });
       setShowLeaveConfirm(false);
       // Navigate back to main messages
@@ -468,26 +489,58 @@ export const ChannelChatView = ({
       return;
     }
 
+    const text = inputMessage.trim();
+    const sendOptions = {
+      parentId: replyingTo ? replyingTo.id : undefined,
+      isBroadcast,
+      quotedReference: replyingTo
+        ? {
+            id: replyingTo.id,
+            text: replyingTo.text,
+            authorName: replyingTo.senderName,
+          }
+        : undefined,
+    };
+
     try {
-      const parentId = replyingTo ? replyingTo.id : undefined;
-      const sent = await streamProChannel.sendMessage(inputMessage.trim(), {
-        parentId,
-        isBroadcast,
-        quotedReference: replyingTo
-          ? {
-              id: replyingTo.id,
-              text: replyingTo.text,
-              authorName: replyingTo.senderName,
-            }
-          : undefined,
-      });
+      const sent = await streamProChannel.sendMessage(text, sendOptions);
       if (!sent) {
         throw new Error('Failed to send via Stream');
       }
       setInputMessage('');
       clearReply();
+      setFailedSend(null);
     } catch (error) {
       if (import.meta.env.DEV) console.error('[ChannelChatView] Send failed:', error);
+      // Keep the draft in the composer and surface an inline retry banner —
+      // a toast alone disappears and leaves no recovery path (main trip chat
+      // has the same banner pattern).
+      setFailedSend({ text, options: sendOptions });
+      const mapped = mapChannelSendError(error);
+      toast({
+        title: mapped.title,
+        description: formatToastDescription(mapped),
+        variant: 'destructive',
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleRetryFailedSend = async () => {
+    if (!failedSend || sending) return;
+    setSending(true);
+    try {
+      const sent = await streamProChannel.sendMessage(failedSend.text, failedSend.options);
+      if (!sent) {
+        throw new Error('Failed to send via Stream');
+      }
+      // Clear the composer only if it still holds the exact failed draft.
+      setInputMessage(prev => (prev.trim() === failedSend.text ? '' : prev));
+      clearReply();
+      setFailedSend(null);
+    } catch (error) {
+      if (import.meta.env.DEV) console.error('[ChannelChatView] Retry failed:', error);
       const mapped = mapChannelSendError(error);
       toast({
         title: mapped.title,
@@ -533,6 +586,12 @@ export const ChannelChatView = ({
         return;
       }
 
+      // Guard before recording the optimistic intent — an intent with no
+      // Stream write behind it can never reconcile and sticks forever.
+      if (!streamProChannel.activeChannel) {
+        return;
+      }
+
       setPendingReactionIntents(prev => {
         const expectedCurrent = prev[messageId]?.[reactionType];
         const baseUserReacted =
@@ -546,91 +605,52 @@ export const ChannelChatView = ({
         return next;
       });
 
-      if (!streamProChannel.activeChannel) {
-        return;
-      }
-
       const ownReaction = streamProChannel.activeChannel.state.messages
         .find(msg => msg.id === messageId)
         ?.own_reactions?.some(r => r.type === reactionType);
 
-      if (ownReaction) {
-        await streamProChannel.activeChannel.deleteReaction(messageId, reactionType);
-      } else {
-        await streamProChannel.activeChannel.sendReaction(messageId, { type: reactionType });
+      try {
+        if (ownReaction) {
+          await streamProChannel.activeChannel.deleteReaction(messageId, reactionType);
+        } else {
+          await streamProChannel.activeChannel.sendReaction(messageId, { type: reactionType });
+        }
+      } catch (error) {
+        if (import.meta.env.DEV) console.error('[ChannelChatView] Reaction failed:', error);
+        // Roll back the optimistic intent — the reconciliation effect only
+        // clears intents once Stream state matches them, which a failed write
+        // never will (the overlay would show a phantom reaction forever).
+        setPendingReactionIntents(prev => {
+          const byType = { ...(prev[messageId] || {}) };
+          delete byType[reactionType];
+          const next = { ...prev };
+          if (Object.keys(byType).length > 0) {
+            next[messageId] = byType;
+          } else {
+            delete next[messageId];
+          }
+          return next;
+        });
+        toast({
+          title: 'Reaction failed',
+          description: 'Please try again.',
+          variant: 'destructive',
+        });
       }
     },
-    [user?.id, isDemoChannel, streamProChannel.activeChannel, baseStreamReactionMap],
+    [user?.id, isDemoChannel, streamProChannel.activeChannel, baseStreamReactionMap, toast],
   );
 
-  // Calculate member count from available channels, with direct DB fallback
-  const [memberCount, setMemberCount] = useState(0);
-
-  useEffect(() => {
-    // First try to get from available channels prop
-    if (availableChannels && availableChannels.length > 0) {
-      const currentChannel = availableChannels.find(c => c.id === channel.id);
-      if (currentChannel?.memberCount && currentChannel.memberCount > 0) {
-        setMemberCount(currentChannel.memberCount);
-        return;
-      }
-    }
-
-    // Fallback: query channel_members directly for an accurate count
-    if (!channel?.id || isDemoChannel) return;
-
-    const fetchMemberCount = async () => {
-      try {
-        const { supabase } = await import('@/integrations/supabase/client');
-        const { count, error } = await supabase
-          .from('channel_members')
-          .select('*', { count: 'exact', head: true })
-          .eq('channel_id', channel.id);
-
-        if (!error && count !== null && count > 0) {
-          setMemberCount(count);
-        } else {
-          // Fall back to role-based access. Two role sources coexist and BOTH must be
-          // honored: the `channel_role_access` junction (new) AND the legacy
-          // `required_role_id` on trip_channels — which is the ONLY one populated for
-          // most existing pro channels. Ignoring required_role_id (the previous bug) made
-          // channels with real members report "0 members".
-          const [{ data: roleAccessData }, { data: channelRow }] = await Promise.all([
-            supabase.from('channel_role_access').select('role_id').eq('channel_id', channel.id),
-            supabase
-              .from('trip_channels')
-              .select('required_role_id')
-              .eq('id', channel.id)
-              .maybeSingle(),
-          ]);
-
-          const roleIds = new Set<string>(
-            (roleAccessData ?? []).map(r => r.role_id).filter((id): id is string => Boolean(id)),
-          );
-          if (channelRow?.required_role_id) roleIds.add(channelRow.required_role_id);
-
-          if (roleIds.size > 0) {
-            const { data: roleMembers } = await supabase
-              .from('user_trip_roles')
-              .select('user_id')
-              .eq('trip_id', channel.tripId)
-              .in('role_id', Array.from(roleIds));
-
-            if (roleMembers) {
-              const uniqueUsers = new Set(roleMembers.map(r => r.user_id));
-              setMemberCount(uniqueUsers.size);
-            }
-          }
-        }
-      } catch (err) {
-        if (import.meta.env.DEV)
-          console.error('[ChannelChatView] Failed to fetch member count:', err);
-      }
-    };
-
-    fetchMemberCount();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- isDemoChannel derived from channel.tripId already in deps
-  }, [channel?.id, channel?.tripId, availableChannels]);
+  // Member count is derived from the channel list, which is populated in one
+  // query by the get_channel_member_counts RPC (single source of truth shared
+  // with the channel switcher). The previous direct-DB fallback here ran a
+  // per-channel query with no cancellation — switching channels quickly let a
+  // slow older fetch overwrite the newer channel's count (and setState after
+  // unmount). A pure derivation cannot race.
+  const memberCount = useMemo(() => {
+    const fromList = availableChannels?.find(c => c.id === channel.id)?.memberCount;
+    return fromList ?? channel.memberCount ?? 0;
+  }, [availableChannels, channel.id, channel.memberCount]);
 
   return (
     <>
@@ -662,7 +682,7 @@ export const ChannelChatView = ({
           )}
           {channel.requiredRoleName && (
             <span
-              className="text-xs bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded-full"
+              className="text-xs bg-gold-primary/15 text-gold-mid px-1.5 py-0.5 rounded-full"
               aria-label={`Restricted to ${channel.requiredRoleName} role`}
             >
               {channel.requiredRoleName}
@@ -670,8 +690,11 @@ export const ChannelChatView = ({
           )}
         </div>
 
-        {/* Channel Options Dropdown */}
-        {!isDemoChannel && (
+        {/* Channel Options Dropdown. Leaving is role-leave (membership is
+            role-derived), so it's only offered when the channel maps to a
+            single role — multi-role shared channels (requiredRoleId null)
+            have no unambiguous role to leave and previously failed at click. */}
+        {!isDemoChannel && channel.requiredRoleId && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -689,7 +712,7 @@ export const ChannelChatView = ({
                 className="text-red-400 focus:text-red-400 focus:bg-red-500/10 cursor-pointer"
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                Leave Channel
+                Leave role
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -773,6 +796,36 @@ export const ChannelChatView = ({
 
       {/* Reuse ChatInput with permission check */}
       <div className="bg-black/30 p-3 pb-[env(safe-area-inset-bottom)] md:pb-3">
+        {failedSend && (
+          <div
+            className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2"
+            role="alert"
+          >
+            <span className="text-xs text-red-300 truncate">
+              Message failed to send — your draft is preserved.
+            </span>
+            <div className="flex shrink-0 items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRetryFailedSend}
+                disabled={sending}
+                className="h-8 rounded-full px-3 text-xs text-red-200 hover:bg-red-500/20 hover:text-red-100"
+              >
+                Retry
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFailedSend(null)}
+                className="h-8 rounded-full px-2 text-xs text-red-300/70 hover:bg-red-500/20"
+                aria-label="Dismiss send error"
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        )}
         {replyingTo && (
           <InlineReplyComponent
             replyTo={{
@@ -810,20 +863,28 @@ export const ChannelChatView = ({
         )}
       </div>
 
-      {/* Leave Channel Confirmation Dialog */}
+      {/* Leave Role Confirmation Dialog — leaving is role-leave, and the copy
+          must say so: it removes the member from the role and every channel
+          that role grants, not just this one. */}
       <AlertDialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
         <AlertDialogContent className="bg-gray-900 border-white/10">
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave &quot;{channel.channelName}&quot;?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Leave the &quot;{channel.requiredRoleName || channel.channelName}&quot; role?
+            </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <p>Are you sure you want to leave this channel?</p>
+              <p>
+                Channel access comes from your role, so leaving removes you from the role itself —
+                not just this channel.
+              </p>
               <ul className="list-disc list-inside text-sm space-y-1 mt-2">
-                <li>You will lose access to this channel and its messages</li>
                 <li>
                   You will be removed from the &quot;
                   {channel.requiredRoleName || channel.channelName}&quot; role
                 </li>
-                <li>An admin will need to re-add you if you want to rejoin</li>
+                <li>You will lose access to every channel this role grants, including this one</li>
+                <li>Any permissions granted by this role are removed</li>
+                <li>An admin will need to re-assign the role if you want to rejoin</li>
               </ul>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -836,7 +897,7 @@ export const ChannelChatView = ({
               disabled={isLeaving}
               className="rounded-full bg-red-600 hover:bg-red-700 text-white"
             >
-              {isLeaving ? 'Leaving...' : 'Leave Channel'}
+              {isLeaving ? 'Leaving...' : 'Leave role'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

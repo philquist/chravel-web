@@ -81,7 +81,12 @@ export function applyPendingReactionOverlay(
   const overlaid: ReactionMap = { ...reactionMap };
   Object.entries(pendingIntents).forEach(([messageId, intentsByType]) => {
     Object.entries(intentsByType).forEach(([reactionType, expectedUserReacted]) => {
-      const currentByType = overlaid[messageId] || {};
+      // Clone the per-message object — the top-level spread above is shallow,
+      // so writing into reactionMap's inner object would mutate the caller's
+      // base map. That mutation made the reconciliation effect see Stream
+      // state as already-matching (instantly clearing pending intents) and
+      // left phantom reactions behind when a Stream write failed.
+      const currentByType = { ...(overlaid[messageId] || {}) };
       const currentReaction = currentByType[reactionType] || {
         count: 0,
         userReacted: false,
