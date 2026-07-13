@@ -1,3 +1,15 @@
+2026-07-13 — Custom / percentage payment splits
+- Added Equal | Custom | % allocator on desktop PaymentInput + mobile CreatePaymentModal.
+- Client resolves percentage→dollars (largest-remainder cents); RPC accepts optional p_custom_amounts and rejects sum ≠ total.
+- Equal path unchanged (NULL custom amounts). Migration applied to ChravelApp prod.
+- Tests: splitAmountUtils + usePaymentSplits; typecheck/lint/build pass.
+- Branch: cursor/payments-ux-delight-3561
+
+2026-07-13 — Payments UX delight (mobile parity + receipts + deeplinks)
+- Deep-dive: trip P2P payments already had equal splits, creator settle checkboxes, create-time attachments, and desktop Venmo/PayPal deeplinks — but mobile create skipped chat system messages, preferred methods were non-clickable badges on outstanding cards, mobile lacked PersonBalanceCard, and push fanout targeted missing `trip_payments` table.
+- Fixed: shared `paymentActivityMessages` for mobile+desktop chat announce; `PaymentMethodPayButtons` deeplinks on outstanding cards + PersonBalanceCard; post-create `PaymentAttachmentAddControl`; paid progress bar; mobile "Who owes whom"; migration retargeting notify trigger + applecash CHECK (applied to ChravelApp prod).
+- Tests: PaymentMethodPayButtons + paymentActivityMessages; typecheck/lint/build pass.
+- Branch: cursor/payments-ux-delight-3561
 2026-07-13 — Polls facepiles + suggest option + tripKeys.polls + Concierge deep-link
 - Non-anonymous voter facepiles (avatars + name tooltips) on PollOption; batched profile fetch in PollComponent.
 - Suggest option: append_poll_option SECURITY DEFINER RPC + poll_suggest_option flag; UI on active polls; demo append via pollStorageService only (mockPolls untouched).

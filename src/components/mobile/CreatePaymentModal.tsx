@@ -16,6 +16,12 @@ import { useFeatureFlag } from '@/lib/featureFlags';
 import { usePaymentAttachmentDraft } from '@/features/payments/hooks/usePaymentAttachmentDraft';
 import { PaymentAttachmentPicker } from '@/features/payments/components/PaymentAttachmentPicker';
 import { LARGE_LIST_THRESHOLDS } from '@/lib/largeListThresholds';
+import {
+  notifyPaymentRecordedInChat,
+  resolvePaymentActorName,
+} from '@/lib/paymentActivityMessages';
+import { useAuth } from '@/hooks/useAuth';
+import { PaymentSplitAllocator } from '@/components/payments/PaymentSplitAllocator';
 
 interface CreatePaymentModalProps {
   isOpen: boolean;
@@ -62,6 +68,7 @@ export const CreatePaymentModal = ({
 }: CreatePaymentModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
   const attachmentsEnabled = useFeatureFlag('payment_attachments', true);
   const attachmentDraft = usePaymentAttachmentDraft();
 
@@ -73,12 +80,22 @@ export const CreatePaymentModal = ({
     selectedPaymentMethods,
     perPersonAmount,
     allParticipantsSelected,
+    splitType,
+    customAmounts,
+    percentages,
+    resolvedAmounts,
+    validationError,
+    isValid,
     setAmount,
     setCurrency,
     setDescription,
     toggleParticipant,
     togglePaymentMethod,
     selectAllParticipants,
+    setSplitType,
+    setCustomAmountForParticipant,
+    setPercentageForParticipant,
+    redistributeEvenly,
     getPaymentData,
     resetForm,
   } = usePaymentSplits(tripMembers);
@@ -149,6 +166,8 @@ export const CreatePaymentModal = ({
         splitCount: paymentData.splitCount,
         splitParticipants: paymentData.splitParticipants,
         paymentMethods: paymentData.paymentMethods,
+        splitType: paymentData.splitType,
+        customAmounts: paymentData.customAmounts,
       });
 
       if (result.success && result.paymentId && userId) {
@@ -164,6 +183,17 @@ export const CreatePaymentModal = ({
           createdAt: new Date().toISOString(),
           isSettled: false,
         };
+
+        // Parity with desktop usePayments: announce the expense in chat so
+        // members see it without opening the Payments tab.
+        notifyPaymentRecordedInChat(
+          tripId,
+          resolvePaymentActorName(user),
+          result.paymentId,
+          paymentData.amount,
+          paymentData.currency,
+          paymentData.description,
+        );
 
         // Attach staged proof/context AFTER the payment exists. The draft hook handles per-item
         // failures, cache invalidation, and clearing itself; failures never block the payment.
@@ -196,7 +226,9 @@ export const CreatePaymentModal = ({
         });
       }
     } catch (error) {
-      console.error('Failed to create payment:', error);
+      if (import.meta.env.DEV) {
+        console.error('Failed to create payment:', error);
+      }
       toast({
         title: 'Error',
         description: 'Failed to create payment. Please try again.',
@@ -332,6 +364,31 @@ export const CreatePaymentModal = ({
                   Showing {filteredTripMembers.length} of {resolvedMemberTotalCount}
                 </p>
               )}
+              <div className="mb-3">
+                <PaymentSplitAllocator
+                  splitType={splitType}
+                  onSplitTypeChange={setSplitType}
+                  participants={tripMembers.filter(m => selectedParticipants.includes(m.id))}
+                  currency={currency}
+                  totalAmount={amount}
+                  equalPerPerson={perPersonAmount}
+                  customAmounts={customAmounts}
+                  percentages={percentages}
+                  resolvedAmounts={resolvedAmounts}
+                  onCustomAmountChange={setCustomAmountForParticipant}
+                  onPercentageChange={setPercentageForParticipant}
+                  onRedistributeEvenly={redistributeEvenly}
+                  validationError={
+                    validationError &&
+                    (validationError.includes('amount') ||
+                      validationError.includes('Percent') ||
+                      validationError.includes('Custom'))
+                      ? validationError
+                      : undefined
+                  }
+                  compact
+                />
+              </div>
               <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2 p-3 bg-white/5 border border-white/10 rounded-xl native-scroll">
                 {filteredTripMembers.length === 0 ? (
                   <p className="text-sm text-gray-400 text-center py-2 w-full">
@@ -387,7 +444,7 @@ export const CreatePaymentModal = ({
                   })
                 )}
               </div>
-              {perPersonAmount > 0 && selectedParticipants.length > 0 && (
+              {splitType === 'equal' && perPersonAmount > 0 && selectedParticipants.length > 0 && (
                 <p className="text-xs text-gray-400 mt-2">
                   ${perPersonAmount.toFixed(2)} per person
                 </p>
@@ -462,13 +519,7 @@ export const CreatePaymentModal = ({
               </Button>
               <Button
                 type="submit"
-                disabled={
-                  isSubmitting ||
-                  selectedParticipants.length === 0 ||
-                  selectedPaymentMethods.length === 0 ||
-                  !amount ||
-                  !description
-                }
+                disabled={isSubmitting || !isValid}
                 className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Creating...' : 'Create Payment'}

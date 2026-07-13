@@ -110,6 +110,8 @@ export const PaymentsTab = React.memo(({ tripId }: PaymentsTabProps) => {
     splitCount: number;
     splitParticipants: string[];
     paymentMethods: string[];
+    splitType?: 'equal' | 'custom' | 'percentage';
+    customAmounts?: Record<string, number>;
   }): Promise<{ success: boolean; paymentId?: string }> => {
     const result = await createPaymentMessage(paymentData);
 

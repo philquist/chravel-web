@@ -600,6 +600,15 @@ Known security anti-patterns discovered during audits. Reference this before int
 - **Required tests:** `MobileTripTabs.transition.test.tsx` + navigation suite must finish in seconds, not OOM.
 - **Fixed in:** `MobileTripTabs.tsx` (July 2026 restore)
 
+## Payment push fanout targeted a non-existent `trip_payments` table
+- **Status:** fixed
+- **Subsystem:** trip P2P payments / notifications
+- **Bug class:** trigger table drift / dead notification path
+- **Symptom:** Creating a payment request never fans out push/in-app notifications to trip members (chat system message worked on desktop only).
+- **Root cause:** `trigger_notify_payment` was defined `AFTER INSERT ON public.trip_payments`, but live expenses write to `trip_payment_messages`. On ChravelApp prod `trip_payments` does not exist, so the trigger never fired. Mobile create also bypassed `usePayments.createPaymentMessage`, skipping the Stream `payment_recorded` system message.
+- **Smallest safe fix:** Rewrite `notify_on_payment` for `trip_payment_messages` columns (`created_by`, `description`, amount/currency), retarget the trigger, share `notifyPaymentRecordedInChat` between desktop + mobile create paths.
+- **Required tests:** `paymentActivityMessages.test.ts`; PaymentMethodPayButtons deeplink coverage.
+- **Fixed in:** `20260713180000_payment_notifications_and_applecash.sql`, `CreatePaymentModal.tsx`, `paymentActivityMessages.ts` (July 2026)
 
 ## Poll Comment Counts Across Separate Query Clients
 
