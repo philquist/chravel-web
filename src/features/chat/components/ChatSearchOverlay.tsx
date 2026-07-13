@@ -31,12 +31,17 @@ interface ChatSearchOverlayProps {
   demoMessages?: MockMessage[];
 }
 
+// Stable default — inline `= []` creates a new array every render and, combined with
+// the search effect's demoMessages dependency + setState on empty query, infinite-loops
+// (hangs Vitest / freezes the search overlay).
+const EMPTY_DEMO_MESSAGES: MockMessage[] = [];
+
 export const ChatSearchOverlay = ({
   tripId,
   onClose,
   onResultSelect,
   isDemoMode = false,
-  demoMessages = [],
+  demoMessages = EMPTY_DEMO_MESSAGES,
 }: ChatSearchOverlayProps) => {
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -56,8 +61,10 @@ export const ChatSearchOverlay = ({
   // Debounced search
   useEffect(() => {
     if (!query.trim()) {
-      setMessages([]);
-      setBroadcasts([]);
+      // Avoid setState([]) on every effect run — new [] !== previous [] and would
+      // re-render forever when demoMessages (or other deps) are unstable.
+      setMessages(prev => (prev.length === 0 ? prev : []));
+      setBroadcasts(prev => (prev.length === 0 ? prev : []));
       return;
     }
 
@@ -143,7 +150,8 @@ export const ChatSearchOverlay = ({
   useEffect(() => {
     if (resultsRef.current && totalResults > 0) {
       const selectedElement = resultsRef.current.querySelector(`[data-index="${selectedIndex}"]`);
-      selectedElement?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      // jsdom does not implement scrollIntoView; guard so search UI stays mounted in tests.
+      selectedElement?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
     }
   }, [selectedIndex, totalResults]);
 
