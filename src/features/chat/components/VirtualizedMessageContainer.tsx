@@ -322,42 +322,63 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
           {virtualItems.map(virtualRow => {
             const row = rows[virtualRow.index];
             if (!row) return null;
+            const wrapperStyle: React.CSSProperties = {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${virtualRow.start}px)`,
+            };
             if (row.type === 'date') {
               return (
                 <div
                   key={`date-${row.date.getTime()}`}
                   ref={virtualizer.measureElement}
                   data-index={virtualRow.index}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
+                  style={wrapperStyle}
                 >
                   <DateSeparator date={row.date} />
                 </div>
               );
             }
+            if (row.type === 'time-gap') {
+              const label = row.date.toLocaleTimeString([], {
+                hour: 'numeric',
+                minute: '2-digit',
+              });
+              return (
+                <div
+                  key={row.key}
+                  ref={virtualizer.measureElement}
+                  data-index={virtualRow.index}
+                  style={wrapperStyle}
+                >
+                  <div className="flex items-center justify-center py-1.5">
+                    <span className="text-[10px] uppercase tracking-wider text-white/40 font-medium">
+                      {label}
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+            // Tighter spacing between grouped bubbles (same sender, <2min),
+            // normal spacing at the end of a group. Subtle fade-in on mount
+            // keeps new bubbles feeling alive without a heavy animation.
+            const spacingClass = row.isLastInGroup ? 'pb-2.5' : 'pb-0.5';
             return (
               <div
                 key={row.message.id}
                 ref={virtualizer.measureElement}
                 data-index={virtualRow.index}
-                className="pb-2"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
+                data-last-in-group={row.isLastInGroup ? 'true' : 'false'}
+                className={`${spacingClass} animate-in fade-in slide-in-from-bottom-1 duration-200`}
+                style={wrapperStyle}
               >
                 {renderMessage(row.message, row.index, row.showSenderInfo)}
               </div>
             );
           })}
+
         </div>
         <div ref={messagesEndRef} className="h-px" aria-hidden="true" />
       </div>
