@@ -568,6 +568,28 @@ Known security anti-patterns discovered during audits. Reference this before int
 - **Required tests:** layout suite Month tab click + Open Day view round-trip.
 - **Fixed in:** `MobileGroupCalendar.tsx` (July 2026)
 
+## Smart Import: Concierge browseWebsite SSRF bypass
+
+**Symptom:** Concierge `browseWebsite` could fetch private/internal hosts while scrape-schedule was SSRF-gated.
+**Risk:** HIGH — internal network probing via authenticated concierge tool path.
+**Root Cause:** `functionExecutor.ts` only checked `http(s)://` prefix; scrape-* used `validateExternalUrlBeforeFetch`.
+**How to Confirm:** Attempt browseWebsite against `https://127.0.0.1` or a public URL that redirects to a private IP; both should be rejected.
+**Smallest Safe Fix:** Call `validateExternalUrlBeforeFetch` before `fetch` in browseWebsite (force HTTPS) and set `redirect: 'error'` so validated hosts cannot redirect to internal networks.
+**Required Tests:** Edge/unit coverage that private hosts are blocked; keep scrape-schedule SSRF tests green.
+**Regression Surfaces:** Concierge URL browsing, reservation lookup helpers that recurse into browseWebsite.
+**Fixed in:** `supabase/functions/_shared/functionExecutor.ts` (2026-07-13 Smart Import hardening; redirect hardened in follow-up)
+
+## Smart Import: trips.id is TEXT, not UUID
+
+**Symptom:** Migration creating FK to `trips(id)` as UUID fails with incompatible types.
+**Risk:** MEDIUM — blocks import_batches / any new trip-scoped table.
+**Root Cause:** Core `trips.id` is `TEXT PRIMARY KEY` (legacy), while many newer tables default to UUID.
+**How to Confirm:** `CREATE TABLE ... trip_id UUID REFERENCES trips(id)` errors with uuid/text mismatch.
+**Smallest Safe Fix:** Use `trip_id TEXT NOT NULL REFERENCES public.trips(id)` for trip-scoped tables.
+**Required Tests:** Migration apply on ChravelApp; schema drift types use `string`.
+**Regression Surfaces:** Any new migration joining to trips/trip_events.
+**Fixed in:** `supabase/migrations/20260713160000_calendar_import_batches.sql`
+
 ## MobileTripTabs `participants = []` default render loop (regression)
 - **Status:** fixed (again)
 - **Subsystem:** mobile trip shell (`MobileTripTabs`)

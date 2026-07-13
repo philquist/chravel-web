@@ -6,7 +6,7 @@
  * Uses react-dropzone for robust DnD handling (fixes desktop drop not firing).
  */
 
-import { useCallback, type DragEventHandler } from 'react';
+import { useCallback, useRef, type DragEventHandler, type ChangeEvent } from 'react';
 import { useDropzone, FileRejection } from 'react-dropzone';
 import { toast } from 'sonner';
 
@@ -27,12 +27,29 @@ export interface UseSmartImportDropzoneOptions {
   onFileSelected: (file: File) => void | Promise<void>;
   /** Disabled when parsing/importing (prevents double-submit) */
   disabled?: boolean;
+  /**
+   * When true, the primary file input requests the camera on supporting
+   * mobile browsers (`capture="environment"`). Prefer a dedicated camera
+   * input for explicit "Take photo" affordances.
+   */
+  preferCamera?: boolean;
 }
 
 export interface UseSmartImportDropzoneReturn {
   getRootProps: ReturnType<typeof useDropzone>['getRootProps'];
   getInputProps: ReturnType<typeof useDropzone>['getInputProps'];
   isDragActive: boolean;
+  /** Props for a hidden camera capture input (mobile photo of schedules). */
+  getCameraInputProps: () => {
+    type: 'file';
+    accept: string;
+    capture: 'environment';
+    disabled: boolean;
+    className: string;
+    'aria-label': string;
+    ref: (node: HTMLInputElement | null) => void;
+    onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  };
 }
 
 type DropzoneGetRootProps = ReturnType<typeof useDropzone>['getRootProps'];
@@ -81,7 +98,10 @@ export function isSmartImportFileTypeValid(file: File): boolean {
 export function useSmartImportDropzone({
   onFileSelected,
   disabled = false,
+  preferCamera = false,
 }: UseSmartImportDropzoneOptions): UseSmartImportDropzoneReturn {
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
@@ -105,7 +125,7 @@ export function useSmartImportDropzone({
 
   const {
     getRootProps: baseGetRootProps,
-    getInputProps,
+    getInputProps: baseGetInputProps,
     isDragActive,
   } = useDropzone({
     onDrop,
@@ -133,9 +153,49 @@ export function useSmartImportDropzone({
     [baseGetRootProps],
   );
 
+  const getInputProps: UseSmartImportDropzoneReturn['getInputProps'] = useCallback(
+    props => {
+      const inputProps = baseGetInputProps(props);
+      if (preferCamera) {
+        return { ...inputProps, capture: 'environment' as const };
+      }
+      return inputProps;
+    },
+    [baseGetInputProps, preferCamera],
+  );
+
+  const getCameraInputProps = useCallback(() => {
+    return {
+      type: 'file' as const,
+      accept: 'image/jpeg,image/png,image/webp',
+      capture: 'environment' as const,
+      disabled,
+      className: 'sr-only',
+      'aria-label': 'Take a photo of a schedule',
+      ref: (node: HTMLInputElement | null) => {
+        cameraInputRef.current = node;
+      },
+      onChange: (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+          if (!isSmartImportFileTypeValid(file)) {
+            toast.error('Invalid file type', {
+              description: 'Please use a JPEG, PNG, or WebP image.',
+            });
+          } else {
+            void onFileSelected(file);
+          }
+        }
+        // Reset so the same photo can be re-selected.
+        event.target.value = '';
+      },
+    };
+  }, [disabled, onFileSelected]);
+
   return {
     getRootProps,
     getInputProps,
     isDragActive,
+    getCameraInputProps,
   };
 }

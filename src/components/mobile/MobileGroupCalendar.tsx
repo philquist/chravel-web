@@ -136,9 +136,9 @@ export const MobileGroupCalendar = ({
 
   const handleStartBackgroundImport = useCallback(
     (url: string) => {
-      startBackgroundImport(url, handleBackgroundImportComplete);
+      startBackgroundImport(url, handleBackgroundImportComplete, { tripId });
     },
-    [startBackgroundImport, handleBackgroundImportComplete],
+    [startBackgroundImport, handleBackgroundImportComplete, tripId],
   );
 
   // Use external view mode if provided, otherwise use internal state

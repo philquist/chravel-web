@@ -3548,6 +3548,68 @@ export type Database = {
           },
         ]
       }
+
+      calendar_import_batches: {
+        Row: {
+          id: string
+          trip_id: string
+          created_by: string
+          source_format: string
+          source_label: string | null
+          source_url: string | null
+          status: string
+          events_imported: number
+          events_skipped: number
+          events_failed: number
+          events_reverted: number
+          events_conflicted: number
+          idempotency_key: string | null
+          warnings: Json
+          created_at: string
+          completed_at: string | null
+          reverted_at: string | null
+        }
+        Insert: {
+          id?: string
+          trip_id: string
+          created_by: string
+          source_format: string
+          source_label?: string | null
+          source_url?: string | null
+          status?: string
+          events_imported?: number
+          events_skipped?: number
+          events_failed?: number
+          events_reverted?: number
+          events_conflicted?: number
+          idempotency_key?: string | null
+          warnings?: Json
+          created_at?: string
+          completed_at?: string | null
+          reverted_at?: string | null
+        }
+        Update: {
+          id?: string
+          trip_id?: string
+          created_by?: string
+          source_format?: string
+          source_label?: string | null
+          source_url?: string | null
+          status?: string
+          events_imported?: number
+          events_skipped?: number
+          events_failed?: number
+          events_reverted?: number
+          events_conflicted?: number
+          idempotency_key?: string | null
+          warnings?: Json
+          created_at?: string
+          completed_at?: string | null
+          reverted_at?: string | null
+        }
+        Relationships: []
+      }
+
       trip_events: {
         Row: {
           created_at: string
@@ -3556,6 +3618,8 @@ export type Database = {
           end_time: string | null
           event_category: string | null
           id: string
+          idempotency_key: string | null
+          import_batch_id: string | null
           include_in_itinerary: boolean | null
           is_all_day: boolean | null
           location: string | null
@@ -3574,6 +3638,8 @@ export type Database = {
           end_time?: string | null
           event_category?: string | null
           id?: string
+          idempotency_key?: string | null
+          import_batch_id?: string | null
           include_in_itinerary?: boolean | null
           is_all_day?: boolean | null
           location?: string | null
@@ -3592,6 +3658,8 @@ export type Database = {
           end_time?: string | null
           event_category?: string | null
           id?: string
+          idempotency_key?: string | null
+          import_batch_id?: string | null
           include_in_itinerary?: boolean | null
           is_all_day?: boolean | null
           location?: string | null
@@ -5194,6 +5262,23 @@ export type Database = {
       }
     }
     Functions: {
+      finalize_calendar_import_batch: {
+        Args: {
+          p_batch_id: string
+          p_imported: number
+          p_skipped: number
+          p_failed: number
+        }
+        Returns: Json
+      }
+      undo_calendar_import_batch: {
+        Args: {
+          p_batch_id: string
+          p_force_delete_edited?: boolean
+        }
+        Returns: Json
+      }
+
       approve_join_request: { Args: { _request_id: string }; Returns: Json }
       assign_org_seat: {
         Args: { _member_id: string; _org_id: string; _seat_key: string }

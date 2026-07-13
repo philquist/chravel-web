@@ -536,3 +536,6 @@ Desktop `usePayments.createPaymentMessage` fired Stream `payment_recorded` chat 
 
 ### Custom/percentage splits: resolve dollars client-side, validate cents server-side
 Keep `create_payment_with_splits_v2` on one uneven path (`p_custom_amounts` JSON object) instead of teaching Postgres about percentages. Client `resolveSplitAmounts` converts % → dollars with largest-remainder pennies; both client `validateCustomAmountMap` and the RPC require `ROUND(sum*100) === ROUND(total*100)`. Omit the arg for equal so the legacy equal path stays untouched. *Evidence: July 2026 custom split RPC + usePaymentSplits tests.*
+### Prefer `@`/`vs` over bare `at` for home/away schedule classification
+Bare `at` matches venue phrases ("Trivia Night at Joe's"). Use `@` and `vs`/`versus` title cues (or explicit labels) so unknown events stay importable instead of being silently filtered.
+

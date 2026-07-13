@@ -33,6 +33,8 @@ interface ScheduleEvent {
   date: string; // YYYY-MM-DD
   start_time?: string; // HH:MM
   location?: string;
+  home_away?: 'home' | 'away' | 'neutral' | 'unknown';
+  opponent?: string;
 }
 
 /** Max characters of raw HTML to send to Gemini (1M token model) */
@@ -153,7 +155,9 @@ For each event extract:
 - title: The matchup or event name exactly as shown (e.g., "Lakers at Memphis Grizzlies", "Concert at Madison Square Garden")
 - date: YYYY-MM-DD format
 - start_time: HH:MM in 24-hour format IF clearly listed on the page. Otherwise OMIT this field entirely.
-- location: For sports - if it's a home game, use the home team name. If it's an away game, use the opponent/away team name. For concerts/shows, use the venue name and city if shown. Do NOT guess addresses or make up locations.
+- location: Venue name and city if shown. Do NOT guess addresses.
+- home_away: ONLY for team sports schedules when clearly labeled. Use "home", "away", "neutral", or "unknown". If not a sports schedule or uncertain, use "unknown" or omit.
+- opponent: Opponent/team name when clearly available for sports; otherwise omit.
 
 CRITICAL RULES:
 1. Today's date is ${todayStr}. Only include events dated ${todayStr} or later. Do NOT include ANY past events.
@@ -164,11 +168,12 @@ CRITICAL RULES:
 6. If no schedule/events are found, return an empty array: []
 7. Look through ALL the content to find events — check every section, table, list, and data block.
 8. For tour/comedy/concert sites, each show date counts as a separate event.
+9. Never invent home/away when the source does not clearly indicate it. Prefer "unknown".
 
 Example output:
 [
-  {"title": "Pacers vs Celtics", "date": "2026-02-10", "start_time": "19:00", "location": "Pacers"},
-  {"title": "Trevor Noah Live", "date": "2026-02-15", "location": "Ryman Auditorium, Nashville TN"}
+  {"title": "Pacers vs Celtics", "date": "2026-02-10", "start_time": "19:00", "location": "Gainbridge Fieldhouse", "home_away": "home", "opponent": "Celtics"},
+  {"title": "Trevor Noah Live", "date": "2026-02-15", "location": "Ryman Auditorium, Nashville TN", "home_away": "unknown"}
 ]`;
 
     let rawContent = '';
