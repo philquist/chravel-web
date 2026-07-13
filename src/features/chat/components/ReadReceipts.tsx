@@ -3,7 +3,7 @@
  * Shows who has read a message
  */
 import React from 'react';
-import { Check, CheckCheck } from 'lucide-react';
+import { CheckCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/utils/avatarUtils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
