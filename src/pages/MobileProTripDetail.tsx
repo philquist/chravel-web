@@ -12,7 +12,9 @@ import { InviteModal } from '../components/InviteModal';
 import { DeleteTripConfirmDialog } from '../components/DeleteTripConfirmDialog';
 import { useDeleteTrip } from '../hooks/useDeleteTrip';
 import { useAuth } from '../hooks/useAuth';
+import { usePendingRequestTripCards } from '../hooks/usePendingRequestTripCards';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { ProTripNotFound } from '../components/pro/ProTripNotFound';
 import { useKeyboardHandler } from '../hooks/useKeyboardHandler';
 import { hapticService } from '../services/hapticService';
 import { proTripMockData } from '../data/proTripMockData';
@@ -37,8 +39,11 @@ import { TripRealtimeHubMount } from '@/components/trip/TripRealtimeHubMount';
 export const MobileProTripDetail = () => {
   const { proTripId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { isDemoMode, isLoading: demoModeLoading } = useDemoMode();
+  // Powers the pending_approval not-found reason (user-scoped RPC, cheap).
+  const { cards: pendingRequestCards, isLoading: pendingCardsLoading } =
+    usePendingRequestTripCards(isDemoMode);
 
   // ✅ FIXED: Always call useTrips hook (Rules of Hooks requirement)
   const { trips: userTrips, loading: tripsLoading } = useTrips();
@@ -348,8 +353,10 @@ export const MobileProTripDetail = () => {
     }
   }, [user?.id, proTripId, tripData, navigate, deleteTrip]);
 
-  // ⚡ Now handle loading and error states AFTER all hooks
-  if (demoModeLoading) {
+  // ⚡ Now handle loading and error states AFTER all hooks. authLoading is part
+  // of the gate: useTrips is disabled until auth hydrates (isLoading=false
+  // while disabled), so a hard refresh flashed Not Found for a signed-in user.
+  if (demoModeLoading || authLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <LoadingSpinner size="lg" text="Initializing..." />
@@ -358,23 +365,7 @@ export const MobileProTripDetail = () => {
   }
 
   if (!proTripId) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Trip Not Found</h1>
-          <p className="text-gray-400 mb-6">No trip ID provided.</p>
-          <button
-            onClick={() => {
-              hapticService.light();
-              navigate('/');
-            }}
-            className="bg-gold-primary hover:bg-gold-mid text-black px-6 py-3 rounded-xl transition-colors active:scale-95 font-medium"
-          >
-            Back to My Trips
-          </button>
-        </div>
-      </div>
-    );
+    return <ProTripNotFound message="No trip ID provided." />;
   }
 
   if (tripsLoading && !isDemoMode) {
@@ -385,27 +376,50 @@ export const MobileProTripDetail = () => {
     );
   }
 
+  // Reason-aware not-found — shares ProTripNotFound with desktop instead of a
+  // second hand-rolled block (signed out → sign-in CTA; own join request
+  // pending → status; otherwise the RLS-safe hedge).
   if (!tripData) {
+    if (!isDemoMode && !user) {
+      return (
+        <ProTripNotFound
+          message="Sign in to view this Pro trip."
+          reason="auth_required"
+          tripId={proTripId}
+        />
+      );
+    }
+
+    if (!isDemoMode && pendingCardsLoading) {
+      return (
+        <div className="min-h-screen bg-black flex items-center justify-center p-4">
+          <LoadingSpinner size="lg" text="Loading trip..." />
+        </div>
+      );
+    }
+
+    if (!isDemoMode && pendingRequestCards.some(card => card.tripId === proTripId)) {
+      return (
+        <ProTripNotFound
+          message="Your request to join this trip is waiting for an organizer's approval."
+          reason="pending_approval"
+          tripId={proTripId}
+          onRetry={() => window.location.reload()}
+        />
+      );
+    }
+
     const errorMessage = isDemoMode
       ? "The demo trip you're looking for doesn't exist."
       : "This Pro trip doesn't exist or you don't have access.";
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Pro Trip Not Found</h1>
-          <p className="text-gray-400 mb-2">{errorMessage}</p>
-          {isDemoMode && <p className="text-xs text-gray-500 mb-6">Trip ID: {proTripId}</p>}
-          <button
-            onClick={() => {
-              hapticService.light();
-              navigate('/');
-            }}
-            className="bg-gold-primary hover:bg-gold-mid text-black px-6 py-3 rounded-xl transition-colors active:scale-95 font-medium"
-          >
-            Back to My Trips
-          </button>
-        </div>
-      </div>
+      <ProTripNotFound
+        message={errorMessage}
+        details={isDemoMode ? `Trip ID: ${proTripId}` : undefined}
+        reason={isDemoMode ? 'not_found' : 'no_access'}
+        tripId={proTripId}
+        onRetry={isDemoMode ? undefined : () => window.location.reload()}
+      />
     );
   }
 

@@ -22,6 +22,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useProTripAdmin } from '../hooks/useProTripAdmin';
 import { MockRolesService } from '../services/mockRolesService';
 import { useTripMembers } from '../hooks/useTripMembers';
+import { usePendingRequestTripCards } from '../hooks/usePendingRequestTripCards';
 import { demoModeService } from '../services/demoModeService';
 import { ProTripData, ProParticipant } from '../types/pro';
 import { usePendingActions } from '../hooks/usePendingActions';
@@ -48,11 +49,14 @@ const ProTripDetailContent = lazy(() =>
  */
 export const ProTripDetailDesktop = () => {
   const { proTripId } = useParams<{ proTripId?: string }>();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { isDemoMode, isLoading: demoModeLoading } = useDemoMode();
 
   // ✅ FIXED: Always call useTrips hook for authenticated mode data
   const { trips: userTrips, loading: tripsLoading } = useTrips();
+  // Powers the pending_approval not-found reason (user-scoped RPC, cheap).
+  const { cards: pendingRequestCards, isLoading: pendingCardsLoading } =
+    usePendingRequestTripCards(isDemoMode);
   const [activeTab, setActiveTab] = useState('chat');
   const [showInbox, setShowInbox] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -200,8 +204,11 @@ export const ProTripDetailDesktop = () => {
     scrollToChat();
   }, [tripData]);
 
-  // ⚡ Loading states AFTER all hooks
-  if (demoModeLoading || (tripsLoading && !isDemoMode)) {
+  // ⚡ Loading states AFTER all hooks. authLoading is part of the gate:
+  // useTrips is disabled until auth hydrates (isLoading=false while disabled),
+  // so without it a hard refresh on this page flashed Not Found for a
+  // signed-in user (Loading ≠ Not Found).
+  if (demoModeLoading || authLoading || (tripsLoading && !isDemoMode)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
         <div className="text-center">
@@ -216,8 +223,41 @@ export const ProTripDetailDesktop = () => {
     return <ProTripNotFound message="No trip ID provided." />;
   }
 
-  // Handle trip not found case - AFTER all hooks
+  // Handle trip not found case - AFTER all hooks. Distinguish WHY the trip is
+  // unavailable: signed out → sign-in CTA; own join request pending → status;
+  // otherwise the RLS-safe hedge (existence is indistinguishable from access).
   if (!tripData || !tripContext) {
+    if (!isDemoMode && !user) {
+      return (
+        <ProTripNotFound
+          message="Sign in to view this Pro trip."
+          reason="auth_required"
+          tripId={proTripId}
+        />
+      );
+    }
+
+    // Trip already missing; wait for the pending-request lookup rather than
+    // flashing no_access → pending_approval.
+    if (!isDemoMode && pendingCardsLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-black">
+          <div className="animate-spin h-12 w-12 gold-gradient-spinner"></div>
+        </div>
+      );
+    }
+
+    if (!isDemoMode && pendingRequestCards.some(card => card.tripId === proTripId)) {
+      return (
+        <ProTripNotFound
+          message="Your request to join this trip is waiting for an organizer's approval."
+          reason="pending_approval"
+          tripId={proTripId}
+          onRetry={() => window.location.reload()}
+        />
+      );
+    }
+
     const errorMessage = isDemoMode
       ? 'The requested trip could not be found in demo data.'
       : "This Pro trip doesn't exist or you don't have access.";
@@ -226,6 +266,9 @@ export const ProTripDetailDesktop = () => {
         message={errorMessage}
         details={isDemoMode ? `Trip ID: ${proTripId}` : undefined}
         availableIds={isDemoMode ? Object.keys(proTripMockData) : undefined}
+        reason={isDemoMode ? 'not_found' : 'no_access'}
+        tripId={proTripId}
+        onRetry={isDemoMode ? undefined : () => window.location.reload()}
       />
     );
   }
