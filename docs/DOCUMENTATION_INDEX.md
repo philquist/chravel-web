@@ -71,7 +71,8 @@ See also: [AUDIT_INDEX.md](AUDIT_INDEX.md) for all security audits.
 - **[API_INTEGRATION_STATUS.md](API_INTEGRATION_STATUS.md)** — External API integration status
 - **[ENV_AND_APIS_REQUIRED.md](ENV_AND_APIS_REQUIRED.md)** — Environment variables and API keys
 - **[GOOGLE_MAPS_PLACES_INTEGRATION.md](ACTIVE/GOOGLE_MAPS_PLACES_INTEGRATION.md)** — Maps/Places integration
-- **[GOOGLE_CLOUD_TTS_MIGRATION.md](ACTIVE/GOOGLE_CLOUD_TTS_MIGRATION.md)** — Text-to-Speech migration
+- **[CONCIERGE_READ_ALOUD_TTS.md](ACTIVE/CONCIERGE_READ_ALOUD_TTS.md)** — Concierge per-reply read-aloud TTS (Lovable AI Gateway)
+- **[GOOGLE_CLOUD_TTS_MIGRATION.md](ACTIVE/GOOGLE_CLOUD_TTS_MIGRATION.md)** — Archived TTS provider history (stub → read-aloud doc)
 - **[TWILIO_SMS_ARCHITECTURE_REPORT.md](TWILIO_SMS_ARCHITECTURE_REPORT.md)** — Twilio SMS integration
 
 ---

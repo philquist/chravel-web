@@ -34,6 +34,7 @@ import { hapticService as haptics } from '@/services/hapticService';
 import { MentionPicker, TripMember, filterMentionMembers } from './MentionPicker';
 import { VoiceRecordButton } from './VoiceRecordButton';
 import type { VoiceRecordingResult } from '../hooks/useVoiceRecorder';
+import { useFeatureFlag } from '@/lib/featureFlags';
 
 interface ChatInputProps {
   inputMessage: string;
@@ -116,6 +117,7 @@ export const ChatInput = ({
     parsedContent,
     clearParsedContent,
   } = useShareAsset(tripId);
+  const voiceNotesEnabled = useFeatureFlag('chat_voice_notes', true);
 
   // Track typing status
   useEffect(() => {
@@ -525,9 +527,12 @@ export const ChatInput = ({
           />
 
           {/* Send Button OR hold-to-record Mic Button — Mic appears when input is empty
-              (iMessage-style). Recorded audio is uploaded through the existing document
-              upload path so no backend/schema changes are needed. */}
-          {inputMessage.trim().length === 0 && !isShareUploading && !disableFileUpload ? (
+              (iMessage-style). Recorded audio uploads as a typed Stream audio attachment
+              (mime/duration/waveform preserved) via shareVoiceNote. */}
+          {inputMessage.trim().length === 0 &&
+          !isShareUploading &&
+          !disableFileUpload &&
+          voiceNotesEnabled ? (
             <VoiceRecordButton
               disabled={isTyping}
               enableTranscription={voiceTranscriptionEnabled}

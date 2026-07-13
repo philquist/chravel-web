@@ -22,13 +22,91 @@ interface StreamAttachment {
   title?: string;
   text?: string;
   thumb_url?: string;
-  ref_id?: string;
-  mimeType?: string;
   mime_type?: string;
-  durationMs?: number;
+  mimeType?: string;
   duration_ms?: number;
+  durationMs?: number;
+  waveform?: number[];
+  ref_id?: string;
+  transcript?: string;
+}
+
+export type StreamViewAttachment = {
+  type: 'image' | 'video' | 'file' | 'link' | 'audio';
+  ref_id: string;
+  url?: string;
+  mimeType?: string;
+  durationMs?: number;
   waveform?: number[];
   transcript?: string;
+};
+
+// .webm is intentionally omitted: it is ambiguous (audio or video). Classify webm via
+// explicit type/mime only so video/webm never becomes VoiceNotePlayer.
+const AUDIO_EXT_RE = /\.(mp3|wav|m4a|ogg|oga|opus|aac|caf)(\?|$)/i;
+
+function attachmentMimeType(attachment: StreamAttachment): string | undefined {
+  return attachment.mime_type || attachment.mimeType;
+}
+
+function isAudioStreamAttachment(attachment: StreamAttachment): boolean {
+  if (attachment.type === 'video') return false;
+  const mimeType = attachmentMimeType(attachment);
+  if (mimeType?.startsWith('video/')) return false;
+  if (attachment.type === 'audio') return true;
+  if (mimeType?.startsWith('audio/')) return true;
+  const url = attachment.asset_url || attachment.url || attachment.image_url;
+  return !!url && AUDIO_EXT_RE.test(url);
+}
+
+function mapStreamAttachments(attachments: StreamAttachment[]): StreamViewAttachment[] {
+  return attachments
+    .map((attachment, index): StreamViewAttachment | null => {
+      // Link/OG unfurl rows are represented via linkPreview, not mosaic/files.
+      if (attachment.type === 'link') return null;
+      if (
+        (attachment.og_scrape_url || attachment.title_link) &&
+        attachment.type !== 'image' &&
+        attachment.type !== 'video' &&
+        attachment.type !== 'file' &&
+        attachment.type !== 'audio'
+      ) {
+        return null;
+      }
+
+      const url =
+        attachment.type === 'image'
+          ? attachment.image_url || attachment.asset_url || attachment.url
+          : attachment.asset_url || attachment.url || attachment.image_url;
+      if (!url) return null;
+
+      let type: StreamViewAttachment['type'] = 'file';
+      if (isAudioStreamAttachment(attachment)) {
+        type = 'audio';
+      } else if (attachment.type === 'image') {
+        type = 'image';
+      } else if (attachment.type === 'video') {
+        type = 'video';
+      } else if (attachment.type === 'file') {
+        type = 'file';
+      } else if (attachment.image_url && !attachment.asset_url) {
+        type = 'image';
+      }
+
+      return {
+        type,
+        ref_id: (typeof attachment.ref_id === 'string' && attachment.ref_id) || `att-${index}`,
+        url,
+        mimeType: attachmentMimeType(attachment),
+        durationMs:
+          typeof attachment.duration_ms === 'number'
+            ? attachment.duration_ms
+            : attachment.durationMs,
+        waveform: Array.isArray(attachment.waveform) ? attachment.waveform : undefined,
+        transcript: typeof attachment.transcript === 'string' ? attachment.transcript : undefined,
+      };
+    })
+    .filter((value): value is StreamViewAttachment => Boolean(value));
 }
 
 interface StreamReaction {
@@ -68,17 +146,10 @@ export interface StreamMessageViewModel {
   hasUnreadThreadReplies?: boolean;
   mediaType?: string;
   mediaUrl?: string;
+  /** Full attachment list for mosaics / voice notes / files (Stream → UI). */
+  attachments?: StreamViewAttachment[];
   reactions?: Record<string, { count: number; userReacted: boolean; users: string[] }>;
   readStatuses: ReadStatus[];
-  attachments?: Array<{
-    type: 'image' | 'video' | 'file' | 'link' | 'audio';
-    ref_id: string;
-    url?: string;
-    mimeType?: string;
-    durationMs?: number;
-    waveform?: number[];
-    transcript?: string;
-  }>;
 }
 
 interface StreamThreadReplyPreview {
@@ -117,38 +188,6 @@ const toLinkPreview = (attachment?: StreamAttachment) => {
   };
 };
 
-const normalizeViewAttachments = (attachments: StreamAttachment[]) =>
-  attachments
-    .map((attachment, index) => {
-      const url =
-        attachment.url ||
-        attachment.asset_url ||
-        attachment.image_url ||
-        attachment.og_scrape_url ||
-        attachment.title_link;
-      const rawType = attachment.type || 'file';
-      const type: 'image' | 'video' | 'file' | 'link' | 'audio' =
-        rawType === 'audio'
-          ? 'audio'
-          : rawType === 'image'
-            ? 'image'
-            : rawType === 'video'
-              ? 'video'
-              : rawType === 'link'
-                ? 'link'
-                : 'file';
-      return {
-        type,
-        ref_id: attachment.ref_id || `${type}-${index}`,
-        url,
-        mimeType: attachment.mimeType || attachment.mime_type,
-        durationMs: attachment.durationMs || attachment.duration_ms,
-        waveform: Array.isArray(attachment.waveform) ? attachment.waveform : undefined,
-        transcript: attachment.transcript,
-      };
-    })
-    .filter(attachment => Boolean(attachment.url));
-
 const resolveMedia = (message: MessageResponse) => {
   const candidate = message as MessageResponse & {
     media_type?: string;
@@ -161,17 +200,24 @@ const resolveMedia = (message: MessageResponse) => {
   let linkPreview = candidate.link_preview;
 
   const attachments = (message.attachments || []) as StreamAttachment[];
+  const mappedAttachments = mapStreamAttachments(attachments);
+
   if (attachments.length > 0) {
     const firstAttachment = attachments[0];
     if (firstAttachment.type === 'image') {
       mediaType = 'image';
-      mediaUrl = firstAttachment.image_url || firstAttachment.asset_url;
+      mediaUrl = firstAttachment.image_url || firstAttachment.asset_url || firstAttachment.url;
     } else if (firstAttachment.type === 'video') {
       mediaType = 'video';
-      mediaUrl = firstAttachment.asset_url;
+      mediaUrl = firstAttachment.asset_url || firstAttachment.url;
+    } else if (isAudioStreamAttachment(firstAttachment)) {
+      mediaType = 'audio';
+      mediaUrl = firstAttachment.asset_url || firstAttachment.url;
     } else if (firstAttachment.type === 'file') {
-      mediaType = 'file';
-      mediaUrl = firstAttachment.asset_url;
+      // Normalize Stream "file" → UI "document" so MessageBubble's download row renders
+      // when attachments fail to map for any reason.
+      mediaType = 'document';
+      mediaUrl = firstAttachment.asset_url || firstAttachment.url;
     }
 
     if (!linkPreview) {
@@ -180,7 +226,24 @@ const resolveMedia = (message: MessageResponse) => {
     }
   }
 
-  return { mediaType, mediaUrl, linkPreview };
+  // Prefer first mapped media attachment when custom media_* fields are absent.
+  if (!mediaUrl && mappedAttachments.length > 0) {
+    const firstMedia = mappedAttachments[0];
+    mediaUrl = firstMedia.url;
+    mediaType =
+      firstMedia.type === 'file'
+        ? 'document'
+        : firstMedia.type === 'audio'
+          ? 'audio'
+          : firstMedia.type;
+  }
+
+  return {
+    mediaType,
+    mediaUrl,
+    linkPreview,
+    attachments: mappedAttachments.length > 0 ? mappedAttachments : undefined,
+  };
 };
 
 const buildReactions = (message: MessageResponse) => {
@@ -287,8 +350,7 @@ export function mapStreamMessageToViewModel(params: {
   const isPinned = typeof pinnedFlag === 'boolean' ? pinnedFlag : Boolean(pinnedAt);
   const parentId =
     message.parent_id || (message as MessageResponse & { reply_to_id?: string }).reply_to_id;
-  const rawAttachments = (message.attachments || []) as StreamAttachment[];
-  const { mediaType, mediaUrl, linkPreview } = resolveMedia(message);
+  const { mediaType, mediaUrl, linkPreview, attachments } = resolveMedia(message);
   const member = messageUserId ? membersById.get(messageUserId) : undefined;
   const parentMessage = parentId ? messageById.get(parentId) : undefined;
   const threadParent = message as MessageResponse & StreamParentMessageFields;
@@ -355,8 +417,8 @@ export function mapStreamMessageToViewModel(params: {
     hasUnreadThreadReplies,
     mediaType,
     mediaUrl,
+    attachments,
     reactions: buildReactions(message),
-    attachments: normalizeViewAttachments(rawAttachments),
     readStatuses: buildReadStatuses({
       messageId: message.id,
       messageCreatedAt: createdAt,

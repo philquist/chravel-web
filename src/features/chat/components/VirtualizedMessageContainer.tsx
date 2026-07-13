@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { isSameDay } from 'date-fns';
+import { format, isSameDay, isToday, isYesterday } from 'date-fns';
 import { LoadMoreIndicator } from './LoadMoreIndicator';
 import { DateSeparator } from './DateSeparator';
 import { hapticService } from '@/services/hapticService';
@@ -12,6 +12,19 @@ interface ChatMessageLike {
   createdAt?: string;
   sender_id?: string;
   user_id?: string;
+  /** Stream view models expose the sender as a nested object, not sender_id. */
+  sender?: { id?: string };
+}
+
+/** Resolve sender identity across Stream view models and legacy shapes. */
+function resolveSenderId(message: ChatMessageLike): string | null {
+  return message.sender_id || message.user_id || message.sender?.id || null;
+}
+
+function formatStickyDateLabel(date: Date): string {
+  if (isToday(date)) return 'Today';
+  if (isYesterday(date)) return 'Yesterday';
+  return format(date, 'EEE, MMM d');
 }
 
 interface VirtualizedMessageContainerProps {
@@ -20,6 +33,7 @@ interface VirtualizedMessageContainerProps {
     message: ChatMessageLike,
     index: number,
     showSenderInfo: boolean,
+    isLastInGroup: boolean,
   ) => React.ReactNode;
   onLoadMore: () => void;
   hasMore: boolean;
@@ -32,11 +46,17 @@ interface VirtualizedMessageContainerProps {
   restoreScroll?: boolean;
   scrollKey?: string;
   scrollContainerRef?: React.MutableRefObject<HTMLDivElement | null>;
+  /**
+   * Captured once per chat open — inserts an iMessage-style "New Messages"
+   * divider immediately before this message id. Cleared on unmount by parent.
+   */
+  firstUnreadMessageId?: string | null;
 }
 
 type RowItem =
   | { type: 'date'; date: Date }
   | { type: 'time-gap'; date: Date; key: string }
+  | { type: 'unread-divider'; key: string }
   | {
       type: 'message';
       message: ChatMessageLike;
@@ -48,8 +68,10 @@ type RowItem =
 const ROW_HEIGHT_ESTIMATE = 72;
 const DATE_ROW_HEIGHT = 40;
 const TIME_GAP_ROW_HEIGHT = 28;
+const UNREAD_DIVIDER_HEIGHT = 32;
 const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
-
+/** Plan: collapse consecutive same-sender messages within a 3-minute window. */
+const GROUP_WINDOW_MS = 3 * 60 * 1000;
 
 export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerProps> = ({
   messages,
@@ -64,11 +86,13 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
   restoreScroll = true,
   scrollKey = 'chat-scroll',
   scrollContainerRef,
+  firstUnreadMessageId = null,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [userIsScrolledUp, setUserIsScrolledUp] = useState(false);
   const [showNewMessagesBadge, setShowNewMessagesBadge] = useState(false);
+  const [stickyDate, setStickyDate] = useState<Date | null>(null);
   const previousMessageCountRef = useRef(messages.length);
   const isLoadingRef = useRef(false);
   const pageSize = 20;
@@ -77,6 +101,44 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
   );
   const localHasMore = visibleStartIndex > 0;
   const visibleMessages = messages.slice(visibleStartIndex);
+
+  // Entrance animation only for messages that arrive after the initial mount.
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
+  const entranceInitializedRef = useRef(false);
+  const [enteringMessageIds, setEnteringMessageIds] = useState<Set<string>>(() => new Set());
+  const prefersReducedMotion =
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  useEffect(() => {
+    if (!entranceInitializedRef.current) {
+      messages.forEach(message => seenMessageIdsRef.current.add(message.id));
+      entranceInitializedRef.current = true;
+      return;
+    }
+
+    const newlyArrived = messages.filter(message => !seenMessageIdsRef.current.has(message.id));
+    if (newlyArrived.length === 0) return;
+
+    newlyArrived.forEach(message => seenMessageIdsRef.current.add(message.id));
+    if (prefersReducedMotion) return;
+
+    const newIds = newlyArrived.map(message => message.id);
+    setEnteringMessageIds(prev => {
+      const next = new Set(prev);
+      newIds.forEach(id => next.add(id));
+      return next;
+    });
+
+    const timer = window.setTimeout(() => {
+      setEnteringMessageIds(prev => {
+        const next = new Set(prev);
+        newIds.forEach(id => next.delete(id));
+        return next;
+      });
+    }, 220);
+
+    return () => window.clearTimeout(timer);
+  }, [messages, prefersReducedMotion]);
 
   const setContainerNode = useCallback(
     (node: HTMLDivElement | null) => {
@@ -87,8 +149,6 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
     },
     [scrollContainerRef],
   );
-
-  const TWO_MINUTES_MS = 2 * 60 * 1000;
 
   const rows = useMemo((): RowItem[] => {
     const result: RowItem[] = [];
@@ -101,10 +161,7 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
       const showDateSeparator = !prevDate || !isSameDay(currentDate, prevDate);
       if (showDateSeparator) {
         result.push({ type: 'date', date: currentDate });
-      } else if (
-        prevDate &&
-        currentDate.getTime() - prevDate.getTime() >= FIFTEEN_MINUTES_MS
-      ) {
+      } else if (prevDate && currentDate.getTime() - prevDate.getTime() >= FIFTEEN_MINUTES_MS) {
         // Inline time-gap pill for long silences within the same day (iMessage-style).
         result.push({
           type: 'time-gap',
@@ -112,36 +169,31 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
           key: `gap-${message.id}`,
         });
       }
-      // Collapse sender info if same sender within 2-minute window (message grouping)
-      const senderId = message.sender_id || message.user_id;
-      const prevSenderId = prevMessage ? prevMessage.sender_id || prevMessage.user_id : null;
+
+      // Unread divider sits just above the first unread message (once per open).
+      if (firstUnreadMessageId && message.id === firstUnreadMessageId) {
+        result.push({ type: 'unread-divider', key: `unread-${message.id}` });
+      }
+
+      const senderId = resolveSenderId(message);
+      const prevSenderId = prevMessage ? resolveSenderId(prevMessage) : null;
       const withinWindow = prevDate
-        ? currentDate.getTime() - prevDate.getTime() < TWO_MINUTES_MS
+        ? currentDate.getTime() - prevDate.getTime() < GROUP_WINDOW_MS
         : false;
       const showSenderInfo =
         showDateSeparator || !senderId || senderId !== prevSenderId || !withinWindow;
 
-      // Look ahead to determine if this is the last bubble in its group.
-      // "Last in group" = next message is a different sender, a bigger time
-      // gap, or a different day. Drives tighter spacing between grouped
-      // bubbles and looser spacing between senders.
       const nextMessage = visibleMessages[idx + 1];
       const nextDate = nextMessage
         ? new Date(nextMessage.created_at || nextMessage.createdAt || 0)
         : null;
-      const nextSenderId = nextMessage
-        ? nextMessage.sender_id || nextMessage.user_id
-        : null;
+      const nextSenderId = nextMessage ? resolveSenderId(nextMessage) : null;
       const nextWithinWindow = nextDate
-        ? nextDate.getTime() - currentDate.getTime() < TWO_MINUTES_MS
+        ? nextDate.getTime() - currentDate.getTime() < GROUP_WINDOW_MS
         : false;
       const nextSameDay = nextDate ? isSameDay(currentDate, nextDate) : false;
       const isLastInGroup =
-        !nextMessage ||
-        !senderId ||
-        senderId !== nextSenderId ||
-        !nextWithinWindow ||
-        !nextSameDay;
+        !nextMessage || !senderId || senderId !== nextSenderId || !nextWithinWindow || !nextSameDay;
 
       result.push({
         type: 'message',
@@ -152,7 +204,7 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
       });
     });
     return result;
-  }, [visibleMessages, visibleStartIndex]);
+  }, [visibleMessages, visibleStartIndex, firstUnreadMessageId]);
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -161,24 +213,45 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
       const row = rows[index];
       if (row?.type === 'date') return DATE_ROW_HEIGHT;
       if (row?.type === 'time-gap') return TIME_GAP_ROW_HEIGHT;
+      if (row?.type === 'unread-divider') return UNREAD_DIVIDER_HEIGHT;
       return ROW_HEIGHT_ESTIMATE;
     },
     overscan: 5,
-    // Key the measurement cache by item identity, not index: when a filter
-    // (e.g. chat → Broadcasts) shrinks the list, surviving rows shift index
-    // without remounting and would otherwise inherit another row's cached
-    // height, stacking bubbles on top of each other.
     getItemKey: index => {
       const row = rows[index];
       if (!row) return index;
       if (row.type === 'date') return `date-${row.date.getTime()}`;
       if (row.type === 'time-gap') return row.key;
+      if (row.type === 'unread-divider') return row.key;
       return row.message.id;
     },
   });
 
-
   const virtualItems = virtualizer.getVirtualItems();
+
+  // Sticky date pill — mirrors the last date separator above the viewport.
+  // Compare by timestamp so we don't setState(new Date) every render (OOM loop).
+  useEffect(() => {
+    if (virtualItems.length === 0) {
+      setStickyDate(prev => (prev === null ? prev : null));
+      return;
+    }
+    const firstVisibleIndex = virtualItems[0]?.index ?? 0;
+    let latestDate: Date | null = null;
+    for (let i = 0; i <= firstVisibleIndex; i++) {
+      const row = rows[i];
+      if (row?.type === 'date') latestDate = row.date;
+      if (row?.type === 'message') {
+        latestDate = new Date(row.message.created_at || row.message.createdAt || 0);
+      }
+    }
+    const nextTs = latestDate && !Number.isNaN(latestDate.getTime()) ? latestDate.getTime() : null;
+    setStickyDate(prev => {
+      const prevTs = prev ? prev.getTime() : null;
+      if (prevTs === nextTs) return prev;
+      return nextTs === null ? null : new Date(nextTs);
+    });
+  }, [virtualItems, rows]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -257,20 +330,9 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
     const isScrolledUp = distanceFromBottom > 100;
     setUserIsScrolledUp(isScrolledUp);
 
-    // Logic: If user is scrolled up more than 100px, show FAB regardless of new messages.
-    // If there are new messages, we definitely show it (handled by setShowNewMessagesBadge above)
-    // BUT we want to support "always visible scroll-to-bottom" when scrolled up.
-
-    // We'll use showNewMessagesBadge for the visual indicator, but maybe we should rename/refactor?
-    // For now, let's keep the logic simple:
-    // If scrolled up significantly OR if new messages arrived while scrolled up -> Show Badge.
-
     if (!isScrolledUp) {
       setShowNewMessagesBadge(false);
     } else {
-      // Optional: You might want to always show it if scrolled up,
-      // or only if there's a reason. The plan asked for "always visible scroll-to-bottom FAB".
-      // So we set it to true if isScrolledUp is true.
       setShowNewMessagesBadge(true);
     }
 
@@ -298,6 +360,16 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
 
   return (
     <div className="relative flex-1 flex flex-col min-h-0">
+      {stickyDate && (
+        <div className="pointer-events-none absolute top-1 left-0 right-0 z-20 flex justify-center">
+          <div className="px-3 py-1 rounded-full bg-background/85 backdrop-blur-md border border-border/40 shadow-sm">
+            <span className="text-[11px] text-muted-foreground font-medium">
+              {formatStickyDateLabel(stickyDate)}
+            </span>
+          </div>
+        </div>
+      )}
+
       <div
         ref={setContainerNode}
         onScroll={handleScroll}
@@ -361,24 +433,51 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
                 </div>
               );
             }
-            // Tighter spacing between grouped bubbles (same sender, <2min),
-            // normal spacing at the end of a group. Subtle fade-in on mount
-            // keeps new bubbles feeling alive without a heavy animation.
-            const spacingClass = row.isLastInGroup ? 'pb-2.5' : 'pb-0.5';
+            if (row.type === 'unread-divider') {
+              return (
+                <div
+                  key={row.key}
+                  ref={virtualizer.measureElement}
+                  data-index={virtualRow.index}
+                  data-unread-divider="true"
+                  style={wrapperStyle}
+                >
+                  <div
+                    className="flex items-center gap-3 py-2"
+                    role="separator"
+                    aria-label="New messages"
+                  >
+                    <div className="flex-1 h-px bg-primary/40" />
+                    <span className="text-[10px] uppercase tracking-wider text-primary font-semibold whitespace-nowrap">
+                      New Messages
+                    </span>
+                    <div className="flex-1 h-px bg-primary/40" />
+                  </div>
+                </div>
+              );
+            }
+
+            // 2px between grouped bubbles, 12px after a group ends (plan).
+            const spacingClass = row.isLastInGroup ? 'pb-3' : 'pb-0.5';
+            const shouldAnimateEntrance = enteringMessageIds.has(row.message.id);
             return (
               <div
                 key={row.message.id}
                 ref={virtualizer.measureElement}
                 data-index={virtualRow.index}
                 data-last-in-group={row.isLastInGroup ? 'true' : 'false'}
-                className={`${spacingClass} animate-in fade-in slide-in-from-bottom-1 duration-200`}
+                data-show-sender-info={row.showSenderInfo ? 'true' : 'false'}
+                className={
+                  shouldAnimateEntrance
+                    ? `${spacingClass} animate-in fade-in slide-in-from-bottom-1 duration-200`
+                    : spacingClass
+                }
                 style={wrapperStyle}
               >
-                {renderMessage(row.message, row.index, row.showSenderInfo)}
+                {renderMessage(row.message, row.index, row.showSenderInfo, row.isLastInGroup)}
               </div>
             );
           })}
-
         </div>
         <div ref={messagesEndRef} className="h-px" aria-hidden="true" />
       </div>

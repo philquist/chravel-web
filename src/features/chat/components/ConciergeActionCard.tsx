@@ -25,9 +25,14 @@ export interface ConciergeActionResult {
   status?: ActionResultStatus;
 }
 
+export type ConciergeNavigateHandler = (
+  tab: string,
+  meta?: { entityId?: string; createPoll?: boolean },
+) => void;
+
 interface ConciergeActionCardProps {
   action: ConciergeActionResult;
-  onNavigate?: (tab: string) => void;
+  onNavigate?: ConciergeNavigateHandler;
 }
 
 const ACTION_CONFIG: Record<
@@ -195,7 +200,14 @@ export const ConciergeActionCard: React.FC<ConciergeActionCardProps> = ({ action
         {onNavigate && (
           <button
             type="button"
-            onClick={() => onNavigate(config.tab)}
+            onClick={() =>
+              onNavigate(
+                config.tab,
+                config.tab === 'polls'
+                  ? { entityId: action.entityId, createPoll: !action.entityId }
+                  : undefined,
+              )
+            }
             className="shrink-0 flex items-center gap-1 text-xs text-yellow-300 hover:underline"
           >
             View
@@ -241,7 +253,17 @@ export const ConciergeActionCard: React.FC<ConciergeActionCardProps> = ({ action
       {onNavigate && (
         <button
           type="button"
-          onClick={() => onNavigate(config.tab)}
+          onClick={() =>
+            onNavigate(
+              config.tab,
+              config.tab === 'polls'
+                ? {
+                    entityId: action.entityId,
+                    createPoll: action.actionType === 'create_poll' && !action.entityId,
+                  }
+                : undefined,
+            )
+          }
           className={`shrink-0 flex items-center gap-1 text-xs ${colors.text} hover:underline`}
         >
           View
@@ -259,7 +281,7 @@ export const ConciergeActionCard: React.FC<ConciergeActionCardProps> = ({ action
 interface OverflowSummaryCardProps {
   actionType: string;
   overflowCount: number;
-  onNavigate?: (tab: string) => void;
+  onNavigate?: ConciergeNavigateHandler;
 }
 
 export const OverflowSummaryCard: React.FC<OverflowSummaryCardProps> = ({

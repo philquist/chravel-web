@@ -2,35 +2,23 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { ChevronDown, ChevronUp, ExternalLink, Clock, Copy } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock } from 'lucide-react';
 import { PersonalBalance } from '../../services/paymentBalanceService';
 import { SettlePaymentDialog } from './SettlePaymentDialog';
 import { ConfirmPaymentDialog } from './ConfirmPaymentDialog';
-import { buildPaymentDeeplink, getPaymentMethodDisplayName } from '../../utils/paymentDeeplinks';
 import { formatCurrency } from '../../services/currencyService';
-import type { PaymentMethod as ReceiptPaymentMethod } from '../../types/receipts';
-import { useOpenPaymentApp } from '../../hooks/useOpenPaymentApp';
-import { useToast } from '../../hooks/use-toast';
+import { getPaymentMethodDisplayName } from '../../utils/paymentDeeplinks';
+import { PaymentMethodPayButtons } from './PaymentMethodPayButtons';
 
 interface PersonBalanceCardProps {
   balance: PersonalBalance;
   tripId: string;
 }
 
-const SUPPORTED_DEEPLINK_TYPES: ReceiptPaymentMethod[] = [
-  'venmo',
-  'cashapp',
-  'zelle',
-  'paypal',
-  'applecash',
-];
-
 export const PersonBalanceCard = ({ balance, tripId }: PersonBalanceCardProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const [showSettleDialog, setShowSettleDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const openPaymentApp = useOpenPaymentApp();
-  const { toast } = useToast();
 
   const isPendingConfirmation = balance.confirmationStatus === 'pending';
   const currency = balance.amountOwedCurrency || 'USD';
@@ -43,33 +31,15 @@ export const PersonBalanceCard = ({ balance, tripId }: PersonBalanceCardProps) =
   const getPaymentMethodDisplay = () => {
     if (!balance.preferredPaymentMethod) return 'No payment method set';
     const method = balance.preferredPaymentMethod;
-    const displayName = getPaymentMethodDisplayName(method.type as ReceiptPaymentMethod);
+    const displayName = getPaymentMethodDisplayName(method.type);
     return `${displayName}: ${method.identifier}`;
   };
 
-  const paymentTargets = (balance.availablePaymentMethods || [])
-    .filter(method => SUPPORTED_DEEPLINK_TYPES.includes(method.type as ReceiptPaymentMethod))
-    .map(method => ({
-      source: method,
-      target: buildPaymentDeeplink({
-        method: method.type as ReceiptPaymentMethod,
-        amount,
-        handle: method.identifier,
-      }),
-    }))
-    .filter(
-      (
-        entry,
-      ): entry is {
-        source: NonNullable<typeof balance.availablePaymentMethods>[number];
-        target: NonNullable<ReturnType<typeof buildPaymentDeeplink>>;
-      } => Boolean(entry.target),
-    );
-
-  const copyPaymentHandle = async (label: string, identifier: string) => {
-    await navigator.clipboard.writeText(identifier);
-    toast({ title: `${label} copied`, description: identifier });
-  };
+  const payMethods = (balance.availablePaymentMethods || []).map(method => ({
+    method: method.type,
+    identifier: method.identifier,
+    isPreferred: Boolean(method.isPreferred || method.is_preferred),
+  }));
 
   return (
     <>
@@ -105,39 +75,12 @@ export const PersonBalanceCard = ({ balance, tripId }: PersonBalanceCardProps) =
               </Button>
             ) : youOweThem ? (
               <div className="flex flex-wrap justify-end gap-2 flex-shrink min-w-[9rem] max-w-[18rem]">
-                {paymentTargets.map(({ source, target }) => {
-                  const label = getPaymentMethodDisplayName(target.method);
-                  const isPreferred = source.isPreferred || source.is_preferred;
-                  if (!target.canOpenDirectly) {
-                    return (
-                      <Button
-                        key={source.id}
-                        size="sm"
-                        variant={isPreferred ? 'default' : 'outline'}
-                        className="text-xs px-3 py-2 min-h-[44px]"
-                        onClick={() => copyPaymentHandle(label, target.displayHandle)}
-                        aria-label={`Copy ${balance.userName}'s ${label} identifier ${target.displayHandle}`}
-                      >
-                        <Copy className="w-3 h-3 mr-1" />
-                        Copy {label}
-                      </Button>
-                    );
-                  }
-
-                  return (
-                    <Button
-                      key={source.id}
-                      size="sm"
-                      variant={isPreferred ? 'default' : 'outline'}
-                      className="text-xs px-3 py-2 min-h-[44px]"
-                      onClick={() => openPaymentApp(target)}
-                      aria-label={`Pay ${balance.userName} ${formatAmount(amount)} via ${label}`}
-                    >
-                      <ExternalLink className="w-3 h-3 mr-1" />
-                      {label}
-                    </Button>
-                  );
-                })}
+                <PaymentMethodPayButtons
+                  methods={payMethods}
+                  amount={amount}
+                  payeeName={balance.userName}
+                  note="Trip expense"
+                />
                 <Button
                   size="sm"
                   variant="outline"

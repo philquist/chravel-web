@@ -144,22 +144,77 @@ serve(async req => {
     }
 
     const body: SyncRequest = await req.json();
-    const { customerInfo } = body;
 
-    if (!customerInfo) {
-      return new Response(JSON.stringify({ error: 'Missing customerInfo' }), {
-        status: 400,
+    // SECURITY: Never trust client-supplied customerInfo for entitlement state.
+    // Always fetch authoritative data from RevenueCat REST API using the server-side
+    // secret key, scoped to the authenticated user's id (app_user_id === auth user id).
+    const revenueCatSecretKey = Deno.env.get('REVENUECAT_SECRET_API_KEY');
+    if (!revenueCatSecretKey) {
+      console.error('[sync-rc] REVENUECAT_SECRET_API_KEY not configured — refusing to sync');
+      return new Response(JSON.stringify({ error: 'Entitlement verification unavailable' }), {
+        status: 503,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('[sync-rc] Syncing entitlements for user:', user.id, {
+    const rcResponse = await fetch(
+      `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(user.id)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${revenueCatSecretKey}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    if (!rcResponse.ok) {
+      const errText = await rcResponse.text().catch(() => '');
+      console.error('[sync-rc] RevenueCat API error:', rcResponse.status, errText);
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify entitlements with RevenueCat' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
+    const rcData = await rcResponse.json();
+    const rcSubscriber = rcData?.subscriber ?? {};
+    const rcEntitlements: Record<
+      string,
+      {
+        expires_date: string | null;
+        product_identifier: string;
+        period_type?: string;
+        purchase_date?: string;
+      }
+    > = rcSubscriber.entitlements ?? {};
+
+    const nowMs = Date.now();
+    const activeEntitlements: Record<string, ActiveEntitlementInfo> = {};
+    for (const [entitlementId, info] of Object.entries(rcEntitlements)) {
+      const expMs = info.expires_date ? new Date(info.expires_date).getTime() : Infinity;
+      const isActive = expMs > nowMs;
+      activeEntitlements[entitlementId] = {
+        isActive,
+        expirationDate: info.expires_date,
+        periodType: info.period_type?.toLowerCase(),
+        productIdentifier: info.product_identifier,
+      };
+    }
+
+    const customerInfo = {
+      originalAppUserId: rcSubscriber.original_app_user_id ?? user.id,
+      entitlements: { active: activeEntitlements },
+      latestExpirationDate: null,
+    };
+
+    console.log('[sync-rc] Verified entitlements for user:', user.id, {
       productId: body.productId,
       syncAll: body.syncAll,
+      activeCount: Object.values(activeEntitlements).filter(e => e.isActive).length,
     });
 
-    const activeEntitlements = customerInfo.entitlements?.active || {};
-    const typesToSync = purchaseTypesToSync(body);
+    const verifiedBody: SyncRequest = { ...body, customerInfo };
+    const typesToSync = purchaseTypesToSync(verifiedBody);
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
     const syncedRows: DerivedRow[] = [];
 

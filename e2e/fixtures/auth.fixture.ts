@@ -10,6 +10,7 @@
 
 import { test as base, Page } from '@playwright/test';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { fixtureStepError, isReleaseGateE2E } from './e2eMode';
 
 // Types
 interface TestUser {
@@ -60,22 +61,22 @@ interface AuthFixtures {
   getClientAsUser: (user: TestUser) => Promise<SupabaseClient>;
 }
 
-// Environment validation (lenient - allows tests to be listed without env vars)
+// Environment validation (lenient at module load so Playwright can collect tests).
+// Fixture use-sites fail closed under CHRAVEL_E2E_RELEASE_GATE=1.
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
-// Only warn if missing - errors will happen when fixtures are actually used
-if (!SUPABASE_URL) {
-  console.warn('[E2E Fixtures] SUPABASE_URL not set - database fixtures will not work');
-}
-
-if (!SUPABASE_SERVICE_ROLE_KEY) {
-  console.warn('[E2E Fixtures] SUPABASE_SERVICE_ROLE_KEY not set - admin fixtures will not work');
-}
-
-if (!SUPABASE_ANON_KEY) {
-  console.warn('[E2E Fixtures] SUPABASE_ANON_KEY not set - user fixtures will not work');
+// Warn only at import time — throwing here prevents test discovery ("No tests found").
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
+  const missing = [
+    !SUPABASE_URL ? 'SUPABASE_URL' : null,
+    !SUPABASE_SERVICE_ROLE_KEY ? 'SUPABASE_SERVICE_ROLE_KEY' : null,
+    !SUPABASE_ANON_KEY ? 'SUPABASE_ANON_KEY' : null,
+  ].filter(Boolean);
+  console.warn(
+    `[E2E Fixtures] Missing ${missing.join(', ')} — authenticated auth fixtures may skip/fail.`,
+  );
 }
 
 /**
@@ -98,9 +99,11 @@ const DEFAULT_TEST_PASSWORD = 'TestPassword123!QA';
 export const test = base.extend<AuthFixtures>({
   supabaseAdmin: async ({}, use) => {
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      // Gracefully skip tests that require admin operations in environments without keys (like public CI)
-      console.warn('[E2E Fixtures] Skipping test: SUPABASE_SERVICE_ROLE_KEY missing');
-      base.skip();
+      const message = 'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY required';
+      if (isReleaseGateE2E) throw fixtureStepError('auth admin client', message);
+      // Gracefully skip tests that require admin operations in local/public environments without keys.
+      console.warn(`[E2E Fixtures] Skipping test: ${message}`);
+      base.skip(true, `[local-tolerant] auth admin client: ${message}`);
       return;
     }
 
@@ -116,8 +119,10 @@ export const test = base.extend<AuthFixtures>({
 
   supabaseAnon: async ({}, use) => {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      console.warn('[E2E Fixtures] Skipping test: SUPABASE_ANON_KEY missing');
-      base.skip();
+      const message = 'SUPABASE_URL and SUPABASE_ANON_KEY required';
+      if (isReleaseGateE2E) throw fixtureStepError('auth anon client', message);
+      console.warn(`[E2E Fixtures] Skipping test: ${message}`);
+      base.skip(true, `[local-tolerant] auth anon client: ${message}`);
       return;
     }
 
@@ -156,7 +161,7 @@ export const test = base.extend<AuthFixtures>({
       });
 
       if (authError) {
-        throw new Error(`Failed to create test user: ${authError.message}`);
+        throw fixtureStepError('auth', `Failed to create test user: ${authError.message}`);
       }
 
       const userId = authData.user.id;
@@ -322,7 +327,7 @@ export const test = base.extend<AuthFixtures>({
   getClientAsUser: async ({}, use) => {
     const getClient = async (user: TestUser): Promise<SupabaseClient> => {
       if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-        throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY required');
+        throw fixtureStepError('auth client', 'SUPABASE_URL and SUPABASE_ANON_KEY required');
       }
 
       const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -338,7 +343,7 @@ export const test = base.extend<AuthFixtures>({
       });
 
       if (error) {
-        throw new Error(`Failed to authenticate as user: ${error.message}`);
+        throw fixtureStepError('auth', `Failed to authenticate as user: ${error.message}`);
       }
 
       return client;

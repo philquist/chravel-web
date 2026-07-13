@@ -1,6 +1,7 @@
 import { withCircuitBreaker } from './circuitBreaker.ts';
 import { normalizeGeminiModel } from './gemini.ts';
 import { assertAiToolPermission } from './tripPermissionGuard.ts';
+import { validateExternalUrlBeforeFetch } from './validation.ts';
 
 const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY');
 const GOOGLE_CUSTOM_SEARCH_CX = Deno.env.get('GOOGLE_CUSTOM_SEARCH_CX');
@@ -2512,10 +2513,21 @@ async function _executeImpl(
         return { error: 'Gemini API key not configured for web browsing' };
       }
 
-      const targetUrl = String(url).trim();
+      let targetUrl = String(url).trim();
+      if (targetUrl.startsWith('http://')) {
+        targetUrl = targetUrl.replace('http://', 'https://');
+      }
       // Basic URL validation
-      if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+      if (!targetUrl.startsWith('https://')) {
         return { error: 'URL must start with http:// or https://' };
+      }
+
+      // SSRF protection — same gate as scrape-schedule / urlScraper
+      if (!(await validateExternalUrlBeforeFetch(targetUrl))) {
+        return {
+          error: 'URL must be HTTPS and external (no internal/private networks)',
+          url: targetUrl,
+        };
       }
 
       // Fetch the page content
@@ -2527,7 +2539,8 @@ async function _executeImpl(
             Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           },
           signal: AbortSignal.timeout(15_000),
-          redirect: 'follow',
+          // SECURITY: Prevent redirect-chain SSRF to internal hosts after URL validation
+          redirect: 'error',
         }),
       );
 

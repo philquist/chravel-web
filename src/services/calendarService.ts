@@ -719,7 +719,17 @@ export const calendarService = {
     const tripId = events[0].trip_id;
     await this.ensureTripMembership(tripId, user.id);
 
-    // 3. Build insert rows — use bulk_import so trigger skips notifications
+    // 3. Build insert rows.
+    // Prefer caller source_type for provenance (gmail/concierge/url), but default
+    // to bulk_import so the notify_on_calendar_event trigger still skips per-event
+    // fanout for large imports.
+    const BULK_SAFE_SOURCE_TYPES = new Set([
+      'bulk_import',
+      'gmail_import',
+      'ai_concierge_import',
+      'ai_extracted',
+      'ai_concierge',
+    ]);
     const rows: Array<{
       trip_id: string;
       title: string;
@@ -734,36 +744,49 @@ export const calendarService = {
       source_type: string;
       source_data: Json;
       idempotency_key: string | null;
-    }> = events.map(e => ({
-      trip_id: e.trip_id,
-      title: e.title,
-      description: e.description || null,
-      location: e.location || null,
-      start_time: e.start_time,
-      end_time: e.end_time || null,
-      created_by: user.id,
-      event_category: e.event_category || 'other',
-      include_in_itinerary: e.include_in_itinerary ?? true,
-      is_all_day: e.is_all_day ?? false,
-      source_type: 'bulk_import',
-      source_data: (e.source_data || {}) as Json,
-      idempotency_key: e.idempotency_key ?? null,
-    }));
+      import_batch_id: string | null;
+    }> = events.map(e => {
+      const requested = e.source_type || 'bulk_import';
+      const sourceType = BULK_SAFE_SOURCE_TYPES.has(requested) ? requested : 'bulk_import';
+      return {
+        trip_id: e.trip_id,
+        title: e.title,
+        description: e.description || null,
+        location: e.location || null,
+        start_time: e.start_time,
+        end_time: e.end_time || null,
+        created_by: user.id,
+        event_category: e.event_category || 'other',
+        include_in_itinerary: e.include_in_itinerary ?? true,
+        is_all_day: e.is_all_day ?? false,
+        source_type: sourceType,
+        source_data: (e.source_data || {}) as Json,
+        idempotency_key: e.idempotency_key ?? null,
+        import_batch_id: e.import_batch_id ?? null,
+      };
+    });
 
     const CHUNK_SIZE = 50;
 
     // 4. Single batch: <= CHUNK_SIZE events
     if (rows.length <= CHUNK_SIZE) {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('trip_events')
-        .upsert(rows, { onConflict: 'trip_id,idempotency_key', ignoreDuplicates: true });
+        .upsert(rows, { onConflict: 'trip_id,idempotency_key', ignoreDuplicates: true })
+        .select('id');
 
       if (!error) {
+        // ignoreDuplicates returns only newly inserted rows (not conflict skips)
+        const imported = data?.length ?? 0;
         onProgress?.(rows.length, rows.length);
-        console.info(`[calendarService] Bulk insert succeeded for ${rows.length} events`);
-        this.fetchAndCacheRecentEvents(tripId, rows.length);
-        this.sendBulkImportNotification(tripId, rows.length, user.id);
-        return { imported: rows.length, failed: 0, events: [] };
+        console.info(
+          `[calendarService] Bulk insert succeeded: ${imported} imported of ${rows.length} submitted`,
+        );
+        if (imported > 0) {
+          this.fetchAndCacheRecentEvents(tripId, imported);
+          this.sendBulkImportNotification(tripId, imported, user.id);
+        }
+        return { imported, failed: 0, events: [] };
       }
 
       console.error(
@@ -779,12 +802,13 @@ export const calendarService = {
 
     for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
       const chunk = rows.slice(i, i + CHUNK_SIZE);
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('trip_events')
-        .upsert(chunk, { onConflict: 'trip_id,idempotency_key', ignoreDuplicates: true });
+        .upsert(chunk, { onConflict: 'trip_id,idempotency_key', ignoreDuplicates: true })
+        .select('id');
 
       if (!error) {
-        imported += chunk.length;
+        imported += data?.length ?? 0;
         onProgress?.(Math.min(i + CHUNK_SIZE, rows.length), rows.length);
       } else {
         // Chunk failed — fall back to sequential for this chunk
@@ -868,6 +892,7 @@ export const calendarService = {
       source_type: string;
       source_data: Json;
       idempotency_key: string | null;
+      import_batch_id?: string | null;
     }>,
     onProgress?: (completed: number, total: number) => void,
   ): Promise<{ imported: number; failed: number; events: TripEvent[] }> {

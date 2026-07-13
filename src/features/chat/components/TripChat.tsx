@@ -13,6 +13,8 @@ import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { ChatInput } from './ChatInput';
 import { InlineReplyComponent } from './InlineReplyComponent';
 import { VirtualizedMessageContainer } from './VirtualizedMessageContainer';
+import { findFirstUnreadMessageId } from '../utils/findFirstUnreadMessageId';
+import { messageMatchesChatSearchQuery } from '../utils/matchChatSearchQuery';
 import { MessageItem } from './MessageItem';
 import { MessageSkeleton } from '@/components/mobile/SkeletonLoader';
 import { getMockAvatar } from '@/utils/mockAvatars';
@@ -134,6 +136,7 @@ export const TripChat = React.memo(
       Array<{ id: string; type: 'message' | 'broadcast'; openThread?: boolean; source: 'stream' }>
     >([]);
     const [isServerSearching, setIsServerSearching] = useState(false);
+    const searchJumpPrimedRef = useRef(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const messageScrollRef = useRef<HTMLDivElement>(null);
     const [failedMessages, setFailedMessages] = useState<
@@ -552,6 +555,38 @@ export const TripChat = React.memo(
       streamActiveChannel?.state?.read,
       user?.id,
     ]);
+
+    // Capture first unread once per chat open for the "New Messages" divider.
+    // Clears on unmount via component lifecycle — not updated as the user reads.
+    const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<string | null>(null);
+    const unreadDividerCapturedRef = useRef(false);
+    useEffect(() => {
+      if (unreadDividerCapturedRef.current) return;
+      if (demoMode.isDemoMode) {
+        unreadDividerCapturedRef.current = true;
+        setFirstUnreadMessageId(null);
+        return;
+      }
+      if (!user?.id || liveFormattedMessages.length === 0) return;
+      // Wait for channel read state to settle when Stream is active.
+      if (!streamActiveChannel) return;
+
+      const lastRead = streamActiveChannel.state?.read?.[user.id]?.last_read;
+      unreadDividerCapturedRef.current = true;
+      setFirstUnreadMessageId(
+        findFirstUnreadMessageId({
+          messages: liveFormattedMessages,
+          currentUserId: user.id,
+          lastRead,
+        }),
+      );
+    }, [demoMode.isDemoMode, liveFormattedMessages, streamActiveChannel, user?.id]);
+
+    // Reset divider capture when switching trips.
+    useEffect(() => {
+      unreadDividerCapturedRef.current = false;
+      setFirstUnreadMessageId(null);
+    }, [resolvedTripId]);
 
     const handleSendMessage = async (
       isBroadcast = false,
@@ -1057,11 +1092,7 @@ export const TripChat = React.memo(
       if (!query) return [];
       const sourceMessages = demoMode.isDemoMode ? demoMessages : liveFormattedMessages;
       return sourceMessages
-        .filter(message => {
-          const text = ((message as any).text || '').toLowerCase();
-          const sender = ((message as any).sender?.name || '').toLowerCase();
-          return text.includes(query) || sender.includes(query);
-        })
+        .filter(message => messageMatchesChatSearchQuery(message as any, query))
         .map(message => ({
           id: String((message as any).id),
           type: (message as any).isBroadcast ? ('broadcast' as const) : ('message' as const),
@@ -1127,15 +1158,41 @@ export const TripChat = React.memo(
             : direction === 'previous'
               ? (activeSearchResultIndex - 1 + chatSearchResults.length) % chatSearchResults.length
               : activeSearchResultIndex;
+        searchJumpPrimedRef.current = true;
         setActiveSearchResultIndex(nextIndex);
         scrollToMessage(chatSearchResults[nextIndex]);
       },
       [activeSearchResultIndex, chatSearchResults, scrollToMessage],
     );
 
+    const navigateSearchResult = useCallback(
+      (direction: 'next' | 'previous') => {
+        if (chatSearchResults.length === 0) return;
+        // First Enter / down-chevron should land on result 1 (index 0), not skip to 2.
+        if (!searchJumpPrimedRef.current && direction === 'next') {
+          jumpToSearchResult('current');
+          return;
+        }
+        jumpToSearchResult(direction);
+      },
+      [chatSearchResults.length, jumpToSearchResult],
+    );
+
     useEffect(() => {
       setActiveSearchResultIndex(0);
+      searchJumpPrimedRef.current = false;
     }, [chatSearchQuery]);
+
+    // After results settle for a new query, scroll/highlight the first match so the
+    // "1/N" counter matches the viewport without requiring an extra keypress.
+    useEffect(() => {
+      if (!chatSearchQuery.trim() || chatSearchResults.length === 0) return;
+      if (searchJumpPrimedRef.current) return;
+      const timer = window.setTimeout(() => {
+        jumpToSearchResult('current');
+      }, 150);
+      return () => window.clearTimeout(timer);
+    }, [chatSearchQuery, chatSearchResults, jumpToSearchResult]);
 
     // Scroll to target message from notification click (when messages finish loading)
     const scrollAttemptedRef = useRef(false);
@@ -1168,7 +1225,7 @@ export const TripChat = React.memo(
     }, [messageFilter]);
 
     const renderMessage = useCallback(
-      (message: any, _index: number, showSenderInfo: boolean) => (
+      (message: any, _index: number, showSenderInfo: boolean, isLastInGroup = true) => (
         <div data-message-id={message.id}>
           <MessageItem
             message={message}
@@ -1182,9 +1239,11 @@ export const TripChat = React.memo(
             transportMode="stream"
             onRetry={handleRetryFailedMessage}
             systemMessagePrefs={systemMessagePrefs}
+            tripId={resolvedTripId}
             tripMembers={tripMembers}
             readStatuses={message.readStatuses || readStatusesByMessage[message.id] || []}
             showSenderInfo={showSenderInfo}
+            isLastInGroup={isLastInGroup}
             reactionUserNamesById={reactionUserNamesById}
             isAdmin={isUserAdmin}
             canDeleteOwnMessage={canDeleteOwnMessage}
@@ -1279,7 +1338,7 @@ export const TripChat = React.memo(
                   onKeyDown={event => {
                     if (event.key === 'Enter') {
                       event.preventDefault();
-                      jumpToSearchResult(event.shiftKey ? 'previous' : 'next');
+                      navigateSearchResult(event.shiftKey ? 'previous' : 'next');
                     }
                   }}
                   placeholder="Search messages"
@@ -1299,7 +1358,7 @@ export const TripChat = React.memo(
                   <>
                     <button
                       type="button"
-                      onClick={() => jumpToSearchResult('previous')}
+                      onClick={() => navigateSearchResult('previous')}
                       className="min-h-8 min-w-8 rounded-full hover:bg-muted"
                       aria-label="Previous search result"
                     >
@@ -1307,7 +1366,7 @@ export const TripChat = React.memo(
                     </button>
                     <button
                       type="button"
-                      onClick={() => jumpToSearchResult('next')}
+                      onClick={() => navigateSearchResult('next')}
                       className="min-h-8 min-w-8 rounded-full hover:bg-muted"
                       aria-label="Next search result"
                     >
@@ -1441,6 +1500,7 @@ export const TripChat = React.memo(
                         restoreScroll={true}
                         scrollKey={`chat-scroll-${resolvedTripId}`}
                         scrollContainerRef={messageScrollRef}
+                        firstUnreadMessageId={firstUnreadMessageId}
                       />
                     </FeatureErrorBoundary>
                   </>

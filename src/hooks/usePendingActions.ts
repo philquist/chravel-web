@@ -523,7 +523,7 @@ export function usePendingActions(tripId: string, options: UsePendingActionsOpti
           break;
         case 'createPoll':
         case 'closePoll':
-          queryClient.invalidateQueries({ queryKey: ['tripPolls', tripId], exact: false });
+          queryClient.invalidateQueries({ queryKey: tripKeys.polls(tripId), exact: false });
           break;
         case 'saveLink':
           queryClient.invalidateQueries({ queryKey: ['tripLinks', tripId], exact: false });

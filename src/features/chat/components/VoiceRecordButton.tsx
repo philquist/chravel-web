@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Mic, Trash2 } from 'lucide-react';
+import { Lock, Mic, Send, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { hapticService as haptics } from '@/services/hapticService';
 import { useVoiceRecorder, type VoiceRecordingResult } from '../hooks/useVoiceRecorder';
@@ -30,12 +30,14 @@ type SpeechRecognitionWindow = Window & {
 interface VoiceRecordButtonProps {
   onRecorded: (result: VoiceRecordingResult) => void | Promise<void>;
   disabled?: boolean;
+  /** When true, capture an optional SpeechRecognition transcript alongside the audio blob. */
   enableTranscription?: boolean;
   buttonClassName?: string;
   iconClassName?: string;
 }
 
 const CANCEL_THRESHOLD_PX = 60;
+const LOCK_THRESHOLD_PX = 60;
 
 function formatElapsed(ms: number) {
   const total = Math.floor(ms / 1000);
@@ -44,10 +46,18 @@ function formatElapsed(ms: number) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+function stopRecognition(recognition: BrowserSpeechRecognition | null) {
+  if (!recognition) return;
+  try {
+    recognition.stop();
+  } catch {
+    /* noop — recognition may already be stopped */
+  }
+}
+
 /**
  * Hold-to-record mic button (iMessage/WhatsApp style).
- * Slide left past the threshold to cancel; release to send.
- * Falls back gracefully when MediaRecorder isn't available.
+ * Slide left ≥60px to cancel; slide up ≥60px to lock (hands-free); release to send.
  */
 export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
   onRecorded,
@@ -60,128 +70,180 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
     useVoiceRecorder();
 
   const [dragX, setDragX] = useState(0);
+  const [dragY, setDragY] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
   const transcriptRef = useRef('');
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const startXRef = useRef<number | null>(null);
+  const startYRef = useRef<number | null>(null);
   const willCancelRef = useRef(false);
+  const willLockRef = useRef(false);
+
+  const resetDrag = useCallback(() => {
+    startXRef.current = null;
+    startYRef.current = null;
+    setDragX(0);
+    setDragY(0);
+    willCancelRef.current = false;
+    willLockRef.current = false;
+  }, []);
+
+  const startTranscription = useCallback(() => {
+    transcriptRef.current = '';
+    recognitionRef.current = null;
+    if (!enableTranscription || typeof window === 'undefined') return;
+
+    const speechWindow = window as SpeechRecognitionWindow;
+    const SpeechRecognitionCtor =
+      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) return;
+
+    const recognition = new SpeechRecognitionCtor();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = (event: BrowserSpeechRecognitionEvent) => {
+      let text = '';
+      for (let i = 0; i < event.results.length; i += 1) {
+        text += event.results[i][0]?.transcript || '';
+      }
+      transcriptRef.current = text.trim();
+    };
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
+    } catch {
+      recognitionRef.current = null;
+    }
+  }, [enableTranscription]);
 
   const handlePointerDown = useCallback(
     async (e: React.PointerEvent) => {
-      if (disabled || !isSupported) return;
+      if (disabled || !isSupported || isLocked) return;
       e.preventDefault();
       startXRef.current = e.clientX;
+      startYRef.current = e.clientY;
       willCancelRef.current = false;
+      willLockRef.current = false;
       setDragX(0);
+      setDragY(0);
       haptics.light();
-      transcriptRef.current = '';
-      if (enableTranscription && typeof window !== 'undefined') {
-        const speechWindow = window as SpeechRecognitionWindow;
-        const SpeechRecognitionCtor =
-          speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
-        if (SpeechRecognitionCtor) {
-          const recognition = new SpeechRecognitionCtor();
-          recognition.continuous = true;
-          recognition.interimResults = true;
-          recognition.onresult = (event: BrowserSpeechRecognitionEvent) => {
-            let text = '';
-            for (let i = 0; i < event.results.length; i += 1) {
-              text += event.results[i][0]?.transcript || '';
-            }
-            transcriptRef.current = text.trim();
-          };
-          recognitionRef.current = recognition;
-          try {
-            recognition.start();
-          } catch {
-            recognitionRef.current = null;
-          }
-        }
-      }
+      startTranscription();
       await start();
     },
-    [disabled, enableTranscription, isSupported, start],
+    [disabled, isSupported, isLocked, start, startTranscription],
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (startXRef.current === null || !isRecording) return;
-      const delta = Math.min(0, e.clientX - startXRef.current);
-      setDragX(delta);
-      willCancelRef.current = Math.abs(delta) >= CANCEL_THRESHOLD_PX;
+      if (isLocked) return;
+      if (startXRef.current === null || startYRef.current === null || !isRecording) return;
+      const deltaX = Math.min(0, e.clientX - startXRef.current);
+      const deltaY = Math.min(0, e.clientY - startYRef.current);
+      setDragX(deltaX);
+      setDragY(deltaY);
+
+      const canceling =
+        Math.abs(deltaX) >= CANCEL_THRESHOLD_PX && Math.abs(deltaX) >= Math.abs(deltaY);
+      const locking = Math.abs(deltaY) >= LOCK_THRESHOLD_PX && Math.abs(deltaY) > Math.abs(deltaX);
+      willCancelRef.current = canceling;
+      willLockRef.current = locking && !canceling;
     },
-    [isRecording],
+    [isRecording, isLocked],
   );
 
-  const finish = useCallback(async () => {
-    if (startXRef.current === null) return;
-    startXRef.current = null;
-    setDragX(0);
-    if (willCancelRef.current) {
-      try {
-        recognitionRef.current?.stop?.();
-      } catch {
-        /* noop */
-      }
-      recognitionRef.current = null;
-      cancel();
-      haptics.light();
-      return;
-    }
-    try {
-      recognitionRef.current?.stop?.();
-    } catch {
-      /* noop */
-    }
+  const sendRecording = useCallback(async () => {
+    stopRecognition(recognitionRef.current);
     recognitionRef.current = null;
     const result = await stop();
+    setIsLocked(false);
+    resetDrag();
     if (result) {
       result.transcript = transcriptRef.current || undefined;
       haptics.light();
       await onRecorded(result);
     }
-  }, [cancel, onRecorded, stop]);
+  }, [stop, onRecorded, resetDrag]);
+
+  const finish = useCallback(async () => {
+    if (isLocked) return;
+    if (startXRef.current === null) return;
+
+    if (willLockRef.current) {
+      setIsLocked(true);
+      resetDrag();
+      haptics.light();
+      return;
+    }
+
+    if (willCancelRef.current) {
+      stopRecognition(recognitionRef.current);
+      recognitionRef.current = null;
+      cancel();
+      resetDrag();
+      haptics.light();
+      return;
+    }
+
+    resetDrag();
+    await sendRecording();
+  }, [isLocked, cancel, resetDrag, sendRecording]);
 
   const handlePointerUp = useCallback(() => {
     void finish();
   }, [finish]);
 
   const handlePointerCancel = useCallback(() => {
+    if (isLocked) return;
     if (startXRef.current === null) return;
-    startXRef.current = null;
-    setDragX(0);
-    try {
-      recognitionRef.current?.stop?.();
-    } catch {
-      /* noop */
-    }
+    stopRecognition(recognitionRef.current);
+    recognitionRef.current = null;
+    resetDrag();
+    cancel();
+  }, [cancel, isLocked, resetDrag]);
+
+  const handleLockedCancel = useCallback(() => {
+    stopRecognition(recognitionRef.current);
     recognitionRef.current = null;
     cancel();
-  }, [cancel]);
+    setIsLocked(false);
+    resetDrag();
+    haptics.light();
+  }, [cancel, resetDrag]);
 
-  // Safety: release any recording if the component unmounts mid-hold.
+  const handleLockedSend = useCallback(() => {
+    void sendRecording();
+  }, [sendRecording]);
+
   useEffect(() => {
     return () => {
+      stopRecognition(recognitionRef.current);
+      recognitionRef.current = null;
       if (isRecording) cancel();
     };
-    // Only run on unmount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!isSupported) return null;
 
-  const active = isRecording || isPreparing;
+  const active = isRecording || isPreparing || isLocked;
   const willCancel = willCancelRef.current;
+  const willLock = willLockRef.current;
 
   return (
     <div className="relative flex items-center">
       {active && (
         <div
           className={cn(
-            'absolute right-full mr-2 flex items-center gap-2 px-3 py-1.5 rounded-full whitespace-nowrap pointer-events-none',
+            'absolute right-full mr-2 flex items-center gap-2 px-3 py-1.5 rounded-full whitespace-nowrap',
             'bg-card/95 border border-border/60 backdrop-blur-md shadow-sm',
             willCancel && 'border-destructive/60 text-destructive',
+            willLock && 'border-primary/60 text-primary',
+            isLocked && 'pointer-events-auto',
+            !isLocked && 'pointer-events-none',
           )}
-          style={{ transform: `translateX(${dragX}px)` }}
+          style={{
+            transform: isLocked ? undefined : `translate(${dragX}px, ${dragY}px)`,
+          }}
         >
           <span
             className={cn(
@@ -194,15 +256,41 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
             }}
           />
           <span className="text-xs tabular-nums font-medium">{formatElapsed(elapsedMs)}</span>
-          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-            {willCancel ? (
-              <>
-                <Trash2 size={10} /> Release to cancel
-              </>
-            ) : (
-              <>‹ Slide to cancel</>
-            )}
-          </span>
+          {isLocked ? (
+            <div className="flex items-center gap-1.5">
+              <Lock size={12} className="text-primary" />
+              <button
+                type="button"
+                onClick={handleLockedCancel}
+                className="min-h-11 min-w-11 flex items-center justify-center rounded-full text-destructive hover:bg-destructive/10"
+                aria-label="Cancel recording"
+              >
+                <Trash2 size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={handleLockedSend}
+                className="min-h-11 min-w-11 flex items-center justify-center rounded-full text-primary hover:bg-primary/10"
+                aria-label="Send voice note"
+              >
+                <Send size={14} />
+              </button>
+            </div>
+          ) : (
+            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+              {willCancel ? (
+                <>
+                  <Trash2 size={10} /> Release to cancel
+                </>
+              ) : willLock ? (
+                <>
+                  <Lock size={10} /> Release to lock
+                </>
+              ) : (
+                <>‹ Cancel · ↑ Lock</>
+              )}
+            </span>
+          )}
         </div>
       )}
 
@@ -211,20 +299,25 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
+        onPointerLeave={isLocked ? undefined : handlePointerUp}
         onPointerCancel={handlePointerCancel}
         aria-label={
-          active ? 'Recording — release to send, slide left to cancel' : 'Hold to record voice note'
+          isLocked
+            ? 'Recording locked — tap send or cancel'
+            : active
+              ? 'Recording — release to send, slide left to cancel, slide up to lock'
+              : 'Hold to record voice note'
         }
         aria-pressed={active}
-        disabled={disabled}
+        disabled={disabled || isLocked}
         className={cn(
           buttonClassName,
           active && 'ring-2 ring-destructive/60 scale-110',
+          isLocked && 'ring-primary/60',
           'transition-transform',
         )}
       >
-        <Mic className={iconClassName} />
+        {isLocked ? <Lock className={iconClassName} /> : <Mic className={iconClassName} />}
       </button>
     </div>
   );

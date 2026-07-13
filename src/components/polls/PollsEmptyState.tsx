@@ -8,13 +8,14 @@ interface PollsEmptyStateProps {
 export const PollsEmptyState = ({ containerClassName }: PollsEmptyStateProps) => {
   return (
     <div className={containerClassName ?? 'text-center py-10'}>
-      <div className="text-center">
-        <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+      <div className="text-center py-2">
+        <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
           <BarChart3 size={28} className="text-primary" />
         </div>
-        <h3 className="text-lg font-semibold text-white mb-1">No Polls Yet</h3>
-        <p className="text-gray-400 text-sm max-w-xs mx-auto">
-          Create a poll to ask the group a question and gather votes in real time.
+        <h3 className="text-lg font-semibold tracking-tight text-foreground mb-1">No polls yet</h3>
+        <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">
+          Ask the group a question, gather votes in real time, and keep the discussion right under
+          the poll.
         </p>
       </div>
     </div>

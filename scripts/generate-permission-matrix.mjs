@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { execFileSync } from 'child_process';
 
 const src = 'config/permission-matrix.json';
 const cfg = JSON.parse(fs.readFileSync(src, 'utf8'));
@@ -14,8 +15,14 @@ const typeFile = `${banner}export type PermissionAction = ${cfg.actions.map(a =>
     ' | ',
   )};\nexport type PermissionRule = Record<PermissionAction, boolean>;\nexport type PermissionMatrix = Record<PermissionRole, Partial<Record<PermissionResource | '*', PermissionRule>>>;\nexport const PERMISSION_MATRIX: PermissionMatrix = ${json} as const;\n`;
 
-fs.writeFileSync('src/types/permissionMatrix.generated.ts', typeFile);
-fs.writeFileSync('supabase/functions/_shared/permissionMatrix.generated.ts', typeFile);
+const generatedTypeFiles = [
+  'src/types/permissionMatrix.generated.ts',
+  'supabase/functions/_shared/permissionMatrix.generated.ts',
+];
+for (const generatedTypeFile of generatedTypeFiles) {
+  fs.writeFileSync(generatedTypeFile, typeFile);
+}
+execFileSync('npx', ['prettier', '--write', ...generatedTypeFiles], { stdio: 'ignore' });
 
 function allowedActions(rule) {
   return cfg.actions.filter(action => rule?.[action] === true).map(a => `'${a}'`);

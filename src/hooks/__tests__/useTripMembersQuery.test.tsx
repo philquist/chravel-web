@@ -74,10 +74,9 @@ describe('useTripMembersQuery', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.tripMembers).toHaveLength(2);
     });
 
-    expect(result.current.tripMembers).toHaveLength(2);
     expect(result.current.tripMembers[0].name).toBe('Creator');
     expect(result.current.tripMembers[1].role).toBe('admin');
     expect(result.current.hadMembersError).toBe(false);
@@ -91,11 +90,10 @@ describe('useTripMembersQuery', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.hadMembersError).toBe(true);
     });
 
     expect(result.current.tripMembers).toEqual([]);
-    expect(result.current.hadMembersError).toBe(true);
   });
 
   it('includes creator when trip_members is empty (creator fallback)', async () => {
@@ -109,7 +107,7 @@ describe('useTripMembersQuery', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.tripCreatorId).toBe('creator-1');
     });
 
     expect(result.current.tripMembers).toHaveLength(1);
@@ -135,7 +133,7 @@ describe('useTripMembersQuery', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(tripService.listTripMembersPage).toHaveBeenCalled();
     });
 
     expect(tripService.listTripMembersPage).toHaveBeenCalledWith('trip-123', {

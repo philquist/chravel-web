@@ -29,7 +29,7 @@ describe('useSmartImportDropzone', () => {
     vi.clearAllMocks();
   });
 
-  it('returns getRootProps, getInputProps, and isDragActive', () => {
+  it('returns getRootProps, getInputProps, getCameraInputProps, and isDragActive', () => {
     const onFileSelected = vi.fn();
     const { result } = renderHook(() => useSmartImportDropzone({ onFileSelected }));
 
@@ -37,7 +37,10 @@ describe('useSmartImportDropzone', () => {
     expect(typeof result.current.getRootProps).toBe('function');
     expect(result.current.getInputProps).toBeDefined();
     expect(typeof result.current.getInputProps).toBe('function');
+    expect(result.current.getCameraInputProps).toBeDefined();
+    expect(typeof result.current.getCameraInputProps).toBe('function');
     expect(result.current.isDragActive).toBe(false);
+    expect(result.current.getCameraInputProps().capture).toBe('environment');
   });
 
   it('calls preventDefault on dragOver', async () => {

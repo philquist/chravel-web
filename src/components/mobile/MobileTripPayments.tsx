@@ -45,6 +45,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { tripKeys, QUERY_CACHE_CONFIG } from '@/lib/queryKeys';
 import { isDemoTrip } from '@/utils/demoUtils';
 import { OutstandingPayments } from '@/components/payments/OutstandingPayments';
+import { PersonBalanceCard } from '@/components/payments/PersonBalanceCard';
 
 interface Payment {
   id: string;
@@ -621,6 +622,16 @@ export const MobileTripPayments = ({ tripId }: MobileTripPaymentsProps) => {
           </div>
         </div>
       </div>
+
+      {/* Per-person balances with preferred-method deeplinks (mobile parity with desktop) */}
+      {!demoActive && balanceSummary && balanceSummary.balances.length > 0 && (
+        <div className="px-4 pb-2 space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">Who owes whom</h3>
+          {balanceSummary.balances.map(balance => (
+            <PersonBalanceCard key={balance.userId} balance={balance} tripId={tripId} />
+          ))}
+        </div>
+      )}
 
       {/* Payments List */}
       <div className="flex-1 overflow-y-auto px-4 py-2 space-y-4 native-scroll mobile-safe-scroll">

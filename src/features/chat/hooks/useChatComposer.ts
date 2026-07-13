@@ -28,9 +28,12 @@ export interface ChatMessage {
     domain?: string;
   } | null;
   attachments?: Array<{
-    type: 'image' | 'video' | 'file' | 'link';
+    type: 'image' | 'video' | 'file' | 'link' | 'audio';
     ref_id: string;
     url?: string;
+    mimeType?: string;
+    durationMs?: number;
+    waveform?: number[];
   }>;
 }
 

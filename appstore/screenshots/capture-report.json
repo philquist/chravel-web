@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-18T15:10:50.048Z",
+  "timestamp": "2026-07-13T06:26:29.523Z",
   "baseUrl": "http://127.0.0.1:4173",
   "device": "all",
   "results": [
@@ -55,11 +55,10 @@
     {
       "name": "07-media-gallery",
       "device": "iPhone 6.7\"",
-      "status": "warning",
+      "status": "success",
       "tripUsed": "/trip/5",
       "tab": "media",
-      "dimensions": "1290x2796",
-      "error": "Tab \"media\" content may not be fully loaded"
+      "dimensions": "1290x2796"
     },
     {
       "name": "08-polls-voting",
@@ -104,8 +103,8 @@
   ],
   "summary": {
     "total": 12,
-    "success": 10,
-    "warning": 2,
+    "success": 11,
+    "warning": 1,
     "failed": 0
   }
 }

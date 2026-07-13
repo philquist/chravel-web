@@ -13,6 +13,10 @@ vi.mock('@/hooks/useTheme', () => ({
   useTheme: () => ({ isDarkMode: false, toggleTheme: vi.fn() }),
 }));
 
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ user: null }),
+}));
+
 vi.mock('@/services/hapticService', () => ({
   hapticService: {
     light: vi.fn().mockResolvedValue(undefined),

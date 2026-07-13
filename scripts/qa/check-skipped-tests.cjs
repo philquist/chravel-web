@@ -6,7 +6,7 @@ const repoRoot = path.resolve(__dirname, '../..');
 const allowlistPath = path.join(repoRoot, 'qa/journeys/skip-allowlist.json');
 
 const CRITICAL_DIRS = ['e2e', 'src/services/__tests__', 'src/__tests__', 'src/pages/__tests__'];
-const skipPattern = /(?:describe|test)\.skip\s*\(|test\.fixme\s*\(/;
+const skipPattern = /(?:describe|test|it)\.skip\s*\(|test\.fixme\s*\(/;
 
 function walk(dir) {
   const results = [];

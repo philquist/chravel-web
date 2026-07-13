@@ -65,7 +65,11 @@ export const CreatePollForm = ({
       let deadline_at: string | undefined;
       if (deadlineDate) {
         const time = deadlineTime || '23:59';
-        deadline_at = `${deadlineDate}T${time}:00`;
+        // Normalize to ISO UTC so distributed groups share one absolute deadline.
+        const localDeadline = new Date(`${deadlineDate}T${time}:00`);
+        deadline_at = Number.isNaN(localDeadline.getTime())
+          ? undefined
+          : localDeadline.toISOString();
       }
 
       await onCreatePoll(question.trim(), validOptions, {
@@ -304,9 +308,9 @@ export const CreatePollForm = ({
           <Button
             onClick={handleCreate}
             disabled={!isValid || isSubmitting}
-            className="flex-1 h-10 rounded-lg font-semibold bg-gray-800/80 text-white cta-gold-ring hover:opacity-90 hover:scale-[1.01] active:scale-[0.99] transition-all border-0"
+            className="flex-1 h-11 min-h-[44px] rounded-xl font-semibold"
           >
-            {isSubmitting ? 'Creating...' : 'Create Poll'}
+            {isSubmitting ? 'Creating…' : 'Create Poll'}
           </Button>
         </div>
       </div>

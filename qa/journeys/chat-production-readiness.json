@@ -25,7 +25,7 @@
         "src/hooks/stream/__tests__/useStreamTripChat.send.test.tsx",
         "src/services/__tests__/chatLegacyMutationGuards.test.ts",
         "src/hooks/stream/__tests__/useStreamTripChat.reactions.test.tsx",
-        "src/features/chat/components/__tests__/ThreadView.test.tsx",
+        "src/hooks/stream/__tests__/useStreamTripChat.threads.test.tsx",
         "src/features/chat/hooks/__tests__/useChatReadReceipts.test.tsx",
         "src/features/chat/hooks/__tests__/useChatTypingIndicators.test.tsx"
       ]

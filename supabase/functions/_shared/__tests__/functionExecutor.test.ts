@@ -35,7 +35,10 @@ describe('functionExecutor idempotency', () => {
         return { insert: vi.fn().mockResolvedValue({ error: null }) };
       return { insert: vi.fn() };
     });
-    const mockSupabase = { from: mockFrom };
+    const mockSupabase = {
+      from: mockFrom,
+      rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
+    };
 
     const result = await executeFunctionCall(
       mockSupabase,
@@ -74,7 +77,10 @@ describe('functionExecutor idempotency', () => {
         return { insert: vi.fn().mockResolvedValue({ error: null }) };
       return { insert: vi.fn() };
     });
-    const mockSupabase = { from: mockFrom };
+    const mockSupabase = {
+      from: mockFrom,
+      rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
+    };
 
     await executeFunctionCall(
       mockSupabase,
@@ -97,7 +103,10 @@ describe('functionExecutor idempotency', () => {
     const mockInsert = vi.fn().mockReturnValue({ select: mockSelect });
 
     const mockFrom = vi.fn().mockReturnValue({ insert: mockInsert });
-    const mockSupabase = { from: mockFrom };
+    const mockSupabase = {
+      from: mockFrom,
+      rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
+    };
 
     await expect(
       executeFunctionCall(
@@ -117,7 +126,10 @@ describe('functionExecutor idempotency', () => {
     const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
     const mockInsert = vi.fn().mockReturnValue({ select: mockSelect });
     const mockFrom = vi.fn().mockReturnValue({ insert: mockInsert });
-    const mockSupabase = { from: mockFrom };
+    const mockSupabase = {
+      from: mockFrom,
+      rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
+    };
 
     const result = await executeFunctionCall(
       mockSupabase,
@@ -144,7 +156,10 @@ describe('functionExecutor idempotency', () => {
       if (table === 'trip_events') return { insert: mockTripEventsInsert };
       return { insert: vi.fn() };
     });
-    const mockSupabase = { from: mockFrom };
+    const mockSupabase = {
+      from: mockFrom,
+      rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
+    };
 
     const result = await executeFunctionCall(
       mockSupabase,

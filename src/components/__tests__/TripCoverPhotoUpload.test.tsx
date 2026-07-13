@@ -67,6 +67,36 @@ vi.mock('@/utils/imagePrep', () => ({
   }),
 }));
 
+vi.mock('@/features/trips/hooks/useCoverPhotoUpload', () => ({
+  useCoverPhotoUpload: () => ({
+    upload: async (
+      tripId: string,
+      _blob: Blob,
+      options: { persist?: (publicUrl: string) => Promise<boolean> } = {},
+    ) => {
+      const result = await mockUploadTripCoverBlob({ tripId });
+      if (options.persist) {
+        const persisted = await options.persist(result.publicUrl);
+        if (!persisted) {
+          await mockRemove([result.filePath]);
+          return { ok: false as const, error: 'Failed to save cover photo to trip details' };
+        }
+      }
+      return { ok: true as const, publicUrl: result.publicUrl };
+    },
+  }),
+}));
+
+vi.mock('@/features/trips/hooks/useGenerateCoverPhoto', () => ({
+  useGenerateCoverPhoto: () => ({
+    generate: vi.fn(),
+    isGenerating: false,
+    remainingThisMonth: 3,
+    cap: 3,
+    isEligible: true,
+  }),
+}));
+
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     storage: {

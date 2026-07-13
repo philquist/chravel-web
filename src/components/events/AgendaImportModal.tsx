@@ -298,7 +298,10 @@ export const AgendaImportModal: React.FC<AgendaImportModalProps> = ({
                 <p className="text-sm text-muted-foreground mb-2">
                   {isDragActive
                     ? 'Drop your file here...'
-                    : 'Drag and drop a file here, or click to browse'}
+                    : 'Tap to choose a file, or take a photo of a schedule'}
+                </p>
+                <p className="hidden sm:block text-xs text-muted-foreground mb-2">
+                  Drag and drop also works on desktop
                 </p>
 
                 <div className="flex flex-wrap justify-center gap-1.5 mb-4">
@@ -327,13 +330,13 @@ export const AgendaImportModal: React.FC<AgendaImportModalProps> = ({
                     <Link className="w-3.5 h-3.5" />
                     or import from a URL
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
                     <Input
                       type="url"
-                      placeholder="Paste an agenda page URL"
+                      placeholder="Agenda URL (conference site…)"
                       value={urlInput}
                       onChange={e => setUrlInput(e.target.value)}
-                      className="flex-1 text-sm rounded-lg min-h-[40px]"
+                      className="flex-1 min-w-0 text-sm rounded-lg min-h-[44px]"
                       onKeyDown={e => {
                         if (e.key === 'Enter' && isValidUrl(urlInput.trim())) handleUrlImport();
                       }}
@@ -343,7 +346,7 @@ export const AgendaImportModal: React.FC<AgendaImportModalProps> = ({
                       size="sm"
                       onClick={handleUrlImport}
                       disabled={!urlInput.trim() || !isValidUrl(urlInput.trim())}
-                      className="min-h-[40px] shrink-0"
+                      className="w-full sm:w-auto sm:shrink-0 min-h-[44px]"
                     >
                       <Globe className="w-4 h-4 mr-1.5" />
                       Import

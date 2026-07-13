@@ -14,7 +14,7 @@ describe('SubscriptionPaywall', () => {
 
     expect(screen.getByText('In-app purchases are mobile-only')).toBeInTheDocument();
     expect(
-      screen.getByText(/Open Chravel mobile app to manage subscriptions/i),
+      screen.getByText(/Open ChravelApp mobile app to manage subscriptions/i),
     ).toBeInTheDocument();
   });
 

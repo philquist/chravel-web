@@ -67,17 +67,17 @@ describe('buildTripStreamMessagePayload', () => {
     ]);
   });
 
-  it('preserves voice-note attachment metadata for Stream', () => {
+  it('preserves voice-note metadata on audio attachments', () => {
     const result = buildTripStreamMessagePayload({
       content: '',
       attachments: [
         {
           type: 'audio',
-          ref_id: 'file-1',
           url: 'https://cdn.example/voice.webm',
-          mimeType: 'audio/webm',
-          durationMs: 1234,
-          waveform: [0.2, 0.8],
+          mime_type: 'audio/webm',
+          duration_ms: 3200,
+          waveform: [0.1, 0.4, 0.9],
+          ref_id: 'file-1',
           transcript: 'meet at the gate',
         },
       ],
@@ -89,15 +89,89 @@ describe('buildTripStreamMessagePayload', () => {
       {
         type: 'audio',
         asset_url: 'https://cdn.example/voice.webm',
-        url: 'https://cdn.example/voice.webm',
-        ref_id: 'file-1',
         title: undefined,
-        mimeType: 'audio/webm',
-        durationMs: 1234,
-        waveform: [0.2, 0.8],
+        mime_type: 'audio/webm',
+        duration_ms: 3200,
+        waveform: [0.1, 0.4, 0.9],
+        ref_id: 'file-1',
         transcript: 'meet at the gate',
       },
     ]);
+  });
+
+  it('accepts camelCase voice-note metadata aliases', () => {
+    const result = buildTripStreamMessagePayload({
+      content: '',
+      attachments: [
+        {
+          type: 'audio',
+          url: 'https://cdn.example/voice.webm',
+          mimeType: 'audio/webm',
+          durationMs: 1234,
+          waveform: [0.2, 0.8],
+          transcript: 'boarding starts soon',
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.payload.attachments?.[0]).toMatchObject({
+      type: 'audio',
+      asset_url: 'https://cdn.example/voice.webm',
+      mime_type: 'audio/webm',
+      duration_ms: 1234,
+      waveform: [0.2, 0.8],
+      transcript: 'boarding starts soon',
+    });
+  });
+
+  it('does not duplicate mediaUrl when it is already in attachments[]', () => {
+    const urls = [
+      'https://cdn.example/a.jpg',
+      'https://cdn.example/b.jpg',
+      'https://cdn.example/c.jpg',
+    ];
+    const result = buildTripStreamMessagePayload({
+      content: '',
+      mediaType: 'image',
+      mediaUrl: urls[0],
+      attachments: urls.map(url => ({ type: 'image', url })),
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.payload.attachments).toHaveLength(3);
+    expect(result.payload.attachments?.map(a => (a as { asset_url: string }).asset_url)).toEqual(
+      urls,
+    );
+  });
+
+  it('does not duplicate voice mediaUrl when attachments already include it', () => {
+    const voiceUrl = 'https://cdn.example/voice.webm';
+    const result = buildTripStreamMessagePayload({
+      content: '',
+      mediaType: 'audio',
+      mediaUrl: voiceUrl,
+      attachments: [
+        {
+          type: 'audio',
+          url: voiceUrl,
+          mime_type: 'audio/webm',
+          duration_ms: 1500,
+          waveform: [0.2, 0.6],
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.payload.attachments).toHaveLength(1);
+    expect(result.payload.attachments?.[0]).toMatchObject({
+      type: 'audio',
+      asset_url: voiceUrl,
+      mime_type: 'audio/webm',
+    });
   });
 
   it('rejects content over 4000 chars', () => {

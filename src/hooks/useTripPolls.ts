@@ -13,6 +13,7 @@ import { cacheEntity, getCachedEntities } from '@/offline/cache';
 import { useMutationPermissions } from '@/hooks/useMutationPermissions';
 import { hapticService as haptics } from '@/services/hapticService';
 import { systemMessageService } from '@/services/systemMessageService';
+import { tripKeys } from '@/lib/queryKeys';
 
 const resolveActorName = (
   user: { displayName?: string | null; email?: string | null } | null | undefined,
@@ -110,7 +111,7 @@ export const useTripPolls = (tripId: string) => {
 
   // Fetch polls from database or localStorage
   const { data: polls = [], isLoading } = useQuery({
-    queryKey: ['tripPolls', tripId, isDemoMode],
+    queryKey: tripKeys.polls(tripId, isDemoMode),
     staleTime: 60 * 1000, // 1 minute - polls are stable
     gcTime: 5 * 60 * 1000, // Keep in cache 5 min for instant tab switching
     queryFn: async (): Promise<TripPoll[]> => {
@@ -237,8 +238,10 @@ export const useTripPolls = (tripId: string) => {
       // Skip optimistic update for demo mode — it uses pollStorageService
       if (isDemoMode) return undefined;
 
-      await queryClient.cancelQueries({ queryKey: ['tripPolls', tripId, isDemoMode] });
-      const previousPolls = queryClient.getQueryData<TripPoll[]>(['tripPolls', tripId, isDemoMode]);
+      await queryClient.cancelQueries({ queryKey: tripKeys.polls(tripId, isDemoMode) });
+      const previousPolls = queryClient.getQueryData<TripPoll[]>(
+        tripKeys.polls(tripId, isDemoMode),
+      );
 
       const optimisticPoll: TripPoll = {
         id: `optimistic-poll-${Date.now()}`,
@@ -261,7 +264,7 @@ export const useTripPolls = (tripId: string) => {
         deadline_at: poll.settings?.deadline_at,
       };
 
-      queryClient.setQueryData<TripPoll[]>(['tripPolls', tripId, isDemoMode], old => [
+      queryClient.setQueryData<TripPoll[]>(tripKeys.polls(tripId, isDemoMode), old => [
         optimisticPoll,
         ...(old || []),
       ]);
@@ -337,7 +340,7 @@ export const useTripPolls = (tripId: string) => {
     },
     onError: (error: Error, _variables, context) => {
       if (context?.previousPolls) {
-        queryClient.setQueryData(['tripPolls', tripId, isDemoMode], context.previousPolls);
+        queryClient.setQueryData(tripKeys.polls(tripId, isDemoMode), context.previousPolls);
       }
       const msg = error?.message || '';
       toast({
@@ -349,7 +352,7 @@ export const useTripPolls = (tripId: string) => {
       });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['tripPolls', tripId, isDemoMode] });
+      queryClient.invalidateQueries({ queryKey: tripKeys.polls(tripId, isDemoMode) });
     },
   });
 
@@ -411,7 +414,7 @@ export const useTripPolls = (tripId: string) => {
       }
 
       const pollSnapshot = queryClient
-        .getQueryData<TripPoll[]>(['tripPolls', tripId, isDemoMode])
+        .getQueryData<TripPoll[]>(tripKeys.polls(tripId, isDemoMode))
         ?.find(p => p.id === pollId);
 
       if (pollSnapshot?.status === 'closed') {
@@ -458,7 +461,7 @@ export const useTripPolls = (tripId: string) => {
               title: 'Poll Updated',
               description: 'This poll was updated by someone else. Refreshing...',
             });
-            await queryClient.invalidateQueries({ queryKey: ['tripPolls', tripId, isDemoMode] });
+            await queryClient.invalidateQueries({ queryKey: tripKeys.polls(tripId, isDemoMode) });
           }
           throw batchError;
         }
@@ -469,10 +472,10 @@ export const useTripPolls = (tripId: string) => {
     onMutate: async ({ pollId, optionIds }) => {
       const optionIdsArray = Array.isArray(optionIds) ? optionIds : [optionIds];
 
-      await queryClient.cancelQueries({ queryKey: ['tripPolls', tripId, isDemoMode] });
-      const previous = queryClient.getQueryData<TripPoll[]>(['tripPolls', tripId, isDemoMode]);
+      await queryClient.cancelQueries({ queryKey: tripKeys.polls(tripId, isDemoMode) });
+      const previous = queryClient.getQueryData<TripPoll[]>(tripKeys.polls(tripId, isDemoMode));
 
-      queryClient.setQueryData<TripPoll[]>(['tripPolls', tripId, isDemoMode], old => {
+      queryClient.setQueryData<TripPoll[]>(tripKeys.polls(tripId, isDemoMode), old => {
         if (!old) return old;
 
         return old.map(p => {
@@ -535,7 +538,7 @@ export const useTripPolls = (tripId: string) => {
       });
 
       try {
-        const next = queryClient.getQueryData<TripPoll[]>(['tripPolls', tripId, isDemoMode]);
+        const next = queryClient.getQueryData<TripPoll[]>(tripKeys.polls(tripId, isDemoMode));
         const updatedPoll = next?.find(p => p.id === pollId);
         if (updatedPoll) {
           void cacheEntity({
@@ -553,14 +556,14 @@ export const useTripPolls = (tripId: string) => {
       return { previous };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tripPolls', tripId, isDemoMode] });
+      queryClient.invalidateQueries({ queryKey: tripKeys.polls(tripId, isDemoMode) });
       void haptics.medium();
       // Removed noisy success toast
     },
     onError: (error: Error, vars, context) => {
       // Keep optimistic update when offline (queued).
       if (!error?.message?.includes('OFFLINE:') && context?.previous) {
-        queryClient.setQueryData(['tripPolls', tripId, isDemoMode], context.previous);
+        queryClient.setQueryData(tripKeys.polls(tripId, isDemoMode), context.previous);
 
         // Also rollback the offline snapshot if we applied an optimistic write.
         const previousPoll = context.previous.find(p => p.id === vars.pollId);
@@ -610,7 +613,7 @@ export const useTripPolls = (tripId: string) => {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['tripPolls', tripId, isDemoMode] });
+      queryClient.invalidateQueries({ queryKey: tripKeys.polls(tripId, isDemoMode) });
     },
   });
 
@@ -654,7 +657,7 @@ export const useTripPolls = (tripId: string) => {
       return { pollId };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tripPolls', tripId, isDemoMode] });
+      queryClient.invalidateQueries({ queryKey: tripKeys.polls(tripId, isDemoMode) });
       // Removed noisy success toast
     },
     onError: () => {
@@ -699,7 +702,7 @@ export const useTripPolls = (tripId: string) => {
       return data;
     },
     onSuccess: data => {
-      queryClient.invalidateQueries({ queryKey: ['tripPolls', tripId, isDemoMode] });
+      queryClient.invalidateQueries({ queryKey: tripKeys.polls(tripId, isDemoMode) });
       void haptics.success();
       toast({
         title: 'Poll closed',
@@ -756,7 +759,7 @@ export const useTripPolls = (tripId: string) => {
       return pollId;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tripPolls', tripId, isDemoMode] });
+      queryClient.invalidateQueries({ queryKey: tripKeys.polls(tripId, isDemoMode) });
       toast({
         title: 'Poll deleted',
         description: 'The poll has been removed.',
@@ -766,6 +769,58 @@ export const useTripPolls = (tripId: string) => {
       toast({
         title: 'Error',
         description: 'Failed to delete poll. Only the creator can delete.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Suggest / append option mutation (RLS-safe RPC)
+  const suggestOptionMutation = useMutation({
+    mutationFn: async ({ pollId, optionText }: { pollId: string; optionText: string }) => {
+      const trimmed = optionText.trim();
+      if (!trimmed) throw new Error('Option text cannot be empty.');
+
+      if (isDemoMode) {
+        const updated = await pollStorageService.appendOption(tripId, pollId, trimmed);
+        if (!updated) {
+          // Demo mock polls are read-only — don't mutate mockPolls.
+          throw new Error('Suggest option is available on polls you create in this demo.');
+        }
+        return updated;
+      }
+
+      const snapshot = queryClient
+        .getQueryData<TripPoll[]>(tripKeys.polls(tripId, isDemoMode))
+        ?.find(p => p.id === pollId);
+
+      const { data, error } = await supabase.rpc('append_poll_option', {
+        p_poll_id: pollId,
+        p_option_text: trimmed,
+        p_current_version: snapshot?.version ?? null,
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tripKeys.polls(tripId, isDemoMode) });
+      void haptics.medium();
+      toast({
+        title: 'Option added',
+        description: 'Your suggestion is live for the group.',
+      });
+    },
+    onError: (error: Error) => {
+      const msg = error?.message || '';
+      toast({
+        title: 'Could not add option',
+        description: msg.includes('already exists')
+          ? 'That option is already on this poll.'
+          : msg.includes('maximum')
+            ? 'This poll already has 10 options.'
+            : msg.includes('demo')
+              ? msg
+              : 'Please try again.',
         variant: 'destructive',
       });
     },
@@ -786,7 +841,7 @@ export const useTripPolls = (tripId: string) => {
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'trip_polls', filter: `trip_id=eq.${tripId}` },
-          () => queryClient.invalidateQueries({ queryKey: ['tripPolls', tripId, isDemoMode] }),
+          () => queryClient.invalidateQueries({ queryKey: tripKeys.polls(tripId, isDemoMode) }),
         )
         .subscribe();
       return () => {
@@ -795,7 +850,7 @@ export const useTripPolls = (tripId: string) => {
     }
 
     const unsub = tripHub.subscribe('trip_polls', '*', () => {
-      queryClient.invalidateQueries({ queryKey: ['tripPolls', tripId, isDemoMode] });
+      queryClient.invalidateQueries({ queryKey: tripKeys.polls(tripId, isDemoMode) });
     });
     return unsub;
   }, [tripId, isDemoMode, queryClient]);
@@ -813,11 +868,14 @@ export const useTripPolls = (tripId: string) => {
     closePollAsync: closePollMutation.mutateAsync,
     deletePoll: deletePollMutation.mutate,
     deletePollAsync: deletePollMutation.mutateAsync,
+    suggestOption: suggestOptionMutation.mutate,
+    suggestOptionAsync: suggestOptionMutation.mutateAsync,
     isCreatingPoll: createPollMutation.isPending,
     isVoting: votePollMutation.isPending,
     isRemovingVote: removeVoteMutation.isPending,
     isClosing: closePollMutation.isPending,
     isDeleting: deletePollMutation.isPending,
+    isSuggestingOption: suggestOptionMutation.isPending,
 
     // Permissions (for UI gating)
     canCreatePoll: permissions.canCreatePoll,

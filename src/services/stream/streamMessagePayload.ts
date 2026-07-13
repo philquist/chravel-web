@@ -64,29 +64,53 @@ const normalizeAttachment = (attachment: unknown): UnknownRecord | null => {
 
   if (!assetUrl) return null;
 
-  return {
+  const normalized: UnknownRecord = {
     type,
     asset_url: assetUrl,
-    url: directUrl || undefined,
-    ref_id: typeof row.ref_id === 'string' ? row.ref_id : undefined,
     title: typeof row.title === 'string' ? row.title : undefined,
-    mimeType: typeof row.mimeType === 'string' ? row.mimeType : undefined,
-    durationMs: typeof row.durationMs === 'number' ? row.durationMs : undefined,
-    waveform: Array.isArray(row.waveform) ? row.waveform : undefined,
-    transcript: typeof row.transcript === 'string' ? row.transcript : undefined,
   };
+
+  // Preserve voice-note metadata so receivers can render waveform/duration/transcript.
+  if (typeof row.mime_type === 'string') normalized.mime_type = row.mime_type;
+  if (typeof row.mimeType === 'string' && !normalized.mime_type) {
+    normalized.mime_type = row.mimeType;
+  }
+  if (typeof row.duration_ms === 'number') normalized.duration_ms = row.duration_ms;
+  if (typeof row.durationMs === 'number' && normalized.duration_ms === undefined) {
+    normalized.duration_ms = row.durationMs;
+  }
+  if (Array.isArray(row.waveform)) normalized.waveform = row.waveform;
+  if (typeof row.ref_id === 'string') normalized.ref_id = row.ref_id;
+  if (typeof row.transcript === 'string' && row.transcript.trim()) {
+    normalized.transcript = row.transcript;
+  }
+
+  return normalized;
 };
+
+function attachmentAssetUrl(attachment: UnknownRecord): string | null {
+  const assetUrl = typeof attachment.asset_url === 'string' ? attachment.asset_url : null;
+  const url = typeof attachment.url === 'string' ? attachment.url : null;
+  return assetUrl || url;
+}
 
 function buildAttachments(input: BuildTripStreamPayloadInput): UnknownRecord[] {
   const normalized = (input.attachments || [])
     .map(normalizeAttachment)
     .filter((value): value is UnknownRecord => Boolean(value));
 
+  // Callers often pass both mediaUrl (legacy single-media field) and attachments[].
+  // Skip mediaUrl when that URL is already represented so mosaics/voice notes stay 1:1.
   if (input.mediaUrl) {
-    normalized.push({
-      type: input.mediaType || 'file',
-      asset_url: input.mediaUrl,
-    });
+    const alreadyPresent = normalized.some(
+      attachment => attachmentAssetUrl(attachment) === input.mediaUrl,
+    );
+    if (!alreadyPresent) {
+      normalized.push({
+        type: input.mediaType || 'file',
+        asset_url: input.mediaUrl,
+      });
+    }
   }
 
   if (input.linkPreview?.url) {

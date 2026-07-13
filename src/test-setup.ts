@@ -35,6 +35,13 @@ global.ResizeObserver = class ResizeObserver {
   unobserve() {}
 } as unknown as typeof ResizeObserver;
 
+// jsdom does not implement Element.scrollIntoView; many overlays call it on selection.
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = function scrollIntoView() {
+    // no-op in tests
+  };
+}
+
 // Mock indexedDB for offlineSyncService
 global.indexedDB = {
   open: vi.fn().mockReturnValue({

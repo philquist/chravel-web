@@ -12,7 +12,7 @@ const runIntegrationTests = !!SERVICE_ROLE_KEY;
 
 describe('Security Audit: Structured Objects (Calendar, Polls, Tasks)', () => {
   if (!runIntegrationTests) {
-    it.skip('Skipping integration tests: SUPABASE_SERVICE_ROLE_KEY not found', () => {});
+    it('Skipping integration tests: SUPABASE_SERVICE_ROLE_KEY not found', () => {});
     return;
   }
 

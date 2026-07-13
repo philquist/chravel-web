@@ -2,10 +2,11 @@
  * buildSpeechText — Deterministic spoken-transcript builder for AI Concierge TTS.
  *
  * Converts rich assistant messages (with hotel/place/flight cards, URLs, markdown)
- * into clean, speakable text that sounds natural through Gemini TTS.
+ * into clean, speakable text that sounds natural through gateway TTS.
  *
  * Rules:
  * - Never read raw URLs, tracking links, or markdown syntax aloud.
+ * - Markdown links keep the visible label; bare URLs become "a link to {domain}".
  * - If cards exist, speak a short summary + up to MAX_SPOKEN_CARDS top cards.
  * - Hard cap spoken chars at MAX_SPOKEN_CHARS.
  * - Strip markdown formatting (bold, italic, headers, lists, code blocks).
@@ -19,6 +20,12 @@ const MAX_SPOKEN_CHARS = 1200;
 
 /** Max number of cards to speak details for. */
 const MAX_SPOKEN_CARDS = 3;
+
+/** Bare http(s) URLs, including common punctuation that trails the href. */
+const BARE_HTTP_URL_RE = /https?:\/\/[^\s)\]>"]+/gi;
+
+/** www.* hosts without a scheme — still unreadable if spoken character-by-character. */
+const BARE_WWW_URL_RE = /\bwww\.[^\s)\]>"]+/gi;
 
 interface SpeechTextInput {
   /** The display text / markdown content of the assistant message. */
@@ -38,16 +45,44 @@ interface SpeechTextInput {
   }>;
 }
 
+/**
+ * Extract a speakable site name from a raw URL (e.g. booking.com).
+ * Returns null when the host cannot be parsed cleanly.
+ */
+export function speakableDomainFromUrl(rawUrl: string): string | null {
+  const trimmed = rawUrl.trim().replace(/[.,;:!?)]+$/g, '');
+  if (!trimmed) return null;
+
+  try {
+    const withScheme = /^https?:\/\//i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed.replace(/^\/\//, '')}`;
+    const host = new URL(withScheme).hostname.toLowerCase().replace(/^www\./, '');
+    if (!host || !host.includes('.')) return null;
+    return host;
+  } catch {
+    return null;
+  }
+}
+
+/** Replace a bare URL with a short spoken phrase that names the site when possible. */
+function spokenUrlReplacement(rawUrl: string): string {
+  const domain = speakableDomainFromUrl(rawUrl);
+  return domain ? `a link to ${domain}` : 'a link in the chat';
+}
+
 /** Strip markdown formatting to produce speakable plain text. */
 function stripMarkdown(text: string): string {
   return (
     text
       // Remove images: ![alt](url)
       .replace(/!\[.*?\]\(.*?\)/g, '')
-      // Remove links but keep label: [label](url) → label
+      // Keep link labels; never speak the href: [label](url) → label
       .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-      // Remove raw URLs (http/https)
-      .replace(/https?:\/\/[^\s)]+/g, '')
+      // Bare http(s) URLs → "a link to {domain}"
+      .replace(BARE_HTTP_URL_RE, match => spokenUrlReplacement(match))
+      // Bare www.* URLs without a scheme
+      .replace(BARE_WWW_URL_RE, match => spokenUrlReplacement(match))
       // Remove bold/italic markers
       .replace(/(\*{1,3}|_{1,3})(.*?)\1/g, '$2')
       // Remove headers (# ## ###)
@@ -67,7 +102,7 @@ function stripMarkdown(text: string): string {
       .replace(/:[a-z_]+:/g, '')
       // Collapse multiple newlines
       .replace(/\n{3,}/g, '\n\n')
-      // Collapse multiple spaces
+      // Collapse multiple spaces left by URL/markdown removals
       .replace(/ {2,}/g, ' ')
       .trim()
   );
@@ -148,7 +183,7 @@ function summarizeFlight(
 /**
  * Build a spoken transcript from a rich assistant message.
  *
- * Returns a clean, speakable string suitable for Gemini TTS,
+ * Returns a clean, speakable string suitable for gateway TTS,
  * or an empty string if there's nothing meaningful to speak.
  */
 export function buildSpeechText(input: SpeechTextInput): string {

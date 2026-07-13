@@ -21,7 +21,7 @@
  */
 
 import { test as base, expect } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import type { Page, TestInfo } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -30,6 +30,15 @@ import os from 'node:os';
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 const DEFAULT_PASSWORD = 'TestPassword123!E2E';
+const IS_RELEASE_GATE = process.env.CHRAVEL_E2E_RELEASE_GATE === '1';
+
+function skipOrFail(testInfo: TestInfo, reason: string): never {
+  if (IS_RELEASE_GATE) {
+    throw new Error(reason);
+  }
+  testInfo.skip(true, reason);
+  throw new Error(reason);
+}
 
 async function openDemoConcierge(page: Page): Promise<boolean> {
   await page.addInitScript(() => {
@@ -117,11 +126,15 @@ async function loginViaBrowser(page: Page, email: string): Promise<boolean> {
   await passwordInput.fill(DEFAULT_PASSWORD);
   const submit = page.locator('button[type="submit"]').first();
   await submit.click();
-  await page.waitForURL(url => !url.pathname.includes('/auth'), { timeout: 20000 }).catch(() => null);
+  await page
+    .waitForURL(url => !url.pathname.includes('/auth'), { timeout: 20000 })
+    .catch(() => null);
   return !page.url().includes('/auth');
 }
 
 const test = base.extend<{ testAuth: { email: string; session: string; userId: string } | null }>({
+  // Playwright requires `{}` destructuring for unused fixtures; second arg is the provider.
+  // eslint-disable-next-line no-empty-pattern -- Playwright fixture signature
   testAuth: async ({}, provide) => {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       await provide(null);
@@ -141,9 +154,9 @@ const test = base.extend<{ testAuth: { email: string; session: string; userId: s
 test.describe.configure({ mode: 'serial', timeout: 60_000 });
 
 test.describe('CONCIERGE-DEVICE-SMOKE — demo mobile controls', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }, testInfo) => {
     const opened = await openDemoConcierge(page);
-    if (!opened) test.skip(true, 'Demo trip unavailable');
+    if (!opened) skipOrFail(testInfo, 'Demo trip unavailable');
   });
 
   test('SMOKE-01: Search opens from touch pointer on mobile', async ({ page }) => {
@@ -204,10 +217,12 @@ test.describe('CONCIERGE-DEVICE-SMOKE — demo mobile controls', () => {
 });
 
 test.describe('CONCIERGE-DEVICE-SMOKE — authenticated send (skips without session)', () => {
-  test('SMOKE-06: Send clears composer or shows loading spinner', async ({ page, testAuth }) => {
+  test('SMOKE-06: Send clears composer or shows loading spinner', async ({
+    page,
+    testAuth,
+  }, testInfo) => {
     if (!testAuth) {
-      test.skip(true, 'No auth session — email confirmation may be required');
-      return;
+      skipOrFail(testInfo, 'No auth session — email confirmation may be required');
     }
 
     const tripId = await createTrip(testAuth.session, {
@@ -215,14 +230,12 @@ test.describe('CONCIERGE-DEVICE-SMOKE — authenticated send (skips without sess
       userId: testAuth.userId,
     });
     if (!tripId) {
-      test.skip(true, 'Trip creation failed');
-      return;
+      skipOrFail(testInfo, 'Trip creation failed');
     }
 
     const loggedIn = await loginViaBrowser(page, testAuth.email);
     if (!loggedIn) {
-      test.skip(true, 'Browser login failed');
-      return;
+      skipOrFail(testInfo, 'Browser login failed');
     }
 
     await page.goto(`/trip/${tripId}`);
@@ -285,7 +298,10 @@ test.describe('CONCIERGE-DEVICE-SMOKE — pending tool cards (contract)', () => 
 });
 
 test.describe('CONCIERGE-DEVICE-SMOKE — production bundle markers', () => {
-  test('SMOKE-08: production Concierge controls render on mobile web', async ({ page, request }) => {
+  test('SMOKE-08: production Concierge controls render on mobile web', async ({
+    page,
+    request,
+  }) => {
     const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || 'https://chravel.app';
 
     const htmlResponse = await request.get(baseUrl);

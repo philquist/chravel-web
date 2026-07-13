@@ -18,6 +18,7 @@ import { useFeatureFlag } from '@/lib/featureFlags';
 import { usePaymentAttachmentDraft } from '@/features/payments/hooks/usePaymentAttachmentDraft';
 import { PaymentAttachmentPicker } from '@/features/payments/components/PaymentAttachmentPicker';
 import { LARGE_LIST_THRESHOLDS } from '@/lib/largeListThresholds';
+import { PaymentSplitAllocator } from './PaymentSplitAllocator';
 
 interface PaymentInputProps {
   /**
@@ -33,6 +34,8 @@ interface PaymentInputProps {
     splitCount: number;
     splitParticipants: string[];
     paymentMethods: string[];
+    splitType?: 'equal' | 'custom' | 'percentage';
+    customAmounts?: Record<string, number>;
   }) => void | Promise<{ success: boolean; paymentId?: string } | void>;
   tripMembers: Array<{ id: string; name: string; avatar?: string }>;
   isVisible: boolean;
@@ -77,6 +80,12 @@ export const PaymentInput = ({
     perPersonAmount,
     allParticipantsSelected,
     allPaymentMethodsSelected,
+    splitType,
+    customAmounts,
+    percentages,
+    resolvedAmounts,
+    validationError,
+    isValid,
     setAmount,
     setCurrency,
     setDescription,
@@ -84,6 +93,10 @@ export const PaymentInput = ({
     togglePaymentMethod,
     selectAllParticipants,
     selectAllPaymentMethods,
+    setSplitType,
+    setCustomAmountForParticipant,
+    setPercentageForParticipant,
+    redistributeEvenly,
     getPaymentData,
     resetForm,
     setSelectedParticipants,
@@ -306,7 +319,7 @@ export const PaymentInput = ({
                 <Users size={16} className="text-emerald-400" />
                 <h4 className="text-sm font-semibold text-muted-foreground">
                   Split between {selectedParticipants.length} people
-                  {amountPerPerson > 0 && (
+                  {splitType === 'equal' && amountPerPerson > 0 && (
                     <span className="text-emerald-400 font-semibold ml-1.5">
                       (${amountPerPerson.toFixed(2)} each)
                     </span>
@@ -334,6 +347,31 @@ export const PaymentInput = ({
                     ? 'Select All Shown'
                     : 'Select All Trip Members'}
               </button>
+            </div>
+
+            <div className="mb-3">
+              <PaymentSplitAllocator
+                splitType={splitType}
+                onSplitTypeChange={setSplitType}
+                participants={tripMembers.filter(m => selectedParticipants.includes(m.id))}
+                currency={currency}
+                totalAmount={amount}
+                equalPerPerson={perPersonAmount}
+                customAmounts={customAmounts}
+                percentages={percentages}
+                resolvedAmounts={resolvedAmounts}
+                onCustomAmountChange={setCustomAmountForParticipant}
+                onPercentageChange={setPercentageForParticipant}
+                onRedistributeEvenly={redistributeEvenly}
+                validationError={
+                  validationError &&
+                  (validationError.includes('amount') ||
+                    validationError.includes('Percent') ||
+                    validationError.includes('Custom'))
+                    ? validationError
+                    : undefined
+                }
+              />
             </div>
 
             {showMemberSearch && (
@@ -520,13 +558,7 @@ export const PaymentInput = ({
           <Button
             type="submit"
             className="w-full mt-2 py-3 bg-gray-800/80 text-white cta-gold-ring font-semibold rounded-xl shadow-lg transition-all duration-200 hover:opacity-90 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={
-              isSubmitting ||
-              !amount ||
-              !description ||
-              selectedParticipants.length === 0 ||
-              selectedPaymentMethods.length === 0
-            }
+            disabled={isSubmitting || !isValid}
           >
             {isSubmitting ? 'Creating...' : 'Add Payment Request'}
           </Button>

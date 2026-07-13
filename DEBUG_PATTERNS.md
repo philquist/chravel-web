@@ -521,3 +521,121 @@ Known security anti-patterns discovered during audits. Reference this before int
 - **Required tests:** Document provenance + manual WS check; do not rewrite July 9 control fixes.
 - **Fixed in:** `index.html` (July 2026 recovery)
 - **Also check:** TestFlight may still be stale if `chravel-mobile` bundles frozen `dist` instead of loading `https://chravel.app`.
+
+## Stream chat iMessage polish: attachments + grouping silently no-op
+- **Status:** fixed
+- **Subsystem:** chat / Stream adapters / VirtualizedMessageContainer
+- **Bug class:** field-name / adapter shortlist mismatch
+- **Symptom:** Lovable Phase 1–4 UI looked correct in isolation, but live Stream chat never grouped bubbles (always showSenderInfo), mosaics never formed (one image max / separate messages), voice notes rendered as filename text or nothing, and "Delivered" ticks never appeared.
+- **Root cause:** (1) `buildStreamMessageViewModels` collapsed Stream `attachments` to first `mediaType`/`mediaUrl` only. (2) Grouping read `sender_id`/`user_id` while Stream VMs expose `sender.id`. (3) `shareMultipleFiles` posted one message per image. (4) Voice notes uploaded as plain `file` without mime/duration/waveform. (5) `MessageBubble` only mounted `ReadReceipts` when `readStatuses.length > 0`, making Delivered unreachable.
+- **Smallest safe fix:** Map full attachments (incl. audio metadata) in the Stream VM; resolve sender via `sender.id`; batch multi-image sends; `shareVoiceNote` with typed audio attachment; mount receipts for all sent own messages; skip single-media path when attachments exist.
+- **Required tests:** streamMessageViewModel mosaic/audio/document mapping; VirtualizedMessageContainer grouping on `sender.id`; ReadReceipts Delivered vs gold; streamMessagePayload voice metadata preserve.
+- **Fixed in:** `streamMessageViewModel.ts`, `VirtualizedMessageContainer.tsx`, `useShareAsset.ts`, `MessageBubble.tsx`, `ChatInput.tsx`, `streamMessagePayload.ts` (July 2026)
+
+## Concierge Trip Search modal: no dismiss + frozen input
+- **Status:** fixed
+- **Subsystem:** Concierge / Trip Search (`ConciergeSearchModal`) + Chat search (`ChatSearchOverlay`)
+- **Bug class:** Radix Dialog focus trap + missing dismiss control + pointerdown-open race
+- **Symptom:** Trip Search opens from Concierge header Search with no X/Close; search field renders but rejects keystrokes on mobile (iOS WKWebView / Capacitor).
+- **Root Cause:** (1) `DialogContent showClose={false}` and the in-field X only cleared query text. (2) HTML `autoFocus` inside Radix Dialog is unreliable on iOS WKWebView when the field sits under trip-shell scroll/overflow ancestors. (3) Opening on touch `pointerdown` can land the completing `click` on the newly mounted backdrop and fight focus.
+- **Smallest Safe Fix:** Shared `BodyPortalOverlayShell` + `getTrustedOverlayOpenHandlers` / `useBodyPortalOverlayControls` — body portal at `z-[100]`, always-visible Close, ref focus, open-gesture backdrop guard. Wire Concierge + Chat Search CTAs through the same trusted open helpers (Upload stays in-DOM file input — no overlay race).
+- **Required Tests:** ConciergeSearchModal + ChatSearchOverlay backdrop guard; `bodyPortalOverlay` unit tests; MessageTypeBar + AIConciergeChat touch pointerdown open.
+- **Fixed in:** `BodyPortalOverlayShell.tsx`, `bodyPortalOverlay.ts`, `ConciergeSearchModal.tsx`, `ChatSearchOverlay.tsx`, `MessageTypeBar.tsx`, `AIConciergeChat.tsx` (July 2026)
+### Vitest suite hangs with no failing tests (ChatSearchOverlay)
+- **Symptom:** `npm run test:run` never exits; last activity may be unrelated files; workers at high CPU.
+- **Root cause:** Component default prop `demoMessages = []` + `useEffect(..., [demoMessages])` + `setMessages([])` on empty query → infinite re-render.
+- **Fix:** Module-level `EMPTY_DEMO_MESSAGES`; `setMessages(prev => prev.length === 0 ? prev : [])`; optional `scrollIntoView?.()` for jsdom.
+- **Evidence:** 2026-07-13 release-gate unblock; mountStability regression test.
+
+
+## Mobile calendar empty-day flex expansion
+- **Status:** fixed
+- **Subsystem:** mobile calendar (`MobileGroupCalendar`)
+- **Bug class:** layout / flex growth
+- **Symptom:** Day and Month views both looked like a giant month grid; Day event listings were squeezed or absent; calendar occupied majority of the phone screen even with no events.
+- **Root cause:** Day-view mini calendar used `flex-1` when `eventsForSelectedDate.length === 0`, stretching cells to fill leftover height. Month view used `min-h-[80px]` day cells. View toggle was a buried "Month Grid"/"Day View" label with nearly identical layouts.
+- **Smallest safe fix:** Segmented Day|Month tabs; Day = scrollable agenda + `shrink-0 max-h-[42%]` mini grid; Month = `max-h-[48%]` overview + selected-day agenda strip; never flex-grow the grid for empty days.
+- **Required tests:** `MobileGroupCalendar.layout.test.tsx` asserts Day/Month distinct panels and max-height classes; demoEvents suite still green.
+- **Fixed in:** `src/components/mobile/MobileGroupCalendar.tsx` (July 2026)
+
+## Async haptic before setState breaks Vitest sync clicks
+- **Status:** fixed
+- **Subsystem:** mobile calendar view mode (`setViewMode`)
+- **Bug class:** async handler / test timing
+- **Symptom:** `fireEvent.click` on Day/Month tabs left `aria-selected` unchanged in Vitest.
+- **Root cause:** `await hapticService.light()` before `setInternalViewMode` deferred the state update past the sync click act boundary.
+- **Smallest safe fix:** Fire haptic with `void hapticService.light()` and set state synchronously.
+- **Required tests:** layout suite Month tab click + Open Day view round-trip.
+- **Fixed in:** `MobileGroupCalendar.tsx` (July 2026)
+
+## Smart Import: Concierge browseWebsite SSRF bypass
+
+**Symptom:** Concierge `browseWebsite` could fetch private/internal hosts while scrape-schedule was SSRF-gated.
+**Risk:** HIGH — internal network probing via authenticated concierge tool path.
+**Root Cause:** `functionExecutor.ts` only checked `http(s)://` prefix; scrape-* used `validateExternalUrlBeforeFetch`.
+**How to Confirm:** Attempt browseWebsite against `https://127.0.0.1` or a public URL that redirects to a private IP; both should be rejected.
+**Smallest Safe Fix:** Call `validateExternalUrlBeforeFetch` before `fetch` in browseWebsite (force HTTPS) and set `redirect: 'error'` so validated hosts cannot redirect to internal networks.
+**Required Tests:** Edge/unit coverage that private hosts are blocked; keep scrape-schedule SSRF tests green.
+**Regression Surfaces:** Concierge URL browsing, reservation lookup helpers that recurse into browseWebsite.
+**Fixed in:** `supabase/functions/_shared/functionExecutor.ts` (2026-07-13 Smart Import hardening; redirect hardened in follow-up)
+
+## Smart Import: trips.id is TEXT, not UUID
+
+**Symptom:** Migration creating FK to `trips(id)` as UUID fails with incompatible types.
+**Risk:** MEDIUM — blocks import_batches / any new trip-scoped table.
+**Root Cause:** Core `trips.id` is `TEXT PRIMARY KEY` (legacy), while many newer tables default to UUID.
+**How to Confirm:** `CREATE TABLE ... trip_id UUID REFERENCES trips(id)` errors with uuid/text mismatch.
+**Smallest Safe Fix:** Use `trip_id TEXT NOT NULL REFERENCES public.trips(id)` for trip-scoped tables.
+**Required Tests:** Migration apply on ChravelApp; schema drift types use `string`.
+**Regression Surfaces:** Any new migration joining to trips/trip_events.
+**Fixed in:** `supabase/migrations/20260713160000_calendar_import_batches.sql`
+
+## MobileTripTabs `participants = []` default render loop (regression)
+- **Status:** fixed (again)
+- **Subsystem:** mobile trip shell (`MobileTripTabs`)
+- **Bug class:** unstable default prop identity → effect setState loop
+- **Symptom:** Vitest unit shards hang / OOM (`MobileTripTabs.navigation.test.tsx` allocates to heap limit); CI Unit Tests Shard times out at 20m; consumer tab switches can freeze.
+- **Root cause:** Inline `participants = []` (and `tripData || {}`) mint new identities every render. The `localParticipants` sync effect depends on `participants` and calls `setLocalParticipants`, re-rendering forever. Previously fixed in `0dd88ee43` with `NO_PARTICIPANTS` / `NO_TRIP_DATA`, then lost on `main`.
+- **Smallest safe fix:** Module-level stable defaults; return previous `visitedTabs` Set when unchanged; keep transition hang-detector tests.
+- **Required tests:** `MobileTripTabs.transition.test.tsx` + navigation suite must finish in seconds, not OOM.
+- **Fixed in:** `MobileTripTabs.tsx` (July 2026 restore)
+
+## Concierge TTS: bare URL wipe leaves awkward spoken gaps
+- **Status:** fixed
+- **Subsystem:** Concierge read-aloud (`buildSpeechText` → `concierge-voice-tts`)
+- **Bug class:** speech-prep strips markup without a spoken substitute
+- **Symptom:** Assistant replies with raw https/www links sounded like broken sentences ("Details are here:  for the group") or TTS attempted to spell paths/query strings.
+- **Root cause:** `stripMarkdown` deleted bare `https?://` URLs entirely and ignored `www.*` hosts without a scheme. Markdown `[label](url)` already kept the label.
+- **Smallest safe fix:** Replace bare http(s)/www URLs with `a link to {domain}`; keep markdown labels; never speak query strings.
+- **Required tests:** `src/lib/__tests__/buildSpeechText.test.ts`
+- **Fixed in:** `src/lib/buildSpeechText.ts` (July 2026)
+## Payment push fanout targeted a non-existent `trip_payments` table
+- **Status:** fixed
+- **Subsystem:** trip P2P payments / notifications
+- **Bug class:** trigger table drift / dead notification path
+- **Symptom:** Creating a payment request never fans out push/in-app notifications to trip members (chat system message worked on desktop only).
+- **Root cause:** `trigger_notify_payment` was defined `AFTER INSERT ON public.trip_payments`, but live expenses write to `trip_payment_messages`. On ChravelApp prod `trip_payments` does not exist, so the trigger never fired. Mobile create also bypassed `usePayments.createPaymentMessage`, skipping the Stream `payment_recorded` system message.
+- **Smallest safe fix:** Rewrite `notify_on_payment` for `trip_payment_messages` columns (`created_by`, `description`, amount/currency), retarget the trigger, share `notifyPaymentRecordedInChat` between desktop + mobile create paths.
+- **Required tests:** `paymentActivityMessages.test.ts`; PaymentMethodPayButtons deeplink coverage.
+- **Fixed in:** `20260713180000_payment_notifications_and_applecash.sql`, `CreatePaymentModal.tsx`, `paymentActivityMessages.ts` (July 2026)
+
+## Poll Comment Counts Across Separate Query Clients
+
+**Symptom:** Comment count badge stays at 0 after posting a reply in unit tests (or briefly in UI).
+**Risk:** LOW — UI recovers on refetch; tests flake if two renderHooks use separate QueryClients.
+**Root Cause:** `invalidateQueries` only notifies observers on the same QueryClient; counts rendered from a different client never refetch.
+**How to Confirm:** Two `renderHook` wrappers each create their own `QueryClient`.
+**Smallest Safe Fix:** Share one QueryClient across hooks under test; in app, always use the app-wide client.
+**Required Tests:** `usePollComments` demo add + counts after shared client mount.
+**Regression Surfaces:** Any dual-hook poll comment/count tests.
+**Fixed in:** `src/hooks/__tests__/usePollComments.test.tsx` (July 2026)
+
+## Direct trip_polls UPDATE Cannot Append After options_locked_at
+
+**Symptom:** “Suggest option” fails or silently no-ops once anyone has voted.
+**Risk:** MEDIUM — product feature broken for the common post-first-vote case.
+**Root Cause:** Client UPDATE of `options` is blocked/frozen after `options_locked_at`; append needs append-only SECURITY DEFINER RPC with membership checks.
+**How to Confirm:** Vote once, then try updating `options` via client vs `append_poll_option`.
+**Smallest Safe Fix:** `append_poll_option(p_poll_id, p_option_text, p_current_version)` + `poll_suggest_option` kill switch; invalidate `tripKeys.polls`.
+**Required Tests:** `Poll.facepile-suggest` UI + `pollStorageService.appendOption` demo path.
+**Fixed in:** `20260713170000_append_poll_option.sql` / `useTripPolls.suggestOption` (July 2026)

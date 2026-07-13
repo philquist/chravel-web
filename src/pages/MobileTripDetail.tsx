@@ -13,6 +13,7 @@ import { DeleteTripConfirmDialog } from '../components/DeleteTripConfirmDialog';
 import { useDeleteTrip } from '../hooks/useDeleteTrip';
 import { useTripNotificationMute } from '../hooks/useTripNotificationMute';
 import { useFeatureFlag } from '@/lib/featureFlags';
+import { POLL_DEEP_LINK_EVENT, type PollDeepLink } from '@/lib/pollDeepLink';
 import { useAuth } from '../hooks/useAuth';
 import { useKeyboardHandler } from '../hooks/useKeyboardHandler';
 import { hapticService } from '../services/hapticService';
@@ -79,6 +80,16 @@ export const MobileTripDetail = () => {
       sessionStorage.setItem(`trip_${tripId}_activeTab`, activeTab);
     }
   }, [activeTab, tripId]);
+
+  React.useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<PollDeepLink>).detail;
+      if (!detail || detail.tripId !== tripId) return;
+      setActiveTab('polls');
+    };
+    window.addEventListener(POLL_DEEP_LINK_EVENT, handler);
+    return () => window.removeEventListener(POLL_DEEP_LINK_EVENT, handler);
+  }, [tripId]);
 
   // Keyboard handling for mobile inputs
   useKeyboardHandler({

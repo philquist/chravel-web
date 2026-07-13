@@ -11,7 +11,7 @@ import { demoModeService } from '../../services/demoModeService';
 import { useDemoMode } from '../../hooks/useDemoMode';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/use-toast';
-import { Clock, Users, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Clock, Users, Pencil, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { EditPaymentDialog } from './EditPaymentDialog';
 import { PaymentMessage } from '../../types/payments';
 import { hapticService as haptics } from '@/services/hapticService';
@@ -21,6 +21,10 @@ import { formatShortDate } from '@/utils/dateFormatters';
 import { PAYMENT_METHOD_DISPLAY_NAMES } from '@/types/paymentMethods';
 import { usePaymentAttachments } from '@/hooks/usePaymentAttachments';
 import { PaymentAttachmentsViewer } from '@/features/payments/components/PaymentAttachmentsViewer';
+import { PaymentAttachmentAddControl } from '@/features/payments/components/PaymentAttachmentAddControl';
+import { PaymentMethodPayButtons } from './PaymentMethodPayButtons';
+import { notifyPaymentSettledInChat, resolvePaymentActorName } from '@/lib/paymentActivityMessages';
+import { useFeatureFlag } from '@/lib/featureFlags';
 
 interface PaymentSplit {
   id: string;
@@ -36,6 +40,7 @@ interface PaymentMethodDetail {
   method: string;
   displayName: string;
   identifier: string;
+  isPreferred?: boolean;
 }
 
 interface EnrichedPayment {
@@ -90,6 +95,7 @@ export const OutstandingPayments = ({
   const { toast } = useToast();
 
   const demoActive = isDemoMode && isDemoTrip(tripId);
+  const attachmentsEnabled = useFeatureFlag('payment_attachments', true);
 
   // Filter to unsettled payments from the centralized source
   const unsettledPayments = useMemo(() => {
@@ -167,15 +173,16 @@ export const OutstandingPayments = ({
           supabase.from('payment_splits').select('*').in('payment_message_id', paymentIds),
           supabase
             .from('user_payment_methods')
-            .select('user_id, method_type, identifier, display_name')
+            .select('user_id, method_type, identifier, display_name, is_preferred, is_visible')
             .in('user_id', creatorIds),
         ]);
 
         if (splitsResult.error) throw splitsResult.error;
 
-        // Build creator methods map
+        // Build creator methods map (prefer visible methods; still show preferred first)
         const creatorMethodsMap = new Map<string, PaymentMethodDetail[]>();
         (creatorMethodsResult.data || []).forEach(method => {
+          if (method.is_visible === false) return;
           const existing = creatorMethodsMap.get(method.user_id) || [];
           existing.push({
             method: method.method_type?.toLowerCase() || 'other',
@@ -185,6 +192,7 @@ export const OutstandingPayments = ({
               method.method_type ||
               'Other',
             identifier: method.identifier || '',
+            isPreferred: Boolean(method.is_preferred),
           });
           creatorMethodsMap.set(method.user_id, existing);
         });
@@ -279,19 +287,57 @@ export const OutstandingPayments = ({
     }
 
     // Authenticated mode: toggle in database
+    // Creator OR debtor can mark paid/unpaid (enforced server-side in settle RPCs).
     try {
       let success: boolean;
+      let allSettled = false;
       if (currentlySettled) {
         success = await paymentService.unsettlePayment(splitId);
       } else {
         const defaultMethod =
           enrichedPayments.find(p => p.id === paymentId)?.creatorPaymentDetails[0]?.method ||
           'other';
-        success = await paymentService.settlePayment(splitId, defaultMethod);
+        const settleResult = await paymentService.settlePaymentWithMeta(splitId, defaultMethod);
+        success = settleResult.success;
+        allSettled = settleResult.allSettled;
       }
 
       if (success) {
         await haptics.selectionChanged();
+
+        // Optimistic local update so paid/unpaid status is instantly visible to the actor
+        setEnrichedPayments(prev =>
+          prev.map(payment => {
+            if (payment.id !== paymentId) return payment;
+            const updatedSplits = payment.splits.map(s =>
+              s.id === splitId
+                ? {
+                    ...s,
+                    is_settled: !currentlySettled,
+                    settled_at: !currentlySettled ? new Date().toISOString() : null,
+                  }
+                : s,
+            );
+            return {
+              ...payment,
+              splits: updatedSplits,
+              settledCount: updatedSplits.filter(s => s.is_settled).length,
+            };
+          }),
+        );
+
+        if (allSettled && !currentlySettled) {
+          const payment = enrichedPayments.find(p => p.id === paymentId);
+          if (payment) {
+            notifyPaymentSettledInChat(
+              tripId,
+              resolvePaymentActorName(user),
+              paymentId,
+              payment.description,
+            );
+          }
+        }
+
         onPaymentUpdated?.();
       }
     } catch (error) {
@@ -433,34 +479,86 @@ export const OutstandingPayments = ({
                       {formatCurrency(payment.amount, payment.currency)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatCurrency(payment.amount / payment.splitCount, payment.currency)} each
+                      {(() => {
+                        const shares = payment.splits.map(s => s.amount_owed);
+                        const uniform =
+                          shares.length > 0 && shares.every(s => Math.abs(s - shares[0]) < 0.005);
+                        return uniform
+                          ? `${formatCurrency(shares[0] ?? payment.amount / payment.splitCount, payment.currency)} each`
+                          : 'Custom split';
+                      })()}
                     </p>
                   </div>
                 </div>
 
-                {/* Payment methods */}
+                {/* Preferred payment methods — tappable deeplinks (Venmo / Cash App / PayPal) */}
                 {payment.creatorPaymentDetails.length > 0 && (
-                  <div className="mb-3 p-2 bg-background/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Pay via:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {payment.creatorPaymentDetails.map((method, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {method.displayName}: {method.identifier}
-                        </Badge>
-                      ))}
-                    </div>
+                  <div className="mb-3 p-2 bg-background/50 rounded-lg space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Pay {getCreatorName(payment.createdBy)} via:
+                    </p>
+                    <PaymentMethodPayButtons
+                      methods={payment.creatorPaymentDetails.map(m => ({
+                        method: m.method,
+                        identifier: m.identifier,
+                        displayName: m.displayName,
+                        isPreferred: m.isPreferred,
+                      }))}
+                      amount={
+                        payment.splits.find(s => s.debtor_user_id === user?.id)?.amount_owed ??
+                        payment.amount / Math.max(payment.splitCount, 1)
+                      }
+                      note={payment.description}
+                      payeeName={getCreatorName(payment.createdBy)}
+                    />
                   </div>
                 )}
 
-                {/* Split participants */}
+                {/* Split participants — creator (or debtor) can mark paid/unpaid for group visibility */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Users size={14} />
-                    <span>
-                      Split {payment.splitCount} ways • {payment.settledCount}/
-                      {payment.splits.length} settled
-                    </span>
+                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Users size={14} className="shrink-0" />
+                      <span className="truncate">
+                        Split {payment.splitCount} ways • {payment.settledCount}/
+                        {payment.splits.length} paid
+                      </span>
+                    </div>
+                    {payment.settledCount === payment.splits.length && payment.splits.length > 0 ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-400 shrink-0">
+                        <CheckCircle2 size={14} />
+                        All paid
+                      </span>
+                    ) : (
+                      <span className="shrink-0 tabular-nums">
+                        {Math.round(
+                          (payment.settledCount / Math.max(payment.splits.length, 1)) * 100,
+                        )}
+                        %
+                      </span>
+                    )}
                   </div>
+                  {/* Progress bar for paid vs unpaid */}
+                  <div
+                    className="h-1.5 w-full rounded-full bg-muted overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={payment.settledCount}
+                    aria-valuemin={0}
+                    aria-valuemax={payment.splits.length}
+                    aria-label={`${payment.settledCount} of ${payment.splits.length} participants paid`}
+                  >
+                    <div
+                      className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+                      style={{
+                        width: `${(payment.settledCount / Math.max(payment.splits.length, 1)) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  {user?.id === payment.createdBy && (
+                    <p className="text-[11px] text-muted-foreground/80">
+                      Tap a checkbox to mark who has paid you back.
+                    </p>
+                  )}
                   {payment.splits.map(split => (
                     <div
                       key={split.id}
@@ -470,23 +568,24 @@ export const OutstandingPayments = ({
                           : 'bg-background/50'
                       }`}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         <Checkbox
                           checked={split.is_settled}
                           onCheckedChange={() =>
                             handleToggleSplit(split.id, payment.id, split.is_settled)
                           }
                           aria-label={`Mark ${split.debtor_name || 'participant'} as ${split.is_settled ? 'unpaid' : 'paid'}`}
+                          className="min-h-[20px] min-w-[20px]"
                         />
-                        <Avatar className="w-6 h-6">
+                        <Avatar className="w-6 h-6 shrink-0">
                           <AvatarImage src={split.debtor_avatar} />
                           <AvatarFallback className="text-xs bg-muted">
                             {(split.debtor_name || 'U').substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm">{split.debtor_name}</span>
+                        <span className="text-sm truncate">{split.debtor_name}</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <span
                           className={`text-sm font-medium ${split.is_settled ? 'text-green-500 line-through' : ''}`}
                         >
@@ -505,8 +604,21 @@ export const OutstandingPayments = ({
                   ))}
                 </div>
 
-                {/* Optional attachments (proof/context) — compact, only when present */}
+                {/* Optional attachments (proof/context) — view + post-create upload */}
                 <PaymentAttachmentsViewer attachments={getAttachments(payment.id)} />
+                {attachmentsEnabled && !demoActive && user?.id && (
+                  <PaymentAttachmentAddControl
+                    tripId={tripId}
+                    paymentId={payment.id}
+                    uploadedBy={user.id}
+                    existingCount={getAttachments(payment.id).length}
+                    context={{
+                      description: payment.description,
+                      amount: payment.amount,
+                      currency: payment.currency,
+                    }}
+                  />
+                )}
 
                 {/* Edit/Delete buttons - only show for payment creator */}
                 {user?.id === payment.createdBy && (

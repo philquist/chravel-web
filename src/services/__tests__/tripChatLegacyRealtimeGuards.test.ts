@@ -29,7 +29,7 @@ describe('trip chat legacy realtime guards', () => {
   });
 
   it('does not start Supabase trip realtime subscriptions when Stream is configured', () => {
-    vi.stubEnv('VITE_STREAM_API_KEY', 'stream-key');
+    vi.stubEnv('VITE_STREAM_CHAT_DISABLED', 'false');
 
     subscribeToThreadReplies('parent-1', vi.fn());
     subscribeToMediaUpdates('trip-1', vi.fn());
@@ -38,7 +38,7 @@ describe('trip chat legacy realtime guards', () => {
   });
 
   it('preserves legacy Supabase subscriptions when Stream is not configured', () => {
-    vi.stubEnv('VITE_STREAM_API_KEY', '');
+    vi.stubEnv('VITE_STREAM_CHAT_DISABLED', 'true');
 
     subscribeToThreadReplies('parent-1', vi.fn());
 

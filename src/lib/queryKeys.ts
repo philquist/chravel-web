@@ -43,6 +43,14 @@ export const tripKeys = {
     isDemoMode !== undefined
       ? (['tripPolls', tripId, isDemoMode] as const)
       : (['tripPolls', tripId] as const),
+  pollComments: (tripId: string, pollId: string, isDemoMode?: boolean) =>
+    isDemoMode !== undefined
+      ? (['pollComments', tripId, pollId, isDemoMode] as const)
+      : (['pollComments', tripId, pollId] as const),
+  pollCommentCounts: (tripId: string, isDemoMode?: boolean) =>
+    isDemoMode !== undefined
+      ? (['pollCommentCounts', tripId, isDemoMode] as const)
+      : (['pollCommentCounts', tripId] as const),
   media: (tripId: string, isDemoMode?: boolean) =>
     isDemoMode !== undefined
       ? (['tripMedia', tripId, isDemoMode] as const)

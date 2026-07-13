@@ -3,6 +3,9 @@
 **Invariant:** Previewing a voice in Settings → AI Concierge → Concierge Voice never
 mutates the saved `concierge_voice` preference. Only an explicit row tap saves.
 
+**Related:** Full read-aloud architecture (gateway, voices, speech text) lives in
+[`docs/ACTIVE/CONCIERGE_READ_ALOUD_TTS.md`](ACTIVE/CONCIERGE_READ_ALOUD_TTS.md).
+
 ## Where this is enforced
 
 `src/features/concierge/components/ConciergeVoicePicker.tsx`

@@ -32,6 +32,24 @@ describe('ChatSearchOverlay search behavior', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('ignores backdrop dismiss during the open-gesture guard window', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const onClose = vi.fn();
+
+    render(<ChatSearchOverlay tripId="trip-1" onClose={onClose} onResultSelect={vi.fn()} />);
+
+    const overlay = screen.getByTestId('chat-search-overlay');
+    await user.click(overlay);
+    expect(onClose).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(450);
+    await user.click(overlay);
+    expect(onClose).toHaveBeenCalledWith();
+
+    vi.useRealTimers();
+  });
+
   it('parses filter query and renders both message and broadcast results', async () => {
     const user = userEvent.setup();
     const parsedQuery = {

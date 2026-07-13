@@ -12,8 +12,8 @@ describe('queryClassifier attachment intent and lean fallback', () => {
     expect(cls).toBe('trip_lookup_light');
   });
 
-  it('uses trip_lookup_light for short trip-like prompts', () => {
+  it('uses trip_summary for trip-scoped prompts', () => {
     const cls = classifyQuery('trip?', false);
-    expect(cls).toBe('trip_lookup_light');
+    expect(cls).toBe('trip_summary');
   });
 });

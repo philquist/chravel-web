@@ -55,7 +55,8 @@
     "qa:android15-edge": "node scripts/qa/check-android-15-edge-to-edge.cjs --require-native",
     "iap:validate": "node scripts/validate-iap-product-ids.mjs",
     "iap:validate:api": "node scripts/validate-iap-product-ids.mjs --source=api",
-    "iap:parity": "node scripts/validate-iap-parity.mjs"
+    "iap:parity": "node scripts/validate-iap-parity.mjs",
+    "qa:appstore-release": "node scripts/qa/appstore-release-gate.cjs"
   },
   "overrides": {
     "@tanstack/query-async-storage-persister": {

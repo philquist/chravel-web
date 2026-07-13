@@ -63,6 +63,125 @@ describe('buildStreamMessageViewModels', () => {
       description: 'desc',
       image: 'https://cdn/thumb.png',
     });
+    // Mosaic list includes the image; OG-only file rows without asset_url are excluded.
+    expect(results[0].attachments).toEqual([
+      { type: 'image', ref_id: 'att-0', url: 'https://cdn/image.png' },
+    ]);
+  });
+
+  it('maps multi-image attachments for mosaic rendering', () => {
+    const results = buildStreamMessageViewModels({
+      messages: [
+        baseMessage({
+          attachments: [
+            { type: 'image', asset_url: 'https://cdn/a.jpg' },
+            { type: 'image', asset_url: 'https://cdn/b.jpg' },
+            { type: 'image', asset_url: 'https://cdn/c.jpg' },
+          ] as unknown as MessageResponse['attachments'],
+        }),
+      ],
+      tripMembers: members,
+    });
+
+    expect(results[0].attachments).toHaveLength(3);
+    expect(results[0].attachments?.every(a => a.type === 'image')).toBe(true);
+  });
+
+  it('maps audio attachments with voice-note metadata', () => {
+    const results = buildStreamMessageViewModels({
+      messages: [
+        baseMessage({
+          text: '',
+          attachments: [
+            {
+              type: 'audio',
+              asset_url: 'https://cdn/voice-note.webm',
+              mime_type: 'audio/webm',
+              duration_ms: 4200,
+              waveform: [0.2, 0.5, 0.8],
+            },
+          ] as unknown as MessageResponse['attachments'],
+        }),
+      ],
+      tripMembers: members,
+    });
+
+    expect(results[0].mediaType).toBe('audio');
+    expect(results[0].mediaUrl).toBe('https://cdn/voice-note.webm');
+    expect(results[0].attachments?.[0]).toMatchObject({
+      type: 'audio',
+      url: 'https://cdn/voice-note.webm',
+      mimeType: 'audio/webm',
+      durationMs: 4200,
+      waveform: [0.2, 0.5, 0.8],
+    });
+  });
+
+  it('does not classify video/webm as audio from extension alone', () => {
+    const results = buildStreamMessageViewModels({
+      messages: [
+        baseMessage({
+          text: '',
+          attachments: [
+            {
+              type: 'video',
+              asset_url: 'https://cdn/clip.webm',
+              mime_type: 'video/webm',
+            },
+          ] as unknown as MessageResponse['attachments'],
+        }),
+      ],
+      tripMembers: members,
+    });
+
+    expect(results[0].mediaType).toBe('video');
+    expect(results[0].attachments?.[0]).toMatchObject({
+      type: 'video',
+      url: 'https://cdn/clip.webm',
+      mimeType: 'video/webm',
+    });
+  });
+
+  it('still maps audio/webm voice notes via mime when type is file', () => {
+    const results = buildStreamMessageViewModels({
+      messages: [
+        baseMessage({
+          text: '',
+          attachments: [
+            {
+              type: 'file',
+              asset_url: 'https://cdn/voice.webm',
+              mime_type: 'audio/webm',
+              duration_ms: 2100,
+            },
+          ] as unknown as MessageResponse['attachments'],
+        }),
+      ],
+      tripMembers: members,
+    });
+
+    expect(results[0].mediaType).toBe('audio');
+    expect(results[0].attachments?.[0]?.type).toBe('audio');
+  });
+
+  it('normalizes Stream file attachments to document mediaType with downloadable url', () => {
+    const results = buildStreamMessageViewModels({
+      messages: [
+        baseMessage({
+          attachments: [
+            { type: 'file', asset_url: 'https://cdn/itinerary.pdf', title: 'itinerary.pdf' },
+          ] as unknown as MessageResponse['attachments'],
+        }),
+      ],
+      tripMembers: members,
+    });
+
+    expect(results[0].mediaType).toBe('document');
+    expect(results[0].mediaUrl).toBe('https://cdn/itinerary.pdf');
+    expect(results[0].attachments?.[0]).toMatchObject({
+      type: 'file',
+      url: 'https://cdn/itinerary.pdf',
+    });
   });
 
   it('maps voice-note attachments with transcript metadata', () => {

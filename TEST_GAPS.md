@@ -155,3 +155,30 @@
 - **Suggested tests:** Vitest for the hook with `@tanstack/react-query` test client + mocked `supabase`. Playwright E2E using a fresh authenticated test user and a small fixture image, asserting card rendering on `/dashboard`, `/dashboard/pro`, `/dashboard/events`.
 - **Priority:** high
 - **Provenance:** May 2026 cover photo upload definitive fix (branch `claude/fix-cover-photo-upload-RodMM`)
+
+## iMessage chat polish — mosaic / voice / receipt render paths
+- **Area:** `MessageBubble.tsx`, `VoiceNotePlayer.tsx`, `useShareAsset.ts`
+- **Why this gap matters:** Adapter unit tests now cover Stream→VM attachment mapping; MessageBubble RTL now covers mosaic / voice / place card / tail (July 2026). Still missing: swipe-up-to-lock gesture RTL and feature-flag OFF fallbacks.
+- **Missing coverage:** VoiceRecordButton lock gesture; MessageBubble with `chat_media_mosaic=false` / `chat_voice_notes=false`.
+- **Failure mode if untested:** Kill-switch OFF paths could crash or keep showing disabled UI.
+- **Suggested tests:** Mock useFeatureFlag per key; assert mosaic stacks and voice falls back to file link; pointer lock/send on VoiceRecordButton.
+- **Priority:** medium
+- **Provenance:** July 2026 iMessage chat audit + deferred polish (`cursor/imessage-chat-audit-ff9d`)
+
+## Payment settlement dual-path + post-create attachments E2E
+- **Area:** `OutstandingPayments.tsx`, `PersonBalanceCard.tsx` / `SettlePaymentDialog.tsx`, `PaymentAttachmentAddControl.tsx`
+- **Why this gap matters:** Outstanding checkboxes settle via `settle_payment_split` (direct credit), while balance-card "Mark as Paid" uses pending→confirm. Unit tests cover dialogs and deeplink buttons, but no integration test asserts both paths leave the same ledger state or that post-create receipt upload appears on the card + Media tab.
+- **Missing coverage:** (1) Creator marks debtor paid via checkbox → parent `is_settled` + chat `payment_settled`. (2) Debtor Mark as Paid → pending → creditor Confirm. (3) Add receipt after create → `payment_attachments` row + Media index.
+- **Failure mode if untested:** Dual settlement UX can drift again; receipt upload can succeed in storage but never link to the payment card.
+- **Suggested tests:** Vitest hook/service with mocked settle RPC payloads (`all_settled`); Playwright smoke on authenticated trip Payments tab.
+- **Priority:** medium-high
+- **Provenance:** July 2026 payments UX delight (`cursor/payments-ux-delight-3561`)
+
+## Custom/percentage split create → ledger E2E
+- **Area:** `create_payment_with_splits_v2`, `PaymentInput.tsx`, `CreatePaymentModal.tsx`
+- **Why this gap matters:** Unit tests cover amount math + form validation; no authenticated E2E asserts custom/% create writes the expected `payment_splits.amount_owed` rows and Outstanding shows “Custom split”.
+- **Missing coverage:** Playwright create with Custom 70/30 and % 75/25; assert per-debtor amounts on Outstanding card.
+- **Failure mode if untested:** Client/server cent rounding drift could reject valid creates or insert skewed shares.
+- **Suggested tests:** Authenticated payments smoke with SERVICE_ROLE fixture trip.
+- **Priority:** medium
+- **Provenance:** July 2026 custom split implementation

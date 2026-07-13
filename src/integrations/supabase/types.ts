@@ -322,6 +322,74 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_import_batches: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          events_conflicted: number
+          events_failed: number
+          events_imported: number
+          events_reverted: number
+          events_skipped: number
+          id: string
+          idempotency_key: string | null
+          reverted_at: string | null
+          source_format: string
+          source_label: string | null
+          source_url: string | null
+          status: string
+          trip_id: string
+          warnings: Json
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          events_conflicted?: number
+          events_failed?: number
+          events_imported?: number
+          events_reverted?: number
+          events_skipped?: number
+          id?: string
+          idempotency_key?: string | null
+          reverted_at?: string | null
+          source_format: string
+          source_label?: string | null
+          source_url?: string | null
+          status?: string
+          trip_id: string
+          warnings?: Json
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          events_conflicted?: number
+          events_failed?: number
+          events_imported?: number
+          events_reverted?: number
+          events_skipped?: number
+          id?: string
+          idempotency_key?: string | null
+          reverted_at?: string | null
+          source_format?: string
+          source_label?: string | null
+          source_url?: string | null
+          status?: string
+          trip_id?: string
+          warnings?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_import_batches_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_analytics: {
         Row: {
           campaign_id: string
@@ -2417,6 +2485,44 @@ export type Database = {
           },
         ]
       }
+      poll_comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          poll_id: string
+          trip_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          poll_id: string
+          trip_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          poll_id?: string
+          trip_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_comments_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "trip_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pro_trip_organizations: {
         Row: {
           created_at: string
@@ -3556,6 +3662,7 @@ export type Database = {
           end_time: string | null
           event_category: string | null
           id: string
+          import_batch_id: string | null
           include_in_itinerary: boolean | null
           is_all_day: boolean | null
           location: string | null
@@ -3574,6 +3681,7 @@ export type Database = {
           end_time?: string | null
           event_category?: string | null
           id?: string
+          import_batch_id?: string | null
           include_in_itinerary?: boolean | null
           is_all_day?: boolean | null
           location?: string | null
@@ -3592,6 +3700,7 @@ export type Database = {
           end_time?: string | null
           event_category?: string | null
           id?: string
+          import_batch_id?: string | null
           include_in_itinerary?: boolean | null
           is_all_day?: boolean | null
           location?: string | null
@@ -3603,7 +3712,15 @@ export type Database = {
           updated_at?: string
           version?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "trip_events_import_batch_id_fkey"
+            columns: ["import_batch_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_import_batches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trip_files: {
         Row: {
@@ -5194,6 +5311,38 @@ export type Database = {
       }
     }
     Functions: {
+      append_poll_option: {
+        Args: {
+          p_current_version?: number
+          p_option_text: string
+          p_poll_id: string
+        }
+        Returns: {
+          allow_multiple: boolean | null
+          allow_vote_change: boolean | null
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          created_by: string
+          deadline_at: string | null
+          id: string
+          is_anonymous: boolean | null
+          options: Json
+          question: string
+          source_type: string
+          status: string
+          total_votes: number
+          trip_id: string
+          updated_at: string
+          version: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "trip_polls"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       approve_join_request: { Args: { _request_id: string }; Returns: Json }
       assign_org_seat: {
         Args: { _member_id: string; _org_id: string; _seat_key: string }
@@ -5342,19 +5491,34 @@ export type Database = {
         }
         Returns: string
       }
-      create_payment_with_splits_v2: {
-        Args: {
-          p_amount: number
-          p_created_by: string
-          p_currency: string
-          p_description: string
-          p_payment_methods: Json
-          p_split_count: number
-          p_split_participants: Json
-          p_trip_id: string
-        }
-        Returns: string
-      }
+      create_payment_with_splits_v2:
+        | {
+            Args: {
+              p_amount: number
+              p_created_by: string
+              p_currency: string
+              p_description: string
+              p_payment_methods: Json
+              p_split_count: number
+              p_split_participants: Json
+              p_trip_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_amount: number
+              p_created_by: string
+              p_currency: string
+              p_custom_amounts?: Json
+              p_description: string
+              p_payment_methods: Json
+              p_split_count: number
+              p_split_participants: Json
+              p_trip_id: string
+            }
+            Returns: string
+          }
       create_trip_role: {
         Args: {
           _feature_permissions?: Json
@@ -5374,6 +5538,15 @@ export type Database = {
       ensure_trip_membership: {
         Args: { p_trip_id: string; p_user_id: string }
         Returns: boolean
+      }
+      finalize_calendar_import_batch: {
+        Args: {
+          p_batch_id: string
+          p_failed: number
+          p_imported: number
+          p_skipped: number
+        }
+        Returns: Json
       }
       get_account_deletion_status: { Args: never; Returns: Json }
       get_admin_accessible_channels: {
@@ -5707,6 +5880,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      undo_calendar_import_batch: {
+        Args: { p_batch_id: string; p_force_delete_edited?: boolean }
+        Returns: Json
       }
       update_agenda_item_with_version: {
         Args: {

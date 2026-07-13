@@ -42,6 +42,26 @@ npm run test:e2e
 npx playwright test e2e/specs/auth/full-auth.spec.ts
 ```
 
+### Local-tolerant vs release-gate mode
+
+E2E defaults to **local-tolerant** mode so developers can run browser smoke
+coverage without staging auth secrets. In this mode, launch-critical
+authenticated fixtures may call `test.skip(true, "[local-tolerant] ...")` only
+when the skip is explicit and documented here: missing Supabase credentials,
+email-confirmation-only auth projects, browser login setup failure, trip
+creation failure, membership setup failure, or pro trip creation failure.
+
+Release and App Store QA must use **release-gate** mode:
+
+```bash
+CHRAVEL_E2E_RELEASE_GATE=1 npm run test:e2e -- e2e/specs/chat/messaging.spec.ts
+```
+
+In release-gate mode, auth, trip creation, membership, browser login, and pro
+trip creation fixture failures must throw a clear
+`[E2E fixture step failed: <step>] ...` error instead of skipping. This prevents
+CI/App Store QA from silently passing when launch-critical setup is broken.
+
 ### Required environment variables
 
 ```env
