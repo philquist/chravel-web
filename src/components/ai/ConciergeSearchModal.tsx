@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Search,
   X,
@@ -11,12 +12,18 @@ import {
   Image,
   ChevronDown,
 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUniversalSearch } from '@/hooks/useUniversalSearch';
 import { ContentType, UniversalSearchResult } from '@/services/universalSearchService';
 
 /** Initial number of results shown per category before "Show more" */
 const INITIAL_RESULTS_LIMIT = 5;
+
+/**
+ * Ignore backdrop dismiss for a short window after open.
+ * Concierge opens Search on touch `pointerdown`; if the overlay mounts under the
+ * still-down finger, the matching `click` would otherwise instantly close it.
+ */
+const OPEN_DISMISS_GUARD_MS = 400;
 
 interface ConciergeSearchModalProps {
   open: boolean;
@@ -33,6 +40,8 @@ export const ConciergeSearchModal = ({
 }: ConciergeSearchModalProps) => {
   const [query, setQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<ContentType>>(new Set());
+  const inputRef = useRef<HTMLInputElement>(null);
+  const openedAtRef = useRef(0);
 
   const contentTypes: ContentType[] = useMemo(
     () => [
@@ -53,6 +62,50 @@ export const ConciergeSearchModal = ({
     contentTypes,
     tripIds: [tripId],
   });
+
+  const handleClose = useCallback(() => {
+    onOpenChange(false);
+  }, [onOpenChange]);
+
+  const handleBackdropClose = useCallback(() => {
+    if (Date.now() - openedAtRef.current < OPEN_DISMISS_GUARD_MS) return;
+    handleClose();
+  }, [handleClose]);
+
+  // Focus the field when opened. Radix Dialog + HTML autoFocus was unreliable on
+  // iOS WKWebView (input rendered but never accepted keystrokes). Portal + ref focus
+  // matches ChatSearchOverlay, which already works for trip chat search.
+  useEffect(() => {
+    if (!open) {
+      setQuery('');
+      setExpandedCategories(new Set());
+      return;
+    }
+
+    openedAtRef.current = Date.now();
+    const focusTimer = window.setTimeout(() => {
+      inputRef.current?.focus();
+      // Move caret to end in case the field retained prior value during a fast reopen.
+      const length = inputRef.current?.value.length ?? 0;
+      inputRef.current?.setSelectionRange?.(length, length);
+    }, 50);
+
+    return () => window.clearTimeout(focusTimer);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        handleClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, handleClose]);
 
   const groupedResults = useMemo(() => {
     const groups: Partial<Record<ContentType, UniversalSearchResult[]>> = {};
@@ -100,38 +153,33 @@ export const ConciergeSearchModal = ({
     }
 
     onNavigate({ ...result, metadata: { ...(result.metadata ?? {}), tab } });
-    onOpenChange(false);
+    handleClose();
   };
 
   /** Memoized highlight with cached regex to avoid recompilation per render */
-  const highlight = useCallback(
-    (text: string, q: string) => {
-      if (!q || q.length < 2) return text;
-      const idx = text.toLowerCase().indexOf(q.toLowerCase());
-      if (idx === -1) return text;
+  const highlight = useCallback((text: string, q: string) => {
+    if (!q || q.length < 2) return text;
+    const idx = text.toLowerCase().indexOf(q.toLowerCase());
+    if (idx === -1) return text;
 
-      let display = text;
-      if (text.length > 100) {
-        const start = Math.max(0, idx - 40);
-        const end = Math.min(text.length, idx + q.length + 60);
-        display = (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '');
-      }
+    let display = text;
+    if (text.length > 100) {
+      const start = Math.max(0, idx - 40);
+      const end = Math.min(text.length, idx + q.length + 60);
+      display = (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '');
+    }
 
-      const parts = display.split(
-        new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
-      );
-      return parts.map((part, i) =>
-        part.toLowerCase() === q.toLowerCase() ? (
-          <mark key={i} className="bg-gold-primary/30 text-foreground rounded px-0.5">
-            {part}
-          </mark>
-        ) : (
-          part
-        ),
-      );
-    },
-    [], // stable — only depends on closure, regex is derived from q param
-  );
+    const parts = display.split(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+    return parts.map((part, i) =>
+      part.toLowerCase() === q.toLowerCase() ? (
+        <mark key={i} className="bg-gold-primary/30 text-foreground rounded px-0.5">
+          {part}
+        </mark>
+      ) : (
+        part
+      ),
+    );
+  }, []);
 
   const getIcon = (type: ContentType) => {
     switch (type) {
@@ -207,43 +255,83 @@ export const ConciergeSearchModal = ({
     });
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        showClose={false}
-        className="bg-background border-border text-foreground max-w-md sm:max-w-lg p-0 gap-0 overflow-hidden"
+  if (!open || typeof document === 'undefined') {
+    return null;
+  }
+
+  /**
+   * Portal to document.body so the overlay is not under TripTabs / mobile-trip-shell
+   * overflow. iOS WKWebView treats fixed descendants of scroll containers incorrectly
+   * for layout + keyboard focus — same pattern as ChatSearchOverlay.
+   */
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-start justify-center px-4 bg-black/80 backdrop-blur-md animate-fade-in"
+      style={{
+        paddingTop: 'max(5rem, calc(env(safe-area-inset-top, 0px) + 1.5rem))',
+      }}
+      onClick={handleBackdropClose}
+      data-testid="concierge-search-overlay"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Trip Search"
+        className="w-full max-w-lg bg-background text-foreground rounded-2xl shadow-2xl border border-border overflow-hidden animate-scale-in"
+        onClick={event => event.stopPropagation()}
+        onPointerDown={event => event.stopPropagation()}
+        data-testid="concierge-search-modal"
       >
-        <DialogHeader className="p-4 pb-2 border-b border-border bg-background">
-          <DialogTitle className="text-foreground text-base sr-only">Search Concierge</DialogTitle>
-          <div className="relative">
+        <div className="flex items-center gap-2 p-3 sm:p-4 border-b border-border">
+          <div className="relative min-w-0 flex-1">
             <Search
               size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gold-primary"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gold-primary pointer-events-none"
+              aria-hidden
             />
             <input
-              autoFocus
+              ref={inputRef}
+              type="text"
+              inputMode="search"
+              enterKeyHint="search"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
               value={query}
-              onChange={e => setQuery(e.target.value)}
+              onChange={event => setQuery(event.target.value)}
               placeholder="Search across trip..."
-              className="w-full bg-muted border border-border rounded-lg pl-9 pr-8 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold-primary/50 transition-all"
+              aria-label="Search across trip"
+              data-testid="concierge-search-input"
+              className="w-full min-h-11 bg-muted border border-border rounded-lg pl-9 pr-11 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold-primary/50 transition-all"
             />
-            {query && (
+            {query ? (
               <button
+                type="button"
                 onClick={() => setQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-1 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80"
                 aria-label="Clear search"
+                data-testid="concierge-search-clear"
               >
-                <X size={14} />
+                <X size={16} />
               </button>
-            )}
+            ) : null}
           </div>
-        </DialogHeader>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            aria-label="Close trip search"
+            data-testid="concierge-search-close"
+          >
+            <X className="h-5 w-5" />
+            <span className="hidden sm:inline">Close</span>
+          </button>
+        </div>
 
-        {/* Results */}
         <div className="max-h-[60vh] overflow-y-auto p-0 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent bg-background">
           {isLoading && results.length === 0 && (
             <div className="py-12 text-center text-muted-foreground text-sm animate-pulse flex flex-col items-center gap-2">
-              <div className="w-6 h-6 gold-gradient-spinner animate-spin"></div>
+              <div className="w-6 h-6 gold-gradient-spinner animate-spin" />
               <span>Searching trip...</span>
             </div>
           )}
@@ -282,6 +370,7 @@ export const ConciergeSearchModal = ({
                       {visibleItems.map(item => (
                         <button
                           key={item.id}
+                          type="button"
                           onClick={() => handleSelect(item)}
                           className="w-full text-left px-3 py-3 rounded-lg hover:bg-muted transition-all group flex items-start gap-3 active:scale-[0.99]"
                         >
@@ -310,6 +399,7 @@ export const ConciergeSearchModal = ({
                       ))}
                       {hasMore && !isExpanded && (
                         <button
+                          type="button"
                           onClick={() => toggleCategory(type)}
                           className="w-full text-center py-2 text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
                         >
@@ -346,7 +436,8 @@ export const ConciergeSearchModal = ({
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>,
+    document.body,
   );
 };
