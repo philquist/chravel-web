@@ -515,74 +515,7 @@ export const ChatInput = ({
           />
 
 
-          {/* + Button with Dropdown Menu — right side */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className={CTA_BUTTON_CHAT} aria-label="Message options">
-                <Plus className={`${CTA_ICON_CHAT} text-white`} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              side="top"
-              align="end"
-              sideOffset={8}
-              className="w-52 p-1 bg-neutral-900/95 backdrop-blur-lg border border-neutral-800 rounded-xl shadow-lg animate-slide-in-right z-50"
-            >
-              {/* Broadcast - Deep Crimson Styling. Hidden when the user may not
-                  compose broadcasts (pro/event trips gate to admins/organizers). */}
-              {canSendBroadcast && (
-                <DropdownMenuItem
-                  onClick={() => setIsBroadcastMode(!isBroadcastMode)}
-                  className="flex items-center gap-2 px-3 py-2 border border-[#B91C1C]/60 text-[#B91C1C] font-medium hover:bg-[#B91C1C] hover:text-white rounded-lg mb-1 cursor-pointer"
-                >
-                  <Megaphone className="w-4 h-4" />
-                  Broadcast
-                </DropdownMenuItem>
-              )}
 
-              {/* File — hidden when media uploads are restricted */}
-              {!disableFileUpload && (
-                <DropdownMenuItem
-                  onClick={() => handleFileUpload('document')}
-                  className="flex items-center gap-2 px-3 py-2 text-neutral-300 hover:bg-neutral-800 rounded-lg cursor-pointer"
-                >
-                  <FileText className="w-4 h-4" />
-                  File
-                </DropdownMenuItem>
-              )}
-
-              {/* Link */}
-              <DropdownMenuItem
-                onClick={() => setIsShareModalOpen(true)}
-                className="flex items-center gap-2 px-3 py-2 text-neutral-300 hover:bg-neutral-800 rounded-lg cursor-pointer"
-              >
-                <Link className="w-4 h-4" />
-                Link
-              </DropdownMenuItem>
-
-              {/* Photo — hidden when media uploads are restricted */}
-              {!disableFileUpload && (
-                <DropdownMenuItem
-                  onClick={() => handleFileUpload('image')}
-                  className="flex items-center gap-2 px-3 py-2 text-neutral-300 hover:bg-neutral-800 rounded-lg cursor-pointer"
-                >
-                  <Camera className="w-4 h-4" />
-                  Photo
-                </DropdownMenuItem>
-              )}
-
-              {/* Video — hidden when media uploads are restricted */}
-              {!disableFileUpload && (
-                <DropdownMenuItem
-                  onClick={() => handleFileUpload('video')}
-                  className="flex items-center gap-2 px-3 py-2 text-neutral-300 hover:bg-neutral-800 rounded-lg cursor-pointer"
-                >
-                  <Video className="w-4 h-4" />
-                  Video
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
 
           {/* Send Button — persistent gold rim; broadcast mode keeps orange gradient */}
           <button
