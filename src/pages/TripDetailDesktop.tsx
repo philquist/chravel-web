@@ -33,6 +33,7 @@ import { demoModeService } from '../services/demoModeService';
 import { isDemoTrip } from '@/utils/demoUtils';
 import { useQueryClient } from '@tanstack/react-query';
 import { tripKeys } from '@/lib/queryKeys';
+import { POLL_DEEP_LINK_EVENT, type PollDeepLink } from '@/lib/pollDeepLink';
 import { usePendingActions } from '../hooks/usePendingActions';
 import { TripRealtimeHubMount } from '@/components/trip/TripRealtimeHubMount';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -82,6 +83,17 @@ export const TripDetailDesktop = () => {
 
   // State hooks - all called unconditionally
   const [activeTab, setActiveTab] = useState('chat');
+
+  React.useEffect(() => {
+    if (!tripId) return;
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<PollDeepLink>).detail;
+      if (!detail || detail.tripId !== tripId) return;
+      setActiveTab('polls');
+    };
+    window.addEventListener(POLL_DEEP_LINK_EVENT, handler);
+    return () => window.removeEventListener(POLL_DEEP_LINK_EVENT, handler);
+  }, [tripId]);
   const [showInbox, setShowInbox] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showInvite, setShowInvite] = useState(false);

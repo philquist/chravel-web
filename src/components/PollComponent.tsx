@@ -1,4 +1,5 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { BarChart3 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
@@ -11,6 +12,8 @@ import { useTripPollCommentCounts } from '@/hooks/usePollComments';
 import { useAuth } from '@/hooks/useAuth';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import type { VoterProfile } from './poll/PollOption';
 
 const POLL_CARD_STACK_CLASS = 'space-y-3';
 const POLL_CARD_SHELL_CLASS = 'bg-white/[0.04] border border-white/10 rounded-2xl p-4 space-y-3';
@@ -33,6 +36,7 @@ interface PollComponentProps {
   permissions?: PollPermissions;
   autoShowCreateOnEmpty?: boolean;
   filter?: PollListFilter;
+  focusPollId?: string | null;
 }
 
 function isPollClosedForVoting(poll: PollType): boolean {
@@ -49,6 +53,7 @@ export const PollComponent = ({
   permissions,
   autoShowCreateOnEmpty = false,
   filter = 'all',
+  focusPollId = null,
 }: PollComponentProps) => {
   const { isDemoMode } = useDemoMode();
 
@@ -78,13 +83,63 @@ export const PollComponent = ({
     removeVote,
     closePollAsync,
     deletePollAsync,
+    suggestOptionAsync,
     isCreatingPoll,
     isVoting,
     isRemovingVote,
     isClosing,
     isDeleting,
+    isSuggestingOption,
   } = useTripPolls(tripId);
   const { data: commentCounts = {} } = useTripPollCommentCounts(tripId);
+
+  const voterIds = useMemo(() => {
+    const ids = new Set<string>();
+    polls.forEach(poll => {
+      if (poll.is_anonymous) return;
+      (Array.isArray(poll.options) ? poll.options : []).forEach(option => {
+        (option.voters || []).forEach(voterId => {
+          if (voterId) ids.add(voterId);
+        });
+      });
+    });
+    return [...ids];
+  }, [polls]);
+
+  const { data: voterProfiles = {} } = useQuery({
+    queryKey: ['pollVoterProfiles', tripId, voterIds.join(',')],
+    enabled: voterIds.length > 0 && !isDemoMode,
+    staleTime: 60 * 1000,
+    queryFn: async (): Promise<Record<string, VoterProfile>> => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', voterIds);
+      if (error) throw error;
+      const map: Record<string, VoterProfile> = {};
+      (data ?? []).forEach(row => {
+        map[row.user_id] = {
+          displayName: row.display_name || 'Traveler',
+          avatarUrl: row.avatar_url,
+        };
+      });
+      return map;
+    },
+  });
+
+  const demoVoterProfiles = useMemo(() => {
+    if (!isDemoMode) return {};
+    const map: Record<string, VoterProfile> = {};
+    voterIds.forEach(id => {
+      map[id] = {
+        displayName: id === 'demo-user' ? 'You' : id.replace(/^user-/, 'Traveler '),
+        avatarUrl: null,
+      };
+    });
+    return map;
+  }, [isDemoMode, voterIds]);
+
+  const resolvedVoterProfiles = isDemoMode ? demoVoterProfiles : voterProfiles;
 
   const userId = user?.id;
 
@@ -208,6 +263,10 @@ export const PollComponent = ({
     removeVote({ pollId });
   };
 
+  const handleSuggestOption = async (pollId: string, optionText: string) => {
+    await suggestOptionAsync({ pollId, optionText });
+  };
+
   const handleDeletePoll = async (pollId: string) => {
     if (!effectivePermissions.canDelete) {
       toast.error("You don't have permission to delete polls");
@@ -318,17 +377,22 @@ export const PollComponent = ({
             poll={poll}
             tripId={tripId}
             commentCount={commentCounts[poll.id] ?? 0}
+            voterProfiles={resolvedVoterProfiles}
+            highlighted={focusPollId === poll.id}
             onVote={effectivePermissions.canVote ? handleVote : undefined}
             onRemoveVote={handleRemoveVote}
             onClose={effectivePermissions.canClose ? handleClosePoll : undefined}
             onDelete={effectivePermissions.canDelete ? handleDeletePoll : undefined}
             onExport={handleExportPoll}
+            onSuggestOption={effectivePermissions.canVote ? handleSuggestOption : undefined}
             disabled={isPollClosedForVoting(poll) || !userId || !effectivePermissions.canVote}
             canComment={effectivePermissions.canVote}
+            canSuggestOption={effectivePermissions.canVote}
             isVoting={isVoting}
             isRemovingVote={isRemovingVote}
             isClosing={isClosing}
             isDeleting={isDeleting}
+            isSuggestingOption={isSuggestingOption}
           />
         ))
       )}

@@ -186,6 +186,40 @@ class PollStorageService {
     return polls[pollIndex];
   }
 
+  /** Append a suggested option to an active demo poll (does not touch mockPolls). */
+  async appendOption(tripId: string, pollId: string, optionText: string): Promise<TripPoll | null> {
+    const trimmed = optionText.trim();
+    if (!trimmed) throw new Error('Option text cannot be empty.');
+
+    const polls = await this.getPolls(tripId);
+    const pollIndex = polls.findIndex(p => p.id === pollId);
+    if (pollIndex === -1) return null;
+
+    const poll = polls[pollIndex];
+    if (poll.status !== 'active') {
+      throw new Error('Cannot suggest options on a closed poll');
+    }
+    if (poll.options.length >= 10) {
+      throw new Error('This poll already has the maximum of 10 options');
+    }
+    if (poll.options.some(opt => opt.text.trim().toLowerCase() === trimmed.toLowerCase())) {
+      throw new Error('That option already exists');
+    }
+
+    poll.options.push({
+      id:
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `option_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      text: trimmed,
+      votes: 0,
+      voters: [],
+    });
+    poll.updated_at = new Date().toISOString();
+    await this.savePolls(tripId, polls);
+    return poll;
+  }
+
   // Delete a poll
   async deletePoll(tripId: string, pollId: string): Promise<boolean> {
     const polls = await this.getPolls(tripId);

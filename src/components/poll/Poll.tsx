@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Poll as PollType } from './types';
-import { PollOption } from './PollOption';
+import { PollOption, type VoterProfile } from './PollOption';
 import { PollComments } from './PollComments';
-import { Clock, Trash2, AlertTriangle, MessageCircle, MoreHorizontal } from 'lucide-react';
+import { Clock, Trash2, AlertTriangle, MessageCircle, MoreHorizontal, Plus } from 'lucide-react';
+import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import {
@@ -28,41 +29,55 @@ interface PollProps {
   poll: PollType;
   tripId: string;
   commentCount?: number;
+  voterProfiles?: Record<string, VoterProfile>;
+  highlighted?: boolean;
   onVote?: (pollId: string, optionIds: string | string[]) => void;
   onRemoveVote?: (pollId: string) => void;
   onClose?: (pollId: string) => void;
   onDelete?: (pollId: string) => void;
   onExport?: (pollId: string) => void;
+  onSuggestOption?: (pollId: string, optionText: string) => Promise<void> | void;
   disabled?: boolean;
   canComment?: boolean;
+  canSuggestOption?: boolean;
   isVoting?: boolean;
   isClosing?: boolean;
   isRemovingVote?: boolean;
   isDeleting?: boolean;
+  isSuggestingOption?: boolean;
 }
 
 export const Poll = ({
   poll,
   tripId,
   commentCount = 0,
+  voterProfiles = {},
+  highlighted = false,
   onVote,
   onRemoveVote,
   onClose,
   onDelete,
   onExport: _onExport,
+  onSuggestOption,
   disabled = false,
   canComment = true,
+  canSuggestOption = false,
   isVoting = false,
   isClosing = false,
   isRemovingVote = false,
   isDeleting = false,
+  isSuggestingOption = false,
 }: PollProps) => {
   const { user } = useAuth();
   const commentsEnabled = useFeatureFlag('poll_comments', true);
+  const suggestEnabled = useFeatureFlag('poll_suggest_option', true);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
   const [showComments, setShowComments] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestDraft, setSuggestDraft] = useState('');
+  const articleRef = React.useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!poll.deadline_at || poll.status === 'closed') return;
@@ -102,6 +117,20 @@ export const Poll = ({
     const diff = new Date(poll.deadline_at).getTime() - Date.now();
     return diff > 0 && diff < 60 * 60 * 1000;
   }, [poll.deadline_at, isDeadlinePassed, poll.status]);
+
+  useEffect(() => {
+    if (!highlighted || !articleRef.current) return;
+    articleRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [highlighted]);
+
+  const optionCount = Array.isArray(poll.options) ? poll.options.length : 0;
+  const canShowSuggest =
+    suggestEnabled &&
+    canSuggestOption &&
+    !!onSuggestOption &&
+    poll.status === 'active' &&
+    !isDeadlinePassed &&
+    optionCount < 10;
   const canVote =
     !disabled && !isVoting && poll.status === 'active' && !isDeadlinePassed && !!onVote;
   const hasVoted = poll.allow_multiple
@@ -154,7 +183,14 @@ export const Poll = ({
   };
 
   return (
-    <article className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 space-y-3 shadow-enterprise">
+    <article
+      ref={articleRef}
+      id={`poll-card-${poll.id}`}
+      className={[
+        'bg-white/[0.04] border rounded-2xl p-4 space-y-3 shadow-enterprise transition-shadow',
+        highlighted ? 'border-primary/50 shadow-ring-glow' : 'border-white/10',
+      ].join(' ')}
+    >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base font-semibold tracking-tight text-foreground leading-snug">
@@ -273,6 +309,8 @@ export const Poll = ({
                 option.votes === maxVotes &&
                 options.filter(o => o.votes === maxVotes).length === 1
               }
+              showVoters={!poll.is_anonymous}
+              voterProfiles={voterProfiles}
             />
           ));
         })()}
@@ -290,6 +328,63 @@ export const Poll = ({
             ? 'Submitting…'
             : `Submit ${selectedOptions.length} Vote${selectedOptions.length !== 1 ? 's' : ''}`}
         </Button>
+      )}
+
+      {canShowSuggest && (
+        <div className="pt-1">
+          {!suggestOpen ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setSuggestOpen(true)}
+              className="h-10 min-h-[44px] w-full justify-start px-2.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <Plus size={14} className="mr-1.5" />
+              Suggest an option
+            </Button>
+          ) : (
+            <form
+              className="flex items-center gap-2"
+              onSubmit={async event => {
+                event.preventDefault();
+                const trimmed = suggestDraft.trim();
+                if (!trimmed || !onSuggestOption || isSuggestingOption) return;
+                await onSuggestOption(poll.id, trimmed);
+                setSuggestDraft('');
+                setSuggestOpen(false);
+              }}
+            >
+              <Input
+                value={suggestDraft}
+                onChange={event => setSuggestDraft(event.target.value.slice(0, 120))}
+                placeholder="Add another option…"
+                maxLength={120}
+                className="h-11 min-h-[44px] bg-white/5 border-white/10 text-sm"
+                aria-label="Suggest a poll option"
+                autoFocus
+              />
+              <Button
+                type="submit"
+                disabled={!suggestDraft.trim() || isSuggestingOption}
+                className="h-11 min-h-[44px] rounded-xl px-3 flex-shrink-0"
+              >
+                {isSuggestingOption ? 'Adding…' : 'Add'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-11 min-h-[44px] px-2 text-xs text-muted-foreground"
+                onClick={() => {
+                  setSuggestOpen(false);
+                  setSuggestDraft('');
+                }}
+              >
+                Cancel
+              </Button>
+            </form>
+          )}
+        </div>
       )}
 
       {/* Footer with actions */}

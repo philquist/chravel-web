@@ -595,6 +595,7 @@ export const AIConciergeChat = ({
               showMapWidgets={true}
               onDeleteMessage={handleDeleteMessage}
               onTabChange={onTabChange}
+              tripId={tripId}
               onSavePlace={savePlace}
               onSaveFlight={saveFlight}
               onSaveHotel={saveHotel}

@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { BarChart3, Plus } from 'lucide-react';
 import { PollComponent, type PollListFilter } from './PollComponent';
 import { ActionPill } from './ui/ActionPill';
@@ -17,6 +18,12 @@ import {
   EVENT_PARITY_HEADER_SPAN_CLASS,
 } from '@/lib/tabParity';
 import { cn } from '@/lib/utils';
+import {
+  consumePollDeepLink,
+  parsePollDeepLinkFromSearch,
+  POLL_DEEP_LINK_EVENT,
+  type PollDeepLink,
+} from '@/lib/pollDeepLink';
 
 interface PollPermissions {
   canView: boolean;
@@ -40,6 +47,8 @@ const FILTERS: { id: PollListFilter; label: string }[] = [
 export const CommentsWall = ({ tripId, permissions }: CommentsWallProps) => {
   const [showCreatePoll, setShowCreatePoll] = useState(false);
   const [filter, setFilter] = useState<PollListFilter>('all');
+  const [focusPollId, setFocusPollId] = useState<string | null>(null);
+  const location = useLocation();
   const { variant } = useTripVariant();
   const queryClient = useQueryClient();
   const { isDemoMode } = useDemoMode();
@@ -87,6 +96,32 @@ export const CommentsWall = ({ tripId, permissions }: CommentsWallProps) => {
       : variant === 'events'
         ? EVENT_PARITY_COL_START.tasks
         : TRIP_PARITY_COL_START.tasks;
+
+  useEffect(() => {
+    const fromUrl = parsePollDeepLinkFromSearch(location.search);
+    const fromStorage = consumePollDeepLink(tripId);
+    const link = fromStorage ?? fromUrl;
+    if (!link) return;
+    if (link.createPoll) setShowCreatePoll(true);
+    if (link.pollId) {
+      setFocusPollId(link.pollId);
+      setFilter('all');
+    }
+  }, [tripId, location.search]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<PollDeepLink>).detail;
+      if (!detail || detail.tripId !== tripId) return;
+      if (detail.createPoll) setShowCreatePoll(true);
+      if (detail.pollId) {
+        setFocusPollId(detail.pollId);
+        setFilter('all');
+      }
+    };
+    window.addEventListener(POLL_DEEP_LINK_EVENT, handler);
+    return () => window.removeEventListener(POLL_DEEP_LINK_EVENT, handler);
+  }, [tripId]);
 
   return (
     <div className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pt-4 space-y-3 mobile-safe-scroll">
@@ -153,6 +188,7 @@ export const CommentsWall = ({ tripId, permissions }: CommentsWallProps) => {
         permissions={effectivePermissions}
         autoShowCreateOnEmpty
         filter={filter}
+        focusPollId={focusPollId}
       />
     </div>
   );

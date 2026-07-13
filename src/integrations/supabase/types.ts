@@ -5804,6 +5804,14 @@ export type Database = {
           reason: string
         }[]
       }
+      append_poll_option: {
+        Args: {
+          p_current_version?: number | null
+          p_option_text: string
+          p_poll_id: string
+        }
+        Returns: Database["public"]["Tables"]["trip_polls"]["Row"]
+      }
       vote_on_poll: {
         Args: {
           p_current_version?: number

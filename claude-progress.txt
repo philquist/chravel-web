@@ -1,3 +1,11 @@
+2026-07-13 — Polls facepiles + suggest option + tripKeys.polls + Concierge deep-link
+- Non-anonymous voter facepiles (avatars + name tooltips) on PollOption; batched profile fetch in PollComponent.
+- Suggest option: append_poll_option SECURITY DEFINER RPC + poll_suggest_option flag; UI on active polls; demo append via pollStorageService only (mockPolls untouched).
+- Migrated useTripPolls / conciergeInvalidation / usePendingActions to tripKeys.polls.
+- Concierge/chat deep-link: pollDeepLink.ts + CommentsWall focus/create + MessageItem poll system messages + trip detail tab switch.
+- Validation: focused vitest 19✅ · typecheck ✅ · lint quiet ✅ · build ✅ · merge preflight clean · migration applied on ChravelApp.
+- Branch: cursor/polls-ux-comments-wall-65ec (PR #821)
+
 2026-07-13 — Polls UX polish + per-poll discussion wall
 - Deep-dived polls (CommentsWall → PollComponent → Poll/PollOption/CreatePollForm + useTripPolls).
 - Shipped poll_comments table (RLS + realtime + poll_comments kill switch), usePollComments hook, Reply wall under each poll card.

@@ -5,6 +5,8 @@ import { MessageBubble } from './MessageBubble';
 import { SystemMessageBubble } from './SystemMessageBubble';
 import { useAuth } from '@/hooks/useAuth';
 import { shouldShowSystemMessage, SystemMessageCategoryPrefs } from '@/utils/systemMessageCategory';
+import { requestPollDeepLink } from '@/lib/pollDeepLink';
+import type { SystemMessagePayload } from '@/types/systemMessages';
 import { ReadStatus } from './ReadReceipts';
 import { ModerationAction } from '@/services/moderationService';
 
@@ -60,6 +62,8 @@ interface MessageItemProps {
     targetUserId: string;
     action: ModerationAction;
   }) => Promise<void> | void;
+  tripId?: string;
+  onOpenPollsTab?: () => void;
 }
 
 export const MessageItem = memo(
@@ -93,6 +97,8 @@ export const MessageItem = memo(
     isReportingContent = false,
     canModerate = false,
     onModerationAction,
+    tripId,
+    onOpenPollsTab,
   }: MessageItemProps) => {
     const { user } = useAuth();
     const messageWithGrounding = message as unknown as ChatMessageWithGrounding;
@@ -140,7 +146,27 @@ export const MessageItem = memo(
     const messageWithMedia = message as any;
 
     if (isSystemMessage) {
-      return <SystemMessageBubble body={message.text} timestamp={message.createdAt} />;
+      const eventType = (message as { system_event_type?: string }).system_event_type;
+      const payload = (message as { system_payload?: SystemMessagePayload }).system_payload;
+      const pollId = payload?.pollId;
+      const isPollEvent = eventType === 'poll_created' || eventType === 'poll_closed';
+      const handlePollClick =
+        isPollEvent && tripId
+          ? () => {
+              requestPollDeepLink(tripId, {
+                pollId,
+                createPoll: eventType === 'poll_created' && !pollId,
+              });
+              onOpenPollsTab?.();
+            }
+          : undefined;
+      return (
+        <SystemMessageBubble
+          body={message.text}
+          timestamp={message.createdAt}
+          onClick={handlePollClick}
+        />
+      );
     }
 
     const hasReplies = !!replies && replies.length > 0;
@@ -221,6 +247,8 @@ export const MessageItem = memo(
                 <MessageItem
                   message={reply}
                   depth={1}
+                  tripId={tripId}
+                  onOpenPollsTab={onOpenPollsTab}
                   reactions={(reply as any).reactions || {}}
                   onReaction={onReaction}
                   onReply={onReply}
