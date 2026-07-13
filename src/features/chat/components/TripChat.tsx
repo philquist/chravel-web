@@ -21,7 +21,7 @@ import { useTripChat } from '../hooks/useTripChat';
 import { useAuth } from '@/hooks/useAuth';
 import { hapticService } from '@/services/hapticService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { WifiOff, Pin } from 'lucide-react';
+import { WifiOff, Pin, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { useRoleChannels } from '@/hooks/useRoleChannels';
 import { ChannelChatView } from '@/components/pro/channels/ChannelChatView';
 import { TypingIndicator } from './TypingIndicator';
@@ -127,6 +127,8 @@ export const TripChat = React.memo(
     const [_activeChannelId, _setActiveChannelId] = useState<string | null>(null);
 
     const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+    const [chatSearchQuery, setChatSearchQuery] = useState('');
+    const [activeSearchResultIndex, setActiveSearchResultIndex] = useState(0);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const messageScrollRef = useRef<HTMLDivElement>(null);
     const [failedMessages, setFailedMessages] = useState<
@@ -687,22 +689,25 @@ export const TripChat = React.memo(
       toggleReaction,
     );
 
-    const handleOpenThread = (messageId: string) => {
-      const message =
-        liveFormattedMessages.find(m => m.id === messageId) ||
-        demoMessages.find(m => m.id === messageId);
-      if (!message) return;
+    const handleOpenThread = useCallback(
+      (messageId: string) => {
+        const message =
+          liveFormattedMessages.find(m => m.id === messageId) ||
+          demoMessages.find(m => m.id === messageId);
+        if (!message) return;
 
-      // For inline reply:
-      const content = (message as any).text || (message as any).content || '';
-      const authorName =
-        (message as any).sender?.name ||
-        (message as any).user?.name ||
-        (message as any).author_name ||
-        'User';
+        // For inline reply:
+        const content = (message as any).text || (message as any).content || '';
+        const authorName =
+          (message as any).sender?.name ||
+          (message as any).user?.name ||
+          (message as any).author_name ||
+          'User';
 
-      setReply(messageId, content, authorName);
-    };
+        setReply(messageId, content, authorName);
+      },
+      [demoMessages, liveFormattedMessages, setReply],
+    );
 
     // Inline replies: "open thread" now scrolls to the parent message in the
     // main timeline (replies render nested under it). No modal/drawer.
@@ -1027,8 +1032,43 @@ export const TripChat = React.memo(
           }
         }, 100);
       },
-      [handleActivateThread, messageFilter],
+      [handleActivateThread, messageFilter, setMessageFilter],
     );
+
+    const chatSearchResults = useMemo(() => {
+      const query = chatSearchQuery.trim().toLowerCase();
+      if (!query) return [];
+      const sourceMessages = demoMode.isDemoMode ? demoMessages : liveFormattedMessages;
+      return sourceMessages
+        .filter(message => {
+          const text = ((message as any).text || '').toLowerCase();
+          const sender = ((message as any).sender?.name || '').toLowerCase();
+          return text.includes(query) || sender.includes(query);
+        })
+        .map(message => ({
+          id: String((message as any).id),
+          type: (message as any).isBroadcast ? ('broadcast' as const) : ('message' as const),
+        }));
+    }, [chatSearchQuery, demoMessages, demoMode.isDemoMode, liveFormattedMessages]);
+
+    const jumpToSearchResult = useCallback(
+      (direction: 'current' | 'next' | 'previous' = 'current') => {
+        if (chatSearchResults.length === 0) return;
+        const nextIndex =
+          direction === 'next'
+            ? (activeSearchResultIndex + 1) % chatSearchResults.length
+            : direction === 'previous'
+              ? (activeSearchResultIndex - 1 + chatSearchResults.length) % chatSearchResults.length
+              : activeSearchResultIndex;
+        setActiveSearchResultIndex(nextIndex);
+        scrollToMessage(chatSearchResults[nextIndex]);
+      },
+      [activeSearchResultIndex, chatSearchResults, scrollToMessage],
+    );
+
+    useEffect(() => {
+      setActiveSearchResultIndex(0);
+    }, [chatSearchQuery]);
 
     // Scroll to target message from notification click (when messages finish loading)
     const scrollAttemptedRef = useRef(false);
@@ -1046,7 +1086,7 @@ export const TripChat = React.memo(
       }, 300);
 
       return () => clearTimeout(timer);
-    }, [targetMessageId, isLoading, chatNavigationContext?.openThreadId]);
+    }, [targetMessageId, isLoading, chatNavigationContext?.openThreadId, scrollToMessage]);
 
     // Global keyboard shortcut for search (Ctrl+F or Cmd+F)
     useEffect(() => {
@@ -1162,6 +1202,63 @@ export const TripChat = React.memo(
             className="rounded-2xl border border-border/60 bg-card/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden flex-1 flex flex-col relative min-h-0"
           >
             {/* Filter Tabs */}
+            <div className="border-b border-border/60 bg-background/70 px-3 py-2">
+              <div className="flex min-h-11 items-center gap-2 rounded-full border border-border bg-muted/40 px-3">
+                <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                <input
+                  type="search"
+                  value={chatSearchQuery}
+                  onChange={event => setChatSearchQuery(event.target.value)}
+                  onKeyDown={event => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      jumpToSearchResult(event.shiftKey ? 'previous' : 'next');
+                    }
+                  }}
+                  placeholder="Search messages"
+                  className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  aria-label="Search trip chat messages"
+                />
+                {chatSearchQuery && (
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {chatSearchResults.length > 0
+                      ? `${activeSearchResultIndex + 1}/${chatSearchResults.length}`
+                      : '0 results'}
+                  </span>
+                )}
+                {chatSearchQuery && chatSearchResults.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => jumpToSearchResult('previous')}
+                      className="min-h-8 min-w-8 rounded-full hover:bg-muted"
+                      aria-label="Previous search result"
+                    >
+                      <ChevronUp className="mx-auto h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => jumpToSearchResult('next')}
+                      className="min-h-8 min-w-8 rounded-full hover:bg-muted"
+                      aria-label="Next search result"
+                    >
+                      <ChevronDown className="mx-auto h-4 w-4" />
+                    </button>
+                  </>
+                )}
+                {chatSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setChatSearchQuery('')}
+                    className="min-h-8 min-w-8 rounded-full hover:bg-muted"
+                    aria-label="Clear chat search"
+                  >
+                    <X className="mx-auto h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
             <MessageTypeBar
               activeFilter={messageFilter}
               onFilterChange={setMessageFilter}

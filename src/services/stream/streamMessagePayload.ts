@@ -67,7 +67,13 @@ const normalizeAttachment = (attachment: unknown): UnknownRecord | null => {
   return {
     type,
     asset_url: assetUrl,
+    url: directUrl || undefined,
+    ref_id: typeof row.ref_id === 'string' ? row.ref_id : undefined,
     title: typeof row.title === 'string' ? row.title : undefined,
+    mimeType: typeof row.mimeType === 'string' ? row.mimeType : undefined,
+    durationMs: typeof row.durationMs === 'number' ? row.durationMs : undefined,
+    waveform: Array.isArray(row.waveform) ? row.waveform : undefined,
+    transcript: typeof row.transcript === 'string' ? row.transcript : undefined,
   };
 };
 

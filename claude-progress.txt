@@ -153,3 +153,9 @@
 - Fixed residual realtime blocker: meta CSP in `index.html` now allows `https://ai-gateway.vercel.sh` + `wss://ai-gateway.vercel.sh` (aligned with vercel.json).
 - Hardened composer hit-testing (isolate/z stacking, inactive tab `pointerEvents:none`), Ask-anything placeholder, clearer disabled Send, and stop dictation before realtime mic.
 - Docs: `docs/CONCIERGE_CONTROLS_RECOVERY_2026-07-11.md`. Physical iPhone TestFlight QA remains the DoD gate.
+
+2026-07-13 — Trip chat search + voice-note metadata
+- Added an inline trip-chat search bar with mobile-sized controls and result jumping while keeping the existing full search overlay shortcut intact.
+- Preserved Stream attachment metadata for voice notes (audio type, waveform, duration, optional transcript) so sent notes render with waveform/transcript after realtime hydration; upload progress continues through the shared attachment upload path.
+- Added optional browser SpeechRecognition capture for voice-note transcripts behind a composer toggle; edit/delete controls continue to use Stream client mutations for own messages and voice-note bubbles.
+- Verification: focused Stream payload/view-model tests, typecheck, production build pass; full lint remains blocked by pre-existing e2e no-empty-pattern error; screenshot capture attempted but blocked by missing Playwright browser executable.

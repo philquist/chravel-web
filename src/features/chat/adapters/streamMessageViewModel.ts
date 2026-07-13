@@ -16,11 +16,19 @@ interface StreamAttachment {
   type?: string;
   image_url?: string;
   asset_url?: string;
+  url?: string;
   og_scrape_url?: string;
   title_link?: string;
   title?: string;
   text?: string;
   thumb_url?: string;
+  ref_id?: string;
+  mimeType?: string;
+  mime_type?: string;
+  durationMs?: number;
+  duration_ms?: number;
+  waveform?: number[];
+  transcript?: string;
 }
 
 interface StreamReaction {
@@ -62,6 +70,15 @@ export interface StreamMessageViewModel {
   mediaUrl?: string;
   reactions?: Record<string, { count: number; userReacted: boolean; users: string[] }>;
   readStatuses: ReadStatus[];
+  attachments?: Array<{
+    type: 'image' | 'video' | 'file' | 'link' | 'audio';
+    ref_id: string;
+    url?: string;
+    mimeType?: string;
+    durationMs?: number;
+    waveform?: number[];
+    transcript?: string;
+  }>;
 }
 
 interface StreamThreadReplyPreview {
@@ -99,6 +116,38 @@ const toLinkPreview = (attachment?: StreamAttachment) => {
     image: attachment.image_url || attachment.thumb_url,
   };
 };
+
+const normalizeViewAttachments = (attachments: StreamAttachment[]) =>
+  attachments
+    .map((attachment, index) => {
+      const url =
+        attachment.url ||
+        attachment.asset_url ||
+        attachment.image_url ||
+        attachment.og_scrape_url ||
+        attachment.title_link;
+      const rawType = attachment.type || 'file';
+      const type: 'image' | 'video' | 'file' | 'link' | 'audio' =
+        rawType === 'audio'
+          ? 'audio'
+          : rawType === 'image'
+            ? 'image'
+            : rawType === 'video'
+              ? 'video'
+              : rawType === 'link'
+                ? 'link'
+                : 'file';
+      return {
+        type,
+        ref_id: attachment.ref_id || `${type}-${index}`,
+        url,
+        mimeType: attachment.mimeType || attachment.mime_type,
+        durationMs: attachment.durationMs || attachment.duration_ms,
+        waveform: Array.isArray(attachment.waveform) ? attachment.waveform : undefined,
+        transcript: attachment.transcript,
+      };
+    })
+    .filter(attachment => Boolean(attachment.url));
 
 const resolveMedia = (message: MessageResponse) => {
   const candidate = message as MessageResponse & {
@@ -238,6 +287,7 @@ export function mapStreamMessageToViewModel(params: {
   const isPinned = typeof pinnedFlag === 'boolean' ? pinnedFlag : Boolean(pinnedAt);
   const parentId =
     message.parent_id || (message as MessageResponse & { reply_to_id?: string }).reply_to_id;
+  const rawAttachments = (message.attachments || []) as StreamAttachment[];
   const { mediaType, mediaUrl, linkPreview } = resolveMedia(message);
   const member = messageUserId ? membersById.get(messageUserId) : undefined;
   const parentMessage = parentId ? messageById.get(parentId) : undefined;
@@ -306,6 +356,7 @@ export function mapStreamMessageToViewModel(params: {
     mediaType,
     mediaUrl,
     reactions: buildReactions(message),
+    attachments: normalizeViewAttachments(rawAttachments),
     readStatuses: buildReadStatuses({
       messageId: message.id,
       messageCreatedAt: createdAt,

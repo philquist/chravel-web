@@ -2,14 +2,35 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Mic, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { hapticService as haptics } from '@/services/hapticService';
-import {
-  useVoiceRecorder,
-  type VoiceRecordingResult,
-} from '../hooks/useVoiceRecorder';
+import { useVoiceRecorder, type VoiceRecordingResult } from '../hooks/useVoiceRecorder';
+
+type BrowserSpeechRecognitionResult = {
+  0?: { transcript?: string };
+};
+
+type BrowserSpeechRecognitionEvent = {
+  results: ArrayLike<BrowserSpeechRecognitionResult>;
+};
+
+type BrowserSpeechRecognition = {
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: BrowserSpeechRecognitionEvent) => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type BrowserSpeechRecognitionConstructor = new () => BrowserSpeechRecognition;
+
+type SpeechRecognitionWindow = Window & {
+  SpeechRecognition?: BrowserSpeechRecognitionConstructor;
+  webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor;
+};
 
 interface VoiceRecordButtonProps {
   onRecorded: (result: VoiceRecordingResult) => void | Promise<void>;
   disabled?: boolean;
+  enableTranscription?: boolean;
   buttonClassName?: string;
   iconClassName?: string;
 }
@@ -31,21 +52,16 @@ function formatElapsed(ms: number) {
 export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
   onRecorded,
   disabled,
+  enableTranscription = false,
   buttonClassName,
   iconClassName,
 }) => {
-  const {
-    isSupported,
-    isRecording,
-    isPreparing,
-    elapsedMs,
-    liveLevel,
-    start,
-    stop,
-    cancel,
-  } = useVoiceRecorder();
+  const { isSupported, isRecording, isPreparing, elapsedMs, liveLevel, start, stop, cancel } =
+    useVoiceRecorder();
 
   const [dragX, setDragX] = useState(0);
+  const transcriptRef = useRef('');
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const startXRef = useRef<number | null>(null);
   const willCancelRef = useRef(false);
 
@@ -57,9 +73,33 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
       willCancelRef.current = false;
       setDragX(0);
       haptics.light();
+      transcriptRef.current = '';
+      if (enableTranscription && typeof window !== 'undefined') {
+        const speechWindow = window as SpeechRecognitionWindow;
+        const SpeechRecognitionCtor =
+          speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+        if (SpeechRecognitionCtor) {
+          const recognition = new SpeechRecognitionCtor();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.onresult = (event: BrowserSpeechRecognitionEvent) => {
+            let text = '';
+            for (let i = 0; i < event.results.length; i += 1) {
+              text += event.results[i][0]?.transcript || '';
+            }
+            transcriptRef.current = text.trim();
+          };
+          recognitionRef.current = recognition;
+          try {
+            recognition.start();
+          } catch {
+            recognitionRef.current = null;
+          }
+        }
+      }
       await start();
     },
-    [disabled, isSupported, start],
+    [disabled, enableTranscription, isSupported, start],
   );
 
   const handlePointerMove = useCallback(
@@ -77,12 +117,25 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
     startXRef.current = null;
     setDragX(0);
     if (willCancelRef.current) {
+      try {
+        recognitionRef.current?.stop?.();
+      } catch {
+        /* noop */
+      }
+      recognitionRef.current = null;
       cancel();
       haptics.light();
       return;
     }
+    try {
+      recognitionRef.current?.stop?.();
+    } catch {
+      /* noop */
+    }
+    recognitionRef.current = null;
     const result = await stop();
     if (result) {
+      result.transcript = transcriptRef.current || undefined;
       haptics.light();
       await onRecorded(result);
     }
@@ -96,6 +149,12 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
     if (startXRef.current === null) return;
     startXRef.current = null;
     setDragX(0);
+    try {
+      recognitionRef.current?.stop?.();
+    } catch {
+      /* noop */
+    }
+    recognitionRef.current = null;
     cancel();
   }, [cancel]);
 
@@ -154,7 +213,9 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
         onPointerCancel={handlePointerCancel}
-        aria-label={active ? 'Recording — release to send, slide left to cancel' : 'Hold to record voice note'}
+        aria-label={
+          active ? 'Recording — release to send, slide left to cancel' : 'Hold to record voice note'
+        }
         aria-pressed={active}
         disabled={disabled}
         className={cn(

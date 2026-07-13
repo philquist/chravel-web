@@ -11,6 +11,7 @@ import {
   Image,
   Film,
   File,
+  Captions,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -33,7 +34,6 @@ import { hapticService as haptics } from '@/services/hapticService';
 import { MentionPicker, TripMember, filterMentionMembers } from './MentionPicker';
 import { VoiceRecordButton } from './VoiceRecordButton';
 import type { VoiceRecordingResult } from '../hooks/useVoiceRecorder';
-
 
 interface ChatInputProps {
   inputMessage: string;
@@ -93,6 +93,7 @@ export const ChatInput = ({
   const [isPaymentMode, setIsPaymentMode] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [voiceTranscriptionEnabled, setVoiceTranscriptionEnabled] = useState(false);
   const [shareUrlInput, setShareUrlInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -106,12 +107,10 @@ export const ChatInput = ({
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
   const [mentionedUsers, setMentionedUsers] = useState<TripMember[]>([]);
 
-
-
-
   const {
     shareLink,
     shareMultipleFiles,
+    shareVoiceNote,
     isUploading: isShareUploading,
     uploadProgress,
     parsedContent,
@@ -143,8 +142,6 @@ export const ChatInput = ({
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
   }, [inputMessage]);
-
-
 
   // Handle @ mention detection
   const handleInputChange = useCallback(
@@ -527,15 +524,13 @@ export const ChatInput = ({
             )}
           />
 
-
-
-
           {/* Send Button OR hold-to-record Mic Button — Mic appears when input is empty
               (iMessage-style). Recorded audio is uploaded through the existing document
               upload path so no backend/schema changes are needed. */}
           {inputMessage.trim().length === 0 && !isShareUploading && !disableFileUpload ? (
             <VoiceRecordButton
               disabled={isTyping}
+              enableTranscription={voiceTranscriptionEnabled}
               buttonClassName={CTA_BUTTON_CHAT}
               iconClassName={`${CTA_ICON_CHAT} text-white`}
               onRecorded={async (result: VoiceRecordingResult) => {
@@ -550,9 +545,11 @@ export const ChatInput = ({
                 const file = new globalThis.File([result.blob], filename, {
                   type: result.mimeType || 'audio/webm',
                 });
-                const dt = new DataTransfer();
-                dt.items.add(file);
-                await shareMultipleFiles(dt.files, 'document');
+                await shareVoiceNote(file, {
+                  durationMs: result.durationMs,
+                  waveform: result.waveform,
+                  transcript: result.transcript,
+                });
               }}
             />
           ) : (
@@ -573,6 +570,27 @@ export const ChatInput = ({
               ) : (
                 <Send className={`${CTA_ICON_CHAT} text-white`} />
               )}
+            </button>
+          )}
+
+          {inputMessage.trim().length === 0 && !isShareUploading && !disableFileUpload && (
+            <button
+              type="button"
+              aria-label={
+                voiceTranscriptionEnabled
+                  ? 'Turn off voice note transcription'
+                  : 'Turn on voice note transcription'
+              }
+              aria-pressed={voiceTranscriptionEnabled}
+              onClick={() => setVoiceTranscriptionEnabled(enabled => !enabled)}
+              className={cn(
+                'size-6 min-w-[24px] sm:size-10 sm:min-w-[40px] rounded-full flex items-center justify-center shrink-0 touch-manipulation border transition-colors',
+                voiceTranscriptionEnabled
+                  ? 'border-primary bg-primary/15 text-primary'
+                  : 'border-border text-muted-foreground hover:bg-muted',
+              )}
+            >
+              <Captions className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           )}
 

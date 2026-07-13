@@ -6,7 +6,7 @@ import { autoParseContent, ParsedContent } from '@/services/chatContentParser';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
-type ShareKind = 'image' | 'video' | 'file' | 'link';
+type ShareKind = 'image' | 'video' | 'file' | 'link' | 'audio';
 
 export interface UploadProgress {
   fileId: string;
@@ -27,7 +27,12 @@ export function useShareAsset(tripId: string) {
     return sendTripMessageWithCanonicalTransport(tripId, payload);
   }
 
-  async function shareFile(kind: ShareKind, file: File, onProgress?: (progress: number) => void) {
+  async function shareFile(
+    kind: ShareKind,
+    file: File,
+    onProgress?: (progress: number) => void,
+    metadata?: { durationMs?: number; waveform?: number[]; transcript?: string },
+  ) {
     const fileId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     setUploading(true);
     setError(null);
@@ -61,7 +66,14 @@ export function useShareAsset(tripId: string) {
 
     try {
       // 1) Upload to storage
-      const subdir = kind === 'image' ? 'images' : kind === 'video' ? 'videos' : 'files';
+      const subdir =
+        kind === 'image'
+          ? 'images'
+          : kind === 'video'
+            ? 'videos'
+            : kind === 'audio'
+              ? 'files'
+              : 'files';
       const { publicUrl, key } = await uploadToStorage(file, tripId, subdir);
 
       // Mark as completed
@@ -140,6 +152,35 @@ export function useShareAsset(tripId: string) {
 
         toast.success(`${kind === 'image' ? 'Photo' : 'Video'} uploaded successfully`);
         return { type: kind, ref: row };
+      } else if (kind === 'audio') {
+        const row = await insertFileIndex({
+          tripId,
+          name: file.name,
+          fileType: file.type || 'audio/webm',
+          uploadedBy: userId,
+        });
+
+        await sendMessageWithCanonicalTransport({
+          trip_id: tripId,
+          user_id: userId,
+          author_name: user?.email?.split('@')[0] || 'Former Member',
+          content: metadata?.transcript ? 'Voice note' : '',
+          privacy_mode: 'standard',
+          attachments: [
+            {
+              type: 'audio',
+              ref_id: row.id,
+              url: publicUrl,
+              mimeType: file.type || 'audio/webm',
+              durationMs: metadata?.durationMs,
+              waveform: metadata?.waveform,
+              transcript: metadata?.transcript,
+            },
+          ],
+        });
+
+        toast.success('Voice note sent');
+        return { type: 'audio', ref: row };
       } else {
         // Handle document upload
         const row = await insertFileIndex({
@@ -297,8 +338,16 @@ export function useShareAsset(tripId: string) {
     return results;
   }
 
+  async function shareVoiceNote(
+    file: File,
+    metadata: { durationMs?: number; waveform?: number[]; transcript?: string },
+  ) {
+    return shareFile('audio', file, undefined, metadata);
+  }
+
   return {
     shareFile,
+    shareVoiceNote,
     shareLink,
     shareMultipleFiles,
     isUploading,

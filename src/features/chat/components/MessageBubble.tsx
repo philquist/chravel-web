@@ -85,6 +85,7 @@ export interface MessageBubbleProps {
     mimeType?: string;
     durationMs?: number;
     waveform?: number[];
+    transcript?: string;
   }>;
   // 🆕 Gallery support - all images in chat for navigation
   allChatImages?: { url: string; caption?: string }[];
@@ -291,8 +292,7 @@ export const MessageBubble = memo(
                 const isLastVisible = index === visibleImages.length - 1;
                 const showOverflow = overflow > 0 && isLastVisible;
                 // 3-image layout: first spans full height on the left
-                const spanClass =
-                  visibleImages.length === 3 && index === 0 ? 'row-span-2' : '';
+                const spanClass = visibleImages.length === 3 && index === 0 ? 'row-span-2' : '';
                 return (
                   <button
                     key={index}
@@ -326,6 +326,7 @@ export const MessageBubble = memo(
                   src={attachment.url}
                   waveform={attachment.waveform}
                   durationMs={attachment.durationMs}
+                  transcript={attachment.transcript}
                   isOwn={isOwnMessage}
                 />
               );
