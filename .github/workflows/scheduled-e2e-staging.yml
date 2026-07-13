@@ -44,6 +44,7 @@ jobs:
       VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.E2E_VITE_GOOGLE_MAPS_API_KEY }}
       E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+      CHRAVEL_E2E_RELEASE_GATE: '1'
 
     steps:
       - name: Checkout code

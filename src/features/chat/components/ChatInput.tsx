@@ -35,7 +35,6 @@ import { VoiceRecordButton } from './VoiceRecordButton';
 import type { VoiceRecordingResult } from '../hooks/useVoiceRecorder';
 import { useFeatureFlag } from '@/lib/featureFlags';
 
-
 interface ChatInputProps {
   inputMessage: string;
   onInputChange: (message: string) => void;
@@ -107,9 +106,6 @@ export const ChatInput = ({
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
   const [mentionedUsers, setMentionedUsers] = useState<TripMember[]>([]);
 
-
-
-
   const {
     shareLink,
     shareMultipleFiles,
@@ -146,8 +142,6 @@ export const ChatInput = ({
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
   }, [inputMessage]);
-
-
 
   // Handle @ mention detection
   const handleInputChange = useCallback(
@@ -529,9 +523,6 @@ export const ChatInput = ({
                 : 'bg-muted/70 border border-border/70 focus-visible:ring-primary/40 backdrop-blur-sm text-foreground placeholder:text-muted-foreground',
             )}
           />
-
-
-
 
           {/* Send Button OR hold-to-record Mic Button — Mic appears when input is empty
               (iMessage-style). Recorded audio uploads as a typed Stream audio attachment

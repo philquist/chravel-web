@@ -173,7 +173,8 @@ vi.mock('@/lib/featureFlags', () => ({
     return defaultValue;
   },
   useFeatureFlagStatus: (key: string, defaultValue = true) => ({
-    enabled: key === 'concierge_realtime_voice' ? featureFlagState.realtimeVoiceEnabled : defaultValue,
+    enabled:
+      key === 'concierge_realtime_voice' ? featureFlagState.realtimeVoiceEnabled : defaultValue,
     isPending: false,
   }),
 }));
@@ -320,7 +321,9 @@ describe('AIConciergeChat', () => {
       fireEvent.click(screen.getByTestId('concierge-waveform-dictation-btn'));
 
       expect(realtimeVoiceMock.start).not.toHaveBeenCalled();
-      expect(screen.queryByRole('button', { name: /start voice conversation/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /start voice conversation/i }),
+      ).not.toBeInTheDocument();
     });
 
     it('removes legacy status pills from header', () => {

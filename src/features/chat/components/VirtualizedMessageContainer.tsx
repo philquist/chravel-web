@@ -162,10 +162,8 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
       const showDateSeparator = !prevDate || !isSameDay(currentDate, prevDate);
       if (showDateSeparator) {
         result.push({ type: 'date', date: currentDate });
-      } else if (
-        prevDate &&
-        currentDate.getTime() - prevDate.getTime() >= FIFTEEN_MINUTES_MS
-      ) {
+      } else if (prevDate && currentDate.getTime() - prevDate.getTime() >= FIFTEEN_MINUTES_MS) {
+        // Inline time-gap pill for long silences within the same day (iMessage-style).
         result.push({
           type: 'time-gap',
           date: currentDate,
@@ -196,11 +194,7 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
         : false;
       const nextSameDay = nextDate ? isSameDay(currentDate, nextDate) : false;
       const isLastInGroup =
-        !nextMessage ||
-        !senderId ||
-        senderId !== nextSenderId ||
-        !nextWithinWindow ||
-        !nextSameDay;
+        !nextMessage || !senderId || senderId !== nextSenderId || !nextWithinWindow || !nextSameDay;
 
       result.push({
         type: 'message',
