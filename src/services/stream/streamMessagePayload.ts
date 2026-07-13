@@ -70,7 +70,7 @@ const normalizeAttachment = (attachment: unknown): UnknownRecord | null => {
     title: typeof row.title === 'string' ? row.title : undefined,
   };
 
-  // Preserve voice-note metadata so receivers can render waveform/duration.
+  // Preserve voice-note metadata so receivers can render waveform/duration/transcript.
   if (typeof row.mime_type === 'string') normalized.mime_type = row.mime_type;
   if (typeof row.mimeType === 'string' && !normalized.mime_type) {
     normalized.mime_type = row.mimeType;
@@ -81,6 +81,9 @@ const normalizeAttachment = (attachment: unknown): UnknownRecord | null => {
   }
   if (Array.isArray(row.waveform)) normalized.waveform = row.waveform;
   if (typeof row.ref_id === 'string') normalized.ref_id = row.ref_id;
+  if (typeof row.transcript === 'string' && row.transcript.trim()) {
+    normalized.transcript = row.transcript;
+  }
 
   return normalized;
 };

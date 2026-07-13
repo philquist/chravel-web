@@ -184,6 +184,40 @@ describe('buildStreamMessageViewModels', () => {
     });
   });
 
+  it('maps voice-note attachments with transcript metadata', () => {
+    const results = buildStreamMessageViewModels({
+      messages: [
+        baseMessage({
+          text: '',
+          attachments: [
+            {
+              type: 'audio',
+              asset_url: 'https://cdn/voice.webm',
+              ref_id: 'file-1',
+              mimeType: 'audio/webm',
+              durationMs: 2000,
+              waveform: [0.1, 0.9],
+              transcript: 'boarding starts soon',
+            },
+          ] as unknown as MessageResponse['attachments'],
+        }),
+      ],
+      tripMembers: members,
+    });
+
+    expect(results[0].attachments).toEqual([
+      {
+        type: 'audio',
+        ref_id: 'file-1',
+        url: 'https://cdn/voice.webm',
+        mimeType: 'audio/webm',
+        durationMs: 2000,
+        waveform: [0.1, 0.9],
+        transcript: 'boarding starts soon',
+      },
+    ]);
+  });
+
   it('maps reaction counts, user reacted flag, and users list', () => {
     const results = buildStreamMessageViewModels({
       messages: [

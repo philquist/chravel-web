@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TripChat } from '../TripChat';
 
@@ -8,6 +8,8 @@ const mockSetReply = vi.fn();
 const mockVirtualizedMessageContainer = vi.fn();
 const mockMessageItem = vi.fn();
 const mockMessageTypeBar = vi.fn();
+const mockSearchTripChannelMessages = vi.fn();
+const mockLoadAroundMessage = vi.fn();
 const mockTripTypeState = { isConsumer: true, isPro: false, isEvent: false };
 let mockMessageFilter: 'all' | 'broadcasts' | 'pinned' | 'channels' = 'all';
 const mockTripChatModeState = {
@@ -60,6 +62,7 @@ vi.mock('../../hooks/useTripChat', () => ({
     sendMessageAsync: vi.fn(),
     isCreating: false,
     loadMore: vi.fn(),
+    loadAroundMessage: mockLoadAroundMessage,
     hasMore: false,
     isLoadingMore: false,
     toggleReaction: vi.fn(),
@@ -174,6 +177,13 @@ vi.mock('@/components/ui/alert', () => ({
 vi.mock('@/services/demoModeService', () => ({ demoModeService: { getMessages: vi.fn() } }));
 vi.mock('@/services/hapticService', () => ({ hapticService: { light: vi.fn() } }));
 vi.mock('@/services/chatContentParser', () => ({ parseMessage: vi.fn() }));
+
+vi.mock('@/services/stream/streamMessageSearch', () => ({
+  searchTripChannelMessages: (...args: unknown[]) => mockSearchTripChannelMessages(...args),
+  fetchTripBroadcastHistory: vi.fn().mockResolvedValue([]),
+  fetchTripPinnedHistory: vi.fn().mockResolvedValue([]),
+}));
+
 vi.mock('@/services/stream/streamClient', () => ({
   getStreamClient: () => null,
   getStreamApiKey: () => 'test-stream-api-key',
@@ -206,6 +216,9 @@ describe('TripChat render path', () => {
     mockTripChatError = null;
     mockMessageFilter = 'all';
     mockMessages = defaultMockMessages;
+    mockSearchTripChannelMessages.mockResolvedValue([]);
+    mockLoadAroundMessage.mockResolvedValue(true);
+    HTMLElement.prototype.scrollIntoView = vi.fn();
   });
 
   const renderSubject = (props?: React.ComponentProps<typeof TripChat>) => {
@@ -290,6 +303,41 @@ describe('TripChat render path', () => {
     renderSubject();
 
     expect(screen.queryByText('Pinned Messages')).not.toBeInTheDocument();
+  });
+
+  it('searches Stream history and hydrates an unloaded server result before jumping', async () => {
+    mockSearchTripChannelMessages.mockResolvedValueOnce([
+      {
+        messageId: 'old-msg',
+        tripId: 'trip-123',
+        channelType: 'chravel-trip',
+        channelId: 'trip-trip-123',
+        authorId: 'user-2',
+        authorName: 'User Two',
+        text: 'airport pickup details',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]);
+
+    renderSubject();
+
+    fireEvent.change(screen.getByLabelText('Search trip chat messages'), {
+      target: { value: 'airport' },
+    });
+
+    await waitFor(() => {
+      expect(mockSearchTripChannelMessages).toHaveBeenCalledWith({
+        tripId: 'trip-123',
+        query: 'airport',
+        limit: 25,
+      });
+    });
+
+    fireEvent.keyDown(screen.getByLabelText('Search trip chat messages'), { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockLoadAroundMessage).toHaveBeenCalledWith('old-msg');
+    });
   });
 
   it('keeps rendering messages when settlement-like secondary data is non-array', () => {

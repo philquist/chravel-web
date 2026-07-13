@@ -11,6 +11,8 @@ export interface VoiceRecordingResult {
   durationMs: number;
   /** Normalised 0..1 amplitude samples, ~32 buckets. */
   waveform: number[];
+  /** Optional transcript captured by browser speech recognition while recording. */
+  transcript?: string;
 }
 
 export interface UseVoiceRecorderState {

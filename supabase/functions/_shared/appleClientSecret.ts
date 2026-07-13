@@ -23,13 +23,9 @@ async function importP8(pem: string): Promise<CryptoKey> {
     .replace(/\s+/g, '');
   if (!body) throw new Error('APPLE_P8_PRIVATE_KEY is empty or malformed');
   const der = Uint8Array.from(atob(body), c => c.charCodeAt(0));
-  return crypto.subtle.importKey(
-    'pkcs8',
-    der,
-    { name: 'ECDSA', namedCurve: 'P-256' },
-    false,
-    ['sign'],
-  );
+  return crypto.subtle.importKey('pkcs8', der, { name: 'ECDSA', namedCurve: 'P-256' }, false, [
+    'sign',
+  ]);
 }
 
 export interface AppleClientSecretConfig {

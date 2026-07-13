@@ -541,6 +541,11 @@ When production serves a meta CSP (and may omit the HTTP CSP header), `index.htm
 ### Prove TestFlight web asset provenance before rewriting Concierge controls
 July 9 Search/isActive + realtime lazy-mount fixes were already on `main` and in production `mrex8prk` chunks. Multi-control dead UI on a screenshot matching that chrome is often deployment drift (`chravel-mobile` remote vs bundled) or CSP — not a reason to re-implement working handlers. *Evidence: production chunk markers `header-search-btn` / `mint-realtime-token` present before recovery branch.*
 
+### Preserve custom Stream attachment fields through both send and view-model adapters
+Stream custom attachment metadata such as voice-note waveform/duration/transcript must be explicitly forwarded in payload normalization and hydrated back into message view models; otherwise realtime-confirmed messages lose rich playback UI after refresh.
+
+### Inline chat search needs a two-phase result source
+For responsive UX, search the loaded message window synchronously, then merge debounced Stream `channel.search(query)` results by message ID and hydrate off-window selections with `channel.query({ messages: { id_around } })` before scrolling. This avoids the "0 results" lie when history is older than the retained timeline window.
 ### Launch-critical E2E fixtures need an explicit release-gate mode
 Local Playwright runs can skip authenticated setup when staging secrets or confirmation-free auth are unavailable, but CI/App Store QA must fail instead of reporting green with skipped launch-critical coverage. Centralize the mode flag (`CHRAVEL_E2E_RELEASE_GATE=1`) and throw fixture-step errors (`[E2E fixture step failed: auth|trip creation|membership|pro trip creation] ...`) from shared fixtures so failures identify the broken setup step. *Evidence: July 2026 chat messaging E2E release-gate hardening.*
 

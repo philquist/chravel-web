@@ -1199,6 +1199,34 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
     }
   }, [hasMore, isLoadingMore, messages]);
 
+  const loadAroundMessage = useCallback(async (messageId: string): Promise<boolean> => {
+    const channel = channelRef.current;
+    if (!channel || !messageId) return false;
+
+    try {
+      const result = await channel.query({
+        messages: { limit: PAGE_SIZE, id_around: messageId },
+      });
+      const rawMessages = (result.messages || []) as MessageResponse[];
+      const nearbyMessages = rawMessages.filter(m => !isDeletedStreamMessage(m));
+      if (nearbyMessages.length === 0) return false;
+
+      setMessages(prev => {
+        const byId = new Map<string, MessageResponse>();
+        [...prev, ...nearbyMessages].forEach(message => {
+          byId.set(message.id, message);
+        });
+        return capRetainedMessages(sortMessagesWithCanonicalOrdering([...byId.values()]));
+      });
+      return nearbyMessages.some(message => message.id === messageId);
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error('[Stream] loadAroundMessage failed:', error);
+      }
+      return false;
+    }
+  }, []);
+
   const togglePin = useCallback(
     async (messageId: string, shouldPin: boolean) => {
       const streamClient = getStreamClient();
@@ -1238,6 +1266,7 @@ export const useStreamTripChat = (tripId: string | undefined, options?: { enable
     sendMessageAsync,
     isCreating,
     loadMore,
+    loadAroundMessage,
     hasMore,
     isLoadingMore,
     toggleReaction,

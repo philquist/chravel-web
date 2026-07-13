@@ -151,10 +151,10 @@ serve(async req => {
     const revenueCatSecretKey = Deno.env.get('REVENUECAT_SECRET_API_KEY');
     if (!revenueCatSecretKey) {
       console.error('[sync-rc] REVENUECAT_SECRET_API_KEY not configured — refusing to sync');
-      return new Response(
-        JSON.stringify({ error: 'Entitlement verification unavailable' }),
-        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
+      return new Response(JSON.stringify({ error: 'Entitlement verification unavailable' }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const rcResponse = await fetch(
@@ -178,12 +178,15 @@ serve(async req => {
 
     const rcData = await rcResponse.json();
     const rcSubscriber = rcData?.subscriber ?? {};
-    const rcEntitlements: Record<string, {
-      expires_date: string | null;
-      product_identifier: string;
-      period_type?: string;
-      purchase_date?: string;
-    }> = rcSubscriber.entitlements ?? {};
+    const rcEntitlements: Record<
+      string,
+      {
+        expires_date: string | null;
+        product_identifier: string;
+        period_type?: string;
+        purchase_date?: string;
+      }
+    > = rcSubscriber.entitlements ?? {};
 
     const nowMs = Date.now();
     const activeEntitlements: Record<string, ActiveEntitlementInfo> = {};

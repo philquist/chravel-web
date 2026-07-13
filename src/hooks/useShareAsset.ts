@@ -23,6 +23,8 @@ export interface UploadProgress {
 export interface VoiceNoteShareMeta {
   durationMs: number;
   waveform: number[];
+  /** Optional browser speech-recognition transcript captured while recording. */
+  transcript?: string;
 }
 
 export function useShareAsset(tripId: string) {
@@ -188,6 +190,7 @@ export function useShareAsset(tripId: string) {
                 ? {
                     duration_ms: voiceMeta.durationMs,
                     waveform: voiceMeta.waveform,
+                    ...(voiceMeta.transcript ? { transcript: voiceMeta.transcript } : {}),
                   }
                 : {}),
             },
@@ -406,7 +409,7 @@ export function useShareAsset(tripId: string) {
         trip_id: tripId,
         user_id: userId,
         author_name: user?.email?.split('@')[0] || 'Former Member',
-        content: '',
+        content: meta.transcript ? 'Voice note' : '',
         privacy_mode: 'standard',
         media_type: 'audio',
         media_url: publicUrl,
@@ -418,6 +421,7 @@ export function useShareAsset(tripId: string) {
             mime_type: file.type || 'audio/webm',
             duration_ms: meta.durationMs,
             waveform: meta.waveform,
+            ...(meta.transcript ? { transcript: meta.transcript } : {}),
             upload_path: key,
           },
         ],

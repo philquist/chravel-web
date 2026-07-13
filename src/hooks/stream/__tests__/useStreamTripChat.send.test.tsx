@@ -175,6 +175,34 @@ describe('useStreamTripChat send path', () => {
     expect(result.current.messages.find(message => message.id === 'msg-mid')?.pinned).toBe(true);
   });
 
+  it('hydrates a server-search result window around an unloaded message', async () => {
+    watchMock.mockResolvedValueOnce({
+      membership: { user_id: 'user-1' },
+      messages: [{ id: 'msg-new', text: 'new', created_at: '2026-01-01T10:10:00.000Z' }],
+    });
+    queryMock.mockResolvedValueOnce({
+      messages: [
+        { id: 'msg-old', text: 'old', created_at: '2026-01-01T10:00:00.000Z' },
+        { id: 'msg-new', text: 'new', created_at: '2026-01-01T10:10:00.000Z' },
+      ],
+    });
+
+    const { result } = renderHook(() => useStreamTripChat('trip-abc', { enabled: true }));
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    await act(async () => {
+      await expect(result.current.loadAroundMessage('msg-old')).resolves.toBe(true);
+    });
+
+    expect(queryMock).toHaveBeenCalledWith({
+      messages: { limit: 30, id_around: 'msg-old' },
+    });
+    expect(result.current.messages.map(message => message.id)).toEqual(['msg-old', 'msg-new']);
+  });
+
   it('sends mention payload when create-mention capability is present', async () => {
     getConfigMock.mockReturnValue({
       grants: {

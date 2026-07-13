@@ -78,6 +78,7 @@ describe('buildTripStreamMessagePayload', () => {
           duration_ms: 3200,
           waveform: [0.1, 0.4, 0.9],
           ref_id: 'file-1',
+          transcript: 'meet at the gate',
         },
       ],
     });
@@ -93,8 +94,36 @@ describe('buildTripStreamMessagePayload', () => {
         duration_ms: 3200,
         waveform: [0.1, 0.4, 0.9],
         ref_id: 'file-1',
+        transcript: 'meet at the gate',
       },
     ]);
+  });
+
+  it('accepts camelCase voice-note metadata aliases', () => {
+    const result = buildTripStreamMessagePayload({
+      content: '',
+      attachments: [
+        {
+          type: 'audio',
+          url: 'https://cdn.example/voice.webm',
+          mimeType: 'audio/webm',
+          durationMs: 1234,
+          waveform: [0.2, 0.8],
+          transcript: 'boarding starts soon',
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.payload.attachments?.[0]).toMatchObject({
+      type: 'audio',
+      asset_url: 'https://cdn.example/voice.webm',
+      mime_type: 'audio/webm',
+      duration_ms: 1234,
+      waveform: [0.2, 0.8],
+      transcript: 'boarding starts soon',
+    });
   });
 
   it('does not duplicate mediaUrl when it is already in attachments[]', () => {

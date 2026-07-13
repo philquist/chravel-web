@@ -4,9 +4,34 @@ import { cn } from '@/lib/utils';
 import { hapticService as haptics } from '@/services/hapticService';
 import { useVoiceRecorder, type VoiceRecordingResult } from '../hooks/useVoiceRecorder';
 
+type BrowserSpeechRecognitionResult = {
+  0?: { transcript?: string };
+};
+
+type BrowserSpeechRecognitionEvent = {
+  results: ArrayLike<BrowserSpeechRecognitionResult>;
+};
+
+type BrowserSpeechRecognition = {
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: BrowserSpeechRecognitionEvent) => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type BrowserSpeechRecognitionConstructor = new () => BrowserSpeechRecognition;
+
+type SpeechRecognitionWindow = Window & {
+  SpeechRecognition?: BrowserSpeechRecognitionConstructor;
+  webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor;
+};
+
 interface VoiceRecordButtonProps {
   onRecorded: (result: VoiceRecordingResult) => void | Promise<void>;
   disabled?: boolean;
+  /** When true, capture an optional SpeechRecognition transcript alongside the audio blob. */
+  enableTranscription?: boolean;
   buttonClassName?: string;
   iconClassName?: string;
 }
@@ -21,6 +46,15 @@ function formatElapsed(ms: number) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+function stopRecognition(recognition: BrowserSpeechRecognition | null) {
+  if (!recognition) return;
+  try {
+    recognition.stop();
+  } catch {
+    /* noop — recognition may already be stopped */
+  }
+}
+
 /**
  * Hold-to-record mic button (iMessage/WhatsApp style).
  * Slide left ≥60px to cancel; slide up ≥60px to lock (hands-free); release to send.
@@ -28,6 +62,7 @@ function formatElapsed(ms: number) {
 export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
   onRecorded,
   disabled,
+  enableTranscription = false,
   buttonClassName,
   iconClassName,
 }) => {
@@ -37,6 +72,8 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
   const [dragX, setDragX] = useState(0);
   const [dragY, setDragY] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
+  const transcriptRef = useRef('');
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const startXRef = useRef<number | null>(null);
   const startYRef = useRef<number | null>(null);
   const willCancelRef = useRef(false);
@@ -51,6 +88,34 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
     willLockRef.current = false;
   }, []);
 
+  const startTranscription = useCallback(() => {
+    transcriptRef.current = '';
+    recognitionRef.current = null;
+    if (!enableTranscription || typeof window === 'undefined') return;
+
+    const speechWindow = window as SpeechRecognitionWindow;
+    const SpeechRecognitionCtor =
+      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) return;
+
+    const recognition = new SpeechRecognitionCtor();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = (event: BrowserSpeechRecognitionEvent) => {
+      let text = '';
+      for (let i = 0; i < event.results.length; i += 1) {
+        text += event.results[i][0]?.transcript || '';
+      }
+      transcriptRef.current = text.trim();
+    };
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
+    } catch {
+      recognitionRef.current = null;
+    }
+  }, [enableTranscription]);
+
   const handlePointerDown = useCallback(
     async (e: React.PointerEvent) => {
       if (disabled || !isSupported || isLocked) return;
@@ -62,9 +127,10 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
       setDragX(0);
       setDragY(0);
       haptics.light();
+      startTranscription();
       await start();
     },
-    [disabled, isSupported, isLocked, start],
+    [disabled, isSupported, isLocked, start, startTranscription],
   );
 
   const handlePointerMove = useCallback(
@@ -86,10 +152,13 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
   );
 
   const sendRecording = useCallback(async () => {
+    stopRecognition(recognitionRef.current);
+    recognitionRef.current = null;
     const result = await stop();
     setIsLocked(false);
     resetDrag();
     if (result) {
+      result.transcript = transcriptRef.current || undefined;
       haptics.light();
       await onRecorded(result);
     }
@@ -107,6 +176,8 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
     }
 
     if (willCancelRef.current) {
+      stopRecognition(recognitionRef.current);
+      recognitionRef.current = null;
       cancel();
       resetDrag();
       haptics.light();
@@ -124,11 +195,15 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
   const handlePointerCancel = useCallback(() => {
     if (isLocked) return;
     if (startXRef.current === null) return;
+    stopRecognition(recognitionRef.current);
+    recognitionRef.current = null;
     resetDrag();
     cancel();
   }, [cancel, isLocked, resetDrag]);
 
   const handleLockedCancel = useCallback(() => {
+    stopRecognition(recognitionRef.current);
+    recognitionRef.current = null;
     cancel();
     setIsLocked(false);
     resetDrag();
@@ -141,6 +216,8 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
 
   useEffect(() => {
     return () => {
+      stopRecognition(recognitionRef.current);
+      recognitionRef.current = null;
       if (isRecording) cancel();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

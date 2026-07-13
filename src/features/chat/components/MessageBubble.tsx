@@ -94,6 +94,7 @@ export interface MessageBubbleProps {
     mimeType?: string;
     durationMs?: number;
     waveform?: number[];
+    transcript?: string;
   }>;
   // 🆕 Gallery support - all images in chat for navigation
   allChatImages?: { url: string; caption?: string }[];
@@ -313,6 +314,7 @@ export const MessageBubble = memo(
                   src={(resolvedMediaUrl ?? mediaUrl) as string}
                   waveform={audioAttachment?.waveform}
                   durationMs={audioAttachment?.durationMs}
+                  transcript={audioAttachment?.transcript}
                   isOwn={isOwnMessage}
                 />
               </div>
@@ -406,6 +408,7 @@ export const MessageBubble = memo(
                   src={attachment.url}
                   waveform={attachment.waveform}
                   durationMs={attachment.durationMs}
+                  transcript={attachment.transcript}
                   isOwn={isOwnMessage}
                 />
               );

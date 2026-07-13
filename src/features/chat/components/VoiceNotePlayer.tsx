@@ -10,6 +10,8 @@ interface VoiceNotePlayerProps {
   durationMs?: number;
   /** Style variant — own bubbles use gold-tinted controls. */
   isOwn?: boolean;
+  /** Optional speech-to-text transcript saved with the voice note. */
+  transcript?: string;
 }
 
 const PLAYBACK_RATES = [1, 1.5, 2] as const;
@@ -45,6 +47,7 @@ export const VoiceNotePlayer: React.FC<VoiceNotePlayerProps> = ({
   waveform,
   durationMs,
   isOwn = false,
+  transcript,
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -122,78 +125,90 @@ export const VoiceNotePlayer: React.FC<VoiceNotePlayerProps> = ({
   const barInactiveClass = isOwn ? 'bg-primary-foreground/30' : 'bg-foreground/25';
 
   return (
-    <div
-      className={cn(
-        'flex items-center gap-2.5 py-1 pr-1 select-none',
-        'min-w-[180px] max-w-[260px]',
-      )}
-    >
-      <button
-        type="button"
-        onClick={toggle}
-        aria-label={isPlaying ? 'Pause voice note' : 'Play voice note'}
-        className={cn(
-          'flex items-center justify-center rounded-full shrink-0 transition-transform active:scale-95',
-          'w-8 h-8',
-          isOwn
-            ? 'bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30'
-            : 'bg-primary text-primary-foreground hover:bg-primary/90',
-        )}
-      >
-        {isPlaying ? <Pause size={14} /> : <Play size={14} className="translate-x-[1px]" />}
-      </button>
-
+    <div className="space-y-1">
       <div
-        className="flex-1 flex items-center gap-[2px] h-7 cursor-pointer"
-        role="slider"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(progress * 100)}
-        aria-label="Voice note position"
-        tabIndex={0}
-        onClick={e => seekFromEvent(e.clientX, e.currentTarget as HTMLElement)}
+        className={cn(
+          'flex items-center gap-2.5 py-1 pr-1 select-none',
+          'min-w-[180px] max-w-[260px]',
+        )}
       >
-        {bars.map((amp, i) => {
-          const barProgress = i / Math.max(1, bars.length - 1);
-          const isActive = barProgress <= progress;
-          const height = Math.max(3, Math.round(amp * 26));
-          return (
-            <div
-              key={i}
-              className={cn(
-                'w-[2px] rounded-full transition-colors',
-                isActive ? barActiveClass : barInactiveClass,
-              )}
-              style={{ height: `${height}px` }}
-            />
-          );
-        })}
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={isPlaying ? 'Pause voice note' : 'Play voice note'}
+          className={cn(
+            'flex items-center justify-center rounded-full shrink-0 transition-transform active:scale-95',
+            'w-8 h-8',
+            isOwn
+              ? 'bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30'
+              : 'bg-primary text-primary-foreground hover:bg-primary/90',
+          )}
+        >
+          {isPlaying ? <Pause size={14} /> : <Play size={14} className="translate-x-[1px]" />}
+        </button>
+
+        <div
+          className="flex-1 flex items-center gap-[2px] h-7 cursor-pointer"
+          role="slider"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress * 100)}
+          aria-label="Voice note position"
+          tabIndex={0}
+          onClick={e => seekFromEvent(e.clientX, e.currentTarget as HTMLElement)}
+        >
+          {bars.map((amp, i) => {
+            const barProgress = i / Math.max(1, bars.length - 1);
+            const isActive = barProgress <= progress;
+            const height = Math.max(3, Math.round(amp * 26));
+            return (
+              <div
+                key={i}
+                className={cn(
+                  'w-[2px] rounded-full transition-colors',
+                  isActive ? barActiveClass : barInactiveClass,
+                )}
+                style={{ height: `${height}px` }}
+              />
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setRateIndex(i => (i + 1) % PLAYBACK_RATES.length)}
+          aria-label="Change playback speed"
+          className={cn(
+            'text-[10px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums shrink-0',
+            isOwn
+              ? 'bg-primary-foreground/15 text-primary-foreground/90 hover:bg-primary-foreground/25'
+              : 'bg-foreground/10 text-foreground/80 hover:bg-foreground/20',
+          )}
+        >
+          {PLAYBACK_RATES[rateIndex]}x
+        </button>
+
+        <span
+          className={cn(
+            'text-[10px] tabular-nums shrink-0 min-w-[32px] text-right',
+            isOwn ? 'text-primary-foreground/80' : 'text-muted-foreground',
+          )}
+        >
+          {isPlaying ? formatTime(currentSec) : formatTime(remaining || durationSec)}
+        </span>
+
+        <audio ref={audioRef} src={src} preload="metadata" />
       </div>
-
-      <button
-        type="button"
-        onClick={() => setRateIndex(i => (i + 1) % PLAYBACK_RATES.length)}
-        aria-label="Change playback speed"
-        className={cn(
-          'text-[10px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums shrink-0',
-          isOwn
-            ? 'bg-primary-foreground/15 text-primary-foreground/90 hover:bg-primary-foreground/25'
-            : 'bg-foreground/10 text-foreground/80 hover:bg-foreground/20',
-        )}
-      >
-        {PLAYBACK_RATES[rateIndex]}x
-      </button>
-
-      <span
-        className={cn(
-          'text-[10px] tabular-nums shrink-0 min-w-[32px] text-right',
-          isOwn ? 'text-primary-foreground/80' : 'text-muted-foreground',
-        )}
-      >
-        {isPlaying ? formatTime(currentSec) : formatTime(remaining || durationSec)}
-      </span>
-
-      <audio ref={audioRef} src={src} preload="metadata" />
+      {transcript && (
+        <p
+          className={cn(
+            'max-w-[260px] text-xs leading-snug',
+            isOwn ? 'text-primary-foreground/80' : 'text-muted-foreground',
+          )}
+        >
+          {transcript}
+        </p>
+      )}
     </div>
   );
 };

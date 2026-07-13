@@ -18,6 +18,8 @@ export interface StreamMessageSearchHit {
   text: string;
   createdAt?: string;
   threadParentId?: string;
+  messageType?: string;
+  privacyMode?: string;
 }
 
 interface SearchTripChannelMessagesOptions {
@@ -43,6 +45,8 @@ function mapChannelSearchHit(
     user?: { id?: string; name?: string };
     created_at?: string;
     parent_id?: string;
+    message_type?: string;
+    privacy_mode?: string;
   },
   params: {
     tripId: string;
@@ -62,6 +66,8 @@ function mapChannelSearchHit(
     text: message.text || '',
     createdAt: message.created_at || undefined,
     threadParentId: message.parent_id || undefined,
+    messageType: message.message_type || undefined,
+    privacyMode: message.privacy_mode || undefined,
   };
 }
 

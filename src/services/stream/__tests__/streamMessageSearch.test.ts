@@ -43,6 +43,8 @@ describe('streamMessageSearch', () => {
             text: 'join this trip',
             user: { id: 'u-1', name: 'Alex' },
             created_at: '2026-06-21T12:00:00.000Z',
+            message_type: 'broadcast',
+            privacy_mode: 'broadcast',
           },
         },
       ],
@@ -72,6 +74,8 @@ describe('streamMessageSearch', () => {
         text: 'join this trip',
         createdAt: '2026-06-21T12:00:00.000Z',
         threadParentId: undefined,
+        messageType: 'broadcast',
+        privacyMode: 'broadcast',
       },
     ]);
   });
@@ -166,6 +170,8 @@ describe('streamMessageSearch', () => {
             user: { id: 'u-3', name: 'C' },
             created_at: '2026-01-01T00:00:02.000Z',
             parent_id: 'parent-1',
+            message_type: 'broadcast',
+            privacy_mode: 'broadcast',
           },
         },
       ],

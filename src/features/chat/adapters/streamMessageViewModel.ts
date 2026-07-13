@@ -23,9 +23,12 @@ interface StreamAttachment {
   text?: string;
   thumb_url?: string;
   mime_type?: string;
+  mimeType?: string;
   duration_ms?: number;
+  durationMs?: number;
   waveform?: number[];
   ref_id?: string;
+  transcript?: string;
 }
 
 export type StreamViewAttachment = {
@@ -35,17 +38,23 @@ export type StreamViewAttachment = {
   mimeType?: string;
   durationMs?: number;
   waveform?: number[];
+  transcript?: string;
 };
 
 // .webm is intentionally omitted: it is ambiguous (audio or video). Classify webm via
 // explicit type/mime only so video/webm never becomes VoiceNotePlayer.
 const AUDIO_EXT_RE = /\.(mp3|wav|m4a|ogg|oga|opus|aac|caf)(\?|$)/i;
 
+function attachmentMimeType(attachment: StreamAttachment): string | undefined {
+  return attachment.mime_type || attachment.mimeType;
+}
+
 function isAudioStreamAttachment(attachment: StreamAttachment): boolean {
   if (attachment.type === 'video') return false;
-  if (attachment.mime_type?.startsWith('video/')) return false;
+  const mimeType = attachmentMimeType(attachment);
+  if (mimeType?.startsWith('video/')) return false;
   if (attachment.type === 'audio') return true;
-  if (attachment.mime_type?.startsWith('audio/')) return true;
+  if (mimeType?.startsWith('audio/')) return true;
   const url = attachment.asset_url || attachment.url || attachment.image_url;
   return !!url && AUDIO_EXT_RE.test(url);
 }
@@ -88,9 +97,13 @@ function mapStreamAttachments(attachments: StreamAttachment[]): StreamViewAttach
         type,
         ref_id: (typeof attachment.ref_id === 'string' && attachment.ref_id) || `att-${index}`,
         url,
-        mimeType: attachment.mime_type,
-        durationMs: attachment.duration_ms,
+        mimeType: attachmentMimeType(attachment),
+        durationMs:
+          typeof attachment.duration_ms === 'number'
+            ? attachment.duration_ms
+            : attachment.durationMs,
         waveform: Array.isArray(attachment.waveform) ? attachment.waveform : undefined,
+        transcript: typeof attachment.transcript === 'string' ? attachment.transcript : undefined,
       };
     })
     .filter((value): value is StreamViewAttachment => Boolean(value));
