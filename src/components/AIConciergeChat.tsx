@@ -10,6 +10,7 @@ import { useConciergeUsage } from '../hooks/useConciergeUsage';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { CTA_BUTTON, CTA_ICON_SIZE } from '@/lib/ctaButtonStyles';
+import { getTrustedOverlayOpenHandlers } from '@/lib/bodyPortalOverlay';
 import { useSaveToTripPlaces } from '@/hooks/useSaveToTripPlaces';
 import { useConciergeReadAloud } from '@/hooks/useConciergeReadAloud';
 import { buildSpeechText } from '@/lib/buildSpeechText';
@@ -473,15 +474,7 @@ export const AIConciergeChat = ({
           <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2">
             <button
               type="button"
-              onPointerDown={event => {
-                // Mobile WebView/Safari can drop the synthetic click if a later layout
-                // change steals focus. Open on the trusted pointer gesture so Search
-                // cannot feel dead. Mouse clicks still get the normal idempotent click.
-                if (event.pointerType === 'touch' || event.pointerType === 'pen') {
-                  setSearchOpen(true);
-                }
-              }}
-              onClick={() => setSearchOpen(true)}
+              {...getTrustedOverlayOpenHandlers(() => setSearchOpen(true))}
               className={`${CTA_BUTTON} relative z-30 pointer-events-auto`}
               aria-label="Search trip"
               title="Search trip"
@@ -496,9 +489,9 @@ export const AIConciergeChat = ({
               Concierge Chravel Agent
             </h3>
             {/*
-              Keep the file input as a real, transparent tap target inside the button.
-              iOS Safari / WKWebView can ignore synthetic .click() and sometimes miss
-              label-only activation when the input is visually hidden elsewhere.
+              Upload stays in-DOM (transparent file input), not a body-portal overlay —
+              no pointerdown→backdrop dismiss race. Keep the real <input> as the tap
+              target so iOS WKWebView does not ignore synthetic .click().
             */}
             <label
               htmlFor={uploadInputId}

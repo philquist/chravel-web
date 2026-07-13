@@ -534,10 +534,10 @@ Known security anti-patterns discovered during audits. Reference this before int
 
 ## Concierge Trip Search modal: no dismiss + frozen input
 - **Status:** fixed
-- **Subsystem:** Concierge / Trip Search (`ConciergeSearchModal`)
+- **Subsystem:** Concierge / Trip Search (`ConciergeSearchModal`) + Chat search (`ChatSearchOverlay`)
 - **Bug class:** Radix Dialog focus trap + missing dismiss control + pointerdown-open race
 - **Symptom:** Trip Search opens from Concierge header Search with no X/Close; search field renders but rejects keystrokes on mobile (iOS WKWebView / Capacitor).
 - **Root Cause:** (1) `DialogContent showClose={false}` and the in-field X only cleared query text. (2) HTML `autoFocus` inside Radix Dialog is unreliable on iOS WKWebView when the field sits under trip-shell scroll/overflow ancestors. (3) Opening on touch `pointerdown` can land the completing `click` on the newly mounted backdrop and fight focus.
-- **Smallest Safe Fix:** Use a `createPortal(..., document.body)` overlay at `z-[100]` (same as `ChatSearchOverlay`), always-visible Close control (`min-h-11`), ref + delayed `focus()` on open, and a short backdrop-dismiss guard after open.
-- **Required Tests:** `src/components/ai/__tests__/ConciergeSearchModal.test.tsx` — type into input, Close calls `onOpenChange(false)`, backdrop ignore during open guard, Escape closes.
-- **Fixed in:** `src/components/ai/ConciergeSearchModal.tsx` (July 2026)
+- **Smallest Safe Fix:** Shared `BodyPortalOverlayShell` + `getTrustedOverlayOpenHandlers` / `useBodyPortalOverlayControls` — body portal at `z-[100]`, always-visible Close, ref focus, open-gesture backdrop guard. Wire Concierge + Chat Search CTAs through the same trusted open helpers (Upload stays in-DOM file input — no overlay race).
+- **Required Tests:** ConciergeSearchModal + ChatSearchOverlay backdrop guard; `bodyPortalOverlay` unit tests; MessageTypeBar + AIConciergeChat touch pointerdown open.
+- **Fixed in:** `BodyPortalOverlayShell.tsx`, `bodyPortalOverlay.ts`, `ConciergeSearchModal.tsx`, `ChatSearchOverlay.tsx`, `MessageTypeBar.tsx`, `AIConciergeChat.tsx` (July 2026)

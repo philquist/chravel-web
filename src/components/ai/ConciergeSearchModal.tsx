@@ -1,5 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import {
   Search,
   X,
@@ -12,18 +11,12 @@ import {
   Image,
   ChevronDown,
 } from 'lucide-react';
+import { BodyPortalOverlayShell } from '@/components/overlays/BodyPortalOverlayShell';
 import { useUniversalSearch } from '@/hooks/useUniversalSearch';
 import { ContentType, UniversalSearchResult } from '@/services/universalSearchService';
 
 /** Initial number of results shown per category before "Show more" */
 const INITIAL_RESULTS_LIMIT = 5;
-
-/**
- * Ignore backdrop dismiss for a short window after open.
- * Concierge opens Search on touch `pointerdown`; if the overlay mounts under the
- * still-down finger, the matching `click` would otherwise instantly close it.
- */
-const OPEN_DISMISS_GUARD_MS = 400;
 
 interface ConciergeSearchModalProps {
   open: boolean;
@@ -41,7 +34,6 @@ export const ConciergeSearchModal = ({
   const [query, setQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<ContentType>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
-  const openedAtRef = useRef(0);
 
   const contentTypes: ContentType[] = useMemo(
     () => [
@@ -67,45 +59,10 @@ export const ConciergeSearchModal = ({
     onOpenChange(false);
   }, [onOpenChange]);
 
-  const handleBackdropClose = useCallback(() => {
-    if (Date.now() - openedAtRef.current < OPEN_DISMISS_GUARD_MS) return;
-    handleClose();
-  }, [handleClose]);
-
-  // Focus the field when opened. Radix Dialog + HTML autoFocus was unreliable on
-  // iOS WKWebView (input rendered but never accepted keystrokes). Portal + ref focus
-  // matches ChatSearchOverlay, which already works for trip chat search.
-  useEffect(() => {
-    if (!open) {
-      setQuery('');
-      setExpandedCategories(new Set());
-      return;
-    }
-
-    openedAtRef.current = Date.now();
-    const focusTimer = window.setTimeout(() => {
-      inputRef.current?.focus();
-      // Move caret to end in case the field retained prior value during a fast reopen.
-      const length = inputRef.current?.value.length ?? 0;
-      inputRef.current?.setSelectionRange?.(length, length);
-    }, 50);
-
-    return () => window.clearTimeout(focusTimer);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        handleClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, handleClose]);
+  const handleDeactivate = useCallback(() => {
+    setQuery('');
+    setExpandedCategories(new Set());
+  }, []);
 
   const groupedResults = useMemo(() => {
     const groups: Partial<Record<ContentType, UniversalSearchResult[]>> = {};
@@ -255,189 +212,169 @@ export const ConciergeSearchModal = ({
     });
   };
 
-  if (!open || typeof document === 'undefined') {
-    return null;
-  }
-
-  /**
-   * Portal to document.body so the overlay is not under TripTabs / mobile-trip-shell
-   * overflow. iOS WKWebView treats fixed descendants of scroll containers incorrectly
-   * for layout + keyboard focus — same pattern as ChatSearchOverlay.
-   */
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[100] flex items-start justify-center px-4 bg-black/80 backdrop-blur-md animate-fade-in"
-      style={{
-        paddingTop: 'max(5rem, calc(env(safe-area-inset-top, 0px) + 1.5rem))',
-      }}
-      onClick={handleBackdropClose}
-      data-testid="concierge-search-overlay"
+  return (
+    <BodyPortalOverlayShell
+      open={open}
+      onClose={handleClose}
+      onDeactivate={handleDeactivate}
+      ariaLabel="Trip Search"
+      panelClassName="max-w-lg"
+      overlayTestId="concierge-search-overlay"
+      panelTestId="concierge-search-modal"
+      inputRef={inputRef}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Trip Search"
-        className="w-full max-w-lg bg-background text-foreground rounded-2xl shadow-2xl border border-border overflow-hidden animate-scale-in"
-        onClick={event => event.stopPropagation()}
-        onPointerDown={event => event.stopPropagation()}
-        data-testid="concierge-search-modal"
-      >
-        <div className="flex items-center gap-2 p-3 sm:p-4 border-b border-border">
-          <div className="relative min-w-0 flex-1">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gold-primary pointer-events-none"
-              aria-hidden
-            />
-            <input
-              ref={inputRef}
-              type="text"
-              inputMode="search"
-              enterKeyHint="search"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              value={query}
-              onChange={event => setQuery(event.target.value)}
-              placeholder="Search across trip..."
-              aria-label="Search across trip"
-              data-testid="concierge-search-input"
-              className="w-full min-h-11 bg-muted border border-border rounded-lg pl-9 pr-11 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold-primary/50 transition-all"
-            />
-            {query ? (
-              <button
-                type="button"
-                onClick={() => setQuery('')}
-                className="absolute right-1 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                aria-label="Clear search"
-                data-testid="concierge-search-clear"
-              >
-                <X size={16} />
-              </button>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-            aria-label="Close trip search"
-            data-testid="concierge-search-close"
-          >
-            <X className="h-5 w-5" />
-            <span className="hidden sm:inline">Close</span>
-          </button>
+      <div className="flex items-center gap-2 p-3 sm:p-4 border-b border-border">
+        <div className="relative min-w-0 flex-1">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gold-primary pointer-events-none"
+            aria-hidden
+          />
+          <input
+            ref={inputRef}
+            type="text"
+            inputMode="search"
+            enterKeyHint="search"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            value={query}
+            onChange={event => setQuery(event.target.value)}
+            placeholder="Search across trip..."
+            aria-label="Search across trip"
+            data-testid="concierge-search-input"
+            className="w-full min-h-11 bg-muted border border-border rounded-lg pl-9 pr-11 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold-primary/50 transition-all"
+          />
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="absolute right-1 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80"
+              aria-label="Clear search"
+              data-testid="concierge-search-clear"
+            >
+              <X size={16} />
+            </button>
+          ) : null}
         </div>
-
-        <div className="max-h-[60vh] overflow-y-auto p-0 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent bg-background">
-          {isLoading && results.length === 0 && (
-            <div className="py-12 text-center text-muted-foreground text-sm animate-pulse flex flex-col items-center gap-2">
-              <div className="w-6 h-6 gold-gradient-spinner animate-spin" />
-              <span>Searching trip...</span>
-            </div>
-          )}
-
-          {!isLoading && query.trim().length >= 2 && results.length === 0 && (
-            <div className="py-12 text-center text-sm">
-              <p className="text-foreground font-medium">
-                No results found for &quot;{query}&quot;
-              </p>
-              <p className="text-xs mt-2 text-muted-foreground">
-                Try searching tasks, events, places...
-              </p>
-            </div>
-          )}
-
-          {results.length > 0 && (
-            <div className="py-2 space-y-4">
-              {categoryOrder.map(type => {
-                const items = groupedResults[type];
-                if (!items || items.length === 0) return null;
-
-                const isExpanded = expandedCategories.has(type);
-                const visibleItems = isExpanded ? items : items.slice(0, INITIAL_RESULTS_LIMIT);
-                const hasMore = items.length > INITIAL_RESULTS_LIMIT;
-
-                return (
-                  <div key={type} className="space-y-1">
-                    <div className="px-4 py-1 flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted/60 backdrop-blur-sm sticky top-0 z-10 border-y border-border">
-                      {getIcon(type)}
-                      <span>{getLabel(type)}</span>
-                      <span className="ml-auto bg-muted text-muted-foreground px-1.5 rounded-sm">
-                        {items.length}
-                      </span>
-                    </div>
-                    <div className="space-y-0.5 px-2">
-                      {visibleItems.map(item => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => handleSelect(item)}
-                          className="w-full text-left px-3 py-3 rounded-lg hover:bg-muted transition-all group flex items-start gap-3 active:scale-[0.99]"
-                        >
-                          <div className="mt-0.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity bg-muted p-1.5 rounded-md">
-                            {getIcon(type)}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-2 mb-0.5">
-                              <p className="text-sm font-medium text-foreground truncate transition-colors">
-                                {highlight(item.title, query)}
-                              </p>
-                              {item.timestamp && (
-                                <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">
-                                  {new Date(item.timestamp).toLocaleDateString(undefined, {
-                                    month: 'short',
-                                    day: 'numeric',
-                                  })}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                              {highlight(item.snippet, query)}
-                            </p>
-                          </div>
-                        </button>
-                      ))}
-                      {hasMore && !isExpanded && (
-                        <button
-                          type="button"
-                          onClick={() => toggleCategory(type)}
-                          className="w-full text-center py-2 text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
-                        >
-                          <ChevronDown size={12} />
-                          Show {items.length - INITIAL_RESULTS_LIMIT} more
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {!query && (
-            <div className="py-16 text-center px-6">
-              <div className="w-16 h-16 bg-gold-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-gold-primary/30">
-                <Search className="text-gold-primary" size={24} />
-              </div>
-              <h3 className="text-foreground font-medium mb-1">Trip Search</h3>
-              <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
-                Search across Concierge, Calendar, Tasks, Places, and more.
-              </p>
-              <div className="flex flex-wrap justify-center gap-2 max-w-xs mx-auto">
-                {['Events', 'Tasks', 'Concierge', 'Places', 'Payments'].map(tag => (
-                  <span
-                    key={tag}
-                    className="text-xs bg-muted border border-border text-muted-foreground px-2.5 py-1 rounded-full"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={handleClose}
+          className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          aria-label="Close trip search"
+          data-testid="concierge-search-close"
+        >
+          <X className="h-5 w-5" />
+          <span className="hidden sm:inline">Close</span>
+        </button>
       </div>
-    </div>,
-    document.body,
+
+      <div className="max-h-[60vh] overflow-y-auto p-0 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent bg-background">
+        {isLoading && results.length === 0 && (
+          <div className="py-12 text-center text-muted-foreground text-sm animate-pulse flex flex-col items-center gap-2">
+            <div className="w-6 h-6 gold-gradient-spinner animate-spin" />
+            <span>Searching trip...</span>
+          </div>
+        )}
+
+        {!isLoading && query.trim().length >= 2 && results.length === 0 && (
+          <div className="py-12 text-center text-sm">
+            <p className="text-foreground font-medium">No results found for &quot;{query}&quot;</p>
+            <p className="text-xs mt-2 text-muted-foreground">
+              Try searching tasks, events, places...
+            </p>
+          </div>
+        )}
+
+        {results.length > 0 && (
+          <div className="py-2 space-y-4">
+            {categoryOrder.map(type => {
+              const items = groupedResults[type];
+              if (!items || items.length === 0) return null;
+
+              const isExpanded = expandedCategories.has(type);
+              const visibleItems = isExpanded ? items : items.slice(0, INITIAL_RESULTS_LIMIT);
+              const hasMore = items.length > INITIAL_RESULTS_LIMIT;
+
+              return (
+                <div key={type} className="space-y-1">
+                  <div className="px-4 py-1 flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted/60 backdrop-blur-sm sticky top-0 z-10 border-y border-border">
+                    {getIcon(type)}
+                    <span>{getLabel(type)}</span>
+                    <span className="ml-auto bg-muted text-muted-foreground px-1.5 rounded-sm">
+                      {items.length}
+                    </span>
+                  </div>
+                  <div className="space-y-0.5 px-2">
+                    {visibleItems.map(item => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleSelect(item)}
+                        className="w-full text-left px-3 py-3 rounded-lg hover:bg-muted transition-all group flex items-start gap-3 active:scale-[0.99]"
+                      >
+                        <div className="mt-0.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity bg-muted p-1.5 rounded-md">
+                          {getIcon(type)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2 mb-0.5">
+                            <p className="text-sm font-medium text-foreground truncate transition-colors">
+                              {highlight(item.title, query)}
+                            </p>
+                            {item.timestamp && (
+                              <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">
+                                {new Date(item.timestamp).toLocaleDateString(undefined, {
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                            {highlight(item.snippet, query)}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                    {hasMore && !isExpanded && (
+                      <button
+                        type="button"
+                        onClick={() => toggleCategory(type)}
+                        className="w-full text-center py-2 text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
+                      >
+                        <ChevronDown size={12} />
+                        Show {items.length - INITIAL_RESULTS_LIMIT} more
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!query && (
+          <div className="py-16 text-center px-6">
+            <div className="w-16 h-16 bg-gold-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-gold-primary/30">
+              <Search className="text-gold-primary" size={24} />
+            </div>
+            <h3 className="text-foreground font-medium mb-1">Trip Search</h3>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
+              Search across Concierge, Calendar, Tasks, Places, and more.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2 max-w-xs mx-auto">
+              {['Events', 'Tasks', 'Concierge', 'Places', 'Payments'].map(tag => (
+                <span
+                  key={tag}
+                  className="text-xs bg-muted border border-border text-muted-foreground px-2.5 py-1 rounded-full"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </BodyPortalOverlayShell>
   );
 };
