@@ -5,28 +5,34 @@ import { getTrustedOverlayOpenHandlers } from '@/lib/bodyPortalOverlay';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TripChannel } from '@/types/roleChannels';
 
-/** Centralized segment color map — single source of truth for all chat tab styling */
+/**
+ * Centralized segment color map — single source of truth for all chat tab styling.
+ * Brand rule: active segments use the gold accent (design-system tokens, not raw
+ * palette hexes — the previous iOS-blue/green literals fought the dark/gold
+ * theme); broadcasts keep the semantic red via the `destructive` token because
+ * they are urgent one-to-many announcements.
+ */
 const SEGMENT_COLORS = {
   all: {
-    active: 'bg-[#007AFF] text-white shadow-md',
+    active: 'bg-gold-primary text-black shadow-md',
     inactive: 'text-white/70 hover:text-white hover:bg-white/5 chat-segment-inactive',
     badge: 'bg-gold-primary text-black',
   },
   broadcasts: {
-    active: 'bg-[#B91C1C] text-white shadow-md',
-    inactive: 'text-[#EF4444] hover:text-white hover:bg-[#B91C1C]',
-    badge: 'bg-[#B91C1C] text-white',
+    active: 'bg-destructive text-destructive-foreground shadow-md',
+    inactive: 'text-destructive hover:text-destructive-foreground hover:bg-destructive/80',
+    badge: 'bg-destructive text-destructive-foreground',
   },
   channels: {
-    active: 'bg-[#059669] text-white shadow-md',
-    inactive: 'text-[#34D399] hover:text-white hover:bg-[#059669]',
+    active: 'bg-gold-primary text-black shadow-md',
+    inactive: 'text-gold-primary/80 hover:text-gold-primary hover:bg-gold-primary/10',
   },
   pinned: {
-    active: 'bg-amber-500 text-black shadow-md',
-    // Inactive must stay readable on the bar's neutral background in both light and dark modes.
-    // amber-300 washed out on the light-mode bar (low contrast on light page bg).
-    inactive: 'text-amber-700 dark:text-amber-300 hover:text-black hover:bg-amber-400',
-    badge: 'bg-amber-500 text-black',
+    active: 'bg-gold-primary text-black shadow-md',
+    // Inactive must stay readable on the bar's neutral background in both light
+    // and dark modes (a light gold washed out on the light-mode bar).
+    inactive: 'text-gold-dark dark:text-gold-light hover:text-black hover:bg-gold-mid',
+    badge: 'bg-gold-primary text-black',
   },
   search: {
     inactive: 'text-white/70 hover:text-white hover:bg-white/5 chat-segment-inactive',
@@ -47,6 +53,13 @@ interface MessageTypeBarProps {
   onChannelSelect?: (channel: TripChannel | null) => void;
   // Search props
   onSearchClick?: () => void;
+  /**
+   * How the Channels pill picks a channel. 'popover' (default) renders the
+   * inline dropdown; 'external' delegates to the parent (e.g. a mobile bottom
+   * sheet) via onOpenChannelPicker and renders no popover at all.
+   */
+  channelPickerMode?: 'popover' | 'external';
+  onOpenChannelPicker?: () => void;
 }
 
 export const MessageTypeBar = ({
@@ -61,20 +74,29 @@ export const MessageTypeBar = ({
   activeChannel,
   onChannelSelect,
   onSearchClick,
+  channelPickerMode = 'popover',
+  onOpenChannelPicker,
 }: MessageTypeBarProps) => {
   const pillBarRef = useRef<HTMLDivElement>(null);
   const [channelPopoverOpen, setChannelPopoverOpen] = useState(false);
   const formatChannelLabel = (name?: string) =>
     (name || 'channel').toLowerCase().replace(/\s+/g, '-');
 
-  // Auto-open channels popover when switching to channels filter
+  // Auto-open channels popover when switching to channels filter. In external
+  // picker mode the parent owns channel selection — an invisible auto-opened
+  // popover here would steal focus from the bottom sheet.
   useEffect(() => {
-    if (activeFilter === 'channels' && hasChannels && availableChannels.length > 0) {
+    if (
+      channelPickerMode === 'popover' &&
+      activeFilter === 'channels' &&
+      hasChannels &&
+      availableChannels.length > 0
+    ) {
       setChannelPopoverOpen(true);
     } else {
       setChannelPopoverOpen(false);
     }
-  }, [activeFilter, hasChannels, availableChannels.length]);
+  }, [activeFilter, hasChannels, availableChannels.length, channelPickerMode]);
 
   const handleChannelSelect = (channel: TripChannel) => {
     onChannelSelect?.(channel);
@@ -104,7 +126,7 @@ export const MessageTypeBar = ({
           <button
             onClick={() => onFilterChange('all')}
             className={cn(
-              'relative flex min-h-9 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
+              'relative flex min-h-11 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
               'text-[11px] sm:text-xs font-medium transition-all duration-200 whitespace-nowrap',
               activeFilter === 'all' ? SEGMENT_COLORS.all.active : SEGMENT_COLORS.all.inactive,
             )}
@@ -123,7 +145,7 @@ export const MessageTypeBar = ({
           <button
             onClick={() => onFilterChange('broadcasts')}
             className={cn(
-              'relative flex min-h-9 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
+              'relative flex min-h-11 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
               'text-[11px] sm:text-xs font-medium transition-all duration-200 whitespace-nowrap',
               activeFilter === 'broadcasts'
                 ? SEGMENT_COLORS.broadcasts.active
@@ -150,7 +172,7 @@ export const MessageTypeBar = ({
           <button
             onClick={() => onFilterChange('pinned')}
             className={cn(
-              'relative flex min-h-9 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
+              'relative flex min-h-11 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
               'text-[11px] sm:text-xs font-medium transition-all duration-200 whitespace-nowrap',
               activeFilter === 'pinned'
                 ? SEGMENT_COLORS.pinned.active
@@ -174,7 +196,34 @@ export const MessageTypeBar = ({
           </button>
 
           {/* Channels Segment (Pro/Events only) - Always show but disable if no channels */}
-          {isPro && (
+          {isPro && channelPickerMode === 'external' && (
+            <button
+              onClick={() => {
+                if (hasChannels) {
+                  onFilterChange('channels');
+                  onOpenChannelPicker?.();
+                }
+              }}
+              disabled={!hasChannels}
+              className={cn(
+                'relative flex min-h-11 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
+                'text-[11px] sm:text-xs font-medium transition-all duration-200 whitespace-nowrap',
+                !hasChannels && 'opacity-40 cursor-not-allowed',
+                activeFilter === 'channels' && hasChannels
+                  ? SEGMENT_COLORS.channels.active
+                  : SEGMENT_COLORS.channels.inactive,
+                !hasChannels && 'hover:bg-transparent',
+              )}
+              aria-pressed={activeFilter === 'channels'}
+              title={!hasChannels ? 'No role-based channels for this trip' : undefined}
+            >
+              <span>{channelsLabel}</span>
+              {activeChannel && hasChannels && (
+                <ChevronDown className="h-2.5 w-2.5 opacity-70 sm:h-3 sm:w-3" />
+              )}
+            </button>
+          )}
+          {isPro && channelPickerMode === 'popover' && (
             <Popover open={channelPopoverOpen} onOpenChange={setChannelPopoverOpen}>
               <PopoverTrigger asChild>
                 <button
@@ -185,7 +234,7 @@ export const MessageTypeBar = ({
                   }}
                   disabled={!hasChannels}
                   className={cn(
-                    'relative flex min-h-9 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
+                    'relative flex min-h-11 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
                     'text-[11px] sm:text-xs font-medium transition-all duration-200 whitespace-nowrap',
                     !hasChannels && 'opacity-40 cursor-not-allowed',
                     activeFilter === 'channels' && hasChannels
@@ -268,7 +317,7 @@ export const MessageTypeBar = ({
               type="button"
               {...(onSearchClick ? getTrustedOverlayOpenHandlers(onSearchClick) : {})}
               className={cn(
-                'relative flex min-h-9 min-w-9 items-center justify-center px-1.5 py-1 sm:min-h-10 sm:min-w-10 sm:px-2 rounded-lg sm:rounded-xl shrink-0',
+                'relative flex min-h-11 min-w-11 items-center justify-center px-1.5 py-1 sm:min-h-10 sm:min-w-10 sm:px-2 rounded-lg sm:rounded-xl shrink-0',
                 'text-[11px] sm:text-xs font-medium transition-all duration-200',
                 SEGMENT_COLORS.search.inactive,
               )}
@@ -283,7 +332,7 @@ export const MessageTypeBar = ({
               type="button"
               {...(onSearchClick ? getTrustedOverlayOpenHandlers(onSearchClick) : {})}
               className={cn(
-                'relative flex min-h-9 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
+                'relative flex min-h-11 items-center gap-0.5 px-1.5 py-1 sm:min-h-10 sm:gap-1 sm:px-2 sm:py-1.5 rounded-lg sm:rounded-xl shrink-0',
                 'text-[11px] sm:text-xs font-medium transition-all duration-200 whitespace-nowrap',
                 SEGMENT_COLORS.search.inactive,
               )}

@@ -178,7 +178,21 @@ vi.mock('@/services/stream/streamClient', () => ({
   getStreamClient: () => null,
   getStreamApiKey: () => 'test-stream-api-key',
   onStreamClientConnected: vi.fn(() => () => {}),
+  onStreamClientConnectionStatusChange: vi.fn(() => () => {}),
 }));
+
+const mockChatSidebar = vi.fn();
+vi.mock('../sidebar/ChatSidebar', () => ({
+  ChatSidebar: (props: any) => {
+    mockChatSidebar(props);
+    return <div data-testid="chat-sidebar" />;
+  },
+}));
+vi.mock('../MobileChannelSheet', () => ({
+  MobileChannelSheet: () => <div data-testid="mobile-channel-sheet" />,
+}));
+let mockIsMobile = false;
+vi.mock('@/hooks/use-mobile', () => ({ useIsMobile: () => mockIsMobile }));
 
 vi.mock('../VirtualizedMessageContainer', () => ({
   VirtualizedMessageContainer: (props: any) => {
@@ -206,6 +220,8 @@ describe('TripChat render path', () => {
     mockTripChatError = null;
     mockMessageFilter = 'all';
     mockMessages = defaultMockMessages;
+    mockIsMobile = false;
+    Object.assign(mockTripTypeState, { isConsumer: true, isPro: false, isEvent: false });
   });
 
   const renderSubject = (props?: React.ComponentProps<typeof TripChat>) => {
@@ -270,7 +286,7 @@ describe('TripChat render path', () => {
     },
   ])(
     'keeps pin capability + pinned hydration parity for $surface without changing broadcast defaults',
-    ({ tripType, props }) => {
+    ({ surface, tripType, props }) => {
       Object.assign(mockTripTypeState, tripType);
       renderSubject(props);
 
@@ -279,9 +295,12 @@ describe('TripChat render path', () => {
       expect(messageItemProps.message.isPinned).toBe(true);
       expect(messageItemProps.message.pinnedAt).toBe('2026-01-01T00:02:00.000Z');
       expect(messageItemProps.message.isBroadcast).toBe(true);
-      const messageTypeBarProps = mockMessageTypeBar.mock.calls[0][0];
-      expect(messageTypeBarProps.activeFilter).toBe('all');
-      expect(messageTypeBarProps.broadcastBadgeCount).toBe(0);
+      // Desktop pro renders the channel rail instead of the pill bar; both
+      // carry the same filter/broadcast-badge contract.
+      const chromeProps =
+        surface === 'pro' ? mockChatSidebar.mock.calls[0][0] : mockMessageTypeBar.mock.calls[0][0];
+      expect(chromeProps.activeFilter).toBe('all');
+      expect(chromeProps.broadcastBadgeCount).toBe(0);
     },
   );
 
@@ -334,6 +353,53 @@ describe('TripChat render path', () => {
 
     mockTripChatError = null;
     consoleErrorSpy.mockRestore();
+  });
+
+  describe('chat chrome fork (rail vs pill bar)', () => {
+    it('consumer desktop keeps the pill bar and renders no rail or sheet', () => {
+      renderSubject();
+
+      expect(mockMessageTypeBar).toHaveBeenCalled();
+      expect(mockMessageTypeBar.mock.calls[0][0].channelPickerMode).toBe('popover');
+      expect(screen.queryByTestId('chat-sidebar')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('mobile-channel-sheet')).not.toBeInTheDocument();
+    });
+
+    it('event desktop keeps the pill bar and renders no rail or sheet', () => {
+      Object.assign(mockTripTypeState, { isConsumer: false, isPro: false, isEvent: true });
+      renderSubject({ isEvent: true });
+
+      expect(mockMessageTypeBar).toHaveBeenCalled();
+      expect(screen.queryByTestId('chat-sidebar')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('mobile-channel-sheet')).not.toBeInTheDocument();
+    });
+
+    it('pro desktop renders the persistent rail instead of the pill bar', () => {
+      Object.assign(mockTripTypeState, { isConsumer: false, isPro: true, isEvent: false });
+      renderSubject({ isPro: true });
+
+      expect(screen.getByTestId('chat-sidebar')).toBeInTheDocument();
+      expect(mockMessageTypeBar).not.toHaveBeenCalled();
+      expect(screen.queryByTestId('mobile-channel-sheet')).not.toBeInTheDocument();
+      // Rail receives the section state + channel wiring
+      const sidebarProps = mockChatSidebar.mock.calls[0][0];
+      expect(sidebarProps.activeFilter).toBe('all');
+      expect(typeof sidebarProps.onChannelSelect).toBe('function');
+      expect(sidebarProps.channelUnreadCounts).toEqual({});
+    });
+
+    it('pro mobile keeps the pill bar in external picker mode with the bottom sheet', () => {
+      mockIsMobile = true;
+      Object.assign(mockTripTypeState, { isConsumer: false, isPro: true, isEvent: false });
+      renderSubject({ isPro: true });
+
+      expect(screen.queryByTestId('chat-sidebar')).not.toBeInTheDocument();
+      expect(mockMessageTypeBar).toHaveBeenCalled();
+      const barProps = mockMessageTypeBar.mock.calls[0][0];
+      expect(barProps.channelPickerMode).toBe('external');
+      expect(typeof barProps.onOpenChannelPicker).toBe('function');
+      expect(screen.getByTestId('mobile-channel-sheet')).toBeInTheDocument();
+    });
   });
 
   it('keeps loaded history visible behind a retry banner instead of blanking it on error', () => {

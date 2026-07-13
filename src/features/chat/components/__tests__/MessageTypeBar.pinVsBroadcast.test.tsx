@@ -25,14 +25,16 @@ describe('MessageTypeBar pinned vs broadcasts hinting', () => {
     expect(screen.getByRole('button', { name: /channels/i })).toBeInTheDocument();
   });
 
-  it('uses a dark-mode-aware amber for the inactive Pinned label so it stays readable in light mode', () => {
+  it('uses a dark-mode-aware gold for the inactive Pinned label so it stays readable in light mode', () => {
     render(<MessageTypeBar activeFilter="all" {...baseProps} />);
 
     const pinnedButton = screen.getByRole('button', { name: /Pinned/ });
-    // Light-mode color must be darker than amber-300 (the prior value washed out on the bar);
-    // dark: variant preserves the original amber-300 on dark surfaces.
-    expect(pinnedButton.className).toMatch(/text-amber-700/);
-    expect(pinnedButton.className).toMatch(/dark:text-amber-300/);
+    // Light-mode color must be a dark token (light golds wash out on the bar);
+    // dark: variant uses the light champagne gold on dark surfaces. Same
+    // contrast intent as the earlier amber-700/amber-300 pair, now on brand
+    // tokens instead of raw palette values.
+    expect(pinnedButton.className).toMatch(/text-gold-dark/);
+    expect(pinnedButton.className).toMatch(/dark:text-gold-light/);
   });
 
   it('shows explicit broadcasts hint when broadcasts tab is active', () => {

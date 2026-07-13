@@ -35,6 +35,10 @@ import { selectReadStatusesByMessage } from '../selectors/readStateSelectors';
 import { useChatTypingIndicators } from '../hooks/useChatTypingIndicators';
 import { useChatReactions } from '../hooks/useChatReactions';
 import { MessageTypeBar } from './MessageTypeBar';
+import { ChatSidebar } from './sidebar/ChatSidebar';
+import { MobileChannelSheet } from './MobileChannelSheet';
+import { useChannelUnreadCounts } from '../hooks/useChannelUnreadCounts';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { ChatSearchOverlay } from './ChatSearchOverlay';
 import { useEffectiveSystemMessagePreferences } from '@/hooks/useSystemMessagePreferences';
 import { FeatureErrorBoundary } from '@/components/FeatureErrorBoundary';
@@ -64,6 +68,8 @@ interface TripChatProps {
   isPro?: boolean; // 🆕 Flag to enable role channels for enterprise trips
   userRole?: string; // 🆕 User's role for channel access
   participants?: Array<{ id: string; name: string; role?: string }>; // 🆕 Participants with roles for channel generation
+  /** Navigates to the Team tab — powers the channel rail's empty-state CTA for admins. */
+  onNavigateToTeam?: () => void;
 }
 
 interface MockMessage {
@@ -122,12 +128,18 @@ export const TripChat = React.memo(
     isPro = false,
     userRole = 'member',
     participants = [],
+    onNavigateToTeam,
   }: TripChatProps) => {
     const [demoMessages, setDemoMessages] = useState<MockMessage[]>([]);
 
     const [_activeChannelId, _setActiveChannelId] = useState<string | null>(null);
 
     const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+    // Desktop pro trips swap the pill bar for a persistent Slack-style rail;
+    // mobile pro keeps the pill bar and opens channels in a bottom sheet.
+    const isMobileViewport = useIsMobile();
+    const showChatSidebar = isPro && !isMobileViewport;
+    const [channelSheetOpen, setChannelSheetOpen] = useState(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const messageScrollRef = useRef<HTMLDivElement>(null);
     const [failedMessages, setFailedMessages] = useState<
@@ -468,6 +480,18 @@ export const TripChat = React.memo(
       sendMessage,
       filterMessages,
     } = useChatComposer({ tripId: resolvedTripId, demoMode: demoMode.isDemoMode, isEvent });
+
+    // Per-channel unread badges for the rail / bottom sheet (Stream-sourced).
+    // Declared after useChatComposer — reads messageFilter from it.
+    const availableChannelIds = useMemo(
+      () => availableChannels.map(channel => channel.id),
+      [availableChannels],
+    );
+    const { counts: channelUnreadCounts } = useChannelUnreadCounts({
+      channelIds: availableChannelIds,
+      enabled: isPro && !demoMode.isDemoMode && !!user?.id,
+      activeChannelId: messageFilter === 'channels' ? (roleActiveChannel?.id ?? null) : null,
+    });
 
     // Extract unique roles from participants for channel generation
 
@@ -868,6 +892,24 @@ export const TripChat = React.memo(
       }
     }, [messageFilter, availableChannels, roleActiveChannel, setRoleActiveChannel]);
 
+    // If the channel being viewed was evicted (archived/deleted/role removed —
+    // useRoleChannels nulls it) and no channels remain, fall back to the main
+    // timeline instead of stranding the user on an empty channels view. When
+    // other channels survive, the auto-select effect above picks one instead.
+    const prevRoleChannelRef = useRef<typeof roleActiveChannel>(null);
+    useEffect(() => {
+      const hadChannel = prevRoleChannelRef.current;
+      prevRoleChannelRef.current = roleActiveChannel;
+      if (
+        hadChannel &&
+        !roleActiveChannel &&
+        messageFilter === 'channels' &&
+        availableChannels.length === 0
+      ) {
+        setMessageFilter('all');
+      }
+    }, [roleActiveChannel, messageFilter, availableChannels.length]);
+
     // Determine which messages to show - authenticated trips show ONLY live messages
     const messagesToShow = demoMode.isDemoMode ? demoMessages : liveFormattedMessages;
 
@@ -1160,6 +1202,53 @@ export const TripChat = React.memo(
       ],
     );
 
+    // Composer tray + posting-restriction banner are rendered in one of two
+    // places: inside the chat pane's right column when the desktop rail is
+    // shown (composer aligns to the message pane, Slack-style), or full-width
+    // below the chat card everywhere else (the original position).
+    const composerTray =
+      messageFilter !== 'channels' && canPostToChat ? (
+        <div
+          className="chat-composer-tray chat-input-persistent w-full flex-shrink-0 bg-background"
+          style={{
+            paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
+            touchAction: 'manipulation',
+          }}
+        >
+          <div className="w-full">
+            <ChatInput
+              inputMessage={inputMessage}
+              onInputChange={setInputMessage}
+              onSendMessage={handleSendMessage}
+              onKeyPress={handleKeyPress}
+              apiKey=""
+              isTyping={isSendingMessage}
+              tripMembers={tripMembers}
+              hidePayments={true}
+              isPro={isPro}
+              tripId={resolvedTripId}
+              disableFileUpload={!canUploadMedia}
+              safeAreaBottom={false}
+              onTypingChange={handleTypingChange}
+              canSendBroadcast={canSendBroadcast}
+            />
+          </div>
+        </div>
+      ) : null;
+
+    const restrictionBanner =
+      messageFilter !== 'channels' && !canPostToChat && !chatModeLoading ? (
+        <div className="w-full border-t border-border/60 bg-card/70 px-4 py-3 text-center">
+          <p className="text-sm text-muted-foreground">
+            {effectiveChatMode === 'broadcasts'
+              ? 'This chat is in announcements-only mode. Only admins can post.'
+              : effectiveChatMode === 'admin_only'
+                ? 'This chat is in admin-only mode. Only admins can post.'
+                : 'You do not have permission to post in this chat.'}
+          </p>
+        </div>
+      ) : null;
+
     return (
       <div className="relative flex flex-col h-full min-h-0 overflow-hidden">
         <PullToRefreshIndicator
@@ -1189,198 +1278,225 @@ export const TripChat = React.memo(
           </Alert>
         )}
 
-        {/* Chat Container - Messages with Integrated Filter Tabs */}
+        {/* Chat Container - Messages with Integrated Filter Tabs. Desktop pro
+            trips render a persistent Slack-style channel rail on the left;
+            everything else keeps the pill bar. One copy of the content tree —
+            only the chrome around it differs. */}
         <div className="chat-body flex-1 flex flex-col min-h-0 overflow-hidden" data-chat-container>
           <div
             ref={messagesContainerRef}
             className="rounded-2xl border border-border/60 bg-card/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden flex-1 flex flex-col relative min-h-0"
           >
-            {/* Filter Tabs */}
-            <MessageTypeBar
-              activeFilter={messageFilter}
-              onFilterChange={setMessageFilter}
-              hasChannels={availableChannels.length > 0 || participantRoles.length > 0}
-              onSearchClick={() => setShowSearchOverlay(true)}
-              isPro={isPro}
-              broadcastBadgeCount={totalBroadcastCount}
-              unreadCount={messageUnreadCount}
-              pinnedCount={pinnedMessages.length}
-              availableChannels={availableChannels as any}
-              activeChannel={roleActiveChannel}
-              onChannelSelect={(channel: any) => {
-                setRoleActiveChannel(channel);
-                setMessageFilter('channels');
-              }}
-            />
+            <div className="flex min-h-0 flex-1">
+              {showChatSidebar && (
+                <ChatSidebar
+                  activeFilter={messageFilter}
+                  onFilterChange={setMessageFilter}
+                  channels={availableChannels as any}
+                  activeChannelId={roleActiveChannel?.id ?? null}
+                  onChannelSelect={(channel: any) => {
+                    if (channel) {
+                      setRoleActiveChannel(channel);
+                      setMessageFilter('channels');
+                    } else {
+                      setRoleActiveChannel(null);
+                      setMessageFilter('all');
+                    }
+                  }}
+                  channelUnreadCounts={channelUnreadCounts}
+                  messageUnreadCount={messageUnreadCount}
+                  broadcastBadgeCount={totalBroadcastCount}
+                  pinnedCount={pinnedMessages.length}
+                  onSearchClick={() => setShowSearchOverlay(true)}
+                  canManageChannels={isUserAdmin}
+                  onNavigateToTeam={onNavigateToTeam}
+                />
+              )}
 
-            {/* Conditional Content Area */}
-            {messageFilter === 'channels' && roleActiveChannel ? (
-              <ChannelChatView
-                channel={roleActiveChannel as any}
-                availableChannels={availableChannels as any}
-                onChannelChange={setRoleActiveChannel as any}
-              />
-            ) : (
-              <>
-                {/* Only replace the whole timeline with an error/initializing card when
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                {!showChatSidebar && (
+                  <MessageTypeBar
+                    activeFilter={messageFilter}
+                    onFilterChange={setMessageFilter}
+                    hasChannels={availableChannels.length > 0 || participantRoles.length > 0}
+                    onSearchClick={() => setShowSearchOverlay(true)}
+                    isPro={isPro}
+                    broadcastBadgeCount={totalBroadcastCount}
+                    unreadCount={messageUnreadCount}
+                    pinnedCount={pinnedMessages.length}
+                    availableChannels={availableChannels as any}
+                    activeChannel={roleActiveChannel}
+                    onChannelSelect={(channel: any) => {
+                      setRoleActiveChannel(channel);
+                      setMessageFilter('channels');
+                    }}
+                    channelPickerMode={isPro ? 'external' : 'popover'}
+                    onOpenChannelPicker={() => setChannelSheetOpen(true)}
+                  />
+                )}
+
+                {/* Conditional Content Area */}
+                {messageFilter === 'channels' && roleActiveChannel ? (
+                  <ChannelChatView
+                    channel={roleActiveChannel as any}
+                    availableChannels={availableChannels as any}
+                    onChannelChange={setRoleActiveChannel as any}
+                  />
+                ) : (
+                  <>
+                    {/* Only replace the whole timeline with an error/initializing card when
                     there is NO loaded history to show. If history is already on screen,
                     a transient error must NOT blank it — surface a slim retry banner
                     above the preserved messages instead (see the banner below). */}
-                {chatError && !isLoading && messagesToShow.length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center p-6">
-                    <div className="text-center space-y-3">
-                      {getStreamApiKey() || chatError.message.includes('Timed out') ? (
-                        <>
-                          <p className="text-sm text-muted-foreground">
-                            Something went wrong in Chat
-                          </p>
-                          <p className="text-xs text-muted-foreground">{NON_CRITICAL_CHAT_NOTE}</p>
-                          <button
-                            onClick={() => {
-                              reload?.();
-                            }}
-                            className="text-sm text-primary underline hover:no-underline"
-                          >
-                            Retry
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-sm text-muted-foreground">Chat is initializing…</p>
-                          <p className="text-xs text-muted-foreground">
-                            Hang tight — connecting to the messaging service.
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ) : isLoading && messagesToShow.length === 0 ? (
-                  <div className="flex-1 overflow-y-auto p-4">
-                    <MessageSkeleton />
-                  </div>
-                ) : (
-                  <>
-                    {/* Non-blocking retry banner: history stays visible under a transient
+                    {chatError && !isLoading && messagesToShow.length === 0 ? (
+                      <div className="flex-1 flex items-center justify-center p-6">
+                        <div className="text-center space-y-3">
+                          {getStreamApiKey() || chatError.message.includes('Timed out') ? (
+                            <>
+                              <p className="text-sm text-muted-foreground">
+                                Something went wrong in Chat
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {NON_CRITICAL_CHAT_NOTE}
+                              </p>
+                              <button
+                                onClick={() => {
+                                  reload?.();
+                                }}
+                                className="text-sm text-primary underline hover:no-underline"
+                              >
+                                Retry
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-sm text-muted-foreground">Chat is initializing…</p>
+                              <p className="text-xs text-muted-foreground">
+                                Hang tight — connecting to the messaging service.
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ) : isLoading && messagesToShow.length === 0 ? (
+                      <div className="flex-1 overflow-y-auto p-4">
+                        <MessageSkeleton />
+                      </div>
+                    ) : (
+                      <>
+                        {/* Non-blocking retry banner: history stays visible under a transient
                         error / reconnect instead of being replaced by a full-screen card. */}
-                    {chatError && messagesToShow.length > 0 && (
-                      <div className="mx-3 mt-3 mb-1 flex items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2">
-                        <p className="text-xs text-amber-100">
-                          Reconnecting to chat — showing your recent messages.
-                        </p>
-                        <button
-                          onClick={() => {
-                            reload?.();
-                          }}
-                          className="flex-shrink-0 text-xs font-medium text-amber-200 underline hover:no-underline"
-                        >
-                          Retry
-                        </button>
-                      </div>
-                    )}
-                    {messageFilter === 'pinned' && pinnedMessages.length > 0 && (
-                      <div className="mx-3 mt-3 mb-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2">
-                        <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-amber-200">
-                          <Pin className="h-3.5 w-3.5" />
-                          <span>Pinned Messages</span>
-                        </div>
-                        <div className="space-y-1.5">
-                          {pinnedMessages.slice(0, 3).map(message => (
+                        {chatError && messagesToShow.length > 0 && (
+                          <div className="mx-3 mt-3 mb-1 flex items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                            <p className="text-xs text-amber-100">
+                              Reconnecting to chat — showing your recent messages.
+                            </p>
                             <button
-                              key={message.id}
-                              onClick={() => scrollToMessage(message.id)}
-                              className="block w-full truncate rounded-md bg-black/15 px-2 py-1 text-left text-xs text-amber-100 hover:bg-black/25"
+                              onClick={() => {
+                                reload?.();
+                              }}
+                              className="flex-shrink-0 text-xs font-medium text-amber-200 underline hover:no-underline"
                             >
-                              {message.sender.name}: {message.text || 'Attachment'}
+                              Retry
                             </button>
-                          ))}
-                        </div>
+                          </div>
+                        )}
+                        {messageFilter === 'pinned' && pinnedMessages.length > 0 && (
+                          <div className="mx-3 mt-3 mb-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                            <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-amber-200">
+                              <Pin className="h-3.5 w-3.5" />
+                              <span>Pinned Messages</span>
+                            </div>
+                            <div className="space-y-1.5">
+                              {pinnedMessages.slice(0, 3).map(message => (
+                                <button
+                                  key={message.id}
+                                  onClick={() => scrollToMessage(message.id)}
+                                  className="block w-full truncate rounded-md bg-black/15 px-2 py-1 text-left text-xs text-amber-100 hover:bg-black/25"
+                                >
+                                  {message.sender.name}: {message.text || 'Attachment'}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <FeatureErrorBoundary
+                          featureName="Chat Timeline Enhancements"
+                          fallback={null}
+                        >
+                          <VirtualizedMessageContainer
+                            messages={messagesWithThreads as any}
+                            renderMessage={renderMessage}
+                            onLoadMore={demoMode.isDemoMode ? () => {} : loadMoreMessages}
+                            hasMore={demoMode.isDemoMode ? false : hasMore}
+                            isLoading={isLoadingMore}
+                            initialVisibleCount={10}
+                            className="chat-scroll-container native-scroll px-3"
+                            autoScroll={true}
+                            restoreScroll={true}
+                            scrollKey={`chat-scroll-${resolvedTripId}`}
+                            scrollContainerRef={messageScrollRef}
+                            firstUnreadMessageId={firstUnreadMessageId}
+                          />
+                        </FeatureErrorBoundary>
+                      </>
+                    )}
+
+                    {/* Typing Indicator */}
+                    {!demoMode.isDemoMode && typingUsers.length > 0 && (
+                      <FeatureErrorBoundary featureName="Typing Indicator" fallback={null}>
+                        <TypingIndicator typingUsers={typingUsers} />
+                      </FeatureErrorBoundary>
+                    )}
+
+                    {/* Reply Bar */}
+                    {replyingTo && (
+                      <div className="border-t border-border/60 bg-muted/60 px-4 py-2">
+                        <InlineReplyComponent
+                          replyTo={{
+                            id: replyingTo.id,
+                            text: replyingTo.text,
+                            senderName: replyingTo.senderName,
+                          }}
+                          onCancel={clearReply}
+                        />
                       </div>
                     )}
-                    <FeatureErrorBoundary featureName="Chat Timeline Enhancements" fallback={null}>
-                      <VirtualizedMessageContainer
-                        messages={messagesWithThreads as any}
-                        renderMessage={renderMessage}
-                        onLoadMore={demoMode.isDemoMode ? () => {} : loadMoreMessages}
-                        hasMore={demoMode.isDemoMode ? false : hasMore}
-                        isLoading={isLoadingMore}
-                        initialVisibleCount={10}
-                        className="chat-scroll-container native-scroll px-3"
-                        autoScroll={true}
-                        restoreScroll={true}
-                        scrollKey={`chat-scroll-${resolvedTripId}`}
-                        scrollContainerRef={messageScrollRef}
-                        firstUnreadMessageId={firstUnreadMessageId}
-                      />
-                    </FeatureErrorBoundary>
                   </>
                 )}
 
-                {/* Typing Indicator */}
-                {!demoMode.isDemoMode && typingUsers.length > 0 && (
-                  <FeatureErrorBoundary featureName="Typing Indicator" fallback={null}>
-                    <TypingIndicator typingUsers={typingUsers} />
-                  </FeatureErrorBoundary>
+                {/* Rail layout: composer lives inside the message pane column */}
+                {showChatSidebar && composerTray && (
+                  <div className="border-t border-border/60">{composerTray}</div>
                 )}
-
-                {/* Reply Bar */}
-                {replyingTo && (
-                  <div className="border-t border-border/60 bg-muted/60 px-4 py-2">
-                    <InlineReplyComponent
-                      replyTo={{
-                        id: replyingTo.id,
-                        text: replyingTo.text,
-                        senderName: replyingTo.senderName,
-                      }}
-                      onCancel={clearReply}
-                    />
-                  </div>
-                )}
-              </>
-            )}
+                {showChatSidebar && restrictionBanner}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Persistent Chat Input - Hidden when in Channels mode or user cannot post */}
-        {messageFilter !== 'channels' && canPostToChat && (
-          <div
-            className="chat-composer-tray chat-input-persistent w-full flex-shrink-0 bg-background"
-            style={{
-              paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
-              touchAction: 'manipulation',
-            }}
-          >
-            <div className="w-full">
-              <ChatInput
-                inputMessage={inputMessage}
-                onInputChange={setInputMessage}
-                onSendMessage={handleSendMessage}
-                onKeyPress={handleKeyPress}
-                apiKey=""
-                isTyping={isSendingMessage}
-                tripMembers={tripMembers}
-                hidePayments={true}
-                isPro={isPro}
-                tripId={resolvedTripId}
-                disableFileUpload={!canUploadMedia}
-                safeAreaBottom={false}
-                onTypingChange={handleTypingChange}
-                canSendBroadcast={canSendBroadcast}
-              />
-            </div>
-          </div>
-        )}
+        {/* Pill-bar layout: composer keeps its original full-width slot */}
+        {!showChatSidebar && composerTray}
+        {!showChatSidebar && restrictionBanner}
 
-        {/* Chat mode restriction banner */}
-        {messageFilter !== 'channels' && !canPostToChat && !chatModeLoading && (
-          <div className="w-full border-t border-border/60 bg-card/70 px-4 py-3 text-center">
-            <p className="text-sm text-muted-foreground">
-              {effectiveChatMode === 'broadcasts'
-                ? 'This chat is in announcements-only mode. Only admins can post.'
-                : effectiveChatMode === 'admin_only'
-                  ? 'This chat is in admin-only mode. Only admins can post.'
-                  : 'You do not have permission to post in this chat.'}
-            </p>
-          </div>
+        {/* Mobile pro: bottom-sheet channel picker (popover replacement) */}
+        {isPro && !showChatSidebar && (
+          <MobileChannelSheet
+            isOpen={channelSheetOpen}
+            onClose={() => setChannelSheetOpen(false)}
+            channels={availableChannels as any}
+            activeChannelId={roleActiveChannel?.id ?? null}
+            onSelect={(channel: any) => {
+              if (channel) {
+                setRoleActiveChannel(channel);
+                setMessageFilter('channels');
+              } else {
+                setRoleActiveChannel(null);
+                setMessageFilter('all');
+              }
+            }}
+            channelUnreadCounts={channelUnreadCounts}
+          />
         )}
 
         {/* Threads render inline beneath their parent — no modal/drawer. */}

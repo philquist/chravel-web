@@ -136,6 +136,7 @@ export const ProTabContent = ({
                 name: p.name,
                 role: p.role,
               }))}
+              onNavigateToTeam={() => onTabChange('team')}
             />
           </FeatureErrorBoundary>
         );

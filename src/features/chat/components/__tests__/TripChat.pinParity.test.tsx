@@ -156,6 +156,7 @@ vi.mock('@/services/chatContentParser', () => ({ parseMessage: vi.fn() }));
 vi.mock('@/services/stream/streamClient', () => ({
   getStreamClient: () => ({ userID: 'user-1' }),
   onStreamClientConnected: vi.fn(() => () => {}),
+  onStreamClientConnectionStatusChange: vi.fn(() => () => {}),
 }));
 
 vi.mock('../VirtualizedMessageContainer', () => ({
@@ -242,7 +243,11 @@ describe('TripChat pin parity across trip/pro/event contexts', () => {
       expect(screen.getByText('Preserve this text')).toBeInTheDocument();
 
       if ('isPro' in props) {
-        expect(screen.getByRole('button', { name: /channels/i })).toBeInTheDocument();
+        // Desktop pro renders the persistent channel rail: channels stay
+        // reachable as always-visible rows (plus rail-level search).
+        expect(screen.getByRole('navigation', { name: 'Chat sections' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /ops/i })).toBeInTheDocument();
+        expect(screen.getByLabelText('Search messages')).toBeInTheDocument();
       }
     },
   );
