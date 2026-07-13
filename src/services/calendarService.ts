@@ -770,16 +770,23 @@ export const calendarService = {
 
     // 4. Single batch: <= CHUNK_SIZE events
     if (rows.length <= CHUNK_SIZE) {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('trip_events')
-        .upsert(rows, { onConflict: 'trip_id,idempotency_key', ignoreDuplicates: true });
+        .upsert(rows, { onConflict: 'trip_id,idempotency_key', ignoreDuplicates: true })
+        .select('id');
 
       if (!error) {
+        // ignoreDuplicates returns only newly inserted rows (not conflict skips)
+        const imported = data?.length ?? 0;
         onProgress?.(rows.length, rows.length);
-        console.info(`[calendarService] Bulk insert succeeded for ${rows.length} events`);
-        this.fetchAndCacheRecentEvents(tripId, rows.length);
-        this.sendBulkImportNotification(tripId, rows.length, user.id);
-        return { imported: rows.length, failed: 0, events: [] };
+        console.info(
+          `[calendarService] Bulk insert succeeded: ${imported} imported of ${rows.length} submitted`,
+        );
+        if (imported > 0) {
+          this.fetchAndCacheRecentEvents(tripId, imported);
+          this.sendBulkImportNotification(tripId, imported, user.id);
+        }
+        return { imported, failed: 0, events: [] };
       }
 
       console.error(
@@ -795,12 +802,13 @@ export const calendarService = {
 
     for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
       const chunk = rows.slice(i, i + CHUNK_SIZE);
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('trip_events')
-        .upsert(chunk, { onConflict: 'trip_id,idempotency_key', ignoreDuplicates: true });
+        .upsert(chunk, { onConflict: 'trip_id,idempotency_key', ignoreDuplicates: true })
+        .select('id');
 
       if (!error) {
-        imported += chunk.length;
+        imported += data?.length ?? 0;
         onProgress?.(Math.min(i + CHUNK_SIZE, rows.length), rows.length);
       } else {
         // Chunk failed — fall back to sequential for this chunk

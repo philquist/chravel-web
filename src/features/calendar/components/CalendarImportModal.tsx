@@ -432,7 +432,7 @@ export const CalendarImportModal: React.FC<CalendarImportModalProps> = ({
       };
     });
 
-    const skipped = duplicateIndices.size + excludedIndices.size;
+    const skipped = parseResult.events.length - eventsToInsert.length;
     setImportProgress({ imported: 0, skipped, failed: 0 });
     setImportingProgress({ completed: 0, total: eventsToInsert.length });
 

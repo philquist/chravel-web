@@ -2539,7 +2539,8 @@ async function _executeImpl(
             Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           },
           signal: AbortSignal.timeout(15_000),
-          redirect: 'follow',
+          // SECURITY: Prevent redirect-chain SSRF to internal hosts after URL validation
+          redirect: 'error',
         }),
       );
 

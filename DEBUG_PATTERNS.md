@@ -573,11 +573,11 @@ Known security anti-patterns discovered during audits. Reference this before int
 **Symptom:** Concierge `browseWebsite` could fetch private/internal hosts while scrape-schedule was SSRF-gated.
 **Risk:** HIGH — internal network probing via authenticated concierge tool path.
 **Root Cause:** `functionExecutor.ts` only checked `http(s)://` prefix; scrape-* used `validateExternalUrlBeforeFetch`.
-**How to Confirm:** Attempt browseWebsite against `https://127.0.0.1` or link-local metadata host; should be rejected.
-**Smallest Safe Fix:** Call `validateExternalUrlBeforeFetch` before `fetch` in browseWebsite (force HTTPS).
+**How to Confirm:** Attempt browseWebsite against `https://127.0.0.1` or a public URL that redirects to a private IP; both should be rejected.
+**Smallest Safe Fix:** Call `validateExternalUrlBeforeFetch` before `fetch` in browseWebsite (force HTTPS) and set `redirect: 'error'` so validated hosts cannot redirect to internal networks.
 **Required Tests:** Edge/unit coverage that private hosts are blocked; keep scrape-schedule SSRF tests green.
 **Regression Surfaces:** Concierge URL browsing, reservation lookup helpers that recurse into browseWebsite.
-**Fixed in:** `supabase/functions/_shared/functionExecutor.ts` (2026-07-13 Smart Import hardening)
+**Fixed in:** `supabase/functions/_shared/functionExecutor.ts` (2026-07-13 Smart Import hardening; redirect hardened in follow-up)
 
 ## Smart Import: trips.id is TEXT, not UUID
 
