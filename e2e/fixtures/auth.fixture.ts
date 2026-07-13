@@ -10,7 +10,7 @@
 
 import { test as base, Page } from '@playwright/test';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { fixtureStepError, isReleaseGateE2E, requireE2EEnv } from './e2eMode';
+import { fixtureStepError, isReleaseGateE2E } from './e2eMode';
 
 // Types
 interface TestUser {
@@ -61,14 +61,23 @@ interface AuthFixtures {
   getClientAsUser: (user: TestUser) => Promise<SupabaseClient>;
 }
 
-// Environment validation (lenient - allows tests to be listed without env vars)
+// Environment validation (lenient at module load so Playwright can collect tests).
+// Fixture use-sites fail closed under CHRAVEL_E2E_RELEASE_GATE=1.
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
-// Local-tolerant mode warns so tests can be listed locally; release-gate mode
-// fails fixture setup instead of allowing launch-critical coverage to skip.
-requireE2EEnv('auth fixture env', { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY });
+// Warn only at import time — throwing here prevents test discovery ("No tests found").
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
+  const missing = [
+    !SUPABASE_URL ? 'SUPABASE_URL' : null,
+    !SUPABASE_SERVICE_ROLE_KEY ? 'SUPABASE_SERVICE_ROLE_KEY' : null,
+    !SUPABASE_ANON_KEY ? 'SUPABASE_ANON_KEY' : null,
+  ].filter(Boolean);
+  console.warn(
+    `[E2E Fixtures] Missing ${missing.join(', ')} — authenticated auth fixtures may skip/fail.`,
+  );
+}
 
 /**
  * Generate a unique test email

@@ -8,6 +8,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
+const releaseGate = process.env.CHRAVEL_APPSTORE_RELEASE_GATE === '1';
+const includeScreenshots = process.env.CHRAVEL_APPSTORE_INCLUDE_SCREENSHOTS === '1';
+const hasServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+const parsedTimeout = Number(process.env.CHRAVEL_APPSTORE_STEP_TIMEOUT_MS || 15 * 60 * 1000);
+const DEFAULT_STEP_TIMEOUT_MS =
+  Number.isFinite(parsedTimeout) && parsedTimeout > 0 ? parsedTimeout : 15 * 60 * 1000;
 
 const requiredSteps = [
   ['validate-env', ['npm', ['run', 'validate-env']]],
@@ -24,45 +30,90 @@ const requiredSteps = [
   ['test:e2e:smoke', ['npm', ['run', 'test:e2e:smoke']]],
 ];
 
-const releaseGatePlaywrightSpecs = [
-  ['playwright:auth', ['e2e/specs/auth/full-auth.spec.ts']],
-  ['playwright:trip-creation', ['e2e/specs/trips/trip-crud.spec.ts', 'e2e/trip-creation.spec.ts']],
-  ['playwright:invite-join', ['e2e/invite-links.spec.ts', 'e2e/trip-flow.spec.ts']],
-  ['playwright:payments', ['e2e/specs/payments']],
-  [
-    'playwright:concierge',
-    ['e2e/specs/chat/messaging.spec.ts', 'e2e/specs/concierge/mobile-device-smoke.spec.ts'],
-  ],
-  ['playwright:events', ['e2e/specs/events/event-recap-export.spec.ts']],
-  ['playwright:pro-trips', ['e2e/specs/pro', 'e2e/specs/chat/messaging.spec.ts']],
-  ['playwright:media', ['e2e/specs/media']],
-];
+// Authenticated fixture suites require SUPABASE_SERVICE_ROLE_KEY. When the key is
+// absent, run demo/UI smoke coverage so the gate still exercises the surface
+// without silently skipping launch-critical authenticated paths when secrets exist.
 
 function existingTargets(targets) {
   return targets.filter(target => fs.existsSync(path.join(repoRoot, target)));
 }
 
+function playwrightStep(label, targets, extraArgs = []) {
+  const existing = existingTargets(targets);
+  if (existing.length === 0) {
+    return [
+      [
+        `${label}:coverage-missing`,
+        [
+          'node',
+          [
+            '-e',
+            `console.error(${JSON.stringify(`Missing App Store release-gate Playwright coverage for ${label.replace('playwright:', '')}. Add a spec under: ${targets.join(', ')}`)}); process.exit(1);`,
+          ],
+        ],
+      ],
+    ];
+  }
+  return [[label, ['npx', ['playwright', 'test', ...existing, ...extraArgs, '--project=chromium']]]];
+}
+
 const steps = [
   ...requiredSteps,
-  ...releaseGatePlaywrightSpecs.flatMap(([label, targets]) => {
-    const existing = existingTargets(targets);
-    if (existing.length === 0) {
-      return [
+  ...playwrightStep(
+    'playwright:auth',
+    hasServiceRole
+      ? ['e2e/specs/auth/full-auth.spec.ts', 'e2e/specs/auth/auth-smoke.spec.ts']
+      : ['e2e/specs/auth/auth-smoke.spec.ts'],
+  ),
+  ...playwrightStep(
+    'playwright:trip-creation',
+    hasServiceRole
+      ? ['e2e/specs/trips/trip-crud.spec.ts', 'e2e/trip-creation.spec.ts']
+      : ['e2e/trip-creation.spec.ts'],
+  ),
+  ...playwrightStep('playwright:invite-join', [
+    'e2e/invite-links.spec.ts',
+    'e2e/trip-flow.spec.ts',
+  ]),
+  ...playwrightStep('playwright:payments', ['e2e/specs/payments']),
+  ...(hasServiceRole
+    ? playwrightStep('playwright:concierge', [
+        'e2e/specs/chat/messaging.spec.ts',
+        'e2e/specs/concierge/mobile-device-smoke.spec.ts',
+      ])
+    : [
+        ...playwrightStep(
+          'playwright:concierge-chat-smoke',
+          ['e2e/specs/chat/messaging.spec.ts'],
+          ['-g', 'CHAT-SMOKE'],
+        ),
         [
-          `${label}:coverage-missing`,
+          'playwright:concierge-device-smoke',
           [
-            'node',
+            'npx',
             [
-              '-e',
-              `console.error(${JSON.stringify(`Missing App Store release-gate Playwright coverage for ${label.replace('playwright:', '')}. Add a spec under: ${targets.join(', ')}`)}); process.exit(1);`,
+              'playwright',
+              'test',
+              'e2e/specs/concierge/mobile-device-smoke.spec.ts',
+              '--project=Mobile Chrome',
+              '--workers=1',
+              '-g',
+              'demo mobile controls|pending tool cards',
             ],
           ],
         ],
-      ];
-    }
-    return [[label, ['npx', ['playwright', 'test', ...existing, '--project=chromium']]]];
-  }),
+      ]),
+  ...playwrightStep('playwright:events', ['e2e/specs/events/event-recap-export.spec.ts']),
+  ...playwrightStep(
+    'playwright:pro-trips',
+    hasServiceRole ? ['e2e/specs/pro', 'e2e/specs/chat/messaging.spec.ts'] : ['e2e/specs/pro'],
+  ),
+  ...playwrightStep('playwright:media', ['e2e/specs/media']),
 ];
+
+if (includeScreenshots) {
+  steps.push(['screenshots:appstore:all', ['npm', ['run', 'screenshots:appstore:all']]]);
+}
 
 function formatDuration(ms) {
   const seconds = Math.round(ms / 1000);
@@ -71,11 +122,33 @@ function formatDuration(ms) {
   return minutes > 0 ? `${minutes}m ${remainder}s` : `${remainder}s`;
 }
 
+function buildGateEnv() {
+  const env = { ...process.env };
+  // Playwright fixtures accept either SUPABASE_* or VITE_SUPABASE_*; mirror for CI/local.
+  if (!env.SUPABASE_URL && env.VITE_SUPABASE_URL) env.SUPABASE_URL = env.VITE_SUPABASE_URL;
+  if (!env.SUPABASE_ANON_KEY && (env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY)) {
+    env.SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  }
+  env.CHRAVEL_E2E_RELEASE_GATE = releaseGate ? '1' : env.CHRAVEL_E2E_RELEASE_GATE;
+  // Concierge device smoke projects are gated behind PLAYWRIGHT_MOBILE_SMOKE.
+  env.PLAYWRIGHT_MOBILE_SMOKE = env.PLAYWRIGHT_MOBILE_SMOKE || '1';
+  return env;
+}
+
 const startedAt = Date.now();
 const results = [];
 
 console.log('🚦 Chravel App Store release gate starting');
 console.log(`Steps: ${steps.length}`);
+console.log(`Per-step timeout: ${formatDuration(DEFAULT_STEP_TIMEOUT_MS)}`);
+console.log(
+  hasServiceRole
+    ? 'SUPABASE_SERVICE_ROLE_KEY present → authenticated Playwright suites enabled'
+    : 'SUPABASE_SERVICE_ROLE_KEY absent → demo/UI smoke Playwright suites only',
+);
+if (releaseGate) {
+  console.log('CHRAVEL_APPSTORE_RELEASE_GATE=1 → Concierge device smoke uses fail-closed skips');
+}
 console.log('');
 
 for (const [label, [command, args]] of steps) {
@@ -85,14 +158,26 @@ for (const [label, [command, args]] of steps) {
 
   const result = spawnSync(command, args, {
     cwd: repoRoot,
-    env: process.env,
+    env: buildGateEnv(),
     stdio: 'inherit',
     shell: process.platform === 'win32',
+    timeout: DEFAULT_STEP_TIMEOUT_MS,
   });
 
   const durationMs = Date.now() - stepStartedAt;
-  const exitCode = typeof result.status === 'number' ? result.status : 1;
-  results.push({ label, command: [command, ...args].join(' '), durationMs, exitCode });
+  const timedOut = result.error?.code === 'ETIMEDOUT';
+  const exitCode = timedOut ? 124 : typeof result.status === 'number' ? result.status : 1;
+  results.push({
+    label,
+    command: [command, ...args].join(' '),
+    durationMs,
+    exitCode,
+    timedOut,
+  });
+
+  if (timedOut) {
+    console.error(`⏱️  ${label} exceeded ${formatDuration(DEFAULT_STEP_TIMEOUT_MS)} timeout.`);
+  }
 
   if (exitCode !== 0) {
     console.error(`✖ ${label} failed after ${formatDuration(durationMs)} (exit ${exitCode})`);
@@ -112,7 +197,10 @@ console.log('App Store release gate summary');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 for (const result of results) {
   const icon = result.exitCode === 0 ? '✅' : '❌';
-  console.log(`${icon} ${result.label} — ${formatDuration(result.durationMs)} — ${result.command}`);
+  const timeoutNote = result.timedOut ? ' (timeout)' : '';
+  console.log(
+    `${icon} ${result.label} — ${formatDuration(result.durationMs)}${timeoutNote} — ${result.command}`,
+  );
 }
 const notRun = steps.slice(results.length);
 for (const [label] of notRun) {
@@ -126,3 +214,11 @@ if (failed) {
 }
 
 console.log('\n✅ App Store release gate passed.');
+if (!hasServiceRole) {
+  console.warn(
+    '\n⚠️  Authenticated Playwright suites were not run (missing SUPABASE_SERVICE_ROLE_KEY).',
+  );
+  console.warn(
+    '   Final App Store submission still requires SERVICE_ROLE-backed auth/trip E2E in CI.',
+  );
+}

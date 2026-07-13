@@ -531,3 +531,9 @@ Known security anti-patterns discovered during audits. Reference this before int
 - **Smallest safe fix:** Map full attachments (incl. audio metadata) in the Stream VM; resolve sender via `sender.id`; batch multi-image sends; `shareVoiceNote` with typed audio attachment; mount receipts for all sent own messages; skip single-media path when attachments exist.
 - **Required tests:** streamMessageViewModel mosaic/audio/document mapping; VirtualizedMessageContainer grouping on `sender.id`; ReadReceipts Delivered vs gold; streamMessagePayload voice metadata preserve.
 - **Fixed in:** `streamMessageViewModel.ts`, `VirtualizedMessageContainer.tsx`, `useShareAsset.ts`, `MessageBubble.tsx`, `ChatInput.tsx`, `streamMessagePayload.ts` (July 2026)
+### Vitest suite hangs with no failing tests (ChatSearchOverlay)
+- **Symptom:** `npm run test:run` never exits; last activity may be unrelated files; workers at high CPU.
+- **Root cause:** Component default prop `demoMessages = []` + `useEffect(..., [demoMessages])` + `setMessages([])` on empty query → infinite re-render.
+- **Fix:** Module-level `EMPTY_DEMO_MESSAGES`; `setMessages(prev => prev.length === 0 ? prev : [])`; optional `scrollIntoView?.()` for jsdom.
+- **Evidence:** 2026-07-13 release-gate unblock; mountStability regression test.
+
