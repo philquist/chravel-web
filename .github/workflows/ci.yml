@@ -250,6 +250,7 @@ jobs:
       - name: Run full E2E tests
         run: npm run test:e2e
         env:
+          CHRAVEL_E2E_RELEASE_GATE: '1'
           PLAYWRIGHT_TEST_BASE_URL: 'http://localhost:8080'
           PLAYWRIGHT_SKIP_BUILD: '1'
 
