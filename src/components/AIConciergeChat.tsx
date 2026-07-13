@@ -166,7 +166,7 @@ export const AIConciergeChat = ({
     onNavigateToPlaces: handleNavigateToPlaces,
   });
 
-  // ── Google TTS ──────────────────────────────────────────────────────
+  // ── Read-aloud TTS (Lovable AI Gateway via concierge-voice-tts) ─────
   const {
     playbackState: ttsPlaybackState,
     playingMessageId: ttsPlayingMessageId,

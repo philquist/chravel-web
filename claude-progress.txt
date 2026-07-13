@@ -1,3 +1,10 @@
+2026-07-13 — Concierge read-aloud (TTS) audit + URL speech harden
+- Confirmed per-reply speaker button is still wired: MessageRenderer → TTSSpeakerButton → useConciergeReadAloud → concierge-voice-tts (Lovable AI Gateway openai/gpt-4o-mini-tts). Deployed on ChravelApp; 10 settings voices match server catalog (default coral).
+- Hardened buildSpeechText: bare https/www URLs become "a link to {domain}"; markdown labels kept; query strings never spoken. Added buildSpeechText unit tests.
+- Bidirectional realtime remains separate (gated by concierge_realtime_voice). Stale docs/ACTIVE/GOOGLE_CLOUD_TTS_MIGRATION.md still describes superseded Gemini path — follow-up to rewrite.
+- Verification: MessageRenderer.tts + buildSpeechText tests, typecheck, lint:check, build green.
+- Branch: cursor/concierge-tts-read-aloud-audit-c59e
+
 2026-07-13 — Smart Import hardening (calendar): batch undo, mobile UX, SSRF, home/away filters
 - Audited Calendar/Agenda/Lineup/Gmail/Concierge import paths end-to-end.
 - Added durable `calendar_import_batches` + `undo_calendar_import_batch` RPC (RLS + edit-conflict aware).

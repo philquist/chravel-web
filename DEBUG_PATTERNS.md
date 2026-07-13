@@ -599,3 +599,13 @@ Known security anti-patterns discovered during audits. Reference this before int
 - **Smallest safe fix:** Module-level stable defaults; return previous `visitedTabs` Set when unchanged; keep transition hang-detector tests.
 - **Required tests:** `MobileTripTabs.transition.test.tsx` + navigation suite must finish in seconds, not OOM.
 - **Fixed in:** `MobileTripTabs.tsx` (July 2026 restore)
+
+## Concierge TTS: bare URL wipe leaves awkward spoken gaps
+- **Status:** fixed
+- **Subsystem:** Concierge read-aloud (`buildSpeechText` → `concierge-voice-tts`)
+- **Bug class:** speech-prep strips markup without a spoken substitute
+- **Symptom:** Assistant replies with raw https/www links sounded like broken sentences ("Details are here:  for the group") or TTS attempted to spell paths/query strings.
+- **Root cause:** `stripMarkdown` deleted bare `https?://` URLs entirely and ignored `www.*` hosts without a scheme. Markdown `[label](url)` already kept the label.
+- **Smallest safe fix:** Replace bare http(s)/www URLs with `a link to {domain}`; keep markdown labels; never speak query strings.
+- **Required tests:** `src/lib/__tests__/buildSpeechText.test.ts`
+- **Fixed in:** `src/lib/buildSpeechText.ts` (July 2026)
