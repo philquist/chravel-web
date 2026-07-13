@@ -7,6 +7,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 
 import { test as authTest, TestUser } from './auth.fixture';
+import { fixtureStepError } from './e2eMode';
 
 // Types
 interface TestTrip {
@@ -135,7 +136,10 @@ export const test = authTest.extend<TripFixtures>({
         .single();
 
       if (tripError) {
-        throw new Error(`Failed to create test trip: ${tripError.message}`);
+        throw fixtureStepError(
+          tripType === 'pro' ? 'pro trip creation' : 'trip creation',
+          `Failed to create test trip: ${tripError.message}`,
+        );
       }
 
       createdTrips.push(trip.id);
@@ -149,7 +153,10 @@ export const test = authTest.extend<TripFixtures>({
       });
 
       if (memberError) {
-        console.warn(`Failed to add creator as member (non-fatal): ${memberError.message}`);
+        throw fixtureStepError(
+          'membership',
+          `Failed to add creator as member: ${memberError.message}`,
+        );
       }
 
       return {
@@ -194,7 +201,7 @@ export const test = authTest.extend<TripFixtures>({
       });
 
       if (error) {
-        throw new Error(`Failed to add trip member: ${error.message}`);
+        throw fixtureStepError('membership', `Failed to add trip member: ${error.message}`);
       }
     };
 

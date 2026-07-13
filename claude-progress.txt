@@ -153,3 +153,8 @@
 - Fixed residual realtime blocker: meta CSP in `index.html` now allows `https://ai-gateway.vercel.sh` + `wss://ai-gateway.vercel.sh` (aligned with vercel.json).
 - Hardened composer hit-testing (isolate/z stacking, inactive tab `pointerEvents:none`), Ask-anything placeholder, clearer disabled Send, and stop dictation before realtime mic.
 - Docs: `docs/CONCIERGE_CONTROLS_RECOVERY_2026-07-11.md`. Physical iPhone TestFlight QA remains the DoD gate.
+
+2026-07-13 — E2E release-gate fixture failures
+- Split chat messaging E2E setup into local-tolerant vs release-gate mode via CHRAVEL_E2E_RELEASE_GATE=1, preserving documented local skips while making launch-critical fixture failures throw explicit step errors.
+- Added shared E2E mode helpers under e2e/fixtures and tightened auth/trip fixture failures for auth, trip creation, membership, and pro trip creation.
+- Wired CI full E2E and scheduled staging/App Store QA E2E to release-gate mode; verification reached Playwright browser execution but Chromium install remains blocked by CDN 403 in this environment.
