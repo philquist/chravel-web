@@ -133,6 +133,17 @@ export const ChatInput = ({
     }
   }, [canSendBroadcast, isBroadcastMode]);
 
+  // Auto-grow the textarea like iMessage / WhatsApp — height follows content up to
+  // the CSS max-height (set inline on the element), then scrolls internally.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [inputMessage]);
+
+
+
   // Handle @ mention detection
   const handleInputChange = useCallback(
     (value: string) => {
