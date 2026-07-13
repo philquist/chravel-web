@@ -445,58 +445,7 @@ class ChannelService {
           this.mapChannelData(c as unknown as ChannelRowWithRole),
         );
 
-        // Compute member counts for admin-returned channels
-        // Count from channel_members (explicit membership) first, then fall back to role-based count
-        const channelIds = channels.map(c => c.id);
-        if (channelIds.length > 0) {
-          // Get explicit channel_members counts
-          const { data: memberData } = await supabase
-            .from('channel_members')
-            .select('channel_id, user_id')
-            .in('channel_id', channelIds)
-            .limit(2000);
-
-          // Build a map of channel_id -> Set<user_id> for deduplication
-          const channelMemberMap = new Map<string, Set<string>>();
-          (memberData || []).forEach(row => {
-            if (!channelMemberMap.has(row.channel_id)) {
-              channelMemberMap.set(row.channel_id, new Set());
-            }
-            channelMemberMap.get(row.channel_id)!.add(row.user_id);
-          });
-
-          // Also count role-based members (from user_trip_roles + channel_role_access)
-          for (const channel of channels) {
-            const memberSet = channelMemberMap.get(channel.id) || new Set<string>();
-
-            // Get roles that grant access to this channel
-            const { data: roleAccessData } = await supabase
-              .from('channel_role_access')
-              .select('role_id')
-              .eq('channel_id', channel.id)
-              .limit(100);
-
-            const roleIds = (roleAccessData || []).map(r => r.role_id);
-            // Also include legacy required_role_id
-            if (channel.requiredRoleId) {
-              roleIds.push(channel.requiredRoleId);
-            }
-
-            if (roleIds.length > 0) {
-              const uniqueRoleIds = [...new Set(roleIds)];
-              const { data: roleMembers } = await supabase
-                .from('user_trip_roles')
-                .select('user_id')
-                .eq('trip_id', tripId)
-                .in('role_id', uniqueRoleIds)
-                .limit(500);
-
-              (roleMembers || []).forEach(r => memberSet.add(r.user_id));
-            }
-
-            channel.memberCount = memberSet.size;
-          }
-        }
+        await this.applyMemberCounts(tripId, channels);
 
         return channels;
       }
@@ -549,68 +498,44 @@ class ChannelService {
         }
       });
 
-      // Fetch member counts for all accessible channels
-      // Must consider BOTH channel_role_access junction table AND legacy required_role_id
-      const channelIds = Array.from(uniqueChannels.keys());
-      if (channelIds.length > 0) {
-        // Step 1: Get roles from channel_role_access junction table
-        const { data: junctionRoles } = await supabase
-          .from('channel_role_access')
-          .select('channel_id, role_id')
-          .in('channel_id', channelIds)
-          .limit(500);
+      const channels = Array.from(uniqueChannels.values());
+      await this.applyMemberCounts(tripId, channels);
 
-        // Step 2: Build a map of channel_id -> Set of role_ids (including legacy required_role_id)
-        const channelRoleMap = new Map<string, Set<string>>();
-
-        // Initialize with legacy required_role_id from each channel
-        for (const [channelId, channel] of uniqueChannels) {
-          const roleSet = new Set<string>();
-          // Include legacy required_role_id if present
-          if (channel.requiredRoleId) {
-            roleSet.add(channel.requiredRoleId);
-          }
-          channelRoleMap.set(channelId, roleSet);
-        }
-
-        // Add roles from junction table
-        if (junctionRoles) {
-          junctionRoles.forEach(cr => {
-            const roleSet = channelRoleMap.get(cr.channel_id);
-            if (roleSet) {
-              roleSet.add(cr.role_id);
-            }
-          });
-        }
-
-        // Step 3: For each channel, count DISTINCT users with any of its granted roles
-        // A user with multiple roles granting access should only be counted once
-        for (const [channelId, roleSet] of channelRoleMap) {
-          if (roleSet.size === 0) continue;
-
-          const roleArray = Array.from(roleSet);
-          // Fetch user_ids instead of just counting rows to allow deduplication
-          const { data: userRoleData } = await supabase
-            .from('user_trip_roles')
-            .select('user_id')
-            .eq('trip_id', tripId)
-            .in('role_id', roleArray)
-            .limit(500);
-
-          // Use a Set to count distinct users (handles multi-role users correctly)
-          const distinctUserIds = new Set((userRoleData || []).map(row => row.user_id));
-
-          const channel = uniqueChannels.get(channelId);
-          if (channel) {
-            channel.memberCount = distinctUserIds.size;
-          }
-        }
-      }
-
-      return Array.from(uniqueChannels.values());
+      return channels;
     } catch {
       return [];
     }
+  }
+
+  /**
+   * Populate memberCount on each channel from the get_channel_member_counts
+   * RPC — one query for the whole trip, one shared definition of "member"
+   * (role-derived ∪ explicit channel_members, DISTINCT users). Replaces the
+   * previous per-branch N+1 loops whose counting rules disagreed between the
+   * admin and member paths. Counts degrade to 0 on RPC failure rather than
+   * failing the channel list.
+   */
+  private async applyMemberCounts(tripId: string, channels: TripChannel[]): Promise<void> {
+    if (channels.length === 0) return;
+
+    const { data, error } = await supabase.rpc('get_channel_member_counts', {
+      p_trip_id: tripId,
+    });
+
+    if (error || !data) {
+      if (import.meta.env.DEV) {
+        console.warn('[channelService] get_channel_member_counts failed:', error?.message);
+      }
+      return;
+    }
+
+    const countMap = new Map<string, number>(
+      data.map(row => [row.channel_id, Number(row.member_count)]),
+    );
+
+    channels.forEach(channel => {
+      channel.memberCount = countMap.get(channel.id) ?? 0;
+    });
   }
 
   private mapChannelData(d: ChannelRowWithRole): TripChannel {

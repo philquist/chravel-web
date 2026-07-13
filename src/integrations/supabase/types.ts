@@ -5376,26 +5376,16 @@ export type Database = {
         Returns: boolean
       }
       get_account_deletion_status: { Args: never; Returns: Json }
-      get_admin_accessible_channels: {
-        Args: { _trip_id: string; _user_id: string }
-        Returns: {
-          channel_name: string
-          channel_slug: string
-          created_at: string
-          created_by: string
-          description: string
-          id: string
-          is_archived: boolean
-          is_private: boolean
-          member_count: number
-          required_role_id: string
-          trip_id: string
-          updated_at: string
-        }[]
-      }
       get_broadcast_read_count: {
         Args: { p_broadcast_id: string }
         Returns: number
+      }
+      get_channel_member_counts: {
+        Args: { p_trip_id: string }
+        Returns: {
+          channel_id: string
+          member_count: number
+        }[]
       }
       get_events_in_user_tz: {
         Args: { p_trip_id: string; p_user_id: string }
