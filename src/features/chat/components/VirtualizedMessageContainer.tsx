@@ -36,10 +36,20 @@ interface VirtualizedMessageContainerProps {
 
 type RowItem =
   | { type: 'date'; date: Date }
-  | { type: 'message'; message: ChatMessageLike; index: number; showSenderInfo: boolean };
+  | { type: 'time-gap'; date: Date; key: string }
+  | {
+      type: 'message';
+      message: ChatMessageLike;
+      index: number;
+      showSenderInfo: boolean;
+      isLastInGroup: boolean;
+    };
 
 const ROW_HEIGHT_ESTIMATE = 72;
 const DATE_ROW_HEIGHT = 40;
+const TIME_GAP_ROW_HEIGHT = 28;
+const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
+
 
 export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerProps> = ({
   messages,
@@ -91,6 +101,16 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
       const showDateSeparator = !prevDate || !isSameDay(currentDate, prevDate);
       if (showDateSeparator) {
         result.push({ type: 'date', date: currentDate });
+      } else if (
+        prevDate &&
+        currentDate.getTime() - prevDate.getTime() >= FIFTEEN_MINUTES_MS
+      ) {
+        // Inline time-gap pill for long silences within the same day (iMessage-style).
+        result.push({
+          type: 'time-gap',
+          date: currentDate,
+          key: `gap-${message.id}`,
+        });
       }
       // Collapse sender info if same sender within 2-minute window (message grouping)
       const senderId = message.sender_id || message.user_id;
@@ -100,7 +120,36 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
         : false;
       const showSenderInfo =
         showDateSeparator || !senderId || senderId !== prevSenderId || !withinWindow;
-      result.push({ type: 'message', message, index: visibleStartIndex + idx, showSenderInfo });
+
+      // Look ahead to determine if this is the last bubble in its group.
+      // "Last in group" = next message is a different sender, a bigger time
+      // gap, or a different day. Drives tighter spacing between grouped
+      // bubbles and looser spacing between senders.
+      const nextMessage = visibleMessages[idx + 1];
+      const nextDate = nextMessage
+        ? new Date(nextMessage.created_at || nextMessage.createdAt || 0)
+        : null;
+      const nextSenderId = nextMessage
+        ? nextMessage.sender_id || nextMessage.user_id
+        : null;
+      const nextWithinWindow = nextDate
+        ? nextDate.getTime() - currentDate.getTime() < TWO_MINUTES_MS
+        : false;
+      const nextSameDay = nextDate ? isSameDay(currentDate, nextDate) : false;
+      const isLastInGroup =
+        !nextMessage ||
+        !senderId ||
+        senderId !== nextSenderId ||
+        !nextWithinWindow ||
+        !nextSameDay;
+
+      result.push({
+        type: 'message',
+        message,
+        index: visibleStartIndex + idx,
+        showSenderInfo,
+        isLastInGroup,
+      });
     });
     return result;
   }, [visibleMessages, visibleStartIndex]);
@@ -108,7 +157,12 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => containerRef.current,
-    estimateSize: index => (rows[index]?.type === 'date' ? DATE_ROW_HEIGHT : ROW_HEIGHT_ESTIMATE),
+    estimateSize: index => {
+      const row = rows[index];
+      if (row?.type === 'date') return DATE_ROW_HEIGHT;
+      if (row?.type === 'time-gap') return TIME_GAP_ROW_HEIGHT;
+      return ROW_HEIGHT_ESTIMATE;
+    },
     overscan: 5,
     // Key the measurement cache by item identity, not index: when a filter
     // (e.g. chat → Broadcasts) shrinks the list, surviving rows shift index
@@ -117,9 +171,12 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
     getItemKey: index => {
       const row = rows[index];
       if (!row) return index;
-      return row.type === 'date' ? `date-${row.date.getTime()}` : row.message.id;
+      if (row.type === 'date') return `date-${row.date.getTime()}`;
+      if (row.type === 'time-gap') return row.key;
+      return row.message.id;
     },
   });
+
 
   const virtualItems = virtualizer.getVirtualItems();
 
@@ -265,42 +322,63 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
           {virtualItems.map(virtualRow => {
             const row = rows[virtualRow.index];
             if (!row) return null;
+            const wrapperStyle: React.CSSProperties = {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${virtualRow.start}px)`,
+            };
             if (row.type === 'date') {
               return (
                 <div
                   key={`date-${row.date.getTime()}`}
                   ref={virtualizer.measureElement}
                   data-index={virtualRow.index}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
+                  style={wrapperStyle}
                 >
                   <DateSeparator date={row.date} />
                 </div>
               );
             }
+            if (row.type === 'time-gap') {
+              const label = row.date.toLocaleTimeString([], {
+                hour: 'numeric',
+                minute: '2-digit',
+              });
+              return (
+                <div
+                  key={row.key}
+                  ref={virtualizer.measureElement}
+                  data-index={virtualRow.index}
+                  style={wrapperStyle}
+                >
+                  <div className="flex items-center justify-center py-1.5">
+                    <span className="text-[10px] uppercase tracking-wider text-white/40 font-medium">
+                      {label}
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+            // Tighter spacing between grouped bubbles (same sender, <2min),
+            // normal spacing at the end of a group. Subtle fade-in on mount
+            // keeps new bubbles feeling alive without a heavy animation.
+            const spacingClass = row.isLastInGroup ? 'pb-2.5' : 'pb-0.5';
             return (
               <div
                 key={row.message.id}
                 ref={virtualizer.measureElement}
                 data-index={virtualRow.index}
-                className="pb-2"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
+                data-last-in-group={row.isLastInGroup ? 'true' : 'false'}
+                className={`${spacingClass} animate-in fade-in slide-in-from-bottom-1 duration-200`}
+                style={wrapperStyle}
               >
                 {renderMessage(row.message, row.index, row.showSenderInfo)}
               </div>
             );
           })}
+
         </div>
         <div ref={messagesEndRef} className="h-px" aria-hidden="true" />
       </div>
