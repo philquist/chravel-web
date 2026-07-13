@@ -416,29 +416,74 @@ export const ChatInput = ({
             </div>
           )}
 
-          {/* Emoji Picker Button — lazy-loaded */}
-          <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
-            <PopoverTrigger asChild>
-              <button className={CTA_BUTTON_CHAT} aria-label="Insert emoji">
-                <Smile className={`${CTA_ICON_CHAT} text-white`} />
+          {/* + Button with Dropdown Menu — left side (iMessage-style) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className={CTA_BUTTON_CHAT} aria-label="Message options">
+                <Plus className={`${CTA_ICON_CHAT} text-white`} />
               </button>
-            </PopoverTrigger>
-            <PopoverContent
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
               side="top"
               align="start"
-              className="p-0 w-auto border-0 bg-transparent shadow-none"
+              sideOffset={8}
+              className="w-52 p-1 bg-neutral-900/95 backdrop-blur-lg border border-neutral-800 rounded-xl shadow-lg animate-slide-in-right z-50"
             >
-              <EmojiMartPicker onEmojiSelect={handleEmojiSelect} />
-            </PopoverContent>
-          </Popover>
+              {/* Broadcast - Deep Crimson Styling. Hidden when the user may not
+                  compose broadcasts (pro/event trips gate to admins/organizers). */}
+              {canSendBroadcast && (
+                <DropdownMenuItem
+                  onClick={() => setIsBroadcastMode(!isBroadcastMode)}
+                  className="flex items-center gap-2 px-3 py-2 border border-[#B91C1C]/60 text-[#B91C1C] font-medium hover:bg-[#B91C1C] hover:text-white rounded-lg mb-1 cursor-pointer"
+                >
+                  <Megaphone className="w-4 h-4" />
+                  Broadcast
+                </DropdownMenuItem>
+              )}
 
-          {/* Dictation Button — reuses concierge Web Speech API hook */}
-          <VoiceButton
-            voiceState={dictationState}
-            isEligible={true}
-            onToggle={toggleDictation}
-            small
-          />
+              {/* File — hidden when media uploads are restricted */}
+              {!disableFileUpload && (
+                <DropdownMenuItem
+                  onClick={() => handleFileUpload('document')}
+                  className="flex items-center gap-2 px-3 py-2 text-neutral-300 hover:bg-neutral-800 rounded-lg cursor-pointer"
+                >
+                  <FileText className="w-4 h-4" />
+                  File
+                </DropdownMenuItem>
+              )}
+
+              {/* Link */}
+              <DropdownMenuItem
+                onClick={() => setIsShareModalOpen(true)}
+                className="flex items-center gap-2 px-3 py-2 text-neutral-300 hover:bg-neutral-800 rounded-lg cursor-pointer"
+              >
+                <Link className="w-4 h-4" />
+                Link
+              </DropdownMenuItem>
+
+              {/* Photo — hidden when media uploads are restricted */}
+              {!disableFileUpload && (
+                <DropdownMenuItem
+                  onClick={() => handleFileUpload('image')}
+                  className="flex items-center gap-2 px-3 py-2 text-neutral-300 hover:bg-neutral-800 rounded-lg cursor-pointer"
+                >
+                  <Camera className="w-4 h-4" />
+                  Photo
+                </DropdownMenuItem>
+              )}
+
+              {/* Video — hidden when media uploads are restricted */}
+              {!disableFileUpload && (
+                <DropdownMenuItem
+                  onClick={() => handleFileUpload('video')}
+                  className="flex items-center gap-2 px-3 py-2 text-neutral-300 hover:bg-neutral-800 rounded-lg cursor-pointer"
+                >
+                  <Video className="w-4 h-4" />
+                  Video
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Mention Picker */}
           {showMentionPicker && tripMembers.length > 0 && (
@@ -452,7 +497,7 @@ export const ChatInput = ({
             />
           )}
 
-          {/* Message Input */}
+          {/* Message Input — auto-growing (iMessage / WhatsApp style) */}
           <textarea
             ref={textareaRef}
             value={inputMessage}
@@ -460,13 +505,15 @@ export const ChatInput = ({
             onKeyDown={handleKeyPress}
             placeholder={isBroadcastMode ? 'Send an announcement...' : 'Type @ to mention someone…'}
             rows={1}
+            style={{ maxHeight: '9.5rem' }}
             className={cn(
-              'flex-1 min-h-[38px] sm:min-h-[44px] px-3 sm:px-4 py-2 rounded-full resize-none focus:outline-none focus-visible:ring-2 transition-all',
+              'flex-1 min-h-[38px] sm:min-h-[44px] px-3 sm:px-4 py-2 rounded-2xl resize-none focus:outline-none focus-visible:ring-2 transition-all overflow-y-auto leading-snug',
               isBroadcastMode
                 ? 'bg-destructive/10 border border-destructive/50 focus-visible:ring-destructive/40 backdrop-blur-sm text-foreground placeholder:text-destructive/70'
                 : 'bg-muted/70 border border-border/70 focus-visible:ring-primary/40 backdrop-blur-sm text-foreground placeholder:text-muted-foreground',
             )}
           />
+
 
           {/* + Button with Dropdown Menu — right side */}
           <DropdownMenu>
