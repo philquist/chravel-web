@@ -81,8 +81,8 @@ This checklist ensures all environment variables, secrets, API keys, and configu
 
 | Variable | Description | Where Used |
 |----------|-------------|------------|
-| `LOVABLE_API_KEY` | Lovable AI API key | Edge Functions: `lovable-concierge` |
-| `GEMINI_API_KEY` | Google Gemini API key | Edge Functions: `gemini-chat` |
+| `LOVABLE_API_KEY` | Lovable AI API key (Gateway) | Edge Functions: `lovable-concierge` (fallback), **`concierge-voice-tts`** (read-aloud). See `docs/ACTIVE/CONCIERGE_READ_ALOUD_TTS.md`. |
+| `GEMINI_API_KEY` | Google Gemini API key | Edge Functions: `lovable-concierge`, `gemini-chat` |
 
 **✅ Checklist:**
 - [ ] Lovable API account created
