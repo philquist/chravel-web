@@ -5,7 +5,7 @@ describe('globalSyncProcessor', () => {
     vi.clearAllMocks();
     vi.resetModules();
     vi.unstubAllEnvs();
-    vi.stubEnv('VITE_STREAM_API_KEY', '');
+    vi.stubEnv('VITE_STREAM_CHAT_DISABLED', 'true');
 
     Object.defineProperty(window.navigator, 'onLine', {
       configurable: true,
@@ -19,13 +19,13 @@ describe('globalSyncProcessor', () => {
   });
 
   it('returns false when Stream is configured (regardless of connection timing)', async () => {
-    vi.stubEnv('VITE_STREAM_API_KEY', 'stream-key');
+    vi.stubEnv('VITE_STREAM_CHAT_DISABLED', 'false');
     const { shouldUseLegacyChatSync } = await import('../globalSyncProcessor');
     expect(shouldUseLegacyChatSync()).toBe(false);
   });
 
   it('omits legacy chat handlers from sync queue when Stream is configured', async () => {
-    vi.stubEnv('VITE_STREAM_API_KEY', 'stream-key');
+    vi.stubEnv('VITE_STREAM_CHAT_DISABLED', 'false');
 
     const getQueuedOperations = vi
       .fn()

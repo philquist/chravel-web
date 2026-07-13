@@ -55,7 +55,7 @@ import { channelService } from '../services/channelService';
 describe('Channel Send Flow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubEnv('VITE_STREAM_API_KEY', '');
+    vi.stubEnv('VITE_STREAM_CHAT_DISABLED', 'true');
   });
 
   // ============================================
@@ -244,7 +244,7 @@ describe('Channel Send Flow', () => {
 
   describe('stream canonical transport guard', () => {
     it('rejects legacy Supabase send path when stream is configured', async () => {
-      vi.stubEnv('VITE_STREAM_API_KEY', 'stream-key');
+      vi.stubEnv('VITE_STREAM_CHAT_DISABLED', 'false');
 
       await expect(
         channelService.sendMessage({ channelId: 'ch-1', content: 'test' }),

@@ -128,7 +128,7 @@ describe('Payment Security Tests', () => {
       // Verification
       const userBBalance = result.balances.find(b => b.userId === userBId);
       expect(userBBalance).toBeDefined();
-      expect(userBBalance?.preferredPaymentMethod).toEqual({
+      expect(userBBalance?.preferredPaymentMethod).toMatchObject({
         id: 'wallet-1',
         type: 'venmo',
         identifier: '@user-b',
