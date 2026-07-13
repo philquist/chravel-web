@@ -291,8 +291,7 @@ export const MessageBubble = memo(
                 const isLastVisible = index === visibleImages.length - 1;
                 const showOverflow = overflow > 0 && isLastVisible;
                 // 3-image layout: first spans full height on the left
-                const spanClass =
-                  visibleImages.length === 3 && index === 0 ? 'row-span-2' : '';
+                const spanClass = visibleImages.length === 3 && index === 0 ? 'row-span-2' : '';
                 return (
                   <button
                     key={index}

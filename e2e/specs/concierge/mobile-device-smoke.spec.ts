@@ -117,12 +117,14 @@ async function loginViaBrowser(page: Page, email: string): Promise<boolean> {
   await passwordInput.fill(DEFAULT_PASSWORD);
   const submit = page.locator('button[type="submit"]').first();
   await submit.click();
-  await page.waitForURL(url => !url.pathname.includes('/auth'), { timeout: 20000 }).catch(() => null);
+  await page
+    .waitForURL(url => !url.pathname.includes('/auth'), { timeout: 20000 })
+    .catch(() => null);
   return !page.url().includes('/auth');
 }
 
 const test = base.extend<{ testAuth: { email: string; session: string; userId: string } | null }>({
-  testAuth: async ({}, provide) => {
+  testAuth: async (_fixtures, provide) => {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       await provide(null);
       return;
@@ -285,7 +287,10 @@ test.describe('CONCIERGE-DEVICE-SMOKE — pending tool cards (contract)', () => 
 });
 
 test.describe('CONCIERGE-DEVICE-SMOKE — production bundle markers', () => {
-  test('SMOKE-08: production Concierge controls render on mobile web', async ({ page, request }) => {
+  test('SMOKE-08: production Concierge controls render on mobile web', async ({
+    page,
+    request,
+  }) => {
     const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || 'https://chravel.app';
 
     const htmlResponse = await request.get(baseUrl);

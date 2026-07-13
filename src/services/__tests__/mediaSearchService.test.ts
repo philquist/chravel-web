@@ -29,8 +29,8 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-describe.skip('mediaSearchService', () => {
-  describe.skip('searchMedia', () => {
+describe('mediaSearchService', () => {
+  describe('searchMedia', () => {
     it('should return empty array for empty query', async () => {
       const results = await searchMedia({
         tripId: 'trip-123',
@@ -59,7 +59,7 @@ describe.skip('mediaSearchService', () => {
     });
   });
 
-  describe.skip('searchMediaByTags', () => {
+  describe('searchMediaByTags', () => {
     it('should return empty array for empty tags', async () => {
       const results = await searchMediaByTags('trip-123', []);
       expect(results).toEqual([]);

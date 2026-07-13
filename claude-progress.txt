@@ -153,3 +153,8 @@
 - Fixed residual realtime blocker: meta CSP in `index.html` now allows `https://ai-gateway.vercel.sh` + `wss://ai-gateway.vercel.sh` (aligned with vercel.json).
 - Hardened composer hit-testing (isolate/z stacking, inactive tab `pointerEvents:none`), Ask-anything placeholder, clearer disabled Send, and stop dictation before realtime mic.
 - Docs: `docs/CONCIERGE_CONTROLS_RECOVERY_2026-07-11.md`. Physical iPhone TestFlight QA remains the DoD gate.
+
+2026-07-13 — Skipped test burn-down audit
+- Removed all skipped Vitest suites from src/ by replacing stale component-harness and brittle mock-integration skips with focused current-path coverage for auth session derivation, trip invite URLs, chat ordering, payment split math, calendar conflict logic, media search, chat service author resolution, chat content parsing, and pro-trip route/mock-data invariants.
+- Kept live/service-dependent Playwright skips isolated to e2e allowlist entries and tightened qa:skip-policy so it now catches it.skip as well as describe.skip/test.skip/test.fixme; verified a temporary unapproved skip fails the policy gate.
+- Verification: focused 14-file Vitest audit suite, qa:skip-policy, validate pass after formatting drift cleanup; full Vitest run still hangs after startup in this environment and PWA smoke remains blocked by missing Playwright Chromium executable.

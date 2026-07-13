@@ -2,10 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Mic, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { hapticService as haptics } from '@/services/hapticService';
-import {
-  useVoiceRecorder,
-  type VoiceRecordingResult,
-} from '../hooks/useVoiceRecorder';
+import { useVoiceRecorder, type VoiceRecordingResult } from '../hooks/useVoiceRecorder';
 
 interface VoiceRecordButtonProps {
   onRecorded: (result: VoiceRecordingResult) => void | Promise<void>;
@@ -34,16 +31,8 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
   buttonClassName,
   iconClassName,
 }) => {
-  const {
-    isSupported,
-    isRecording,
-    isPreparing,
-    elapsedMs,
-    liveLevel,
-    start,
-    stop,
-    cancel,
-  } = useVoiceRecorder();
+  const { isSupported, isRecording, isPreparing, elapsedMs, liveLevel, start, stop, cancel } =
+    useVoiceRecorder();
 
   const [dragX, setDragX] = useState(0);
   const startXRef = useRef<number | null>(null);
@@ -154,7 +143,9 @@ export const VoiceRecordButton: React.FC<VoiceRecordButtonProps> = ({
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
         onPointerCancel={handlePointerCancel}
-        aria-label={active ? 'Recording — release to send, slide left to cancel' : 'Hold to record voice note'}
+        aria-label={
+          active ? 'Recording — release to send, slide left to cancel' : 'Hold to record voice note'
+        }
         aria-pressed={active}
         disabled={disabled}
         className={cn(

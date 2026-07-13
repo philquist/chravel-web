@@ -50,7 +50,6 @@ const DATE_ROW_HEIGHT = 40;
 const TIME_GAP_ROW_HEIGHT = 28;
 const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
 
-
 export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerProps> = ({
   messages,
   renderMessage,
@@ -101,10 +100,7 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
       const showDateSeparator = !prevDate || !isSameDay(currentDate, prevDate);
       if (showDateSeparator) {
         result.push({ type: 'date', date: currentDate });
-      } else if (
-        prevDate &&
-        currentDate.getTime() - prevDate.getTime() >= FIFTEEN_MINUTES_MS
-      ) {
+      } else if (prevDate && currentDate.getTime() - prevDate.getTime() >= FIFTEEN_MINUTES_MS) {
         // Inline time-gap pill for long silences within the same day (iMessage-style).
         result.push({
           type: 'time-gap',
@@ -129,19 +125,13 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
       const nextDate = nextMessage
         ? new Date(nextMessage.created_at || nextMessage.createdAt || 0)
         : null;
-      const nextSenderId = nextMessage
-        ? nextMessage.sender_id || nextMessage.user_id
-        : null;
+      const nextSenderId = nextMessage ? nextMessage.sender_id || nextMessage.user_id : null;
       const nextWithinWindow = nextDate
         ? nextDate.getTime() - currentDate.getTime() < TWO_MINUTES_MS
         : false;
       const nextSameDay = nextDate ? isSameDay(currentDate, nextDate) : false;
       const isLastInGroup =
-        !nextMessage ||
-        !senderId ||
-        senderId !== nextSenderId ||
-        !nextWithinWindow ||
-        !nextSameDay;
+        !nextMessage || !senderId || senderId !== nextSenderId || !nextWithinWindow || !nextSameDay;
 
       result.push({
         type: 'message',
@@ -176,7 +166,6 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
       return row.message.id;
     },
   });
-
 
   const virtualItems = virtualizer.getVirtualItems();
 
@@ -378,7 +367,6 @@ export const VirtualizedMessageContainer: React.FC<VirtualizedMessageContainerPr
               </div>
             );
           })}
-
         </div>
         <div ref={messagesEndRef} className="h-px" aria-hidden="true" />
       </div>
