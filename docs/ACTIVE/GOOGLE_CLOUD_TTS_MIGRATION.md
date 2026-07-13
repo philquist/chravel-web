@@ -1,48 +1,53 @@
-# Voice Provider Migration Note (Google Cloud TTS → Gemini 3.1 Flash TTS)
+# Voice Provider Migration Note — ARCHIVED
 
-## Status
-The `concierge-tts` edge function (Google Cloud TTS) has been superseded by the
-`gemini-tts` edge function, which calls the **Gemini 3.1 Flash TTS Preview** model.
+> **Status: historical.** This document previously described a Google Cloud TTS →
+> Gemini TTS migration that is **no longer the live Concierge read-aloud path**.
+>
+> **Current source of truth:**
+> [`CONCIERGE_READ_ALOUD_TTS.md`](./CONCIERGE_READ_ALOUD_TTS.md)
+>
+> Live stack (2026-07+): `concierge-voice-tts` → Lovable AI Gateway
+> (`openai/gpt-4o-mini-tts`) with 10 OpenAI voices from Settings. Secret:
+> `LOVABLE_API_KEY`. No `VITE_CONCIERGE_TTS_ENABLED` client flag.
 
-The client-side feature flag `VITE_CONCIERGE_TTS_ENABLED=true` routes TTS requests
-to `gemini-tts`. When `false` (default), the old `concierge-tts` path is used as a
-rollback.
+Keep this file only so old links in PRs / indexes do not 404. Do not follow the
+verification steps below for production work.
 
-## What changed
-- **Provider**: Gemini API (`generativelanguage.googleapis.com`) via `generateContent`
-  with `responseModalities: ["AUDIO"]` and `speechConfig`.
-- **Auth**: `GEMINI_API_KEY` (shared with text concierge). Optional dedicated
-  `GEMINI_TTS_API_KEY` takes precedence if set.
-- **Model**: `gemini-3.1-flash-tts-preview` (configurable via `GEMINI_TTS_MODEL` env var).
-- **Voices**: Gemini TTS short names — `Charon` (primary), `Puck` (fallback).
-  Configurable via `app_settings` table (`tts_primary_voice_id`, `tts_fallback_voice_id`).
-- **Style**: Concierge persona tone tag prepended to text (e.g. `[warm, calm, concise ...]`).
-- **Fallback**: Retries with fallback voice on 400/403/404/429 errors.
-- **Timeout**: 30s per Gemini API call.
+---
 
-## Verification checklist
+## What this doc used to claim (obsolete)
+
+The `concierge-tts` edge function (Google Cloud TTS) was described as superseded by
+`gemini-tts` (Gemini 3.1 Flash TTS Preview), routed by
+`VITE_CONCIERGE_TTS_ENABLED=true`.
+
+That routing **does not exist** in the current SPA. The frontend calls
+`/functions/v1/concierge-voice-tts` exclusively for read-aloud and settings voice
+preview.
+
+### Obsolete verification (do not use)
 
 ```bash
-# 1) Enable the Gemini TTS path (client-side)
-#    Set VITE_CONCIERGE_TTS_ENABLED=true in .env or Vercel env vars
-
-# 2) Confirm GEMINI_API_KEY is set in Supabase secrets
-supabase secrets list --project-ref <project-ref> | rg GEMINI_API_KEY
-
-# 3) Deploy the gemini-tts edge function
-supabase functions deploy gemini-tts --project-ref <project-ref>
-
-# 4) Apply the migration to update app_settings voice defaults
-supabase db push --project-ref <project-ref>
-
-# 5) Invoke function and confirm audio response
-curl -i -X POST "https://<project-ref>.supabase.co/functions/v1/gemini-tts" \
-  -H "Authorization: Bearer <user-jwt>" \
-  -H "apikey: <anon-key>" \
-  -H "Content-Type: application/json" \
-  --data '{"text":"Hello, welcome to your trip!","voiceName":"Charon"}'
+# OBSOLETE — gemini-tts is not the Concierge read-aloud path
+# Set VITE_CONCIERGE_TTS_ENABLED=true
+# supabase functions deploy gemini-tts
+# curl .../functions/v1/gemini-tts ...
 ```
 
-## Rollback path
-Set `VITE_CONCIERGE_TTS_ENABLED=false` (or remove it) and redeploy the frontend.
-The old `concierge-tts` edge function remains deployed as the fallback path.
+### Obsolete rollback (do not use)
+
+```bash
+# OBSOLETE — VITE_CONCIERGE_TTS_ENABLED is not consulted by useConciergeReadAloud
+# Set VITE_CONCIERGE_TTS_ENABLED=false
+```
+
+### Where legacy functions still appear
+
+These may remain deployed for unrelated/legacy callers or cleanup debt:
+
+- `google-tts` — Google Cloud TTS (`GOOGLE_CLOUD_TTS_API_KEY`)
+- `concierge-tts` / `gemini-tts` — earlier Concierge experiments
+- `elevenlabs-tts` — early provider swap era
+
+Before deleting any of them, grep the repo + edge logs for callers. New features
+must use `concierge-voice-tts` only.
