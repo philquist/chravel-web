@@ -40,6 +40,8 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
   DropdownMenuItem: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
     <button onClick={onClick}>{children}</button>
   ),
+  DropdownMenuLabel: ({ children }: { children: ReactNode }) => <span>{children}</span>,
+  DropdownMenuSeparator: () => <hr />,
 }));
 
 vi.mock('@/components/ui/dialog', () => ({
