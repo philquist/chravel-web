@@ -11,7 +11,6 @@ import {
   Image,
   Film,
   File,
-  Captions,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -35,9 +34,8 @@ const CTA_ICON_CHAT = 'w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]';
 const CTA_BUTTON_CHAT = `size-6 min-w-[24px] sm:size-10 sm:min-w-[40px] rounded-full flex items-center justify-center shrink-0 select-none touch-manipulation ${CTA_GRADIENT} ${CTA_INTERACTIVE} ${CTA_DISABLED}`;
 import { hapticService as haptics } from '@/services/hapticService';
 import { MentionPicker, TripMember, filterMentionMembers } from './MentionPicker';
-import { VoiceRecordButton } from './VoiceRecordButton';
-import type { VoiceRecordingResult } from '../hooks/useVoiceRecorder';
-import { useFeatureFlag } from '@/lib/featureFlags';
+import { VoiceButton } from './VoiceButton';
+import { useWebSpeechVoice } from '@/hooks/useWebSpeechVoice';
 
 interface ChatInputProps {
   inputMessage: string;
@@ -97,12 +95,12 @@ export const ChatInput = ({
   const [isPaymentMode, setIsPaymentMode] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [voiceTranscriptionEnabled, setVoiceTranscriptionEnabled] = useState(false);
   const [shareUrlInput, setShareUrlInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sendLockRef = useRef(false); // Ref-based double-tap guard (no re-render needed)
+  const dictationBaseRef = useRef('');
 
   // @-mention state
   const [showMentionPicker, setShowMentionPicker] = useState(false);
@@ -114,13 +112,44 @@ export const ChatInput = ({
   const {
     shareLink,
     shareMultipleFiles,
-    shareVoiceNote,
     isUploading: isShareUploading,
     uploadProgress,
     parsedContent,
     clearParsedContent,
   } = useShareAsset(tripId);
-  const voiceNotesEnabled = useFeatureFlag('chat_voice_notes', true);
+
+  // Dictation — mirrors Concierge waveform behavior. Finalized transcript is
+  // appended to the current input; user then hits Send. No voice-note upload.
+  const handleDictationTranscript = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      const base = dictationBaseRef.current;
+      const separator = base && !base.endsWith(' ') ? ' ' : '';
+      dictationBaseRef.current = '';
+      onInputChange(base + separator + trimmed);
+    },
+    [onInputChange],
+  );
+  const { voiceState, toggleVoice, userTranscript } = useWebSpeechVoice(handleDictationTranscript);
+  const isDictating = voiceState === 'listening' || voiceState === 'connecting';
+
+  // Live interim transcript preview into the composer while dictating.
+  useEffect(() => {
+    if (!isDictating) return;
+    const interim = userTranscript.trim();
+    if (!interim) return;
+    const base = dictationBaseRef.current;
+    const separator = base && !base.endsWith(' ') ? ' ' : '';
+    onInputChange(base + separator + interim);
+  }, [isDictating, userTranscript, onInputChange]);
+
+  const handleVoiceToggle = useCallback(() => {
+    if (voiceState === 'idle' || voiceState === 'error') {
+      dictationBaseRef.current = inputMessage;
+    }
+    toggleVoice();
+  }, [voiceState, toggleVoice, inputMessage]);
 
   // Track typing status
   useEffect(() => {
@@ -520,26 +549,6 @@ export const ChatInput = ({
                 </>
               )}
 
-              {/* PREFERENCES section */}
-              <DropdownMenuSeparator className="my-1 bg-neutral-800" />
-              <DropdownMenuLabel className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
-                Preferences
-              </DropdownMenuLabel>
-              <DropdownMenuItem
-                onSelect={(e) => {
-                  e.preventDefault();
-                  setVoiceTranscriptionEnabled(v => !v);
-                }}
-                className="flex items-center justify-between gap-2 px-3 py-2 text-neutral-300 hover:bg-neutral-800 rounded-lg cursor-pointer"
-              >
-                <span className="flex items-center gap-2">
-                  <Captions className="w-4 h-4" />
-                  Transcribe voice notes
-                </span>
-                <span className={cn('text-xs', voiceTranscriptionEnabled ? 'text-primary' : 'text-muted-foreground')}>
-                  {voiceTranscriptionEnabled ? 'On' : 'Off'}
-                </span>
-              </DropdownMenuItem>
 
             </DropdownMenuContent>
           </DropdownMenu>
@@ -574,36 +583,13 @@ export const ChatInput = ({
             )}
           />
 
-          {/* Send Button OR hold-to-record Mic Button — Mic appears when input is empty
-              (iMessage-style). Recorded audio uploads as a typed Stream audio attachment
-              (mime/duration/waveform preserved) via shareVoiceNote. */}
-          {inputMessage.trim().length === 0 &&
-          !isShareUploading &&
-          !disableFileUpload &&
-          voiceNotesEnabled ? (
-            <VoiceRecordButton
-              disabled={isTyping}
-              enableTranscription={voiceTranscriptionEnabled}
-              buttonClassName={CTA_BUTTON_CHAT}
-              iconClassName={`${CTA_ICON_CHAT} text-white`}
-              onRecorded={async (result: VoiceRecordingResult) => {
-                const ext = result.mimeType.includes('mp4')
-                  ? 'm4a'
-                  : result.mimeType.includes('ogg')
-                    ? 'ogg'
-                    : 'webm';
-                const filename = `voice-note-${Date.now()}.${ext}`;
-                // `File` from lucide-react is imported at the top and shadows the DOM
-                // constructor here — use the global explicitly.
-                const file = new globalThis.File([result.blob], filename, {
-                  type: result.mimeType || 'audio/webm',
-                });
-                await shareVoiceNote(file, {
-                  durationMs: result.durationMs,
-                  waveform: result.waveform,
-                  transcript: result.transcript,
-                });
-              }}
+          {/* Mic (dictation) when empty; Send when text is present — mirrors Concierge composer. */}
+          {inputMessage.trim().length === 0 && !isShareUploading ? (
+            <VoiceButton
+              voiceState={voiceState}
+              isEligible
+              onToggle={handleVoiceToggle}
+              small
             />
           ) : (
             <button
