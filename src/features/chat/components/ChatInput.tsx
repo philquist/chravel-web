@@ -11,7 +11,6 @@ import {
   Image,
   Film,
   File,
-  Captions,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -35,9 +34,8 @@ const CTA_ICON_CHAT = 'w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]';
 const CTA_BUTTON_CHAT = `size-6 min-w-[24px] sm:size-10 sm:min-w-[40px] rounded-full flex items-center justify-center shrink-0 select-none touch-manipulation ${CTA_GRADIENT} ${CTA_INTERACTIVE} ${CTA_DISABLED}`;
 import { hapticService as haptics } from '@/services/hapticService';
 import { MentionPicker, TripMember, filterMentionMembers } from './MentionPicker';
-import { VoiceRecordButton } from './VoiceRecordButton';
-import type { VoiceRecordingResult } from '../hooks/useVoiceRecorder';
-import { useFeatureFlag } from '@/lib/featureFlags';
+import { VoiceButton } from './VoiceButton';
+import { useWebSpeechVoice } from '@/hooks/useWebSpeechVoice';
 
 interface ChatInputProps {
   inputMessage: string;
