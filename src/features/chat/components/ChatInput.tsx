@@ -549,26 +549,6 @@ export const ChatInput = ({
                 </>
               )}
 
-              {/* PREFERENCES section */}
-              <DropdownMenuSeparator className="my-1 bg-neutral-800" />
-              <DropdownMenuLabel className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
-                Preferences
-              </DropdownMenuLabel>
-              <DropdownMenuItem
-                onSelect={(e) => {
-                  e.preventDefault();
-                  setVoiceTranscriptionEnabled(v => !v);
-                }}
-                className="flex items-center justify-between gap-2 px-3 py-2 text-neutral-300 hover:bg-neutral-800 rounded-lg cursor-pointer"
-              >
-                <span className="flex items-center gap-2">
-                  <Captions className="w-4 h-4" />
-                  Transcribe voice notes
-                </span>
-                <span className={cn('text-xs', voiceTranscriptionEnabled ? 'text-primary' : 'text-muted-foreground')}>
-                  {voiceTranscriptionEnabled ? 'On' : 'Off'}
-                </span>
-              </DropdownMenuItem>
 
             </DropdownMenuContent>
           </DropdownMenu>
