@@ -14,7 +14,7 @@ import { ChatInput } from './ChatInput';
 import { InlineReplyComponent } from './InlineReplyComponent';
 import { VirtualizedMessageContainer } from './VirtualizedMessageContainer';
 import { findFirstUnreadMessageId } from '../utils/findFirstUnreadMessageId';
-import { messageMatchesChatSearchQuery } from '../utils/matchChatSearchQuery';
+
 import { MessageItem } from './MessageItem';
 import { MessageSkeleton } from '@/components/mobile/SkeletonLoader';
 import { getMockAvatar } from '@/utils/mockAvatars';
@@ -23,7 +23,7 @@ import { useTripChat } from '../hooks/useTripChat';
 import { useAuth } from '@/hooks/useAuth';
 import { hapticService } from '@/services/hapticService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { WifiOff, Pin, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { WifiOff, Pin } from 'lucide-react';
 import { useRoleChannels } from '@/hooks/useRoleChannels';
 import { ChannelChatView } from '@/components/pro/channels/ChannelChatView';
 import { TypingIndicator } from './TypingIndicator';
@@ -47,7 +47,7 @@ import { useBlockedUsers, useReportContent } from '@/hooks/useUserSafety';
 import { getStreamApiKey, getStreamClient } from '@/services/stream/streamClient';
 import { derivePinnedMessages } from '../utils/pinnedMessages';
 import { extractQuotedReferenceFromStreamMessage } from '@/services/stream/streamMessagePayload';
-import { searchTripChannelMessages } from '@/services/stream/streamMessageSearch';
+
 import { messageEvents } from '@/telemetry/events';
 import { shouldUseLegacyChatSync } from '@/services/stream/streamTransportGuards';
 import { tripKeys } from '@/lib/queryKeys';
@@ -130,13 +130,6 @@ export const TripChat = React.memo(
     const [_activeChannelId, _setActiveChannelId] = useState<string | null>(null);
 
     const [showSearchOverlay, setShowSearchOverlay] = useState(false);
-    const [chatSearchQuery, setChatSearchQuery] = useState('');
-    const [activeSearchResultIndex, setActiveSearchResultIndex] = useState(0);
-    const [serverSearchResults, setServerSearchResults] = useState<
-      Array<{ id: string; type: 'message' | 'broadcast'; openThread?: boolean; source: 'stream' }>
-    >([]);
-    const [isServerSearching, setIsServerSearching] = useState(false);
-    const searchJumpPrimedRef = useRef(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const messageScrollRef = useRef<HTMLDivElement>(null);
     const [failedMessages, setFailedMessages] = useState<
@@ -1087,112 +1080,6 @@ export const TripChat = React.memo(
       [handleActivateThread, loadAroundMessage, messageFilter, setMessageFilter],
     );
 
-    const localChatSearchResults = useMemo(() => {
-      const query = chatSearchQuery.trim().toLowerCase();
-      if (!query) return [];
-      const sourceMessages = demoMode.isDemoMode ? demoMessages : liveFormattedMessages;
-      return sourceMessages
-        .filter(message => messageMatchesChatSearchQuery(message as any, query))
-        .map(message => ({
-          id: String((message as any).id),
-          type: (message as any).isBroadcast ? ('broadcast' as const) : ('message' as const),
-          openThread: false,
-          source: 'local' as const,
-        }));
-    }, [chatSearchQuery, demoMessages, demoMode.isDemoMode, liveFormattedMessages]);
-
-    useEffect(() => {
-      const query = chatSearchQuery.trim();
-      if (!query || demoMode.isDemoMode || shouldSkipLiveChat || !resolvedTripId) {
-        setServerSearchResults([]);
-        setIsServerSearching(false);
-        return;
-      }
-
-      let cancelled = false;
-      setIsServerSearching(true);
-      const timer = window.setTimeout(() => {
-        void searchTripChannelMessages({ tripId: resolvedTripId, query, limit: 25 }).then(
-          results => {
-            if (cancelled) return;
-            setServerSearchResults(
-              results.map(result => {
-                const targetId = result.threadParentId || result.messageId;
-                const isBroadcast =
-                  result.messageType === 'broadcast' || result.privacyMode === 'broadcast';
-                return {
-                  id: targetId,
-                  type: isBroadcast ? ('broadcast' as const) : ('message' as const),
-                  openThread: Boolean(result.threadParentId),
-                  source: 'stream' as const,
-                };
-              }),
-            );
-            setIsServerSearching(false);
-          },
-        );
-      }, 300);
-
-      return () => {
-        cancelled = true;
-        window.clearTimeout(timer);
-      };
-    }, [chatSearchQuery, demoMode.isDemoMode, resolvedTripId, shouldSkipLiveChat]);
-
-    const chatSearchResults = useMemo(() => {
-      const seen = new Set<string>();
-      return [...localChatSearchResults, ...serverSearchResults].filter(result => {
-        const key = `${result.type}:${result.id}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-    }, [localChatSearchResults, serverSearchResults]);
-
-    const jumpToSearchResult = useCallback(
-      (direction: 'current' | 'next' | 'previous' = 'current') => {
-        if (chatSearchResults.length === 0) return;
-        const nextIndex =
-          direction === 'next'
-            ? (activeSearchResultIndex + 1) % chatSearchResults.length
-            : direction === 'previous'
-              ? (activeSearchResultIndex - 1 + chatSearchResults.length) % chatSearchResults.length
-              : activeSearchResultIndex;
-        searchJumpPrimedRef.current = true;
-        setActiveSearchResultIndex(nextIndex);
-        scrollToMessage(chatSearchResults[nextIndex]);
-      },
-      [activeSearchResultIndex, chatSearchResults, scrollToMessage],
-    );
-
-    const navigateSearchResult = useCallback(
-      (direction: 'next' | 'previous') => {
-        if (chatSearchResults.length === 0) return;
-        // First Enter / down-chevron should land on result 1 (index 0), not skip to 2.
-        if (!searchJumpPrimedRef.current && direction === 'next') {
-          jumpToSearchResult('current');
-          return;
-        }
-        jumpToSearchResult(direction);
-      },
-      [chatSearchResults.length, jumpToSearchResult],
-    );
-
-    useEffect(() => {
-      setActiveSearchResultIndex(0);
-      searchJumpPrimedRef.current = false;
-    }, [chatSearchQuery]);
-
-    // After results settle for a new query, scroll/highlight the first match so the
-    // "1/N" counter matches the viewport without requiring an extra keypress.
-    useEffect(() => {
-      if (!chatSearchQuery.trim() || chatSearchResults.length === 0) return;
-      if (searchJumpPrimedRef.current) return;
-      const timer = window.setTimeout(() => {
-        jumpToSearchResult('current');
-      }, 150);
-      return () => window.clearTimeout(timer);
-    }, [chatSearchQuery, chatSearchResults, jumpToSearchResult]);
 
     // Scroll to target message from notification click (when messages finish loading)
     const scrollAttemptedRef = useRef(false);
@@ -1328,65 +1215,6 @@ export const TripChat = React.memo(
             className="rounded-2xl border border-border/60 bg-card/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden flex-1 flex flex-col relative min-h-0"
           >
             {/* Filter Tabs */}
-            <div className="border-b border-border/60 bg-background/70 px-3 py-2">
-              <div className="flex min-h-11 items-center gap-2 rounded-full border border-border bg-muted/40 px-3">
-                <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-                <input
-                  type="search"
-                  value={chatSearchQuery}
-                  onChange={event => setChatSearchQuery(event.target.value)}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      navigateSearchResult(event.shiftKey ? 'previous' : 'next');
-                    }
-                  }}
-                  placeholder="Search messages"
-                  className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                  aria-label="Search trip chat messages"
-                />
-                {chatSearchQuery && (
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {isServerSearching
-                      ? 'Searching…'
-                      : chatSearchResults.length > 0
-                        ? `${activeSearchResultIndex + 1}/${chatSearchResults.length}`
-                        : '0 results'}
-                  </span>
-                )}
-                {chatSearchQuery && chatSearchResults.length > 0 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => navigateSearchResult('previous')}
-                      className="min-h-8 min-w-8 rounded-full hover:bg-muted"
-                      aria-label="Previous search result"
-                    >
-                      <ChevronUp className="mx-auto h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => navigateSearchResult('next')}
-                      className="min-h-8 min-w-8 rounded-full hover:bg-muted"
-                      aria-label="Next search result"
-                    >
-                      <ChevronDown className="mx-auto h-4 w-4" />
-                    </button>
-                  </>
-                )}
-                {chatSearchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setChatSearchQuery('')}
-                    className="min-h-8 min-w-8 rounded-full hover:bg-muted"
-                    aria-label="Clear chat search"
-                  >
-                    <X className="mx-auto h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-
             <MessageTypeBar
               activeFilter={messageFilter}
               onFilterChange={setMessageFilter}
