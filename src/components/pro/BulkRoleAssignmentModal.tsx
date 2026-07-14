@@ -17,7 +17,7 @@ import {
 import { ProParticipant } from '../../types/pro';
 import { ProTripCategory } from '../../types/proCategories';
 import { useBulkRoleAssignment } from '../../hooks/useBulkRoleAssignment';
-import { getRoleColorClass } from '../../utils/roleUtils';
+import { ROLE_BADGE_CLASS } from '../../utils/roleUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '../../utils/avatarUtils';
 import { TripRole } from '../../types/roleChannels';
@@ -39,7 +39,9 @@ export const BulkRoleAssignmentModal = ({
   isOpen,
   onClose,
   roster,
-  category,
+  // Role badges are now a flat neutral color regardless of category — kept in the
+  // props contract since the caller still passes it, but no longer read here.
+  category: _category,
   existingRoles,
   availableRoles = [],
   onUpdateMemberRole,
@@ -283,9 +285,7 @@ export const BulkRoleAssignmentModal = ({
                     <p className="font-medium truncate">{member.name}</p>
                     <p className="text-sm text-gray-400 truncate">{member.email}</p>
                   </div>
-                  <span
-                    className={`${getRoleColorClass(member.role, category)} px-2 py-1 rounded text-xs font-medium`}
-                  >
+                  <span className={`${ROLE_BADGE_CLASS} px-2 py-1 rounded text-xs font-medium`}>
                     {member.role}
                   </span>
                 </label>

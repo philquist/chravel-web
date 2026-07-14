@@ -7,7 +7,7 @@ import { useOrgChartData } from '../../hooks/useOrgChartData';
 import { OrgChartNodeComponent } from './OrgChartNode';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '../../utils/avatarUtils';
-import { getRoleColorClass } from '../../utils/roleUtils';
+import { ROLE_BADGE_CLASS } from '../../utils/roleUtils';
 
 interface TeamOrgChartProps {
   roster: ProParticipant[];
@@ -137,7 +137,7 @@ export const TeamOrgChart = ({ roster, category, onMemberClick }: TeamOrgChartPr
                       <span
                         role="status"
                         aria-label={`Role: ${member.role}`}
-                        className={`${getRoleColorClass(member.role, category)} px-2 py-0.5 rounded text-xs font-medium inline-block mt-1`}
+                        className={`${ROLE_BADGE_CLASS} px-2 py-0.5 rounded text-xs font-medium inline-block mt-1`}
                       >
                         {member.role}
                       </span>

@@ -1,30 +1,27 @@
 import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ProParticipant } from '../../../types/pro';
-import { ProTripCategory } from '../../../types/proCategories';
-import { AlertTriangle } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
-import { getInitials } from '../../../utils/avatarUtils';
-import { getRoleColorClass } from '../../../utils/roleUtils';
-import { QuickContactMenu } from '../QuickContactMenu';
+import { TeamMemberCard } from './TeamMemberCard';
 
-const ROW_HEIGHT = 120;
+// Estimate only — actual row height is measured post-render via virtualizer.measureElement,
+// since card height varies with phone/medical/dietary/role-pill-wrap content.
+const ROW_HEIGHT_ESTIMATE = 136;
 const COLS_DESKTOP = 4;
 const COLS_MOBILE = 1;
 
 interface VirtualizedRosterGridProps {
   members: ProParticipant[];
-  category: ProTripCategory;
   memberRolesMap: Map<string, string[]>;
   adminUserIds: Set<string>;
+  coordinatorUserIds: Set<string>;
   isMobile: boolean;
 }
 
 export const VirtualizedRosterGrid: React.FC<VirtualizedRosterGridProps> = ({
   members,
-  category,
   memberRolesMap,
   adminUserIds,
+  coordinatorUserIds,
   isMobile,
 }) => {
   const parentRef = useRef<HTMLDivElement>(null);
@@ -34,16 +31,21 @@ export const VirtualizedRosterGrid: React.FC<VirtualizedRosterGridProps> = ({
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => ROW_HEIGHT,
+    estimateSize: () => ROW_HEIGHT_ESTIMATE,
     overscan: 2,
   });
 
   const getRolePills = (member: ProParticipant) => {
     const memberUserId = member.userId ?? member.id;
     const isAdminMember = memberUserId ? adminUserIds.has(memberUserId) : false;
+    const isCoordinatorMember = memberUserId ? coordinatorUserIds.has(memberUserId) : false;
     const assignedRoles = memberUserId ? memberRolesMap.get(memberUserId) || [] : [];
-    const allRolePills: { name: string; isAdmin: boolean }[] = [];
-    if (isAdminMember) allRolePills.push({ name: 'admin', isAdmin: true });
+    const allRolePills: { name: string; isAdmin: boolean; isCoordinator?: boolean }[] = [];
+    if (isAdminMember) {
+      allRolePills.push({ name: 'admin', isAdmin: true });
+    } else if (isCoordinatorMember) {
+      allRolePills.push({ name: 'coordinator', isAdmin: false, isCoordinator: true });
+    }
     const sortedRoles = [...assignedRoles].sort((a, b) =>
       a.toLowerCase().localeCompare(b.toLowerCase()),
     );
@@ -83,6 +85,8 @@ export const VirtualizedRosterGrid: React.FC<VirtualizedRosterGridProps> = ({
           return (
             <div
               key={virtualRow.key}
+              ref={virtualizer.measureElement}
+              data-index={virtualRow.index}
               style={{
                 position: 'absolute',
                 top: 0,
@@ -95,72 +99,12 @@ export const VirtualizedRosterGrid: React.FC<VirtualizedRosterGridProps> = ({
               {rowMembers.map(member => {
                 const { allRolePills, showFallbackRole } = getRolePills(member);
                 return (
-                  <div
+                  <TeamMemberCard
                     key={member.id}
-                    className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-lg p-3"
-                  >
-                    <div className="flex items-start gap-2.5">
-                      <Avatar className="w-10 h-10 border-2 border-gray-600 flex-shrink-0">
-                        <AvatarImage src={member.avatar} alt={member.name} />
-                        <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
-                          {getInitials(member.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <QuickContactMenu member={member}>
-                          <h3 className="text-white text-sm font-medium truncate cursor-pointer hover:text-amber-400 transition-colors leading-tight">
-                            {member.name}
-                          </h3>
-                        </QuickContactMenu>
-                        <p className="text-gray-400 text-xs truncate leading-tight">
-                          {member.email}
-                        </p>
-                        {member.phone && (
-                          <p className="text-gray-500 text-xs truncate leading-tight">
-                            {member.phone}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                          {allRolePills.map((pill, index) => (
-                            <span
-                              key={`${pill.name}-${index}`}
-                              role="status"
-                              aria-label={`Role: ${pill.name}${pill.isAdmin ? ' (admin)' : ''}`}
-                              className={`${
-                                pill.isAdmin
-                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                  : getRoleColorClass(pill.name, category)
-                              } px-1.5 py-0.5 rounded text-xs font-medium`}
-                            >
-                              {pill.name}
-                            </span>
-                          ))}
-                          {showFallbackRole && (
-                            <span
-                              role="status"
-                              aria-label={`Role: ${member.role}`}
-                              className={`${getRoleColorClass(member.role, category)} px-1.5 py-0.5 rounded text-xs font-medium`}
-                            >
-                              {member.role}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {member.medicalNotes && (
-                      <div className="mt-2 p-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded flex items-center gap-1.5">
-                        <AlertTriangle size={12} className="text-yellow-400 flex-shrink-0" />
-                        <span className="text-yellow-400 text-xs font-medium">Medical Alert</span>
-                      </div>
-                    )}
-                    {member.dietaryRestrictions && member.dietaryRestrictions.length > 0 && (
-                      <div className="mt-1.5">
-                        <p className="text-gray-400 text-xs leading-tight">
-                          Dietary: {member.dietaryRestrictions.join(', ')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                    member={member}
+                    rolePills={allRolePills}
+                    fallbackRole={showFallbackRole ? member.role : null}
+                  />
                 );
               })}
             </div>

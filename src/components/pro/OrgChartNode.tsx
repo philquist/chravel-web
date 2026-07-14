@@ -1,7 +1,7 @@
 import React from 'react';
 import { Users, ChevronDown, ChevronRight } from 'lucide-react';
 import { OrgChartNode as OrgChartNodeType } from '../../hooks/useOrgChartData';
-import { getRoleColorClass } from '../../utils/roleUtils';
+import { ROLE_BADGE_CLASS } from '../../utils/roleUtils';
 import { ProTripCategory } from '../../types/proCategories';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '../../utils/avatarUtils';
@@ -40,7 +40,7 @@ export const OrgChartNodeComponent = ({
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-white text-sm truncate">{node.name}</h3>
             <span
-              className={`${getRoleColorClass(node.role, category)} px-2 py-0.5 rounded text-xs font-medium inline-block mt-1`}
+              className={`${ROLE_BADGE_CLASS} px-2 py-0.5 rounded text-xs font-medium inline-block mt-1`}
             >
               {node.role}
             </span>

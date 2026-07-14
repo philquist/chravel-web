@@ -1,24 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Users,
-  AlertTriangle,
-  UserPlus,
-  Clock,
-  Cog,
-  LayoutGrid,
-  Network,
-  ShieldCheck,
-} from 'lucide-react';
+import { Users, UserPlus, Clock, Cog, LayoutGrid, Network, ShieldCheck } from 'lucide-react';
 import { ProParticipant, TeamTripContext } from '../../../types/pro';
 import { ProTripCategory, getCategoryConfig } from '../../../types/proCategories';
 import { TeamOnboardingBanner } from '../TeamOnboardingBanner';
 import { BulkRoleAssignmentModal } from '../BulkRoleAssignmentModal';
-import { QuickContactMenu } from '../QuickContactMenu';
 import { RoleContactSheet } from '../RoleContactSheet';
-import { extractUniqueRoles, getRoleColorClass } from '../../../utils/roleUtils';
+import { extractUniqueRoles } from '../../../utils/roleUtils';
 import { Button } from '../../ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
-import { getInitials } from '../../../utils/avatarUtils';
 import { useDemoMode } from '../../../hooks/useDemoMode';
 import { useSuperAdmin } from '../../../hooks/useSuperAdmin';
 import { useIsMobile } from '../../../hooks/use-mobile';
@@ -27,6 +15,7 @@ import { RoleManagerDialog } from '../admin/RoleManagerDialog';
 import { CoordinatorInviteDialog } from '../admin/CoordinatorInviteDialog';
 import { TeamOrgChart } from '../TeamOrgChart';
 import { VirtualizedRosterGrid } from './VirtualizedRosterGrid';
+import { TeamMemberCard } from './TeamMemberCard';
 import { TripRole } from '../../../types/roleChannels';
 import { useRoleAssignments } from '../../../hooks/useRoleAssignments';
 import { useTripAdmins } from '../../../hooks/useTripAdmins';
@@ -177,6 +166,10 @@ export const RolesView = ({
   const isAdmin =
     isSuperAdmin || userRole === 'admin' || userRole === 'tour manager' || userRole === 'manager';
 
+  // Shared chrome for the admin action row — flex-1 fill on mobile so a lone
+  // trailing button never dangles alone with dead space beside it.
+  const adminActionButtonClass = `${isMobile ? 'flex-1 basis-[47%]' : ''} justify-center rounded-xl bg-black/60 hover:bg-white/10 hover:text-gold-light hover:border-primary/40 text-white border-white/20 transition-colors min-h-[42px] px-4 text-xs whitespace-nowrap`;
+
   return (
     <div className="space-y-6">
       {/* Onboarding Banner */}
@@ -196,28 +189,34 @@ export const RolesView = ({
       )}
 
       {/* Header with Stats and Admin Indicator */}
-      <div className="bg-gradient-to-br from-white/5 via-white/3 to-transparent backdrop-blur-sm border border-gray-700/50 rounded-xl p-3 shadow-xl">
-        {/* Row 1: Team Label + Stats + Admin Badge */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Users className="text-gold-mid" size={20} />
-            <h2 className="text-lg font-bold text-white">{teamLabel}</h2>
-            <span className="text-gray-400 text-sm">{roster.length} members</span>
+      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 space-y-4">
+        {/* Team Label + Stats + Admin Badge */}
+        <div
+          className={`flex ${isMobile ? 'flex-col items-start gap-2' : 'items-center justify-between gap-3'}`}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <Users className="text-gold-mid flex-shrink-0" size={20} />
+            <h2 className="text-lg font-bold text-white truncate">{teamLabel}</h2>
+            <span className="text-ink-3 text-sm flex-shrink-0">
+              {roster.length} {roster.length === 1 ? 'member' : 'members'}
+            </span>
           </div>
           {(canManageRoles || isSuperAdmin) && !effectiveIsReadOnly && (
-            <span className="text-xs text-gray-500">Admin Access</span>
+            <span className="flex-shrink-0 text-[11px] font-medium text-gold-light bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1">
+              Admin Access
+            </span>
           )}
         </div>
 
-        {/* Row 2: Consolidated Admin Action Buttons (3 buttons) - Mobile optimized */}
+        {/* Admin action buttons — flex-1 fill on mobile so a lone trailing button never dangles alone */}
         {(canManageRoles || isSuperAdmin) && !effectiveIsReadOnly && (
-          <div className={`flex ${isMobile ? 'flex-wrap' : 'justify-center'} gap-3 mb-3`}>
+          <div className="flex flex-wrap gap-2">
             <Button
               onClick={onCreateRole}
               disabled={adminLoading || isLoadingRoles}
               variant="outline"
               size="sm"
-              className="rounded-full bg-black/40 hover:bg-black/60 hover:text-gold-mid hover:border-gold-primary/50 text-white border-white/20 transition-colors min-h-[42px] px-4 text-xs whitespace-nowrap"
+              className={adminActionButtonClass}
             >
               <UserPlus className="w-4 h-4 mr-1.5 shrink-0" />
               Create Role
@@ -226,7 +225,7 @@ export const RolesView = ({
               onClick={() => setShowRoleManagerDialog(true)}
               variant="outline"
               size="sm"
-              className="rounded-full bg-black/40 hover:bg-black/60 hover:text-gold-mid hover:border-gold-primary/50 text-white border-white/20 transition-colors min-h-[42px] px-4 text-xs whitespace-nowrap"
+              className={adminActionButtonClass}
               title="Manage roles, assignments, and admins"
             >
               <Cog className="w-4 h-4 mr-1.5 shrink-0" />
@@ -236,7 +235,7 @@ export const RolesView = ({
               onClick={() => setShowRequestsDialog(true)}
               variant="outline"
               size="sm"
-              className="rounded-full bg-black/40 hover:bg-black/60 hover:text-gold-mid hover:border-gold-primary/50 text-white border-white/20 transition-colors min-h-[42px] px-4 text-xs whitespace-nowrap"
+              className={adminActionButtonClass}
               title="View join requests"
             >
               <Clock className="w-4 h-4 mr-1.5 shrink-0" />
@@ -247,7 +246,7 @@ export const RolesView = ({
                 onClick={() => setShowCoordinatorDialog(true)}
                 variant="outline"
                 size="sm"
-                className="rounded-full bg-black/40 hover:bg-black/60 hover:text-gold-mid hover:border-gold-primary/50 text-white border-white/20 transition-colors min-h-[42px] px-4 text-xs whitespace-nowrap"
+                className={adminActionButtonClass}
                 title="Grant logistics-only access to an outside organizer"
               >
                 <ShieldCheck className="w-4 h-4 mr-1.5 shrink-0" />
@@ -257,20 +256,20 @@ export const RolesView = ({
           </div>
         )}
 
-        {/* Row 3: View mode toggle + Role Filter Pills on the same row */}
+        {/* View mode toggle + Role Filter Pills */}
         <div
-          className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between gap-4'} mb-3`}
+          className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between gap-4'}`}
         >
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs text-gray-500">View:</span>
-            <div className="flex rounded-lg bg-white/5 border border-gray-600 p-0.5">
+            <span className="text-xs text-ink-3">View:</span>
+            <div className="flex rounded-xl bg-white/5 border border-white/10 p-0.5">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 aria-label="Grid view"
                 aria-pressed={viewMode === 'grid'}
-                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-md text-xs font-medium transition-colors ${
-                  viewMode === 'grid' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white'
+                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-medium transition-colors ${
+                  viewMode === 'grid' ? 'bg-white/15 text-white' : 'text-ink-3 hover:text-white'
                 }`}
               >
                 <LayoutGrid size={14} />
@@ -281,10 +280,8 @@ export const RolesView = ({
                 onClick={() => setViewMode('orgchart')}
                 aria-label="Org chart view"
                 aria-pressed={viewMode === 'orgchart'}
-                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-md text-xs font-medium transition-colors ${
-                  viewMode === 'orgchart'
-                    ? 'bg-gray-600 text-white'
-                    : 'text-gray-400 hover:text-white'
+                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-medium transition-colors ${
+                  viewMode === 'orgchart' ? 'bg-white/15 text-white' : 'text-ink-3 hover:text-white'
                 }`}
               >
                 <Network size={14} />
@@ -296,7 +293,7 @@ export const RolesView = ({
           {isLoadingRoles ? (
             <div className="flex gap-2 items-center">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-8 w-20 rounded-full bg-gray-700/50 animate-pulse" />
+                <div key={i} className="h-8 w-20 rounded-full bg-white/10 animate-pulse" />
               ))}
             </div>
           ) : (
@@ -335,10 +332,10 @@ export const RolesView = ({
                       onClick={() => setSelectedRole(role)}
                       aria-label={`Filter by ${role === 'all' ? 'all roles' : `role ${role}`}${role !== 'all' ? `, ${memberCount} members` : ''}`}
                       aria-pressed={selectedRole === role}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-all duration-200 ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-colors duration-200 ${
                         selectedRole === role
-                          ? 'bg-gold-primary text-black shadow-lg shadow-gold-primary/30 scale-105'
-                          : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:scale-[1.02] border border-gray-600'
+                          ? 'bg-gold-primary text-black shadow-ring-glow'
+                          : 'bg-white/5 text-ink-2 hover:bg-white/10 border border-white/10'
                       }`}
                     >
                       {role === 'all' ? 'All' : role}
@@ -355,7 +352,7 @@ export const RolesView = ({
 
         {/* Manual Role Input Notice for Corporate & Business */}
         {availableRoles.length === 0 && (
-          <div className="bg-gold-primary/10 border border-gold-primary/20 rounded-lg p-3">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
             <p className="text-gold-mid/80 text-sm">
               Team members can have custom titles entered manually.{' '}
               {isAdmin && 'Use the "Create Role" button above to add new roles.'}
@@ -368,7 +365,7 @@ export const RolesView = ({
       {isLoadingRoster ? (
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="bg-white/5 border border-gray-700 rounded-lg p-3 animate-pulse">
+            <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-3 animate-pulse">
               <div className="flex gap-2.5">
                 <div className="w-10 h-10 rounded-full bg-white/10" />
                 <div className="flex-1 space-y-2">
@@ -385,9 +382,9 @@ export const RolesView = ({
       ) : filteredRoster.length > 50 ? (
         <VirtualizedRosterGrid
           members={filteredRoster}
-          category={category}
           memberRolesMap={memberRolesMap}
           adminUserIds={adminUserIds}
+          coordinatorUserIds={coordinatorUserIds}
           isMobile={isMobile}
         />
       ) : (
@@ -437,91 +434,26 @@ export const RolesView = ({
                 member.role.toLowerCase() !== 'admin';
 
               return (
-                <div
+                <TeamMemberCard
                   key={member.id}
-                  className="bg-white/5 backdrop-blur-sm border border-gray-700 rounded-lg p-3"
-                >
-                  <div className="flex items-start gap-2.5">
-                    <Avatar className="w-10 h-10 border-2 border-gray-600 flex-shrink-0">
-                      <AvatarImage src={member.avatar} alt={member.name} />
-                      <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
-                        {getInitials(member.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <QuickContactMenu member={member}>
-                        <h3 className="text-white text-sm font-medium truncate cursor-pointer hover:text-gold-mid transition-colors leading-tight">
-                          {member.name}
-                        </h3>
-                      </QuickContactMenu>
-                      <p className="text-gray-400 text-xs truncate leading-tight">{member.email}</p>
-                      {member.phone && (
-                        <p className="text-gray-500 text-xs truncate leading-tight">
-                          {member.phone}
-                        </p>
-                      )}
-                      {/* Role pills - admin first, then assigned roles alphabetically */}
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                        {allRolePills.map((pill, index) => (
-                          <span
-                            key={`${pill.name}-${index}`}
-                            role="status"
-                            aria-label={`Role: ${pill.name}${pill.isAdmin ? ' (admin)' : pill.isCoordinator ? ' (coordinator)' : ''}`}
-                            className={`${
-                              pill.isAdmin
-                                ? 'bg-gold-primary/20 text-gold-light border border-gold-primary/30'
-                                : pill.isCoordinator
-                                  ? 'bg-gold-mid/10 text-gold-light border border-gold-mid/40'
-                                  : getRoleColorClass(pill.name, category)
-                            } px-1.5 py-0.5 rounded text-xs font-medium`}
-                          >
-                            {pill.name}
-                          </span>
-                        ))}
-                        {showFallbackRole && (
-                          <span
-                            role="status"
-                            aria-label={`Role: ${member.role}`}
-                            className={`${getRoleColorClass(member.role, category)} px-1.5 py-0.5 rounded text-xs font-medium`}
-                          >
-                            {member.role}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Medical Alerts - Compact */}
-                  {member.medicalNotes && (
-                    <div className="mt-2 p-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded flex items-center gap-1.5">
-                      <AlertTriangle size={12} className="text-yellow-400 flex-shrink-0" />
-                      <span className="text-yellow-400 text-xs font-medium">Medical Alert</span>
-                    </div>
-                  )}
-
-                  {/* Dietary Restrictions - Compact */}
-                  {member.dietaryRestrictions && member.dietaryRestrictions.length > 0 && (
-                    <div className="mt-1.5">
-                      <p className="text-gray-400 text-xs leading-tight">
-                        Dietary: {member.dietaryRestrictions.join(', ')}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                  member={member}
+                  rolePills={allRolePills}
+                  fallbackRole={showFallbackRole ? member.role : null}
+                />
               );
             })}
           </div>
 
           {filteredRoster.length === 0 && (
             <div className="text-center py-12">
-              <Users size={48} className="text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 mb-3">No team members found for the selected role.</p>
+              <Users size={48} className="text-ink-3 mx-auto mb-4" />
+              <p className="text-ink-3 mb-3">No team members found for the selected role.</p>
               {selectedRole !== 'all' && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedRole('all')}
-                  className="text-gold-mid border-gold-primary/30 hover:bg-gold-primary/10"
+                  className="text-gold-mid border-primary/30 hover:bg-primary/10"
                 >
                   Show all members
                 </Button>

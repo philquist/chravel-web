@@ -96,11 +96,11 @@ export const normalizeRole = (role: string): string => {
 };
 
 /**
- * Get role color class for badges — unified gold/amber system
+ * Role badge class for regular (non-admin, non-coordinator) team roles. Neutral
+ * glass treatment — gold is reserved for admin/coordinator pills so those retain
+ * visual priority over a plain team role.
  */
-export const getRoleColorClass = (_role: string, _category: ProTripCategory): string => {
-  return 'bg-amber-500/15 text-amber-400 border border-amber-500/25';
-};
+export const ROLE_BADGE_CLASS = 'bg-white/10 text-ink-2 border border-white/15';
 
 /**
  * Get role suggestions based on partial input
