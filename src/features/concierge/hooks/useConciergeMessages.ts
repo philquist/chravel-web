@@ -106,6 +106,16 @@ export function useConciergeMessages({ tripId, isDemoMode, userId, userPlan }: P
     hasHydratedRef.current = true;
   }, [isHistoryLoading, historyError, mergedHistoryMessages, tripId, user?.id]);
 
+  // iPad/WKWebView: if history fetch hangs, don't block the composer forever.
+  useEffect(() => {
+    if (!isHistoryLoading || hasHydratedRef.current) return;
+    const timeout = setTimeout(() => {
+      if (!isMounted.current || hasHydratedRef.current) return;
+      hasHydratedRef.current = true;
+    }, 12_000);
+    return () => clearTimeout(timeout);
+  }, [isHistoryLoading]);
+
   useEffect(() => {
     if (!isOffline || messages.length > 0) return;
     const cached = conciergeCacheService.getCachedMessages(tripId, user?.id ?? 'anonymous');

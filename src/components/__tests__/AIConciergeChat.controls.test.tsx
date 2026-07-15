@@ -297,6 +297,8 @@ describe('AIConciergeChat controls (lean)', () => {
     expect(input?.className).toMatch(/absolute/);
     expect(input?.className).toMatch(/inset-0/);
     expect(input?.className).toMatch(/opacity-0/);
+    expect(uploadLabel.className).toContain('cta-gold-ring');
+    expect(uploadLabel.className).not.toContain('overflow-hidden');
   });
 
   it('toggles text dictation from the waveform button (App Store launch path)', () => {

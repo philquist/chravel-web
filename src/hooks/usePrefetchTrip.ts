@@ -190,7 +190,24 @@ export const usePrefetchTrip = () => {
           break;
 
         case 'concierge':
-          // AI Concierge is stateless, no prefetch needed
+          if (user?.id) {
+            queryClient.prefetchQuery({
+              queryKey: ['conciergeHistory', tripId, user.id, 'live'],
+              queryFn: async () => {
+                const { data: rows, error: queryError } = await supabase
+                  .from('ai_queries')
+                  .select('id, query_text, response_text, created_at, metadata')
+                  .eq('trip_id', tripId)
+                  .eq('user_id', user.id)
+                  .order('created_at', { ascending: true })
+                  .limit(50);
+                if (queryError)
+                  throw new Error(queryError.message ?? 'Failed to fetch concierge history');
+                return rows ?? [];
+              },
+              staleTime: 30 * 1000,
+            });
+          }
           break;
       }
     },
@@ -235,12 +252,12 @@ export const usePrefetchTrip = () => {
     (tripId: string) => {
       const deferHeavyPrefetch = shouldDeferHeavyPrefetch();
 
-      // Phase 1: preload only the highest-likelihood tabs immediately.
-      preloadTabChunks(['chat', 'calendar', 'tasks', 'payments']);
+      // Phase 1: preload tier-1 tabs immediately (concierge mounts on trip open).
+      preloadTabChunks(['chat', 'calendar', 'concierge', 'tasks', 'payments']);
 
       // Phase 1b: defer heavy/rare tab chunks to idle time.
       scheduleIdlePrefetch(() => {
-        preloadTabChunks(['polls', 'places', 'media', 'concierge']);
+        preloadTabChunks(['polls', 'places', 'media']);
       });
 
       if (isDemoMode) return;
@@ -248,6 +265,7 @@ export const usePrefetchTrip = () => {
       // Phase 2: immediate data prefetch for likely first interactions.
       prefetchTab(tripId, 'chat');
       setTimeout(() => prefetchTab(tripId, 'calendar'), 125);
+      setTimeout(() => prefetchTab(tripId, 'concierge'), 250);
 
       // Keep tasks eager only on normal networks.
       if (!deferHeavyPrefetch) {
