@@ -6,7 +6,8 @@ import { cn } from '@/lib/utils';
  * ActionPill — shared action button that matches the exact dimensions of tab pills.
  *
  * Variants:
- *   manualOutline  — manual/user-entered actions: dark bg, white border, white text
+ *   primary        — create/new CTAs: gold fill, black text (matches calendar + button default)
+ *   manualOutline  — secondary manual actions: dark bg, white border, white text
  *   aiOutline      — AI-assisted actions: dark bg, gold border, gold text, star icon
  *
  * Sizing is locked to match TripTabs pill dimensions:
@@ -14,7 +15,7 @@ import { cn } from '@/lib/utils';
  */
 
 interface ActionPillProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant: 'manualOutline' | 'aiOutline';
+  variant: 'primary' | 'manualOutline' | 'aiOutline';
   /** Optional icon rendered before children (e.g. Plus, Download, Upload) */
   leftIcon?: React.ReactNode;
   /** When true, renders as a compact icon-only button (no label text) */
@@ -25,6 +26,8 @@ const BASE =
   'inline-flex items-center justify-center gap-1.5 min-h-[42px] py-2.5 rounded-xl font-medium text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:pointer-events-none disabled:opacity-50';
 
 const VARIANT_CLASSES: Record<ActionPillProps['variant'], string> = {
+  primary:
+    'bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary-glow/85 hover:shadow-primary-glow/75 border border-transparent',
   manualOutline: 'bg-black/60 border border-white/30 text-white hover:bg-white/10',
   aiOutline: 'bg-black/60 border border-white/30 text-white hover:bg-white/10',
 };
@@ -32,12 +35,22 @@ const VARIANT_CLASSES: Record<ActionPillProps['variant'], string> = {
 export const ActionPill = React.forwardRef<HTMLButtonElement, ActionPillProps>(
   ({ variant, leftIcon, iconOnly = false, children, className, ...rest }, ref) => {
     const paddingClass = iconOnly ? 'px-3' : 'px-3.5';
+    const iconOnlyPrimaryClass =
+      iconOnly && variant === 'primary'
+        ? 'size-11 min-h-[44px] min-w-[44px] rounded-full p-0'
+        : undefined;
 
     return (
       <button
         ref={ref}
         type="button"
-        className={cn(BASE, VARIANT_CLASSES[variant], paddingClass, className)}
+        className={cn(
+          BASE,
+          VARIANT_CLASSES[variant],
+          paddingClass,
+          iconOnlyPrimaryClass,
+          className,
+        )}
         {...rest}
       >
         {/* AI variant auto-prepends star when no custom leftIcon is given */}

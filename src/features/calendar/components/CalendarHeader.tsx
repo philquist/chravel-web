@@ -132,9 +132,9 @@ export const CalendarHeader = ({
           <span className="hidden lg:inline whitespace-nowrap">{getViewButtonLabel()}</span>
         </ActionPill>
 
-        {/* Add Event button — manual action */}
+        {/* Add Event button — primary create action */}
         <ActionPill
-          variant="manualOutline"
+          variant="primary"
           leftIcon={<Plus />}
           onClick={onAddEvent}
           className={`${colAddEvent} w-full md:min-h-11 md:px-4 focus-visible:ring-primary/50`}

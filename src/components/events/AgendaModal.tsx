@@ -324,7 +324,7 @@ export const AgendaModal = ({
                       </TooltipProvider>
                     )}
                     <ActionPill
-                      variant="manualOutline"
+                      variant="primary"
                       leftIcon={<Plus />}
                       onClick={() => setIsAddingSession(true)}
                       className={`${EVENT_PARITY_COL_START.chat} w-full`}

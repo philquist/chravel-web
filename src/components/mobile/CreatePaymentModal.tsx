@@ -249,8 +249,8 @@ export const CreatePaymentModal = ({
         {/* Fixed Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-green-400" />
+            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-primary" />
             </div>
             <h2 className="text-xl font-semibold text-white">Add Payment</h2>
           </div>
@@ -272,7 +272,7 @@ export const CreatePaymentModal = ({
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 placeholder="e.g., Dinner at restaurant"
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 required
               />
             </div>
@@ -520,7 +520,7 @@ export const CreatePaymentModal = ({
               <Button
                 type="submit"
                 disabled={isSubmitting || !isValid}
-                className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1"
               >
                 {isSubmitting ? 'Creating...' : 'Create Payment'}
               </Button>

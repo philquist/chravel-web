@@ -212,7 +212,7 @@ export const EventTasksTab = ({ eventId, permissions }: EventTasksTabProps) => {
       {canCreate && !isAddingTask && (
         <div className="flex justify-end">
           <ActionPill
-            variant="manualOutline"
+            variant="primary"
             leftIcon={<Plus size={16} />}
             iconOnly
             onClick={() => setIsAddingTask(true)}
