@@ -1,3 +1,9 @@
+2026-07-15 — Mobile base camp modal + first-run boot polish
+- Basecamp selector overlay now top-aligns on mobile, caps to dynamic viewport height, scrolls internally, and keeps its header sticky so short screens do not crop the top of the modal.
+- First-run/anonymous boot fallback now shows a branded non-spinning Chravel boot screen instead of a bare loading wheel after the native splash; authenticated cold starts still use the dashboard/trip skeletons.
+- Verification: focused BasecampSelector/DashboardSkeleton tests, typecheck, lint:check, build pass; merge preflight and screenshot browser install blocked by environment/CDN fetch limitations.
+- Branch: work
+
 2026-07-15 — Mobile calendar controls cleanup
 - Collapsed mobile Calendar Day, Month, Import, and Export into one four-column control row; removed redundant top "New" CTA while preserving the existing floating/section add buttons.
 - Added layout regression coverage for the symmetric single-row controls.

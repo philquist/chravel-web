@@ -144,6 +144,10 @@ Inline default array props are new references every render. If a `useEffect` dep
 
 ### Full-suite Vitest can hang without reporting failures; release gates should fail closed with a configurable timeout and require focused follow-up instead of running indefinitely. Evidence: App Store QA gate timed out `npm run test:run` at 180s on 2026-07-13 while focused feature suites passed.
 
+
+### First-run native boot states should be branded and non-spinning
+A cold TestFlight/native shell may need a few seconds for auth/session and route chunks; render a safe branded boot screen (no user data, no spinner) for anonymous/unknown state and reserve dashboard/trip skeletons for devices with a canonical Supabase session marker. *Evidence: `BootHydrationFallback` first-run polish, July 2026.*
+
 ## Auth, Permissions, Payments
 
 ### Permission model varies by trip type: consumer open · pro role-based · event organizer-only
