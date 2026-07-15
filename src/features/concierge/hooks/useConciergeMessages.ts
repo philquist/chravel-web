@@ -69,6 +69,7 @@ export function useConciergeMessages({ tripId, isDemoMode, userId, userPlan }: P
     if (combined.length === 0) return combined;
     const dedupedByFingerprint = new Map<string, ChatMessage>();
     combined.forEach(message => {
+      if (!message || typeof message.content !== 'string') return;
       const fingerprint = `${message.type}|${message.content.trim()}|${message.timestamp}`;
       if (!dedupedByFingerprint.has(fingerprint)) dedupedByFingerprint.set(fingerprint, message);
     });

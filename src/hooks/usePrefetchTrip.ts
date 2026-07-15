@@ -3,6 +3,8 @@ import { useCallback } from 'react';
 import { tripService } from '@/services/tripService';
 import { calendarService } from '@/services/calendarService';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchConciergeHistoryMessages } from '@/features/concierge/utils/mapConciergeHistory';
+import { conciergeHistoryQueryKey } from '@/hooks/useConciergeHistory';
 import { paymentService } from '@/services/paymentService';
 import { paymentBalanceService } from '@/services/paymentBalanceService';
 import { fetchTripMediaItemsPaginated } from '@/services/tripMediaService';
@@ -192,19 +194,8 @@ export const usePrefetchTrip = () => {
         case 'concierge':
           if (user?.id) {
             queryClient.prefetchQuery({
-              queryKey: ['conciergeHistory', tripId, user.id, 'live'],
-              queryFn: async () => {
-                const { data: rows, error: queryError } = await supabase
-                  .from('ai_queries')
-                  .select('id, query_text, response_text, created_at, metadata')
-                  .eq('trip_id', tripId)
-                  .eq('user_id', user.id)
-                  .order('created_at', { ascending: true })
-                  .limit(50);
-                if (queryError)
-                  throw new Error(queryError.message ?? 'Failed to fetch concierge history');
-                return rows ?? [];
-              },
+              queryKey: conciergeHistoryQueryKey(tripId, user.id, false),
+              queryFn: () => fetchConciergeHistoryMessages(tripId, user.id),
               staleTime: 30 * 1000,
             });
           }
