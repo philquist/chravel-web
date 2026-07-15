@@ -191,22 +191,19 @@ export const RolesView = ({
 
       {/* Header with Stats and Admin Indicator */}
       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 space-y-4">
-        {/* Team Label + Stats + Admin Badge */}
-        <div
-          className={`flex ${isMobile ? 'flex-col items-start gap-2' : 'items-center justify-between gap-3'}`}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <Users className="text-gold-mid flex-shrink-0" size={20} />
-            <h2 className="text-lg font-bold text-white truncate">{teamLabel}</h2>
-            <span className="text-ink-3 text-sm flex-shrink-0">
-              {roster.length} {roster.length === 1 ? 'member' : 'members'}
-            </span>
+        {/* Symmetric header: Team | member count | Admin Access (or blank) */}
+        <div className="grid grid-cols-3 items-center gap-2" data-testid="team-header-row">
+          <h2 className="text-lg font-bold text-white truncate text-left min-w-0">{teamLabel}</h2>
+          <span className="text-ink-3 text-sm text-center tabular-nums whitespace-nowrap">
+            {roster.length} {roster.length === 1 ? 'member' : 'members'}
+          </span>
+          <div className="flex justify-end min-h-[24px] min-w-0">
+            {(canManageRoles || isSuperAdmin) && !effectiveIsReadOnly ? (
+              <span className="flex-shrink-0 text-[11px] font-medium text-gold-light bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1">
+                Admin Access
+              </span>
+            ) : null}
           </div>
-          {(canManageRoles || isSuperAdmin) && !effectiveIsReadOnly && (
-            <span className="flex-shrink-0 text-[11px] font-medium text-gold-light bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1">
-              Admin Access
-            </span>
-          )}
         </div>
 
         {/* Admin action buttons — single row of equal-width text pills */}

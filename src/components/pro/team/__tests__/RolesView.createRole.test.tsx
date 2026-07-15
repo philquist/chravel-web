@@ -111,4 +111,32 @@ describe('RolesView Create Role enablement', () => {
     expect(row).toContainElement(manageRoles);
     expect(row).toContainElement(requests);
   });
+
+  it('lays out Team, member count, and Admin Access on one symmetric row without the glyph', () => {
+    render(
+      <RolesView
+        roster={[]}
+        userRole="admin"
+        category="sports"
+        canManageRoles
+        onCreateRole={vi.fn()}
+        isLoadingRoles={false}
+        adminLoading={false}
+        tripId="22be43ef-270d-4c99-9b53-b3541d5c82ef"
+        tripCreatorId="013d9240-10c0-44e5-8da5-abfa2c4751c5"
+        availableRoles={[]}
+      />,
+    );
+
+    const headerRow = screen.getByTestId('team-header-row');
+    expect(headerRow.className).toMatch(/grid-cols-3/);
+
+    // Sports category uses "Team Roster" as the section title (not bare "Team").
+    const heading = screen.getByRole('heading', { name: /team roster/i });
+    expect(headerRow).toContainElement(heading);
+    // No Users glyph in the header (redundant with the Team tab icon).
+    expect(headerRow.querySelector('svg')).toBeNull();
+    expect(headerRow).toHaveTextContent(/0 members/);
+    expect(headerRow).toHaveTextContent(/admin access/i);
+  });
 });
