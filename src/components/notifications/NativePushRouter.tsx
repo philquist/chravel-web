@@ -20,11 +20,33 @@ import {
   type NativePushActionData,
 } from '@/lib/nativePushBridge';
 
-function tabForPush(data: NativePushActionData): string | null {
-  if (data.eventId || data.type === 'calendar_event') return 'calendar';
-  if (data.pollId || data.type === 'poll_update') return 'polls';
-  if (data.taskId || data.type === 'task_update') return 'tasks';
-  if (data.threadId || data.messageId) return 'chat';
+/**
+ * Map native push payload fields/types to the same trip tabs the in-app Alerts
+ * panel uses (see categoryMap + NotificationsDialog). Prefer explicit entity
+ * ids, then fall back to notification type aliases.
+ */
+export function tabForPush(data: NativePushActionData): string | null {
+  if (data.eventId || data.type === 'calendar_event' || data.type === 'calendar') return 'calendar';
+  if (data.pollId || data.type === 'poll_update' || data.type === 'poll') return 'polls';
+  if (data.taskId || data.type === 'task_update' || data.type === 'task') return 'tasks';
+  if (data.threadId || data.messageId || data.type === 'chat' || data.type === 'mention') {
+    return 'chat';
+  }
+
+  const type = String(data.type || '').toLowerCase();
+  if (type === 'broadcast' || type === 'broadcast_posted') return 'broadcasts';
+  if (type === 'pin' || type === 'pin_announcement') return 'chat';
+  if (type === 'payment' || type === 'payment_request') return 'payments';
+  if (type === 'basecamp' || type === 'basecamp_updates' || type === 'trip_update') return 'places';
+  if (
+    type === 'join_request' ||
+    type === 'member_joined' ||
+    type === 'join_approved' ||
+    type === 'join_rejected'
+  ) {
+    return 'collaborators';
+  }
+
   return null;
 }
 

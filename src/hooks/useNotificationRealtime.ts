@@ -26,6 +26,7 @@ import {
   parseNotificationIngestionRow,
   parseNotificationMetadata,
 } from '@/lib/notifications/navigation';
+import { formatInAppAlertCopy } from '@/lib/notifications/alertCopy';
 
 const NOTIFICATION_COLUMNS =
   'id, type, title, message, is_read, is_visible, metadata, trip_id, created_at';
@@ -39,14 +40,24 @@ export function mapRowToNotification(row: Record<string, unknown>): Notification
   }
 
   const metadata = parseNotificationMetadata(parsedRow.metadata);
+  // Prefer metadata for modern notifications, but fall back to column for legacy rows.
+  const tripId = (metadata.trip_id as string) || parsedRow.trip_id || '';
+  const tripName = (metadata.trip_name as string) || '';
+  const alertCopy = formatInAppAlertCopy({
+    type: parsedRow.type,
+    title: parsedRow.title,
+    message: parsedRow.message,
+    tripName,
+    metadata: metadata as Record<string, unknown>,
+  });
+
   return {
     id: parsedRow.id,
     type: parsedRow.type,
-    title: parsedRow.title,
-    description: parsedRow.message,
-    // Prefer metadata for modern notifications, but fall back to column for legacy rows.
-    tripId: (metadata.trip_id as string) || parsedRow.trip_id || '',
-    tripName: (metadata.trip_name as string) || '',
+    title: alertCopy.title,
+    description: alertCopy.description,
+    tripId,
+    tripName,
     timestamp: formatDistanceToNow(new Date(parsedRow.created_at), {
       addSuffix: true,
     }),

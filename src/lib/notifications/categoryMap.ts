@@ -65,7 +65,13 @@ export const NOTIFICATION_CATEGORY_MAP: Record<
     key: 'broadcasts_and_pins',
     uiLabel: 'Broadcasts & Pins',
     preferenceKey: 'broadcasts',
-    backendNotificationTypes: ['broadcast', 'broadcasts', 'broadcast_posted', 'pin_announcement'],
+    backendNotificationTypes: [
+      'broadcast',
+      'broadcasts',
+      'broadcast_posted',
+      'pin',
+      'pin_announcement',
+    ],
     deepLinkTab: 'broadcasts',
   },
   calendar: {

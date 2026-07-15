@@ -1,3 +1,10 @@
+2026-07-15 — Notifications/Alerts deep-dive + generic trip-scoped copy
+- Audited Settings toggles (My Trips / Pro / Events) → notification_preferences → DB fanout → Alerts + push.
+- Alerts were wired but showed entity-specific bodies (addresses, amounts, questions, names); push already used content builder.
+- Fixed: generic trip-scoped copy at fanout + formatInAppAlertCopy on read; pin→broadcasts map; NativePushRouter tabs; join-trip pref gate + generic copy.
+- Migration applied on ChravelApp. Tests: alertCopy/contentBuilder/categoryMap/mapRow/NativePushRouter + NotificationsDialog green; typecheck/lint:check pass.
+- Branch: cursor/notifications-alerts-copy-deepdive-773a
+
 2026-07-15 — Create New Task modal keyboard jump
 - Mobile Create New Task used ResponsiveModal bottom Drawer; iOS keyboard checkmark dismiss left the title at the bottom of the screen.
 - Fix: layout="centered" Dialog + dialog-keyboard-stable visual-viewport centering; skip scrollIntoView for dialog/drawer fields.

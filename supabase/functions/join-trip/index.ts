@@ -565,19 +565,39 @@ serve(async req => {
       // insert also gets a fresh id, so this still dedupes accidental repeat
       // attempts within the same request event without blocking later ones.
       const fanoutEventKey = `join_request:${joinRequestId}:${requestEpisodeAt}`;
-      const notificationPromises = recipientIds.map(recipientId =>
+
+      // Honor Settings → Join Requests preference (default ON when no row).
+      let eligibleRecipientIds = recipientIds;
+      if (recipientIds.length > 0) {
+        const { data: prefRows } = await supabaseClient
+          .from('notification_preferences')
+          .select('user_id, join_requests')
+          .in('user_id', recipientIds);
+        const disabled = new Set(
+          (prefRows || [])
+            .filter(row => row.join_requests === false)
+            .map(row => row.user_id as string),
+        );
+        eligibleRecipientIds = recipientIds.filter(id => !disabled.has(id));
+      }
+
+      const tripLabel =
+        typeof trip.name === 'string' && trip.name.trim() ? trip.name.trim() : 'your trip';
+      const scopedTrip = tripLabel === 'your trip' ? 'your trip' : `your ${tripLabel} trip`;
+
+      const notificationPromises = eligibleRecipientIds.map(recipientId =>
         supabaseClient.from('notifications').insert({
           user_id: recipientId,
-          title: `${requesterName} wants to join ${trip.name}`,
-          message: 'Tap to approve or reject their request',
+          title: `Join request in ${tripLabel}`,
+          message: `Someone requested to join ${scopedTrip}.`,
           type: 'join_request',
           trip_id: invite.trip_id,
           metadata: {
             trip_id: invite.trip_id,
             trip_name: trip.name,
             requester_id: user.id,
-            requester_name: requesterName,
             request_id: joinRequestId,
+            tab: 'collaborators',
             fanout_event_key: fanoutEventKey,
           },
         }),
@@ -593,7 +613,8 @@ serve(async req => {
         r => r.status === 'fulfilled' && r.value.error?.code === '23505',
       ).length;
       logStep('Notifications created', {
-        total: recipientIds.length,
+        total: eligibleRecipientIds.length,
+        skippedByPreference: recipientIds.length - eligibleRecipientIds.length,
         success: successCount,
         deduped: dedupedCount,
       });

@@ -78,6 +78,11 @@ function tripLabel(ctx: TripContext): string {
   return formatTripDisplayName(ctx.tripName);
 }
 
+/** "your trip" | "your Japan Trip trip" — avoids "your your trip trip". */
+function inYourTripPhrase(trip: string): string {
+  return trip === 'your trip' ? 'your trip' : `your ${trip} trip`;
+}
+
 function contextSuffix(ctx: TripContext): string {
   return buildTripContext(ctx);
 }
@@ -96,70 +101,71 @@ function footerLine(): string {
 // ---------------------------------------------------------------------------
 function buildPushContent(input: NotificationContentInput): PushContent {
   const trip = tripLabel(input.tripContext);
+  const scoped = inYourTripPhrase(trip);
   const ctx = contextSuffix(input.tripContext);
-  const actor = input.actorName || 'Someone';
 
+  // Generic, trip-scoped copy — no actor names, addresses, amounts, or entity text.
   switch (input.type) {
     case 'broadcast_posted':
       return {
         title: `New Broadcast in ${trip}`,
-        body: `${actor} posted an announcement${ctx}. Open ChravelApp to review.`,
+        body: `A new broadcast was posted in ${scoped}${ctx}. Open ChravelApp to review.`,
       };
 
     case 'calendar_event_added':
       return {
         title: `Calendar Updated in ${trip}`,
-        body: `A calendar event was added${ctx}. Open ChravelApp for details.`,
+        body: `A calendar event was added to ${scoped}${ctx}. Open ChravelApp for details.`,
       };
 
     case 'calendar_event_updated':
       return {
         title: `Calendar Updated in ${trip}`,
-        body: `A calendar event was updated${ctx}. Open ChravelApp for details.`,
+        body: `A calendar event was updated in ${scoped}${ctx}. Open ChravelApp for details.`,
       };
 
     case 'calendar_bulk_import': {
       const count = input.count ?? 0;
       return {
         title: `${count} New Calendar Events Added`,
-        body: `${trip}${ctx}. Added via Smart Import.`,
+        body: `${count} calendar events were added to ${scoped}${ctx}. Added via Smart Import.`,
       };
     }
 
     case 'payment_request':
       return {
         title: `Payment Request in ${trip}`,
-        body: `${actor} sent a payment request${ctx}. Open ChravelApp to review.`,
+        body: `A new payment request was added to ${scoped}${ctx}. Open ChravelApp to review.`,
       };
 
     case 'payment_settled':
       return {
         title: `Payment Settled in ${trip}`,
-        body: `A payment has been settled${ctx}. Open ChravelApp for details.`,
+        body: `A payment has been settled in ${scoped}${ctx}. Open ChravelApp for details.`,
       };
 
     case 'task_assigned':
       return {
         title: `New Task in ${trip}`,
-        body: `${actor} assigned you a task${ctx}. Open ChravelApp to review.`,
+        body: `A new task was added in ${scoped}${ctx}. Open ChravelApp to review.`,
       };
 
     case 'task_completed':
       return {
         title: `Task Completed in ${trip}`,
-        body: `A task has been completed${ctx}. Open ChravelApp for details.`,
+        body: `A task has been completed in ${scoped}${ctx}. Open ChravelApp for details.`,
       };
 
     case 'poll_created':
       return {
         title: `New Poll in ${trip}`,
-        body: `${actor} created a poll${ctx}. Open ChravelApp to vote.`,
+        body: `A new poll was created in ${scoped}${ctx}. Open ChravelApp to vote.`,
       };
 
     case 'join_request':
       return {
         title: `Join Request in ${trip}`,
-        body: `${actor} wants to join${ctx}. Open ChravelApp to review.`,
+        body: `Someone requested to join ${scoped}${ctx}. Open ChravelApp to review.`,
       };
 
     case 'join_request_approved':
@@ -171,31 +177,31 @@ function buildPushContent(input: NotificationContentInput): PushContent {
     case 'basecamp_updated':
       return {
         title: `Basecamp Updated in ${trip}`,
-        body: `The basecamp location has been updated${ctx}. Open ChravelApp for details.`,
+        body: `The basecamp was updated in ${scoped}${ctx}. Open ChravelApp for details.`,
       };
 
     case 'trip_invite':
       return {
         title: `Trip Invitation`,
-        body: `${actor} invited you to ${trip}${ctx}. Open ChravelApp to respond.`,
+        body: `You've been invited to ${trip}${ctx}. Open ChravelApp to respond.`,
       };
 
     case 'trip_reminder':
       return {
         title: `${trip} Starts Soon!`,
-        body: `Your trip${ctx} begins soon. Open ChravelApp to prepare.`,
+        body: `${scoped}${ctx} begins soon. Open ChravelApp to prepare.`,
       };
 
     case 'rsvp_update':
       return {
         title: `RSVP Update in ${trip}`,
-        body: `${actor} updated their RSVP${ctx}. Open ChravelApp for details.`,
+        body: `An RSVP was updated in ${scoped}${ctx}. Open ChravelApp for details.`,
       };
 
     default:
       return {
         title: `Update in ${trip}`,
-        body: `You have an update${ctx}. Open ChravelApp for details.`,
+        body: `You have an update in ${scoped}${ctx}. Open ChravelApp for details.`,
       };
   }
 }

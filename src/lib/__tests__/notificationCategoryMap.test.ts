@@ -26,13 +26,19 @@ describe('notification category map', () => {
     const broadcastAndPins = NOTIFICATION_CATEGORY_MAP.broadcasts_and_pins;
     expect(broadcastAndPins.preferenceKey).toBe('broadcasts');
     expect(broadcastAndPins.backendNotificationTypes).toEqual(
-      expect.arrayContaining(['broadcast', 'pin_announcement']),
+      expect.arrayContaining(['broadcast', 'pin', 'pin_announcement']),
     );
 
     const messages = NOTIFICATION_CATEGORY_MAP.messages;
     expect(messages.preferenceKey).toBe('chat_messages');
     expect(messages.messagesScope).toBe('mentions_only_fallback');
     expect(messages.backendNotificationTypes).toContain('mention');
+  });
+
+  it('maps pin notifications to the broadcasts preference', () => {
+    const resolved = resolveNotificationCategoryByType('pin');
+    expect(resolved?.preferenceKey).toBe('broadcasts');
+    expect(resolved?.key).toBe('broadcasts_and_pins');
   });
 
   it('keeps notification type lookup table one-to-one with category registry', () => {

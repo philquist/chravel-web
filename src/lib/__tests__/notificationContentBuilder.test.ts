@@ -28,7 +28,8 @@ describe('buildNotificationContent', () => {
       if (isPushContent(content)) {
         expect(content.title).toContain('Broadcast');
         expect(content.title).toContain('Japan Trip');
-        expect(content.body).toContain('Tour Manager');
+        expect(content.body).toContain('your Japan Trip trip');
+        expect(content.body).not.toContain('Tour Manager');
         expect(content.body).toContain('Open ChravelApp');
       }
     });
@@ -49,7 +50,7 @@ describe('buildNotificationContent', () => {
         expect(content.title).toContain('22');
         expect(content.title).toContain('Calendar Events');
         expect(content.body).toContain('Smart Import');
-        expect(content.body).toContain('Cat Williams Tour Nationwide');
+        expect(content.body).toContain('your Cat Williams Tour Nationwide trip');
       }
     });
 
@@ -66,6 +67,7 @@ describe('buildNotificationContent', () => {
         expect(content.title).toContain('Japan Trip');
         expect(content.body).toContain('Tokyo');
         expect(content.body).toContain('vote');
+        expect(content.body).not.toContain('Alex');
       }
     });
 
@@ -83,7 +85,8 @@ describe('buildNotificationContent', () => {
 
       if (isPushContent(content)) {
         expect(content.title).toContain('Join Request');
-        expect(content.body).toContain('Emily');
+        expect(content.body).toContain('Someone requested to join');
+        expect(content.body).not.toContain('Emily');
         expect(content.body).toContain('review');
       }
     });
@@ -98,8 +101,23 @@ describe('buildNotificationContent', () => {
 
       if (isPushContent(content)) {
         expect(content.title).toContain('Payment');
-        expect(content.body).toContain('Tom');
+        expect(content.body).toContain('A new payment request was added');
+        expect(content.body).not.toContain('Tom');
         expect(content.body).toContain('review');
+      }
+    });
+
+    it('builds basecamp push content without address details', () => {
+      const content = buildNotificationContent({
+        type: 'basecamp_updated',
+        channel: 'push',
+        tripContext: sampleTrip,
+      });
+
+      if (isPushContent(content)) {
+        expect(content.title).toContain('Basecamp Updated');
+        expect(content.body).toContain('The basecamp was updated');
+        expect(content.body).toContain('your Japan Trip trip');
       }
     });
   });
