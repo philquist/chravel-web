@@ -495,7 +495,7 @@ export const MobileTripTabs = ({
         // Pro-specific tabs
         case 'team':
           return (
-            <div className="px-4 py-4 pb-safe overflow-y-auto h-full">
+            <div className="mobile-trip-section-pad py-4 pb-safe overflow-y-auto h-full">
               <TeamTab
                 roster={localParticipants.map(p => ({
                   id: p.id,
@@ -606,7 +606,8 @@ export const MobileTripTabs = ({
       <div className="flex-shrink-0 z-40 bg-black/95 backdrop-blur-md border-b border-white/10">
         <div
           ref={tabsContainerRef}
-          className="flex overflow-x-auto scrollbar-hide gap-2 px-4 py-2"
+          data-testid="mobile-trip-tab-rail"
+          className="mobile-trip-tab-rail flex overflow-x-auto scrollbar-hide"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
@@ -633,13 +634,13 @@ export const MobileTripTabs = ({
                 key={tab.id}
                 data-tab={tab.id}
                 data-active={isActive ? 'true' : 'false'}
+                data-testid={`mobile-trip-tab-pill-${tab.id}`}
                 onClick={() => handleTabPress(tab.id, enabled)}
                 onMouseEnter={() => enabled && handleTabHover(tab.id)}
                 onFocus={() => enabled && handleTabHover(tab.id)}
                 className={`
-                  flex items-center justify-center gap-2 
-                  px-4 py-2 min-w-max h-[44px]
-                  rounded-lg font-medium text-sm
+                  mobile-trip-tab-pill flex items-center justify-center
+                  min-w-max rounded-lg font-medium
                   transition-all duration-200
                   flex-shrink-0
                   touch-manipulation
@@ -656,7 +657,7 @@ export const MobileTripTabs = ({
                 `}
               >
                 <Icon size={16} className="flex-shrink-0" />
-                <span className="whitespace-nowrap text-sm">{tab.label}</span>
+                <span className="whitespace-nowrap">{tab.label}</span>
                 {!enabled && <Lock size={12} className="ml-1 flex-shrink-0" />}
               </button>
             );

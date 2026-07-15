@@ -699,3 +699,13 @@ Known security anti-patterns discovered during audits. Reference this before int
 - **Smallest safe fix:** `ResponsiveModal` `layout="centered"` for Create Task (always Dialog) + `.dialog-keyboard-stable` re-centers using `--visual-viewport-*`; skip `scrollIntoView` for fields inside dialogs/drawers.
 - **Required tests:** `TaskCreateModal.layout.test.tsx`; `useKeyboardHandler` dialog-focus skip test.
 - **Fixed in:** `responsive-modal.tsx`, `TaskCreateModal.tsx`, `useKeyboardHandler.ts`, `index.css` (July 2026)
+
+## Mobile trip landscape: tab pills + section content clipped on the left
+- **Status:** confirmed
+- **Subsystem:** mobile trip shell / Calendar / Places / shared trip tabs
+- **Bug class:** missing horizontal safe-area on `position: fixed` shell
+- **Symptom:** In landscape on notched iPhones, trip tab pills and section UI (calendar controls/grid, Places Base Camps/Explore pills, etc.) appear cut off on the left (and sometimes right).
+- **Root cause:** `.mobile-trip-shell` spanned full viewport width; only top safe-area was applied via `.mobile-safe-header`. Landscape moves the notch to a side inset that content ignored.
+- **Smallest safe fix:** `padding-left/right: env(safe-area-inset-*)` on `.mobile-trip-shell`; landscape density classes for pills/text scoped under `.mobile-trip-shell`; avoid double-counting with inner `safe-container` / `max(inset)` helpers.
+- **Required tests:** `mobileTripLandscape.layout.test.ts`; `MobileGroupCalendar.layout.test.tsx`; `PlacesSection.header.test.tsx`.
+- **Fixed in:** `index.css`, `MobileTripTabs.tsx`, `MobileGroupCalendar.tsx`, `PlacesSection.tsx`, `MobileUnifiedMediaHub.tsx`, `MobileTripTasks.tsx`, `CommentsWall.tsx` (July 2026)

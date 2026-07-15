@@ -436,7 +436,7 @@ export const MobileGroupCalendar = ({
       <div
         data-testid={isDayDensity ? 'calendar-day-mini-grid' : 'calendar-month-grid'}
         className={[
-          'shrink-0 overflow-hidden border-t border-white/10 bg-black/40 px-3 pb-3 pt-2',
+          'mobile-trip-calendar-grid shrink-0 overflow-hidden border-t border-white/10 bg-black/40 px-3 pb-3 pt-2',
           // Hard cap: calendar never claims more than the bottom half of the panel
           isDayDensity ? 'max-h-[42%]' : 'max-h-[48%]',
         ].join(' ')}
@@ -490,7 +490,7 @@ export const MobileGroupCalendar = ({
                 aria-label={`${format(date, 'EEEE, MMMM d')}${hasEvents ? `, ${dayEvents.length} event${dayEvents.length === 1 ? '' : 's'}` : ''}`}
                 aria-selected={isSelected}
                 className={[
-                  'relative flex w-full flex-col items-center justify-start rounded-lg transition-all duration-150 active:scale-95',
+                  'mobile-trip-calendar-day relative flex w-full flex-col items-center justify-start rounded-lg transition-all duration-150 active:scale-95',
                   cellHeight,
                   !isSelected ? 'hover:bg-white/10' : '',
                   opts.showEventTitles ? 'min-h-[2.75rem] py-0.5' : '',
@@ -498,7 +498,7 @@ export const MobileGroupCalendar = ({
               >
                 <span
                   className={[
-                    'flex shrink-0 items-center justify-center rounded-full font-medium',
+                    'mobile-trip-calendar-day-num flex shrink-0 items-center justify-center rounded-full font-medium',
                     daySize,
                     isSelected
                       ? 'bg-gold-primary text-primary-foreground'
@@ -550,7 +550,10 @@ export const MobileGroupCalendar = ({
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
           {/* Primary calendar controls — one compact row to preserve vertical calendar space */}
-          <div className="grid shrink-0 grid-cols-4 gap-2 border-b border-white/10 px-4 py-2.5">
+          <div
+            data-testid="calendar-control-row"
+            className="mobile-trip-control-row grid shrink-0 grid-cols-4 border-b border-white/10"
+          >
             <div role="tablist" aria-label="Calendar view" className="contents">
               <button
                 type="button"
@@ -559,7 +562,7 @@ export const MobileGroupCalendar = ({
                 data-testid="calendar-view-day"
                 onClick={() => setViewMode('list')}
                 className={[
-                  'flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-2 text-xs font-semibold transition-all active:scale-[0.98]',
+                  'mobile-trip-control-pill flex items-center justify-center rounded-xl font-semibold transition-all active:scale-[0.98]',
                   currentViewMode === 'list'
                     ? 'bg-primary/15 text-gold-light shadow-ring-glow ring-1 ring-primary/50'
                     : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white',
@@ -575,7 +578,7 @@ export const MobileGroupCalendar = ({
                 data-testid="calendar-view-month"
                 onClick={() => setViewMode('grid')}
                 className={[
-                  'flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-2 text-xs font-semibold transition-all active:scale-[0.98]',
+                  'mobile-trip-control-pill flex items-center justify-center rounded-xl font-semibold transition-all active:scale-[0.98]',
                   currentViewMode === 'grid'
                     ? 'bg-primary/15 text-gold-light shadow-ring-glow ring-1 ring-primary/50'
                     : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white',
@@ -588,7 +591,7 @@ export const MobileGroupCalendar = ({
             <button
               type="button"
               onClick={handleImport}
-              className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 text-xs text-gray-300 transition-colors hover:bg-white/10 active:scale-95"
+              className="mobile-trip-control-pill flex items-center justify-center rounded-xl bg-white/5 text-gray-300 transition-colors hover:bg-white/10 active:scale-95"
             >
               <Upload size={14} />
               Import
@@ -596,7 +599,7 @@ export const MobileGroupCalendar = ({
             <button
               type="button"
               onClick={handleExportClick}
-              className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 text-xs text-gray-300 transition-colors hover:bg-white/10 active:scale-95"
+              className="mobile-trip-control-pill flex items-center justify-center rounded-xl bg-white/5 text-gray-300 transition-colors hover:bg-white/10 active:scale-95"
             >
               <Download size={14} />
               Export
@@ -610,13 +613,13 @@ export const MobileGroupCalendar = ({
               data-testid="calendar-day-view"
               data-view="day"
             >
-              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+              <div className="mobile-trip-section-pad min-h-0 flex-1 overflow-y-auto py-3">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                       {format(selectedDate, 'MMMM yyyy')}
                     </p>
-                    <h3 className="truncate text-xl font-semibold tracking-tight text-white">
+                    <h3 className="mobile-trip-section-title truncate font-semibold tracking-tight text-white">
                       {format(selectedDate, 'EEEE, MMMM d')}
                     </h3>
                   </div>
@@ -661,7 +664,7 @@ export const MobileGroupCalendar = ({
             >
               {renderCompactCalendar({ density: 'month', showEventTitles: true })}
 
-              <div className="min-h-0 flex-1 overflow-y-auto border-t border-white/10 px-4 py-3">
+              <div className="mobile-trip-section-pad min-h-0 flex-1 overflow-y-auto border-t border-white/10 py-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <h3 className="text-base font-semibold text-white">
                     Events for {format(selectedDate, 'EEEE, MMM d')}
