@@ -1,6 +1,25 @@
 import React from 'react';
-import { LoadingSpinner } from '../LoadingSpinner';
 import { deviceLikelyAuthenticated } from '../../lib/bootAuthMarker';
+
+export const BrandedBootScreen: React.FC = () => (
+  <div
+    className="min-h-screen min-h-mobile-screen bg-background flex items-center justify-center px-6"
+    aria-busy="true"
+    aria-label="Opening Chravel"
+  >
+    <div className="flex flex-col items-center gap-4 text-center">
+      <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-primary/25 bg-primary/10 shadow-[0_0_48px_rgba(212,175,55,0.18)]">
+        <span className="text-4xl font-black tracking-tight text-primary" aria-hidden="true">
+          C
+        </span>
+      </div>
+      <div>
+        <p className="text-xl font-bold text-foreground">Chravel</p>
+        <p className="mt-1 text-sm text-muted-foreground">Group trips, together.</p>
+      </div>
+    </div>
+  </div>
+);
 
 /**
  * Branded placeholder for the home dashboard while auth hydrates on cold start.
@@ -53,7 +72,7 @@ export const DashboardSkeleton: React.FC = () => (
 /**
  * Single home of the skeleton-vs-spinner policy for boot/route loading states:
  * devices that look authenticated (canonical Supabase session key present) get
- * the app skeleton; anonymous devices get a neutral spinner because they're
+ * the app skeleton; anonymous devices get a branded, non-spinning boot screen because they're
  * headed to the auth gate or marketing page where an app skeleton would be
  * wrong. Evaluated at render time so mid-session sign-in/sign-out flips it.
  */
@@ -61,11 +80,7 @@ export const BootHydrationFallback: React.FC<{ variant?: 'dashboard' | 'trip' }>
   variant = 'dashboard',
 }) => {
   if (!deviceLikelyAuthenticated()) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+    return <BrandedBootScreen />;
   }
   return variant === 'trip' ? <TripShellSkeleton /> : <DashboardSkeleton />;
 };
