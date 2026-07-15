@@ -47,6 +47,18 @@ const TRIPS_QUERY_KEY = 'trips';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function identifyRevenueCatUserWhenNative(userId: string): void {
+  if (!isCapacitorNativeShell() && !isChravelNativeShell()) return;
+
+  void import('@/integrations/revenuecat/revenuecatClient')
+    .then(({ identifyUser }) => identifyUser(userId))
+    .catch(err => {
+      if (import.meta.env.DEV) {
+        console.warn('[Auth] RevenueCat identify failed:', err);
+      }
+    });
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const demoView = useDemoModeStore(state => state.demoView);
   const [user, setUser] = useState<User | null>(null);
@@ -461,6 +473,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   errorReason: null,
                 });
                 prefetchUserTrips(refreshed.user.id);
+                identifyRevenueCatUserWhenNative(refreshed.user.id);
                 void transformUser(refreshed.user).then(u => {
                   if (u && activeSessionUserIdRef.current === refreshed.user.id) setUser(u);
                 });
@@ -474,6 +487,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               errorReason: null,
             });
             prefetchUserTrips(retry.data.session.user.id);
+            identifyRevenueCatUserWhenNative(retry.data.session.user.id);
             void transformUser(retry.data.session.user).then(u => {
               if (u && activeSessionUserIdRef.current === retry.data.session.user.id) setUser(u);
             });
@@ -507,6 +521,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               errorReason: null,
             });
             prefetchUserTrips(refreshedSession.user.id);
+            identifyRevenueCatUserWhenNative(refreshedSession.user.id);
             void transformUser(refreshedSession.user).then(u => {
               if (u && activeSessionUserIdRef.current === refreshedSession.user.id) setUser(u);
             });
@@ -519,6 +534,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               errorReason: null,
             });
             prefetchUserTrips(session.user.id);
+            identifyRevenueCatUserWhenNative(session.user.id);
             void transformUser(session.user).then(u => {
               if (u && activeSessionUserIdRef.current === session.user.id) setUser(u);
             });
@@ -547,6 +563,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setSession(refreshed.session);
               setUser(buildSessionDerivedUser(refreshed.session.user));
               prefetchUserTrips(refreshed.session.user.id);
+              identifyRevenueCatUserWhenNative(refreshed.session.user.id);
               void transformUser(refreshed.session.user).then(u => {
                 if (u) setUser(u);
               });
@@ -586,6 +603,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           try {
             setAuthTransition({ user: buildSessionDerivedUser(session.user), errorReason: null });
             prefetchUserTrips(session.user.id);
+            identifyRevenueCatUserWhenNative(session.user.id);
             void transformUser(session.user).then(u => {
               if (u && activeSessionUserIdRef.current === session.user.id) setUser(u);
             });
@@ -689,6 +707,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (authEventId !== authEventCounterRef.current) return;
           setUser(buildSessionDerivedUser(session.user));
           prefetchUserTrips(session.user.id);
+          identifyRevenueCatUserWhenNative(session.user.id);
           setIsLoading(false);
 
           transformUser(session.user)

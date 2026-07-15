@@ -591,3 +591,6 @@ Bare `at` matches venue phrases ("Trivia Night at Joe's"). Use `@` and `vs`/`ver
 
 ### Native routing predicates need executable guardrails, not just documentation
 Keep OAuth-return matching, exact-or-dot-boundary host allowlists, and deferred-path precedence in one tested module; CI should reject new inline host `.endsWith()` checks and auth-return redefinitions. Evidence: 2026-07-15 Phase 1 hardening added `src/lib/nativeRoutingGuards.ts` plus `qa:native-routing-guards`.
+
+### RevenueCat SDK calls must await the shared configure promise
+Native billing calls (`identifyUser`, customer info, offerings, purchase, restore, logout) should never race `configureRevenueCat`; keep one module-level initialization promise keyed by user/platform and await it from every SDK call path. Evidence: 2026-07-15 RevenueCat init-race hardening regression test.

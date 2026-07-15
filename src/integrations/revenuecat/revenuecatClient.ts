@@ -65,6 +65,53 @@ async function syncCustomerInfoToBackend(
 // This variable is kept as a null placeholder for the loadPurchasesPlugin() interface.
 const Purchases: unknown | null = null;
 
+type RevenueCatPlugin = {
+  configure?: (options: { apiKey: string; appUserID: string }) => Promise<void> | void;
+  logIn?: (options: { appUserID: string }) => Promise<unknown> | unknown;
+  identify?: (options: { appUserID: string }) => Promise<unknown> | unknown;
+  getCustomerInfo?: () => Promise<{ customerInfo: unknown }> | { customerInfo: unknown };
+  getOfferings?: () => Promise<unknown> | unknown;
+  purchasePackage?: (options: {
+    aPackage: unknown;
+  }) => Promise<{ customerInfo: unknown }> | { customerInfo: unknown };
+  restorePurchases?: () => Promise<{ customerInfo: unknown }> | { customerInfo: unknown };
+  logOut?: () => Promise<void> | void;
+};
+
+type RevenueCatOfferingLike = {
+  current?: {
+    availablePackages?: Array<{ identifier?: string; product?: { identifier?: string } }>;
+  } | null;
+  all?: Record<
+    string,
+    { availablePackages?: Array<{ identifier?: string; product?: { identifier?: string } }> }
+  >;
+};
+
+interface RevenueCatInitializationState {
+  key: string;
+  promise: Promise<RevenueCatResult>;
+}
+
+let revenueCatInitialization: RevenueCatInitializationState | null = null;
+
+function getInitializationKey(
+  userId: string,
+  platform: RevenueCatPlatform,
+  isDemoMode: boolean,
+): string {
+  return `${platform}:${isDemoMode ? 'demo' : 'live'}:${userId}`;
+}
+
+async function awaitActiveRevenueCatInitialization(): Promise<RevenueCatResult | null> {
+  if (!revenueCatInitialization) return null;
+  return revenueCatInitialization.promise;
+}
+
+function asRevenueCatPlugin(plugin: unknown): RevenueCatPlugin | null {
+  return plugin && typeof plugin === 'object' ? (plugin as RevenueCatPlugin) : null;
+}
+
 /**
  * Get current platform using the same native detector as billing provider selection.
  */
@@ -123,6 +170,27 @@ export async function configureRevenueCat(
   userId: string,
   isDemoMode: boolean = false,
 ): Promise<RevenueCatResult> {
+  const platform = getPlatform();
+  const key = getInitializationKey(userId, platform, isDemoMode);
+  if (revenueCatInitialization?.key === key) {
+    return revenueCatInitialization.promise;
+  }
+
+  const initializationPromise = initializeRevenueCat(userId, platform, isDemoMode);
+  revenueCatInitialization = { key, promise: initializationPromise };
+
+  const result = await initializationPromise;
+  if (!result.success) {
+    revenueCatInitialization = null;
+  }
+  return result;
+}
+
+async function initializeRevenueCat(
+  userId: string,
+  platform: RevenueCatPlatform,
+  isDemoMode: boolean,
+): Promise<RevenueCatResult> {
   // Demo mode: no-op
   if (isDemoMode) {
     console.log('[RevenueCat] Demo mode active, skipping configuration');
@@ -134,8 +202,6 @@ export async function configureRevenueCat(
     console.log('[RevenueCat] Feature flag disabled');
     return { success: false, supported: false, errorCode: 'NOT_CONFIGURED' };
   }
-
-  const platform = getPlatform();
 
   // Web: not supported
   if (platform === 'web') {
@@ -156,8 +222,8 @@ export async function configureRevenueCat(
   }
 
   // Load plugin
-  const purchases = await loadPurchasesPlugin();
-  if (!purchases) {
+  const purchases = asRevenueCatPlugin(await loadPurchasesPlugin());
+  if (!purchases?.configure) {
     return {
       success: false,
       supported: true,
@@ -179,8 +245,9 @@ export async function configureRevenueCat(
       }
     }
 
-    // Configure RevenueCat
-    await (purchases as any).configure({
+    // Configure RevenueCat exactly once for the current user/platform key. Every
+    // RevenueCat call path awaits this promise when it is in flight.
+    await purchases.configure({
       apiKey,
       appUserID: userId,
     });
@@ -209,6 +276,42 @@ export async function configureRevenueCat(
 }
 
 /**
+ * Identify/log in the current user after RevenueCat is configured.
+ * This prevents native-shell fire-and-forget auth effects from no-oping before configure resolves.
+ */
+export async function identifyUser(
+  userId: string,
+  isDemoMode: boolean = false,
+): Promise<RevenueCatResult> {
+  const configured = await configureRevenueCat(userId, isDemoMode);
+  if (!configured.success || !configured.supported) {
+    return configured;
+  }
+
+  const purchases = asRevenueCatPlugin(await loadPurchasesPlugin());
+  if (!purchases) {
+    return { success: false, supported: true, errorCode: 'NOT_SUPPORTED' };
+  }
+
+  try {
+    if (purchases.logIn) {
+      await purchases.logIn({ appUserID: userId });
+    } else if (purchases.identify) {
+      await purchases.identify({ appUserID: userId });
+    }
+    return { success: true, supported: true };
+  } catch (error) {
+    console.error('[RevenueCat] Identify failed:', error);
+    return {
+      success: false,
+      supported: true,
+      errorCode: 'UNKNOWN',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
  * Get customer info from RevenueCat
  */
 export async function getCustomerInfo(
@@ -222,13 +325,18 @@ export async function getCustomerInfo(
     return { success: false, supported: false, errorCode: 'NOT_SUPPORTED' };
   }
 
-  const purchases = await loadPurchasesPlugin();
-  if (!purchases) {
+  const initialized = await awaitActiveRevenueCatInitialization();
+  if (initialized && (!initialized.success || !initialized.supported)) {
+    return initialized as RevenueCatResult<RevenueCatCustomerInfo>;
+  }
+
+  const purchases = asRevenueCatPlugin(await loadPurchasesPlugin());
+  if (!purchases?.getCustomerInfo) {
     return { success: false, supported: true, errorCode: 'NOT_SUPPORTED' };
   }
 
   try {
-    const { customerInfo } = await (purchases as any).getCustomerInfo();
+    const { customerInfo } = await purchases.getCustomerInfo();
     return {
       success: true,
       supported: true,
@@ -259,14 +367,19 @@ export async function getOfferings(
     return { success: false, supported: false, errorCode: 'NOT_SUPPORTED' };
   }
 
-  const purchases = await loadPurchasesPlugin();
-  if (!purchases) {
+  const initialized = await awaitActiveRevenueCatInitialization();
+  if (initialized && (!initialized.success || !initialized.supported)) {
+    return initialized as RevenueCatResult<RevenueCatOfferings>;
+  }
+
+  const purchases = asRevenueCatPlugin(await loadPurchasesPlugin());
+  if (!purchases?.getOfferings) {
     return { success: false, supported: true, errorCode: 'NOT_SUPPORTED' };
   }
 
   try {
     // getOfferings returns PurchasesOfferings directly
-    const offerings = await (purchases as any).getOfferings();
+    const offerings = await purchases.getOfferings();
     return {
       success: true,
       supported: true,
@@ -299,14 +412,19 @@ export async function purchasePackage(
     return { success: false, supported: false, errorCode: 'NOT_SUPPORTED' };
   }
 
-  const purchases = await loadPurchasesPlugin();
-  if (!purchases) {
+  const initialized = await awaitActiveRevenueCatInitialization();
+  if (initialized && (!initialized.success || !initialized.supported)) {
+    return initialized as RevenueCatPurchaseResult;
+  }
+
+  const purchases = asRevenueCatPlugin(await loadPurchasesPlugin());
+  if (!purchases?.getOfferings || !purchases.purchasePackage) {
     return { success: false, supported: true, errorCode: 'NOT_SUPPORTED' };
   }
 
   try {
     // Get offerings first to find the package
-    const offerings = await (purchases as any).getOfferings();
+    const offerings = (await purchases.getOfferings()) as RevenueCatOfferingLike;
     const offering = offerings?.all?.[offeringIdentifier] || offerings?.current;
 
     if (!offering) {
@@ -318,7 +436,7 @@ export async function purchasePackage(
       return { success: false, supported: true, errorCode: 'UNKNOWN', error: 'Package not found' };
     }
 
-    const { customerInfo } = await (purchases as any).purchasePackage({ aPackage: pkg });
+    const { customerInfo } = await purchases.purchasePackage({ aPackage: pkg });
 
     console.log('[RevenueCat] Purchase successful');
     return {
@@ -367,16 +485,23 @@ export async function purchaseByProductId(
     return { success: false, supported: false, errorCode: 'NOT_SUPPORTED' };
   }
 
-  const purchases = await loadPurchasesPlugin();
-  if (!purchases) {
+  const initialized = await awaitActiveRevenueCatInitialization();
+  if (initialized && (!initialized.success || !initialized.supported)) {
+    return initialized as RevenueCatPurchaseResult;
+  }
+
+  const purchases = asRevenueCatPlugin(await loadPurchasesPlugin());
+  if (!purchases?.getOfferings || !purchases.purchasePackage) {
     return { success: false, supported: true, errorCode: 'NOT_SUPPORTED' };
   }
 
   try {
-    const offerings = await (purchases as any).getOfferings();
+    const offerings = (await purchases.getOfferings()) as RevenueCatOfferingLike;
     const allOfferings = [...Object.values(offerings?.all || {}), offerings?.current].filter(
       Boolean,
-    ) as Array<{ availablePackages?: Array<{ product?: { identifier?: string } }> }>;
+    ) as Array<{
+      availablePackages?: Array<{ identifier?: string; product?: { identifier?: string } }>;
+    }>;
 
     let pkg: unknown = null;
     for (const off of allOfferings) {
@@ -396,7 +521,7 @@ export async function purchaseByProductId(
       };
     }
 
-    const { customerInfo } = await (purchases as any).purchasePackage({ aPackage: pkg });
+    const { customerInfo } = await purchases.purchasePackage({ aPackage: pkg });
     console.log('[RevenueCat] Purchase successful', { productId });
     const typedCustomerInfo = customerInfo as unknown as RevenueCatCustomerInfo;
     const syncRes = await syncCustomerInfoToBackend(typedCustomerInfo, { productId });
@@ -503,13 +628,18 @@ export async function restorePurchases(
     return { success: false, supported: false, errorCode: 'NOT_SUPPORTED' };
   }
 
-  const purchases = await loadPurchasesPlugin();
-  if (!purchases) {
+  const initialized = await awaitActiveRevenueCatInitialization();
+  if (initialized && (!initialized.success || !initialized.supported)) {
+    return initialized as RevenueCatResult<RevenueCatCustomerInfo>;
+  }
+
+  const purchases = asRevenueCatPlugin(await loadPurchasesPlugin());
+  if (!purchases?.restorePurchases) {
     return { success: false, supported: true, errorCode: 'NOT_SUPPORTED' };
   }
 
   try {
-    const { customerInfo } = await (purchases as any).restorePurchases();
+    const { customerInfo } = await purchases.restorePurchases();
     console.log('[RevenueCat] Restore successful');
     return {
       success: true,
@@ -535,13 +665,18 @@ export async function logoutRevenueCat(): Promise<RevenueCatResult> {
     return { success: true, supported: false };
   }
 
-  const purchases = await loadPurchasesPlugin();
-  if (!purchases) {
+  const initialized = await awaitActiveRevenueCatInitialization();
+  if (initialized && (!initialized.success || !initialized.supported)) {
+    return { success: true, supported: false };
+  }
+
+  const purchases = asRevenueCatPlugin(await loadPurchasesPlugin());
+  if (!purchases?.logOut) {
     return { success: true, supported: false };
   }
 
   try {
-    await (purchases as any).logOut();
+    await purchases.logOut();
     console.log('[RevenueCat] Logged out');
     return { success: true, supported: true };
   } catch (error) {
@@ -689,7 +824,7 @@ export async function assertIosOfferingsContainRequiredProducts(
   }
   const offerings = offeringsRes.data;
   const all = [...Object.values(offerings.all || {}), offerings.current].filter(Boolean) as Array<{
-    availablePackages?: Array<{ product?: { identifier?: string } }>;
+    availablePackages?: Array<{ identifier?: string; product?: { identifier?: string } }>;
   }>;
 
   const available = new Set<string>();

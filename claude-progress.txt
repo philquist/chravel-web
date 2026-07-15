@@ -325,3 +325,8 @@
 - Added `src/lib/nativeRoutingGuards.ts` as the single source for OAuth return-path detection, exact-or-dot-boundary host allowlist matching, and deferred-path precedence.
 - Replaced host allowlist reimplementations in image optimization, cover-photo URL validation, Healthz preview detection, and Lovable env detection; AuthCallback hash-flow detection now imports the canonical OAuth-return matcher.
 - Added focused regression tests for bare `/auth`, `/auth/v1/authorize/`, evilsupabase.co/notsupabase.co/chravel.app.evil.com, and notification deferred-path precedence; wired `qa:native-routing-guards` into `qa:guardrails`.
+
+2026-07-15 — Phase 4 RevenueCat init-race hardening
+- Added a shared RevenueCat initialization promise keyed by user/platform/demo mode so duplicate configure calls coalesce and failed initialization resets for retry.
+- Added `identifyUser` and wired native auth bootstrap/auth-state paths to identify only after the shared configure promise resolves; customerInfo, offerings, purchase, restore, and logout await any active initialization before touching the native SDK.
+- Added RevenueCat init-race regression tests proving immediate identify and customerInfo calls wait for configure; focused RevenueCat + useAuth tests and typecheck pass.
