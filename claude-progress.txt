@@ -1,3 +1,9 @@
+2026-07-15 — Pro Team Requests hang + admin action row layout
+- Requests used the same hang class as Manage Roles: N+1 profiles_public fetches with no timeout + no error UI.
+- Hardened useJoinRequests (timeout, batched soft-fail profiles, isError); JoinRequestsPanel Retry; Create/Manage/Requests now one text-only row (no icons, tighter padding).
+- Verification: JoinRequestsPanel + RolesView layout tests, useJoinRequests suite, typecheck pass.
+- Branch: cursor/fix-pro-team-roles-loading-3944
+
 2026-07-15 — Pro Team tab Create Role / Manage Roles stuck loading
 - Root cause: Create Role disabled on isLoadingRoles/adminLoading; fetchTripRoles used trip_channels embed + N+1 counts with no timeout, so a stall left Manage Roles on infinite "Loading roles...".
 - Fix: resilient fetchTripRoles (no embed, batched counts, soft-fail channels, 12s timeout); Create Role no longer gated on list load; RoleManager error+Retry; camelCase channel display.

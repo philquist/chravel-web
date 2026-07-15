@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Users, UserPlus, Clock, Cog, LayoutGrid, Network, ShieldCheck } from 'lucide-react';
+import { Users, LayoutGrid, Network, ShieldCheck } from 'lucide-react';
 import { ProParticipant, TeamTripContext } from '../../../types/pro';
 import { ProTripCategory, getCategoryConfig } from '../../../types/proCategories';
 import { TeamOnboardingBanner } from '../TeamOnboardingBanner';
@@ -166,9 +166,10 @@ export const RolesView = ({
   const isAdmin =
     isSuperAdmin || userRole === 'admin' || userRole === 'tour manager' || userRole === 'manager';
 
-  // Shared chrome for the admin action row — flex-1 fill on mobile so a lone
-  // trailing button never dangles alone with dead space beside it.
-  const adminActionButtonClass = `${isMobile ? 'flex-1 basis-[47%]' : ''} justify-center rounded-xl bg-black/60 hover:bg-white/10 hover:text-gold-light hover:border-primary/40 text-white border-white/20 transition-colors min-h-[42px] px-4 text-xs whitespace-nowrap`;
+  // Shared chrome for the admin action row — equal-width text pills on one
+  // row (no icons) so Create / Manage / Requests never wrap into an orphan
+  // full-width pill on mobile.
+  const adminActionButtonClass = `${isMobile ? 'flex-1 min-w-0' : ''} justify-center rounded-xl bg-black/60 hover:bg-white/10 hover:text-gold-light hover:border-primary/40 text-white border-white/20 transition-colors min-h-[42px] px-2 sm:px-3 text-xs whitespace-nowrap`;
 
   return (
     <div className="space-y-6">
@@ -208,9 +209,9 @@ export const RolesView = ({
           )}
         </div>
 
-        {/* Admin action buttons — flex-1 fill on mobile so a lone trailing button never dangles alone */}
+        {/* Admin action buttons — single row of equal-width text pills */}
         {(canManageRoles || isSuperAdmin) && !effectiveIsReadOnly && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-nowrap gap-1.5">
             <Button
               onClick={onCreateRole}
               // Visible only when canManageRoles is already true — do not gate on
@@ -222,7 +223,6 @@ export const RolesView = ({
               size="sm"
               className={adminActionButtonClass}
             >
-              <UserPlus className="w-4 h-4 mr-1.5 shrink-0" />
               Create Role
             </Button>
             <Button
@@ -232,7 +232,6 @@ export const RolesView = ({
               className={adminActionButtonClass}
               title="Manage roles, assignments, and admins"
             >
-              <Cog className="w-4 h-4 mr-1.5 shrink-0" />
               Manage Roles
             </Button>
             <Button
@@ -242,7 +241,6 @@ export const RolesView = ({
               className={adminActionButtonClass}
               title="View join requests"
             >
-              <Clock className="w-4 h-4 mr-1.5 shrink-0" />
               Requests
             </Button>
             {coordinatorRoleEnabled && tripId && (
@@ -253,7 +251,7 @@ export const RolesView = ({
                 className={adminActionButtonClass}
                 title="Grant logistics-only access to an outside organizer"
               >
-                <ShieldCheck className="w-4 h-4 mr-1.5 shrink-0" />
+                <ShieldCheck className="w-3.5 h-3.5 mr-1 shrink-0" />
                 Coordinator
               </Button>
             )}

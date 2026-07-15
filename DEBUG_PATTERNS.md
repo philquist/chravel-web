@@ -660,3 +660,13 @@ Known security anti-patterns discovered during audits. Reference this before int
 **Required Tests:** `fetchTripRoles.test.ts`, `RolesView.createRole.test.tsx`, `RoleManager.error.test.tsx`.
 **Regression Surfaces:** RoleManager channel name display, Create Role at MAX_ROLES_PER_TRIP, demo MockRolesService path.
 **Fixed in:** `src/hooks/fetchTripRoles.ts` / `useTripRoles.ts` / `RolesView.tsx` / `RoleManager.tsx` (July 2026)
+
+## Pro Team tab Requests infinite "Loading requests..." spinner
+
+**Symptom:** Team → Requests sheet stuck on "Loading requests..." forever (same class as Manage Roles hang).
+**Risk:** HIGH — admins cannot review join requests.
+**Root Cause:** `useJoinRequests` did per-row `profiles_public` N+1 fetches with no timeout; a stalled profile read left `isLoading` true. Panel had no error/retry UI.
+**How to Confirm:** Open Requests on a Pro trip; spinner never clears even with 0 pending rows.
+**Smallest Safe Fix:** Timeout the primary `trip_join_requests` select; batch profile enrichment once with soft-fail; use stored `requester_*` fields as fallback; expose `isError` + Retry in `JoinRequestsPanel`.
+**Required Tests:** `JoinRequestsPanel.error.test.tsx`; existing `useJoinRequests` RPC tests.
+**Fixed in:** `src/hooks/useJoinRequests.ts` / `JoinRequestsPanel.tsx` (July 2026)

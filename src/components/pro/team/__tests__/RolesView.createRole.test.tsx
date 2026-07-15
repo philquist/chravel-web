@@ -76,7 +76,7 @@ describe('RolesView Create Role enablement', () => {
     expect(createRoleButton).toBeEnabled();
   });
 
-  it('stays clickable even while admin permissions are still resolving', () => {
+  it('keeps Create Role, Manage Roles, and Requests on one text-only row', () => {
     render(
       <RolesView
         roster={[]}
@@ -85,14 +85,30 @@ describe('RolesView Create Role enablement', () => {
         canManageRoles
         onCreateRole={vi.fn()}
         isLoadingRoles={false}
-        adminLoading
+        adminLoading={false}
         tripId="22be43ef-270d-4c99-9b53-b3541d5c82ef"
         tripCreatorId="013d9240-10c0-44e5-8da5-abfa2c4751c5"
         availableRoles={[]}
       />,
     );
 
-    const createRoleButton = screen.getByRole('button', { name: /create role/i });
-    expect(createRoleButton).toBeEnabled();
+    const createRole = screen.getByRole('button', { name: /^create role$/i });
+    const manageRoles = screen.getByRole('button', { name: /^manage roles$/i });
+    const requests = screen.getByRole('button', { name: /^requests$/i });
+
+    expect(createRole).toBeEnabled();
+    expect(manageRoles).toBeInTheDocument();
+    expect(requests).toBeInTheDocument();
+
+    // Text-only pills — no lucide SVG icons inside the three primary actions.
+    expect(createRole.querySelector('svg')).toBeNull();
+    expect(manageRoles.querySelector('svg')).toBeNull();
+    expect(requests.querySelector('svg')).toBeNull();
+
+    const row = createRole.parentElement;
+    expect(row).not.toBeNull();
+    expect(row?.className).toMatch(/flex-nowrap/);
+    expect(row).toContainElement(manageRoles);
+    expect(row).toContainElement(requests);
   });
 });

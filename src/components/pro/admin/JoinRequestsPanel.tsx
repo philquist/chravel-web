@@ -22,9 +22,10 @@ interface JoinRequestsPanelProps {
 }
 
 export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({ tripId }) => {
-  const { requests, isLoading, isProcessing, approveRequest, rejectRequest } = useJoinRequests({
-    tripId,
-  });
+  const { requests, isLoading, isError, isProcessing, approveRequest, rejectRequest, refetch } =
+    useJoinRequests({
+      tripId,
+    });
 
   const [pendingAction, setPendingAction] = useState<{
     type: 'approve' | 'reject';
@@ -60,6 +61,28 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({ tripId }) 
         <div className="flex items-center gap-3">
           <div className="animate-spin h-5 w-5 gold-gradient-spinner" />
           <p className="text-sm text-muted-foreground">Loading requests...</p>
+        </div>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card className="p-6 bg-background/40 backdrop-blur-sm border-white/10">
+        <div className="text-center space-y-3">
+          <AlertCircle className="w-10 h-10 text-amber-400 mx-auto" />
+          <div>
+            <h4 className="font-semibold text-foreground mb-1">Could not load requests</h4>
+            <p className="text-sm text-muted-foreground">Check your connection and try again.</p>
+          </div>
+          <Button
+            onClick={() => {
+              void refetch();
+            }}
+            className="rounded-full bg-amber-500 hover:bg-amber-600 text-black font-medium"
+          >
+            Retry
+          </Button>
         </div>
       </Card>
     );

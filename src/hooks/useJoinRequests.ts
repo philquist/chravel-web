@@ -35,6 +35,53 @@ interface UseJoinRequestsProps {
   isDemoMode?: boolean;
 }
 
+/** Cap join-request list fetches so Requests never spins forever. */
+export const FETCH_JOIN_REQUESTS_TIMEOUT_MS = 12_000;
+
+function withTimeout<T>(promise: PromiseLike<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    Promise.resolve(promise).then(
+      value => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      err => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
+type ProfilePublicRow = {
+  user_id: string | null;
+  display_name: string | null;
+  resolved_display_name: string | null;
+  avatar_url: string | null;
+  first_name: string | null;
+  last_name: string | null;
+};
+
+function resolveDisplayName(
+  profile: ProfilePublicRow | undefined,
+  request: Pick<JoinRequest, 'requester_name' | 'requester_email'>,
+): string {
+  if (profile) {
+    const fromProfile =
+      profile.resolved_display_name ||
+      profile.display_name ||
+      (profile.first_name && profile.last_name
+        ? `${profile.first_name} ${profile.last_name}`
+        : profile.first_name || profile.last_name);
+    if (fromProfile) return fromProfile;
+  }
+  return request.requester_name || request.requester_email?.split('@')[0] || 'New member';
+}
+
 export const useJoinRequests = ({
   tripId,
   enabled = true,
@@ -43,11 +90,13 @@ export const useJoinRequests = ({
   const queryClient = useQueryClient();
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const fetchRequests = useCallback(async () => {
     if (!enabled || !tripId) {
       setIsLoading(false);
+      setIsError(false);
       return;
     }
 
@@ -55,88 +104,89 @@ export const useJoinRequests = ({
     if (isDemoMode) {
       setRequests(getMockPendingRequests(tripId));
       setIsLoading(false);
+      setIsError(false);
       return;
     }
 
     try {
       setIsLoading(true);
+      setIsError(false);
 
-      // Fetch pending join requests - include requester_name/email fallback fields
-      const { data, error } = await supabase
-        .from('trip_join_requests')
-        .select(
-          'id, trip_id, user_id, invite_code, status, requested_at, resolved_at, resolved_by, requester_name, requester_email, requester_avatar_url',
-        )
-        .eq('trip_id', tripId)
-        .eq('status', 'pending')
-        .order('requested_at', { ascending: false });
+      // Primary list only — never N+1 profiles in the critical path (that hung
+      // Requests on "Loading requests..." forever when a profile read stalled).
+      const { data, error } = await withTimeout(
+        (async () =>
+          supabase
+            .from('trip_join_requests')
+            .select(
+              'id, trip_id, user_id, invite_code, status, requested_at, resolved_at, resolved_by, requester_name, requester_email, requester_avatar_url',
+            )
+            .eq('trip_id', tripId)
+            .eq('status', 'pending')
+            .order('requested_at', { ascending: false }))(),
+        FETCH_JOIN_REQUESTS_TIMEOUT_MS,
+        'fetchJoinRequests',
+      );
 
       if (error) throw error;
 
-      // Fetch profiles for user info (use public view for co-member data)
-      const requestsWithProfiles = await Promise.all(
-        (data || []).map(async request => {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles_public')
-            .select('display_name, resolved_display_name, avatar_url, first_name, last_name')
-            .eq('user_id', request.user_id)
-            .maybeSingle();
+      const rows = data || [];
+      const userIds = [
+        ...new Set(rows.map(r => r.user_id).filter((id): id is string => Boolean(id))),
+      ];
 
+      // Soft-fail single batched profile lookup — stored requester_* fields are enough to render.
+      const profilesByUserId = new Map<string, ProfilePublicRow>();
+      if (userIds.length > 0) {
+        try {
+          const { data: profiles, error: profileError } = await withTimeout(
+            (async () =>
+              supabase
+                .from('profiles_public')
+                .select(
+                  'user_id, display_name, resolved_display_name, avatar_url, first_name, last_name',
+                )
+                .in('user_id', userIds))(),
+            5_000,
+            'fetchJoinRequestProfiles',
+          );
           if (profileError) {
-            console.warn(
-              '[useJoinRequests] Failed to fetch profile for user:',
-              request.user_id,
-              profileError,
-            );
-          }
-
-          // CRITICAL FIX: Do NOT filter out requests when profile is missing!
-          // Use stored requester_name/email as fallback
-          // Name resolution priority:
-          // 1. Profile resolved_display_name (DB-computed, always has a value)
-          // 2. Profile display_name
-          // 3. Profile first/last name combination
-          // 4. Stored requester_name from join request (captured at request time)
-          // 5. Stored requester_email from join request
-          // 6. "New member" as last resort
-          let finalDisplayName: string | null = null;
-
-          if (profile) {
-            // resolved_display_name is DB-computed and always has a value if profile exists
-            finalDisplayName = profile.resolved_display_name || profile.display_name;
-            if (!finalDisplayName) {
-              if (profile.first_name && profile.last_name) {
-                finalDisplayName = `${profile.first_name} ${profile.last_name}`;
-              } else if (profile.first_name) {
-                finalDisplayName = profile.first_name;
-              } else if (profile.last_name) {
-                finalDisplayName = profile.last_name;
+            if (import.meta.env.DEV) {
+              console.warn('[useJoinRequests] Failed to batch-load profiles:', profileError);
+            }
+          } else {
+            for (const profile of (profiles || []) as ProfilePublicRow[]) {
+              if (profile.user_id) {
+                profilesByUserId.set(profile.user_id, profile);
               }
             }
           }
-
-          // Fallback to stored request fields if profile data unavailable
-          if (!finalDisplayName) {
-            finalDisplayName =
-              request.requester_name || request.requester_email?.split('@')[0] || 'New member';
+        } catch (profileErr) {
+          if (import.meta.env.DEV) {
+            console.warn('[useJoinRequests] Profile enrichment skipped:', profileErr);
           }
+        }
+      }
 
-          return {
-            ...request,
-            profile: {
-              display_name: finalDisplayName,
-              avatar_url: profile?.avatar_url || request.requester_avatar_url || null,
-              first_name: profile?.first_name || null,
-              last_name: profile?.last_name || null,
-            },
-          };
-        }),
-      );
+      const requestsWithProfiles = rows.map(request => {
+        const profile = profilesByUserId.get(request.user_id);
+        return {
+          ...request,
+          profile: {
+            display_name: resolveDisplayName(profile, request),
+            avatar_url: profile?.avatar_url || request.requester_avatar_url || null,
+            first_name: profile?.first_name || null,
+            last_name: profile?.last_name || null,
+          },
+        };
+      });
 
       setRequests(requestsWithProfiles as JoinRequest[]);
+      setIsError(false);
     } catch (error) {
       console.error('Error fetching join requests:', error);
-      toast.error('Failed to load join requests');
+      toast.error(error instanceof Error ? error.message : 'Failed to load join requests');
+      setIsError(true);
     } finally {
       setIsLoading(false);
     }
@@ -313,7 +363,9 @@ export const useJoinRequests = ({
 
   return {
     requests,
-    isLoading,
+    // Errored fetches are not-loading so Requests can show retry UI.
+    isLoading: isLoading && !isError,
+    isError,
     isProcessing,
     approveRequest,
     rejectRequest,
