@@ -427,8 +427,8 @@ export const TripLinksDisplay: React.FC<TripLinksDisplayProps> = ({ tripId }) =>
       <div className="bg-glass-slate-card border border-glass-slate-border rounded-2xl p-3 md:p-6 shadow-enterprise-lg">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-red-600 to-red-700 sm:h-10 sm:w-10 sm:rounded-xl md:h-12 md:w-12">
-              <Link2 className="h-4 w-4 text-white sm:h-5 sm:w-5 md:h-6 md:w-6" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gold-primary/30 bg-gold-primary/15 sm:h-10 sm:w-10 sm:rounded-xl md:h-12 md:w-12">
+              <Link2 className="gold-gradient-icon h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
             </div>
             <div className="min-w-0">
               <h3 className="text-base font-bold text-white sm:text-lg md:text-xl">Explore</h3>
