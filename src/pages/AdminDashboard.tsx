@@ -99,7 +99,7 @@ export const AdminDashboard = () => {
           <Button
             onClick={() => setIsModalOpen(true)}
             disabled={!isBroadcastSchedulingEnabled}
-            className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+            className="flex items-center gap-2"
           >
             <Plus size={16} />
             Schedule Pro Trip Message
@@ -290,9 +290,7 @@ export const AdminDashboard = () => {
                 <Button variant="outline" onClick={() => setIsModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleScheduleMessage} className="bg-blue-600 hover:bg-blue-700">
-                  Schedule
-                </Button>
+                <Button onClick={handleScheduleMessage}>Schedule</Button>
               </div>
             </div>
           </div>
