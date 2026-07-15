@@ -454,7 +454,17 @@ export const AIConciergeChat = ({
     if (isActive) return;
     if (conversation.active) conversation.cancel();
     setSearchOpen(false);
-  }, [conversation.active, conversation.cancel, isActive]);
+    // iPad/WKWebView: leaving Concierge mid-send left isTyping true and the tab
+    // Suspense fallback visible when returning. Abort + reset composer state.
+    try {
+      streamAbortRef.current?.();
+    } catch {
+      /* ignore */
+    }
+    streamAbortRef.current = null;
+    setIsTyping(false);
+    stopDictation();
+  }, [conversation.active, conversation.cancel, isActive, setIsTyping, stopDictation]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -496,7 +506,7 @@ export const AIConciergeChat = ({
             <label
               htmlFor={uploadInputId}
               data-testid="header-upload-btn"
-              className={`${CTA_BUTTON} relative z-30 cursor-pointer overflow-hidden pointer-events-auto`}
+              className={`${CTA_BUTTON} relative z-30 cursor-pointer pointer-events-auto`}
               aria-label="Attach files to Concierge"
               title="Attach files to Concierge"
             >
@@ -767,8 +777,7 @@ export const AIConciergeChat = ({
                       create_tasks: 'Create tasks from this',
                     };
                     const msg = actionMessages[action] || 'Analyze this';
-                    setInputMessage(msg);
-                    void handleSendMessage(msg);
+                    void handleSendMessage(msg, { attachmentIntentOverride: 'smart_import' });
                   }
                 : undefined
             }

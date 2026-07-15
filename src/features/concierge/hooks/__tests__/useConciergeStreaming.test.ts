@@ -209,6 +209,58 @@ describe('useConciergeStreaming', () => {
     expect(getMessages().some(msg => msg.id === 'limit')).toBe(true);
   });
 
+  it('includes attachmentIntent when sending typed message with attachments', async () => {
+    let capturedBody: Record<string, unknown> | null = null;
+    invokeConciergeStreamMock.mockImplementation((body: Record<string, unknown>) => {
+      capturedBody = body;
+      return { abort: vi.fn() };
+    });
+
+    const imageFile = new File(['photo'], 'receipt.jpg', { type: 'image/jpeg' });
+    const clearAttachments = vi.fn();
+    const { params } = createBaseParams({
+      inputMessage: '',
+      attachedImages: [imageFile],
+      attachmentIntent: 'smart_import',
+      clearAttachments,
+    });
+
+    const { result } = renderHook(() => useConciergeStreaming(params));
+
+    await act(async () => {
+      await result.current.handleSendMessage('Add this to the trip calendar', {
+        attachmentIntentOverride: 'smart_import',
+      });
+    });
+
+    expect(capturedBody?.attachmentIntent).toBe('smart_import');
+    expect(Array.isArray(capturedBody?.attachments)).toBe(true);
+    expect(clearAttachments).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not clear attachments when file encoding fails', async () => {
+    const imageFile = new File(['photo'], 'receipt.jpg', { type: 'image/jpeg' });
+    const clearAttachments = vi.fn();
+    const originalReader = FileReader.prototype.readAsDataURL;
+    FileReader.prototype.readAsDataURL = function () {
+      queueMicrotask(() => this.onerror?.(new ProgressEvent('error')));
+    };
+
+    const { params } = createBaseParams({
+      attachedImages: [imageFile],
+      clearAttachments,
+    });
+
+    const { result } = renderHook(() => useConciergeStreaming(params));
+
+    await act(async () => {
+      await result.current.handleSendMessage('Analyze this');
+    });
+
+    expect(clearAttachments).not.toHaveBeenCalled();
+    FileReader.prototype.readAsDataURL = originalReader;
+  });
+
   it('refreshes usage after a completed stream for limited plans', async () => {
     let callbacks: ConciergeStreamCallbacks | null = null;
     invokeConciergeStreamMock.mockImplementation((_, cb: ConciergeStreamCallbacks) => {

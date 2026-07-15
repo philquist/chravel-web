@@ -92,7 +92,7 @@ export function useConciergeStreaming(params: Params) {
 
   const handleSendMessage = async (
     messageOverride?: string,
-    opts?: { conversationSessionId?: string },
+    opts?: { conversationSessionId?: string; attachmentIntentOverride?: AttachmentIntent },
   ) => {
     const typedMessage =
       typeof messageOverride === 'string' ? messageOverride.trim() : inputMessage.trim();
@@ -103,12 +103,13 @@ export function useConciergeStreaming(params: Params) {
     const hasAnyAttachments = hasImageAttachments || hasDocumentAttachments;
     if ((!typedMessage && !hasAnyAttachments) || isTyping) return;
 
+    const effectiveAttachmentIntent = opts?.attachmentIntentOverride ?? attachmentIntent;
     const attachmentCount = selectedImages.length + selectedDocuments.length;
     const messageToSend =
       typedMessage ||
-      (attachmentIntent === 'summarize'
+      (effectiveAttachmentIntent === 'summarize'
         ? `Please summarize the attached file(s) and highlight key travel details.`
-        : attachmentIntent === 'qa'
+        : effectiveAttachmentIntent === 'qa'
           ? `Please analyze the attached file(s). I'll ask follow-up questions next.`
           : hasDocumentAttachments
             ? `Please analyze the attached file(s) and extract any travel events, reservations, or itinerary items. Show me a preview before adding to calendar.`
@@ -151,9 +152,6 @@ export function useConciergeStreaming(params: Params) {
 
     if (!messageOverride) {
       setInputMessage('');
-    }
-    if (selectedImages.length > 0 || selectedDocuments.length > 0) {
-      _clearAttachments();
     }
     setIsTyping(true);
     setAiStatus('thinking');
@@ -202,6 +200,10 @@ export function useConciergeStreaming(params: Params) {
         attachments = [...attachments, ...docAttachments];
       }
 
+      if (selectedImages.length > 0 || selectedDocuments.length > 0) {
+        _clearAttachments();
+      }
+
       // Slice the last N prior messages. The current user message is
       // appended separately by the edge function, so N prior + 1 current = N+1
       // messages of context. Cap at MAX_CHAT_HISTORY_MESSAGES to avoid
@@ -226,7 +228,7 @@ export function useConciergeStreaming(params: Params) {
           temperature: 0.55,
           maxTokens: 4096,
         },
-        ...(hasAnyAttachments && !typedMessage ? { attachmentIntent } : {}),
+        ...(hasAnyAttachments ? { attachmentIntent: effectiveAttachmentIntent } : {}),
         ...(opts?.conversationSessionId
           ? { conversation_session_id: opts.conversationSessionId }
           : {}),
