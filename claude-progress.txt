@@ -1,8 +1,8 @@
 2026-07-15 — Mobile trip landscape safe layout (pills / sections)
 - Landscape notch clipped trip tab pills and section content (calendar, Places Explore, etc.) because `.mobile-trip-shell` ignored horizontal safe-area.
 - Shell now pads left/right via `env(safe-area-inset-*)`; landscape density classes for tab/control/filter pills scoped under the shell; Places keeps `px-4 lg:px-0` for desktop.
-- Verification: landscape layout + calendar + Places header tests; typecheck/lint/build pending.
-- Branch: cursor/trip-landscape-safe-layout-784b
+- Verification: landscape + calendar + Places header tests 12✅; typecheck ✅; lint:check 0 errors; build ✅; merge preflight clean.
+- Branch: cursor/trip-landscape-safe-layout-784b (PR #838)
 
 2026-07-15 — Pro Team Requests hang + admin action row layout
 - Requests used the same hang class as Manage Roles: N+1 profiles_public fetches with no timeout + no error UI.
