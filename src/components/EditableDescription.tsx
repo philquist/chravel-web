@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Edit, Check, X } from 'lucide-react';
+import { Button } from './ui/button';
 import { tripService } from '../services/tripService';
 import { toast } from 'sonner';
 
@@ -93,22 +94,14 @@ export const EditableDescription = ({
           disabled={isSaving}
         />
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 text-white text-sm rounded-lg transition-colors"
-          >
+          <Button onClick={handleSave} disabled={isSaving} size="sm">
             <Check size={14} />
             {isSaving ? 'Saving...' : 'Save'}
-          </button>
-          <button
-            onClick={handleCancel}
-            disabled={isSaving}
-            className="flex items-center gap-1 px-3 py-1.5 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-600/50 text-white text-sm rounded-lg transition-colors"
-          >
+          </Button>
+          <Button onClick={handleCancel} disabled={isSaving} variant="outline" size="sm">
             <X size={14} />
             Cancel
-          </button>
+          </Button>
           <span className="text-xs text-gray-400">Ctrl+Enter to save, Esc to cancel</span>
         </div>
       </div>

@@ -21,7 +21,7 @@ export const CalendarEmptyState = ({ onAddEvent }: CalendarEmptyStateProps) => {
         </p>
         {onAddEvent && (
           <div className="mt-5 flex justify-center">
-            <ActionPill variant="manualOutline" onClick={onAddEvent} className="min-h-11 px-5">
+            <ActionPill variant="primary" onClick={onAddEvent} className="min-h-11 px-5">
               Add first event
             </ActionPill>
           </div>

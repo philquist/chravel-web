@@ -167,12 +167,7 @@ export const ConfirmPaymentDialog = ({
           >
             Leave Pending
           </Button>
-          <Button
-            type="button"
-            onClick={handleConfirm}
-            disabled={isConfirming}
-            className="bg-green-600 hover:bg-green-700"
-          >
+          <Button type="button" onClick={handleConfirm} disabled={isConfirming} className="flex-1">
             {isConfirming ? (
               <>
                 <div className="w-4 h-4 mr-2 animate-spin gold-gradient-spinner" />

@@ -190,7 +190,7 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({ tripId }) 
               disabled={isProcessing}
               className={`rounded-full ${
                 pendingAction?.type === 'approve'
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
                   : 'bg-red-600 hover:bg-red-700 text-white'
               }`}
             >

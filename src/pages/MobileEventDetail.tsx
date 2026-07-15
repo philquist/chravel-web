@@ -301,7 +301,7 @@ export const MobileEventDetail = () => {
               hapticService.light();
               navigate('/');
             }}
-            className="bg-blue-600 text-white px-6 py-3 rounded-xl transition-colors active:scale-95"
+            className="bg-primary text-primary-foreground px-6 py-3 rounded-xl transition-colors hover:bg-primary/90 active:scale-95"
           >
             Back to My Trips
           </button>
@@ -333,7 +333,7 @@ export const MobileEventDetail = () => {
               hapticService.light();
               navigate('/');
             }}
-            className="bg-blue-600 text-white px-6 py-3 rounded-xl transition-colors active:scale-95"
+            className="bg-primary text-primary-foreground px-6 py-3 rounded-xl transition-colors hover:bg-primary/90 active:scale-95"
           >
             Back to My Trips
           </button>

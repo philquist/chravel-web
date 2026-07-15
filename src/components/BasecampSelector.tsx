@@ -111,8 +111,8 @@ export const BasecampSelector = ({
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-800 bg-gray-900/95 p-6 backdrop-blur">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-green-600 to-green-700 rounded-xl flex items-center justify-center">
-              <Home size={20} className="text-white" />
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+              <Home size={20} className="text-primary-foreground" />
             </div>
             <h2 className="text-xl font-bold text-white">
               {currentBasecamp ? 'Update Basecamp' : 'Set Basecamp'}
@@ -142,7 +142,7 @@ export const BasecampSelector = ({
                 value={address}
                 onChange={e => setAddress(e.target.value)}
                 placeholder="e.g., Grandma's house, Hotel lobby, 123 Main St"
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
             <p className="text-gray-500 text-xs mt-1">
@@ -159,7 +159,7 @@ export const BasecampSelector = ({
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g., 'The Beach House' or 'Mom's Place'"
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
             />
           </div>
 
@@ -173,7 +173,7 @@ export const BasecampSelector = ({
                 value={confirmationNumber}
                 onChange={e => setConfirmationNumber(e.target.value)}
                 placeholder="e.g., ABC123, 20688856"
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
           )}
@@ -185,7 +185,7 @@ export const BasecampSelector = ({
                 type="date"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
             <div>
@@ -195,7 +195,7 @@ export const BasecampSelector = ({
                 min={startDate || undefined}
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
           </div>
@@ -205,7 +205,7 @@ export const BasecampSelector = ({
             <select
               value={type}
               onChange={e => setType(e.target.value as 'hotel' | 'short-term' | 'other')}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
             >
               <option value="hotel">Hotel</option>
               <option value="short-term">Short-term Rental</option>
@@ -227,7 +227,7 @@ export const BasecampSelector = ({
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                className="flex-1"
                 disabled={isLoading}
               >
                 {isLoading ? 'Saving...' : 'Save Basecamp'}

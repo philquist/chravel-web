@@ -409,9 +409,9 @@ const OrganizationCard = ({ organization, badge, onSave }: OrganizationCardProps
           onClick={handleSave}
           disabled={isSaving}
           aria-label={isSaving ? 'Saving organization settings' : 'Save organization settings'}
-          className={`flex items-center gap-2 ${
-            saveSuccess ? 'bg-green-600 hover:bg-green-500' : 'bg-primary hover:bg-primary/80'
-          } text-white px-6 py-2 rounded-lg font-medium transition-colors min-h-[44px] disabled:opacity-50`}
+          className={`flex items-center gap-2 bg-primary hover:bg-primary/80 text-primary-foreground px-6 py-2 rounded-lg font-medium transition-colors min-h-[44px] disabled:opacity-50 ${
+            saveSuccess ? 'shadow-primary-glow/85' : ''
+          }`}
         >
           {isSaving ? (
             <>

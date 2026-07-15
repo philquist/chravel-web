@@ -180,13 +180,13 @@ export const FlightResultCards: React.FC<FlightResultCardsProps> = ({
                   href={deeplink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium rounded-lg transition-colors"
                 >
                   Search on Google Flights
                   <ExternalLink size={12} />
                 </a>
               ) : (
-                <div className="flex-1 flex items-center justify-center py-2 bg-blue-900/30 text-blue-200/70 text-xs font-medium rounded-lg">
+                <div className="flex-1 flex items-center justify-center py-2 bg-primary/10 text-primary/70 text-xs font-medium rounded-lg border border-primary/20">
                   Link unavailable
                 </div>
               )}
@@ -198,7 +198,7 @@ export const FlightResultCards: React.FC<FlightResultCardsProps> = ({
                   className={`flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
                     saved
                       ? 'bg-emerald-500/20 text-emerald-300 cursor-default'
-                      : 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 hover:text-white'
+                      : 'bg-primary/20 hover:bg-primary/30 text-primary hover:text-primary-foreground border border-primary/30'
                   }`}
                   title={saved ? 'Saved' : 'Save to Trip'}
                 >

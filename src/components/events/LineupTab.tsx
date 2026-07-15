@@ -298,7 +298,7 @@ export const LineupTab = ({
             )}
 
             <ActionPill
-              variant="manualOutline"
+              variant="primary"
               leftIcon={<Plus />}
               onClick={() => setIsAddingMember(true)}
               className={`${EVENT_PARITY_COL_START.tasks} w-full`}

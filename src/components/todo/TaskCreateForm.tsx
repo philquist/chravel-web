@@ -242,7 +242,7 @@ export const TaskCreateForm = ({
           <Button
             type="submit"
             disabled={!title.trim() || createTaskMutation.isPending || updateTaskMutation.isPending}
-            className="flex-1 min-h-[44px] bg-gray-800/80 text-white cta-gold-ring hover:opacity-90 hover:scale-[1.01] active:scale-[0.99] transition-all border-0"
+            className="flex-1 min-h-[44px]"
           >
             {isEditMode
               ? updateTaskMutation.isPending

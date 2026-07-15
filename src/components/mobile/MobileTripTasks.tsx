@@ -84,9 +84,10 @@ export const MobileTripTasks = ({ tripId }: MobileTripTasksProps) => {
               await hapticService.medium();
               setIsModalOpen(true);
             }}
-            className="p-3 bg-blue-600 rounded-lg active:scale-95 transition-transform"
+            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-95"
+            aria-label="Create task"
           >
-            <Plus size={20} className="text-white" />
+            <Plus size={20} />
           </button>
         )}
       </div>

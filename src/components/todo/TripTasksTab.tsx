@@ -164,12 +164,12 @@ export const TripTasksTab = React.memo(({ tripId }: TripTasksTabProps) => {
         </div>
         {!showInlineCreate && (
           <ActionPill
-            variant="manualOutline"
+            variant="primary"
             leftIcon={<Plus />}
             iconOnly
             aria-label="Create task"
             onClick={() => setShowCreateModal(true)}
-            className={`${variant === 'pro' ? PRO_PARITY_COL_START.team : variant === 'events' ? EVENT_PARITY_COL_START.tasks : TRIP_PARITY_COL_START.tasks} w-full md:w-auto md:min-w-[44px] md:justify-self-end ring-1 ring-amber-400/40`}
+            className={`${variant === 'pro' ? PRO_PARITY_COL_START.team : variant === 'events' ? EVENT_PARITY_COL_START.tasks : TRIP_PARITY_COL_START.tasks} w-full md:w-auto md:min-w-[44px] md:justify-self-end`}
           />
         )}
       </div>

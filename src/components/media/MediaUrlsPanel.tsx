@@ -371,7 +371,7 @@ export const MediaUrlsPanel = ({ tripId, allowPromoteToTripLink = false }: Media
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-foreground">Chat Links ({links.length})</h3>
         <Button
-          variant="ghost"
+          variant="default"
           size="sm"
           onClick={() => setShowAddForm(!showAddForm)}
           className="text-xs"

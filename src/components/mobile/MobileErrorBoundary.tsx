@@ -48,7 +48,7 @@ export class MobileErrorBoundary extends Component<Props, State> {
             </p>
             <button
               onClick={this.handleReset}
-              className="w-full bg-blue-600 text-white py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
+              className="w-full bg-primary text-primary-foreground py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
             >
               <RefreshCw size={20} />
               <span>Try Again</span>

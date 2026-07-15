@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link2, Edit, Trash2, Plus, Globe, GripVertical } from 'lucide-react';
 import { Button } from '../ui/button';
+import { ActionPill } from '../ui/ActionPill';
 import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Input } from '../ui/input';
@@ -426,8 +427,8 @@ export const TripLinksDisplay: React.FC<TripLinksDisplayProps> = ({ tripId }) =>
       <div className="bg-glass-slate-card border border-glass-slate-border rounded-2xl p-3 md:p-6 shadow-enterprise-lg">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-red-600 to-red-700 sm:h-10 sm:w-10 sm:rounded-xl md:h-12 md:w-12">
-              <Link2 className="h-4 w-4 text-white sm:h-5 sm:w-5 md:h-6 md:w-6" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gold-primary/30 bg-gold-primary/15 sm:h-10 sm:w-10 sm:rounded-xl md:h-12 md:w-12">
+              <Link2 className="gold-gradient-icon h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
             </div>
             <div className="min-w-0">
               <h3 className="text-base font-bold text-white sm:text-lg md:text-xl">Explore</h3>
@@ -444,13 +445,14 @@ export const TripLinksDisplay: React.FC<TripLinksDisplayProps> = ({ tripId }) =>
               <TooltipTrigger asChild>
                 <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                   <DialogTrigger asChild>
-                    <button
+                    <ActionPill
+                      variant="primary"
+                      leftIcon={<Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                       onClick={() => resetForm()}
-                      className="flex w-full min-h-[40px] shrink-0 items-center justify-center rounded-lg border border-white/30 bg-black/60 px-3 py-2 text-xs font-medium text-white transition-all hover:bg-white/10 sm:w-auto sm:min-h-[42px] sm:rounded-xl sm:px-3.5 sm:py-2.5 sm:text-sm"
+                      className="w-full sm:w-auto"
                     >
-                      <Plus className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       Add Link
-                    </button>
+                    </ActionPill>
                   </DialogTrigger>
                   <DialogContent className="bg-glass-slate-card border-glass-slate-border">
                     <DialogHeader>
@@ -508,12 +510,7 @@ export const TripLinksDisplay: React.FC<TripLinksDisplayProps> = ({ tripId }) =>
                         <Button variant="ghost" onClick={() => setIsAddModalOpen(false)}>
                           Cancel
                         </Button>
-                        <Button
-                          onClick={handleCreateLink}
-                          className="bg-black/60 border border-white/30 text-white hover:bg-white/10 shadow-none"
-                        >
-                          Add Link
-                        </Button>
+                        <Button onClick={handleCreateLink}>Add Link</Button>
                       </div>
                     </div>
                   </DialogContent>

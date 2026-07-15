@@ -143,7 +143,7 @@ export const CommentsWall = ({ tripId, permissions }: CommentsWallProps) => {
         </div>
         {effectivePermissions.canCreate && !showCreatePoll && (
           <ActionPill
-            variant="manualOutline"
+            variant="primary"
             leftIcon={<Plus />}
             iconOnly
             onClick={() => setShowCreatePoll(true)}
