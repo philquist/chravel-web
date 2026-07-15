@@ -62,6 +62,7 @@ export const RoleManager: React.FC<RoleManagerProps> = ({ tripId, tripCreatorId 
   const {
     roles,
     isLoading,
+    isError,
     isProcessing,
     createRole,
     deleteRole,
@@ -298,6 +299,30 @@ export const RoleManager: React.FC<RoleManagerProps> = ({ tripId, tripCreatorId 
     );
   }
 
+  if (isError) {
+    return (
+      <Card className="p-6 bg-background/40 backdrop-blur-sm border-white/10">
+        <div className="text-center space-y-3">
+          <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto" />
+          <div>
+            <h4 className="font-semibold text-foreground mb-1">Could not load roles</h4>
+            <p className="text-sm text-muted-foreground">
+              Check your connection and try again. You can still create a role from the Team tab.
+            </p>
+          </div>
+          <Button
+            onClick={() => {
+              void refetchRoles();
+            }}
+            className="rounded-full bg-amber-500 hover:bg-amber-600 text-black font-medium"
+          >
+            Retry
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <>
       <Card className="p-6 bg-background/40 backdrop-blur-sm border-white/10">
@@ -359,23 +384,15 @@ export const RoleManager: React.FC<RoleManagerProps> = ({ tripId, tripCreatorId 
                         <Users className="w-3 h-3" />
                         {role.memberCount || 0} members
                       </span>
-                      {hasChannel &&
-                        channel &&
-                        !(channel as unknown as Record<string, unknown>).is_archived && (
-                          <>
-                            <span>·</span>
-                            <div className="flex items-center gap-1">
-                              <LinkIcon className="w-3 h-3" />
-                              <span>
-                                #
-                                {
-                                  (channel as unknown as Record<string, unknown>)
-                                    .channel_name as string
-                                }
-                              </span>
-                            </div>
-                          </>
-                        )}
+                      {hasChannel && channel && !channel.isArchived && (
+                        <>
+                          <span>·</span>
+                          <div className="flex items-center gap-1">
+                            <LinkIcon className="w-3 h-3" />
+                            <span>#{channel.channelName}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 

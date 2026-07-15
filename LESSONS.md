@@ -16,6 +16,12 @@ Wait for the auth guard to resolve a real user session before triggering trip / 
 ### Trace field names end-to-end before patching data bugs
 DB schema → Supabase types → hook → props → render. Fix at the source, not via mapping hacks.
 
+### Never disable Create actions on list-loading state
+If creating does not require the list, do not `disabled={isLoadingList}` — a hung list fetch greys out the CTA forever. Cap/permission checks belong in the create dialog submit path. Evidence: Pro Team tab Create Role stuck disabled while Manage Roles spun on `useTripRoles`.
+
+### Soft-fail embedded RLS joins on critical list fetches
+PostgREST embeds that evaluate heavy RLS (e.g. `can_access_channel`) can stall the parent list. Fetch the primary rows first; load related rows separately with soft-fail + timeout. Evidence: `trip_roles` + `trip_channels!required_role_id` embed left Manage Roles on "Loading roles...".
+
 ### Trip access requires both existence check AND RLS-gated membership
 Existence ≠ access. Always check membership before any trip-aware mutation or read.
 

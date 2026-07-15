@@ -5,7 +5,7 @@ import { ProTripCategory, getCategoryConfig } from '../../../types/proCategories
 import { TeamOnboardingBanner } from '../TeamOnboardingBanner';
 import { BulkRoleAssignmentModal } from '../BulkRoleAssignmentModal';
 import { RoleContactSheet } from '../RoleContactSheet';
-import { extractUniqueRoles } from '../../../utils/roleUtils';
+import { extractUniqueRoles, MAX_ROLES_PER_TRIP } from '../../../utils/roleUtils';
 import { Button } from '../../ui/button';
 import { useDemoMode } from '../../../hooks/useDemoMode';
 import { useSuperAdmin } from '../../../hooks/useSuperAdmin';
@@ -48,7 +48,7 @@ export const RolesView = ({
   canManageRoles = false,
   onCreateRole,
   isLoadingRoles = false,
-  adminLoading = false,
+  adminLoading: _adminLoading = false,
   isLoadingRoster = false,
   tripId,
   tripCreatorId,
@@ -213,7 +213,11 @@ export const RolesView = ({
           <div className="flex flex-wrap gap-2">
             <Button
               onClick={onCreateRole}
-              disabled={adminLoading || isLoadingRoles}
+              // Visible only when canManageRoles is already true — do not gate on
+              // adminLoading or isLoadingRoles (both used to leave this greyed out
+              // forever when a roles/admin fetch hung). Cap is enforced here only
+              // after the list has loaded; CreateRoleDialog also validates on submit.
+              disabled={!isLoadingRoles && availableRoles.length >= MAX_ROLES_PER_TRIP}
               variant="outline"
               size="sm"
               className={adminActionButtonClass}

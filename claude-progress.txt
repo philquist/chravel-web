@@ -1,3 +1,9 @@
+2026-07-15 — Pro Team tab Create Role / Manage Roles stuck loading
+- Root cause: Create Role disabled on isLoadingRoles/adminLoading; fetchTripRoles used trip_channels embed + N+1 counts with no timeout, so a stall left Manage Roles on infinite "Loading roles...".
+- Fix: resilient fetchTripRoles (no embed, batched counts, soft-fail channels, 12s timeout); Create Role no longer gated on list load; RoleManager error+Retry; camelCase channel display.
+- Verification: fetchTripRoles + RolesView + RoleManager tests, typecheck, lint:check, build pass.
+- Branch: cursor/fix-pro-team-roles-loading-3944
+
 2026-07-15 — Mobile base camp modal + first-run boot polish
 - Basecamp selector overlay now top-aligns on mobile, caps to dynamic viewport height, scrolls internally, and keeps its header sticky so short screens do not crop the top of the modal.
 - First-run/anonymous boot fallback now shows a branded non-spinning Chravel boot screen instead of a bare loading wheel after the native splash; authenticated cold starts still use the dashboard/trip skeletons.

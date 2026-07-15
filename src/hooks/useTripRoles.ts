@@ -7,61 +7,14 @@ import { useDemoMode } from './useDemoMode';
 import { MockRolesService } from '@/services/mockRolesService';
 import { useAuth } from './useAuth';
 import { tripKeys, QUERY_CACHE_CONFIG } from '@/lib/queryKeys';
+import { fetchTripRoles } from './fetchTripRoles';
 
 interface UseTripRolesProps {
   tripId: string;
   enabled?: boolean;
 }
 
-async function fetchTripRoles(tripId: string, isDemoMode: boolean): Promise<TripRole[]> {
-  if (isDemoMode) {
-    const mockRoles = MockRolesService.getRolesForTrip(tripId);
-    return mockRoles || [];
-  }
-
-  const { data, error } = await supabase
-    .from('trip_roles')
-    .select(
-      `
-      *,
-      trip_channels:trip_channels!required_role_id(
-        id,
-        channel_name,
-        is_archived
-      )
-    `,
-    )
-    .eq('trip_id', tripId)
-    .order('created_at', { ascending: true });
-
-  if (error) throw error;
-
-  const rolesWithCounts = await Promise.all(
-    (data || []).map(async role => {
-      const { count } = await supabase
-        .from('user_trip_roles')
-        .select('*', { count: 'exact', head: true })
-        .eq('trip_id', tripId)
-        .eq('role_id', role.id);
-
-      return {
-        id: role.id,
-        tripId: role.trip_id,
-        roleName: role.role_name,
-        description: role.description || '',
-        permissionLevel: role.permission_level as 'view' | 'edit' | 'admin',
-        featurePermissions: role.feature_permissions as unknown as TripRole['featurePermissions'],
-        createdBy: role.created_by,
-        createdAt: role.created_at,
-        updatedAt: role.updated_at,
-        memberCount: count || 0,
-        channels: (role.trip_channels || []) as unknown as TripRole['channels'],
-      };
-    }),
-  );
-
-  return rolesWithCounts;
-}
+export { fetchTripRoles } from './fetchTripRoles';
 
 export const useTripRoles = ({ tripId, enabled = true }: UseTripRolesProps) => {
   const { isDemoMode } = useDemoMode();
@@ -72,6 +25,7 @@ export const useTripRoles = ({ tripId, enabled = true }: UseTripRolesProps) => {
   const {
     data: roles = [],
     isLoading,
+    isFetching,
     refetch,
     isError,
     error,
@@ -82,11 +36,14 @@ export const useTripRoles = ({ tripId, enabled = true }: UseTripRolesProps) => {
     staleTime: QUERY_CACHE_CONFIG.tripRoles.staleTime,
     gcTime: QUERY_CACHE_CONFIG.tripRoles.gcTime,
     refetchOnWindowFocus: QUERY_CACHE_CONFIG.tripRoles.refetchOnWindowFocus,
+    // Finite retries — never leave Create Role / Manage Roles spinning forever.
+    retry: 1,
+    retryDelay: attempt => Math.min(1000 * 2 ** attempt, 4000),
   });
 
   useEffect(() => {
     if (isError && error) {
-      toast.error('Failed to load roles');
+      toast.error(error instanceof Error ? error.message : 'Failed to load roles');
     }
   }, [isError, error]);
 
@@ -303,7 +260,11 @@ export const useTripRoles = ({ tripId, enabled = true }: UseTripRolesProps) => {
 
   return {
     roles,
-    isLoading,
+    // Treat errored fetches as not-loading so Manage Roles can show retry UI
+    // instead of an infinite spinner when the network/RLS path fails.
+    isLoading: isLoading && !isError,
+    isFetching,
+    isError,
     isProcessing,
     createRole,
     updateRole,
