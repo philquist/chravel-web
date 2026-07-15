@@ -742,7 +742,7 @@ export const BasecampsPanel: React.FC<BasecampsPanelProps> = ({
                     setShowTripSelector(true);
                   }}
                   aria-label="Set trip base camp"
-                  className="w-full bg-gray-800/80 text-white cta-gold-ring py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-xs font-medium min-h-[44px] hover:opacity-90 hover:scale-[1.01] active:scale-[0.99]"
+                  className="w-full bg-primary text-primary-foreground py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-xs font-medium min-h-[44px] hover:bg-primary/90 active:scale-[0.99]"
                 >
                   <Plus size={12} />
                   Set Trip Base Camp
@@ -886,7 +886,7 @@ export const BasecampsPanel: React.FC<BasecampsPanelProps> = ({
                     setShowPersonalSelector(true);
                   }}
                   aria-label="Set your personal base camp location"
-                  className="w-full bg-gray-800/80 text-white cta-gold-ring py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-xs font-medium min-h-[44px] hover:opacity-90 hover:scale-[1.01] active:scale-[0.99]"
+                  className="w-full bg-primary text-primary-foreground py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-xs font-medium min-h-[44px] hover:bg-primary/90 active:scale-[0.99]"
                 >
                   <Plus size={12} />
                   Set Your Location

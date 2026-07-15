@@ -7,6 +7,9 @@
  *
  * AI differentiation (Concierge active/listening states) uses blue as a transient
  * state color only — not as a permanent resting accent.
+ *
+ * Note: Trip-tab create/save CTAs use solid gold fill (`bg-primary` / Button default),
+ * not this gray+ring treatment. Reserve CTA_GRADIENT for composer icon buttons only.
  */
 
 /** Primary ring treatment for idle CTA buttons (Mode A — charcoal + gold border) */

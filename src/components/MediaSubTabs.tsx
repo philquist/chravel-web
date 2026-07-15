@@ -587,7 +587,7 @@ export const MediaSubTabs = ({
                       <Button
                         onClick={() => handlePaymentClick(item)}
                         size="sm"
-                        className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         Pay ${item.metadata.perPersonAmount.toFixed(2)}
                       </Button>

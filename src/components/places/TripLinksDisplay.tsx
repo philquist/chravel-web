@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link2, Edit, Trash2, Plus, Globe, GripVertical } from 'lucide-react';
 import { Button } from '../ui/button';
+import { ActionPill } from '../ui/ActionPill';
 import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Input } from '../ui/input';
@@ -444,13 +445,14 @@ export const TripLinksDisplay: React.FC<TripLinksDisplayProps> = ({ tripId }) =>
               <TooltipTrigger asChild>
                 <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                   <DialogTrigger asChild>
-                    <button
+                    <ActionPill
+                      variant="primary"
+                      leftIcon={<Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                       onClick={() => resetForm()}
-                      className="flex w-full min-h-[40px] shrink-0 items-center justify-center rounded-lg border border-white/30 bg-black/60 px-3 py-2 text-xs font-medium text-white transition-all hover:bg-white/10 sm:w-auto sm:min-h-[42px] sm:rounded-xl sm:px-3.5 sm:py-2.5 sm:text-sm"
+                      className="w-full sm:w-auto"
                     >
-                      <Plus className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       Add Link
-                    </button>
+                    </ActionPill>
                   </DialogTrigger>
                   <DialogContent className="bg-glass-slate-card border-glass-slate-border">
                     <DialogHeader>
@@ -508,12 +510,7 @@ export const TripLinksDisplay: React.FC<TripLinksDisplayProps> = ({ tripId }) =>
                         <Button variant="ghost" onClick={() => setIsAddModalOpen(false)}>
                           Cancel
                         </Button>
-                        <Button
-                          onClick={handleCreateLink}
-                          className="bg-black/60 border border-white/30 text-white hover:bg-white/10 shadow-none"
-                        >
-                          Add Link
-                        </Button>
+                        <Button onClick={handleCreateLink}>Add Link</Button>
                       </div>
                     </div>
                   </DialogContent>

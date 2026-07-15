@@ -330,7 +330,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors"
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
             onClick={e => e.stopPropagation()}
           >
             <Download className="w-5 h-5" aria-hidden="true" />

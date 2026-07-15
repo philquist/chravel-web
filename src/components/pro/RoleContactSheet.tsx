@@ -131,7 +131,7 @@ export const RoleContactSheet = ({
               <Button
                 onClick={handleSendMessage}
                 disabled={!message.trim() || isSending}
-                className={`flex-1 ${isUrgent ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                className={`flex-1 ${isUrgent ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary/90 text-primary-foreground'}`}
               >
                 {isSending ? (
                   <>Sending...</>

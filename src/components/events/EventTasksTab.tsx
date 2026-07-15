@@ -248,11 +248,7 @@ export const EventTasksTab = ({ eventId, permissions }: EventTasksTabProps) => {
               >
                 Cancel
               </Button>
-              <Button
-                onClick={handleAddTask}
-                disabled={isCreating}
-                className="bg-black/60 border border-white/30 text-white hover:bg-white/10 shadow-none font-semibold"
-              >
+              <Button onClick={handleAddTask} disabled={isCreating}>
                 Add Task
               </Button>
             </div>
@@ -288,11 +284,7 @@ export const EventTasksTab = ({ eventId, permissions }: EventTasksTabProps) => {
                       <Button onClick={() => setEditingTaskId(null)} variant="ghost" size="sm">
                         <X size={16} />
                       </Button>
-                      <Button
-                        onClick={() => handleUpdateTask(task.id)}
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700"
-                      >
+                      <Button onClick={() => handleUpdateTask(task.id)} size="sm">
                         <Check size={16} />
                       </Button>
                     </div>

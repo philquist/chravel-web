@@ -310,7 +310,7 @@ export const SmartImportGmail: React.FC<SmartImportGmailProps> = ({
         <Button
           onClick={handleImport}
           disabled={!selectedAccountId || importing || selectedAccountIsStale}
-          className="bg-blue-600 hover:bg-blue-700 h-11 min-h-[44px]"
+          className="h-11 min-h-[44px]"
           aria-label={importing ? 'Scanning inbox' : 'Scan inbox for travel reservations'}
         >
           {importing ? (
