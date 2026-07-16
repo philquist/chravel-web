@@ -80,9 +80,15 @@ describe('PlacesSection header', () => {
     const header = screen.getByTestId('places-section-header');
     expect(header).toHaveClass('flex-col');
     expect(header).toHaveClass('md:flex-row');
+    expect(header).toHaveClass('px-4');
+    expect(header).toHaveClass('lg:px-0');
+    expect(screen.getByTestId('places-subtab-rail')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: 'Places' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Base Camps' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Explore' })).toBeInTheDocument();
+    expect(screen.getByTestId('places-subtab-links').className).toContain(
+      'mobile-trip-filter-pill',
+    );
   });
 
   it('switches to Explore tab when Explore is clicked', async () => {

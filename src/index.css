@@ -1052,6 +1052,164 @@
   height: var(--visual-viewport-height, 100dvh);
   max-height: var(--visual-viewport-height, 100dvh);
   overscroll-behavior: none;
+  /*
+   * Landscape notch / home-indicator clearance. Portrait insets are typically 0
+   * on the sides; landscape phones put the notch on the left/right and were
+   * clipping tab pills + section content (calendar, places, etc.). Shell-level
+   * padding keeps every trip tab clear without per-section max() duplication.
+   */
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  box-sizing: border-box;
+}
+
+/*
+ * Inside the padded shell, horizontal safe-container / max(inset) helpers would
+ * double-count the notch gutter. Prefer plain content gutters (px-4 / px-2).
+ */
+.mobile-trip-shell .safe-container {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Trip tab rail + calendar controls (mobile-only components). */
+.mobile-trip-tab-rail {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  gap: 0.5rem;
+}
+
+.mobile-trip-tab-pill {
+  height: 44px;
+  min-height: 44px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  font-size: 0.875rem;
+  gap: 0.5rem;
+}
+
+.mobile-trip-section-pad {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.mobile-trip-control-row {
+  gap: 0.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+}
+
+.mobile-trip-control-pill {
+  min-height: 44px;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  font-size: 0.75rem;
+  gap: 0.375rem;
+}
+
+.mobile-trip-section-title {
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+/*
+ * Landscape density is scoped to the fixed mobile trip shell so shared desktop
+ * surfaces (Places / Polls) keep their existing typography scale.
+ */
+@media (orientation: landscape) and (max-height: 500px) {
+  .mobile-trip-shell .mobile-trip-tab-rail {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    gap: 0.375rem;
+  }
+
+  .mobile-trip-shell .mobile-trip-tab-pill {
+    height: 40px;
+    min-height: 40px;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    font-size: 0.75rem;
+    gap: 0.375rem;
+  }
+
+  .mobile-trip-shell .mobile-trip-tab-pill svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .mobile-trip-shell .mobile-trip-control-row {
+    gap: 0.375rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+  }
+
+  .mobile-trip-shell .mobile-trip-control-pill {
+    min-height: 40px;
+    padding-left: 0.375rem;
+    padding-right: 0.375rem;
+    font-size: 0.6875rem;
+    gap: 0.25rem;
+  }
+
+  .mobile-trip-shell .mobile-trip-control-pill svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .mobile-trip-shell .mobile-trip-section-title {
+    font-size: 1.05rem;
+  }
+
+  .mobile-trip-shell .mobile-trip-filter-pill {
+    min-height: 40px;
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+    font-size: 0.6875rem;
+  }
+
+  .mobile-trip-shell .mobile-trip-calendar-grid {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-bottom: 0.5rem;
+    padding-top: 0.25rem;
+  }
+
+  .mobile-trip-shell .mobile-trip-calendar-day {
+    height: 1.5rem;
+  }
+
+  .mobile-trip-shell .mobile-trip-calendar-day-num {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.7rem;
+  }
+
+  .mobile-trip-shell .mobile-trip-section-pad {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* Tablet / large phone landscape: keep touch targets, use width for denser rails. */
+@media (orientation: landscape) and (min-height: 501px) and (max-width: 1024px) {
+  .mobile-trip-shell .mobile-trip-tab-rail {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  .mobile-trip-shell .mobile-trip-section-pad,
+  .mobile-trip-shell .mobile-trip-control-row {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  .mobile-trip-shell .mobile-trip-section-title {
+    font-size: 1.35rem;
+  }
 }
 
 .keyboard-visible {

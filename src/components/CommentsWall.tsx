@@ -168,7 +168,7 @@ export const CommentsWall = ({ tripId, permissions }: CommentsWallProps) => {
               aria-selected={selected}
               onClick={() => setFilter(item.id)}
               className={cn(
-                'h-9 min-h-[44px] md:min-h-9 px-3 rounded-lg text-xs font-medium transition-colors',
+                'mobile-trip-filter-pill h-9 min-h-[44px] md:min-h-9 px-3 rounded-lg text-xs font-medium transition-colors',
                 selected
                   ? 'bg-primary/15 text-primary border border-primary/30'
                   : 'text-muted-foreground hover:text-foreground hover:bg-white/5',

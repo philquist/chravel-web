@@ -578,7 +578,7 @@ export const MobileUnifiedMediaHub = ({ tripId }: MobileUnifiedMediaHubProps) =>
       />
 
       {/* Action Buttons */}
-      <div className="px-4 py-4 border-b border-white/10 safe-container">
+      <div className="mobile-trip-section-pad py-4 border-b border-white/10">
         <div className={`grid ${actionRight ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
           <button
             onClick={openCapture}
@@ -614,13 +614,13 @@ export const MobileUnifiedMediaHub = ({ tripId }: MobileUnifiedMediaHubProps) =>
       </div>
 
       {/* Storage Quota Bar */}
-      <div className="px-4 py-3 border-b border-white/10 safe-container">
+      <div className="mobile-trip-section-pad py-3 border-b border-white/10">
         <StorageQuotaBar tripId={tripId} showDetails={true} />
       </div>
 
-      {/* Filter Tabs with Counters — match media grid horizontal inset (px-2); equal-width slots so all five fit on narrow PWA / TestFlight */}
+      {/* Filter Tabs with Counters — shell owns landscape safe-area; keep equal-width slots */}
       <div
-        className="flex w-full gap-1 py-3 border-b border-white/10 ps-[max(0.5rem,env(safe-area-inset-left,0px))] pe-[max(0.5rem,env(safe-area-inset-right,0px))]"
+        className="mobile-trip-section-pad flex w-full gap-1 py-3 border-b border-white/10"
         role="tablist"
         aria-label="Media filters"
       >

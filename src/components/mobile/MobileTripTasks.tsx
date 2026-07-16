@@ -63,7 +63,7 @@ export const MobileTripTasks = ({ tripId }: MobileTripTasksProps) => {
   const isEmptyState = tasks.length === 0 && !isLoading;
 
   return (
-    <div className="flex flex-col flex-1 bg-black px-4 py-4 relative min-h-0">
+    <div className="flex flex-col flex-1 bg-black mobile-trip-section-pad py-4 relative min-h-0">
       <PullToRefreshIndicator
         isRefreshing={isRefreshing}
         pullDistance={pullDistance}
@@ -73,7 +73,7 @@ export const MobileTripTasks = ({ tripId }: MobileTripTasksProps) => {
       {/* Header with Add Button */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold text-white">Trip Tasks</h2>
+          <h2 className="mobile-trip-section-title font-bold text-white">Trip Tasks</h2>
           <p className="text-sm text-gray-400">
             {activeTasks.length} pending · {completedTasks.length} completed
           </p>

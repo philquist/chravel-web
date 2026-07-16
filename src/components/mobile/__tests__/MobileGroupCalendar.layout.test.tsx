@@ -128,12 +128,23 @@ describe('MobileGroupCalendar Day/Month layout', () => {
 
     expect(controlRow).not.toBeNull();
     expect(controlRow?.className).toContain('grid-cols-4');
+    expect(controlRow?.className).toContain('mobile-trip-control-row');
     expect(
       within(controlRow as HTMLElement).getByTestId('calendar-view-month'),
     ).toBeInTheDocument();
     expect(within(controlRow as HTMLElement).getByText('Import')).toBeInTheDocument();
     expect(within(controlRow as HTMLElement).getByText('Export')).toBeInTheDocument();
     expect(within(controlRow as HTMLElement).queryByText('New')).toBeNull();
+    expect(screen.getByTestId('calendar-view-day').className).toContain('mobile-trip-control-pill');
+  });
+
+  it('applies landscape-aware calendar grid markers for density CSS', () => {
+    renderCalendar();
+
+    const miniGrid = screen.getByTestId('calendar-day-mini-grid');
+    expect(miniGrid.className).toContain('mobile-trip-calendar-grid');
+    expect(miniGrid.querySelector('.mobile-trip-calendar-day')).not.toBeNull();
+    expect(miniGrid.querySelector('.mobile-trip-calendar-day-num')).not.toBeNull();
   });
 
   it('defaults to Day view with agenda cards and a height-capped mini calendar', () => {
