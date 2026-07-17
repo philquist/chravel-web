@@ -10,9 +10,9 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT lower(coalesce(auth.jwt() ->> 'email', '')) = ANY (
-    ARRAY[
-      'ccamechi@gmail.com'
-    ]
+    -- Founder email scrubbed from source. Superseded by public.super_admins
+    -- table (migration 20260602150000).
+    ARRAY[]::text[]
   );
 $$;
 

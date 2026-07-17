@@ -17,12 +17,10 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT lower(coalesce(auth.jwt() ->> 'email', '')) = ANY (
-    ARRAY[
-      'ccamechi@gmail.com',
-      'christian@chravelapp.com',
-      'phil@philquist.com',
-      'darren.hartgee@gmail.com'
-    ]
+    -- Founder email allowlist scrubbed from source. Superseded by the
+    -- public.super_admins table (migration 20260602150000). This function
+    -- body is retained only for historical migration replay.
+    ARRAY[]::text[]
   );
 $$;
 

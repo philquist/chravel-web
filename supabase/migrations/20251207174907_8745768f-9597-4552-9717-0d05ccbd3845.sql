@@ -1,4 +1,4 @@
--- Grant super admin privileges to ccamechi@gmail.com
+-- Grant super admin privileges to bootstrap founder (email scrubbed; see docs/ops/super-admin-bootstrap.md)
 UPDATE public.profiles 
 SET 
   subscription_status = 'active',
@@ -9,4 +9,5 @@ SET
   free_event_limit = 999,
   free_pro_trips_used = 0,
   free_events_used = 0
-WHERE email = 'ccamechi@gmail.com';
+WHERE email = current_setting('app.bootstrap_admin_email', true);
+-- Historical: original literal scrubbed. Row was already granted in prod.

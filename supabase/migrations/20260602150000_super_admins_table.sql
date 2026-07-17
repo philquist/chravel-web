@@ -76,12 +76,11 @@ CREATE TRIGGER super_admins_audit
   FOR EACH ROW EXECUTE FUNCTION public.log_super_admin_change();
 
 -- ── 3. Seed founders BEFORE repointing is_super_admin() ─────────────────────
-INSERT INTO public.super_admins (email, note) VALUES
-  ('ccamechi@gmail.com',       'bootstrap'),
-  ('christian@chravelapp.com', 'bootstrap'),
-  ('phil@philquist.com',       'bootstrap'),
-  ('darren.hartgee@gmail.com', 'bootstrap')
-ON CONFLICT (email) DO NOTHING;
+-- Founder emails scrubbed from source. Rows are provisioned via the
+-- `bootstrap-super-admins` edge function using the SUPER_ADMIN_BOOTSTRAP_EMAILS
+-- secret. Production already has these rows; fresh envs must invoke that
+-- function once. See docs/ops/super-admin-bootstrap.md.
+SELECT 1;
 
 -- ── 4. Repoint is_super_admin() to the table ────────────────────────────────
 CREATE OR REPLACE FUNCTION public.is_super_admin()

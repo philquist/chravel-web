@@ -45,7 +45,7 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
 -- Phase 2: Backfill profiles for existing users without profiles
--- This fixes existing users like ccamechi@gmail.com who don't have profile rows
+-- This fixes existing users (founder emails scrubbed) who don't have profile rows
 
 INSERT INTO public.profiles (
   user_id,
