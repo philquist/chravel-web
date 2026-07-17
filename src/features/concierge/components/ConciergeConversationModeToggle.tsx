@@ -2,9 +2,15 @@ import React from 'react';
 import { Mic } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useConversationModePreference } from '@/features/concierge/hooks/useConversationModePreference';
+import { useFeatureFlag } from '@/lib/featureFlags';
 
 export const ConciergeConversationModeToggle: React.FC = () => {
+  const conversationModeFlag = useFeatureFlag('concierge_conversation_mode', false);
   const { enabled, setEnabled } = useConversationModePreference();
+
+  // App Store launch path: waveform = dictation, speaker = per-reply TTS.
+  // Hands-free Conversation Mode is experimental — hide the toggle unless the flag is on.
+  if (!conversationModeFlag) return null;
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-xl p-4">

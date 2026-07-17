@@ -398,7 +398,7 @@ export const AIConciergeChat = ({
   }, [handleSendMessage]);
 
   // ── Hands-free conversation mode ─────────────────────────────────────
-  const conversationModeFlag = useFeatureFlag('concierge_conversation_mode', true);
+  const conversationModeFlag = useFeatureFlag('concierge_conversation_mode', false);
   const { enabled: conversationModeUserPref } = useConversationModePreference();
   const conversationModeEffective = conversationModeFlag && conversationModeUserPref && !isDemoMode;
   // Experimental bidirectional realtime voice — NOT the App Store launch path.

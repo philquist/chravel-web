@@ -16,6 +16,34 @@ import {
   DEFAULT_CONCIERGE_VOICE,
 } from '@/features/concierge/hooks/useConciergeVoicePreference';
 import { streamPcmSpeech } from '@/features/concierge/lib/streamConciergeTts';
+import { IS_IOS } from '@/lib/webSpeech';
+import { isCapacitorNativeShell, isChravelNativeShell } from '@/utils/platformDetection';
+
+/** iOS/WKWebView requires audio unlock in the same user-gesture turn as the tap. */
+function unlockAudioForUserGesture(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const Ctx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    void ctx.resume();
+    const buffer = ctx.createBuffer(1, 1, 22050);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+  } catch {
+    /* ignore — blob playback may still work */
+  }
+}
+
+function shouldUseStreamingTts(): boolean {
+  if (IS_IOS) return false;
+  if (isCapacitorNativeShell() || isChravelNativeShell()) return false;
+  return true;
+}
 
 export type TTSPlaybackState = 'idle' | 'loading' | 'playing' | 'error';
 
@@ -207,6 +235,7 @@ export function useConciergeReadAloud(
 
   const play = useCallback(
     async (messageId: string, speechText: string) => {
+      unlockAudioForUserGesture();
       stop();
 
       if (!speechText.trim()) {
@@ -240,40 +269,42 @@ export function useConciergeReadAloud(
         const resolvedVoiceId = voiceIdProp || preferredVoice || DEFAULT_CONCIERGE_VOICE;
         const sentences = splitIntoSentences(speechText);
 
-        // Attempt SSE PCM streaming for the FIRST sentence so playback can
-        // begin while the audio is still being generated. On any failure we
-        // fall back to the original blob-based first-sentence fetch.
+        // Attempt SSE PCM streaming for the FIRST sentence on desktop browsers.
+        // iOS / native shells use blob + <audio> only — WebAudio scheduling is
+        // unreliable after async fetch without a preserved user gesture.
         let firstStreamed = false;
-        try {
-          const stream = streamPcmSpeech({
-            url: TTS_URL,
-            accessToken,
-            apikey: SUPABASE_PUBLIC_ANON_KEY,
-            signal: abortController.signal,
-            body: {
-              text: sentences[0],
-              voice: resolvedVoiceId,
-              tripId,
-              messageId,
-            },
-            onPlaybackStart: () => setPlaybackState('playing'),
-            onMeta: ({ usedFallbackVoice: fb }) => {
-              if (fb) setUsedFallbackVoice(true);
-            },
-          });
-          // Track the streaming stop so the hook's stop() interrupts it.
-          const prevAudio = audioRef.current;
-          audioRef.current = {
-            pause: stream.stop,
-            removeAttribute: () => {},
-            load: () => {},
-          } as unknown as HTMLAudioElement;
-          await stream.done;
-          audioRef.current = prevAudio;
-          firstStreamed = true;
-        } catch (streamErr) {
-          if (abortController.signal.aborted) return;
-          console.warn('[concierge-tts] streaming first chunk failed; falling back', streamErr);
+        if (shouldUseStreamingTts()) {
+          try {
+            const stream = streamPcmSpeech({
+              url: TTS_URL,
+              accessToken,
+              apikey: SUPABASE_PUBLIC_ANON_KEY,
+              signal: abortController.signal,
+              body: {
+                text: sentences[0],
+                voice: resolvedVoiceId,
+                tripId,
+                messageId,
+              },
+              onPlaybackStart: () => setPlaybackState('playing'),
+              onMeta: ({ usedFallbackVoice: fb }) => {
+                if (fb) setUsedFallbackVoice(true);
+              },
+            });
+            // Track the streaming stop so the hook's stop() interrupts it.
+            const prevAudio = audioRef.current;
+            audioRef.current = {
+              pause: stream.stop,
+              removeAttribute: () => {},
+              load: () => {},
+            } as unknown as HTMLAudioElement;
+            await stream.done;
+            audioRef.current = prevAudio;
+            firstStreamed = true;
+          } catch (streamErr) {
+            if (abortController.signal.aborted) return;
+            console.warn('[concierge-tts] streaming first chunk failed; falling back', streamErr);
+          }
         }
 
         // Fire first AND second sentence fetches in parallel for overlap
