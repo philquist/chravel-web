@@ -6,7 +6,7 @@
 -- ============================================================================
 
 -- ── 1. Fix is_super_admin() ──────────────────────────────────────────────────
--- Previous definition only included ccamechi@gmail.com, causing 3 founders to
+-- Previous definition only included <founder-email>, causing 3 founders to
 -- be denied super admin access server-side despite having it client-side.
 
 CREATE OR REPLACE FUNCTION public.is_super_admin()
