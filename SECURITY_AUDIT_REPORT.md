@@ -67,7 +67,7 @@ The application demonstrates good practices in several areas (Stripe webhook ver
   2. Client-side code treats this user as super admin
   3. Access all premium features without payment
   4. Potential access to admin tools/dashboards
-- **Note:** The server-side `check-subscription` only grants super admin bypass to `ccamechi@gmail.com` (line 72), so the server-side is partially protected, but client-side entitlements in `src/billing/entitlements.ts:35` check against the full `SUPER_ADMIN_EMAILS` list which includes the demo account.
+- **Note:** The server-side `check-subscription` only grants super admin bypass to `<founder-email>` (line 72), so the server-side is partially protected, but client-side entitlements in `src/billing/entitlements.ts:35` check against the full `SUPER_ADMIN_EMAILS` list which includes the demo account.
 - **Fix:**
   - Remove `demo@chravelapp.com` from `FOUNDER_EMAILS`
   - Create a separate `DEMO_ACCOUNTS` list with limited demo-specific privileges
@@ -260,7 +260,7 @@ The application demonstrates good practices in several areas (Stripe webhook ver
 
 ### MED-01: Inconsistent Super Admin Lists Between Client and Server
 - **Files:** `src/constants/admins.ts:2` vs `supabase/functions/check-subscription/index.ts:72`
-- **Description:** Client has 3 super admins (`ccamechi@gmail.com`, `christian@chravelapp.com`, `demo@chravelapp.com`), server has only 1 (`ccamechi@gmail.com`). This inconsistency means the demo account gets full client-side premium access but not server-side bypass.
+- **Description:** Client has 3 super admins (`<founder-email>`, `<founder-email>`, `demo@chravelapp.com`), server has only 1 (`<founder-email>`). This inconsistency means the demo account gets full client-side premium access but not server-side bypass.
 
 ### MED-02: No CSRF Protection on Edge Functions
 - **Description:** Edge functions rely on CORS + JWT for protection. There are no CSRF tokens. If a user is authenticated, a malicious site can forge requests (mitigated partially by CORS if wildcards are fixed).

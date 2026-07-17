@@ -57,7 +57,7 @@ Known security anti-patterns discovered during audits. Reference this before int
 **Symptom:** Code appears to grant admin access based on client-side email comparison, but RLS actually blocks the operation.
 **Risk:** MEDIUM — creates false confidence that client-side checks enforce access control. A future refactor might trust this pattern.
 **Root Cause:** `SUPER_ADMIN_EMAILS.includes(user.email)` check was used to skip membership validation, but the underlying Supabase query still enforces RLS.
-**How to Confirm:** Trace the data flow — the Supabase client uses the anon key, so all queries respect RLS policies. The `is_super_admin()` SQL function (only allows `ccamechi@gmail.com`) is the actual enforcement.
+**How to Confirm:** Trace the data flow — the Supabase client uses the anon key, so all queries respect RLS policies. The `is_super_admin()` SQL function (only allows `<founder-email>`) is the actual enforcement.
 **Smallest Safe Fix:** Remove client-side admin bypass code. Let RLS be the single source of truth.
 **Required Tests:** Verify admin users can still access their data via RLS. Verify non-admin cannot bypass membership.
 **Regression Surfaces:** Trip creation limits (super admin still bypasses trip count limit via client-side check — this is intentional for the founder).

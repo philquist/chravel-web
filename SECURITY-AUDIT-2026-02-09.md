@@ -233,7 +233,7 @@ END IF;
 
 ### C3. Super Admin Determined by Client-Side Email Check
 - **Files:** `src/hooks/useAuth.tsx:330-341`, `src/constants/admins.ts`, `supabase/functions/create-trip/index.ts:72-78`
-- **Impact:** `SUPER_ADMIN_EMAILS = ['ccamechi@gmail.com']` hardcoded in source. Admin status granted client-side by email match. Email exposed in committed source code.
+- **Impact:** `SUPER_ADMIN_EMAILS = ['<founder-email>']` hardcoded in source. Admin status granted client-side by email match. Email exposed in committed source code.
 - **Why not auto-fixed:** Moving to server-side admin check requires a database column or custom claims, plus migration. The email is already in git history.
 - **Recommended fix:**
   1. Add `is_super_admin` boolean column to `profiles` table
