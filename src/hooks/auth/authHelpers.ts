@@ -44,15 +44,22 @@ export const getOAuthRedirectUrl = (returnTo: string | null): string => {
     return `${window.location.origin}/auth${returnToQuery}`;
   }
 
-  const chravelNativeInjected =
-    typeof window !== 'undefined' &&
-    (window as Window & { ChravelNative?: { isNative?: boolean } }).ChravelNative?.isNative ===
-      true;
+  // If the chravel-mobile shell exposes the ASWebAuthenticationSession bridge, use the
+  // `chravel://` custom scheme — that scheme is what causes the auth session to
+  // auto-dismiss and hand the callback URL back to the main WebView. Without it,
+  // Google's account picker stays open indefinitely.
+  const chravelNative =
+    typeof window !== 'undefined'
+      ? (window as Window & {
+          ChravelNative?: { isNative?: boolean; openOAuthUrl?: (url: string) => unknown };
+        }).ChravelNative
+      : undefined;
 
-  if (chravelNativeInjected) {
+  if (chravelNative?.isNative && typeof chravelNative.openOAuthUrl === 'function') {
     return `chravel://auth-callback${returnToQuery}`;
   }
 
+  // Capacitor / PWA fallback: Universal Link handed back by the wrapper.
   return `https://chravel.app/auth-callback${returnToQuery}`;
 };
 
