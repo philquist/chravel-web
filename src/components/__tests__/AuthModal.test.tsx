@@ -7,7 +7,6 @@ import { AuthModal } from '../AuthModal';
 import { AuthProvider } from '@/hooks/useAuth';
 import * as platformDetection from '@/utils/platformDetection';
 
-// Mock the supabase client
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
@@ -26,6 +25,10 @@ vi.mock('@/integrations/supabase/client', () => ({
       single: vi.fn().mockResolvedValue({ data: null, error: null }),
     }),
   },
+}));
+
+vi.mock('@/utils/installedAuthBrowser', () => ({
+  openInstalledAuthBrowser: vi.fn().mockResolvedValue({ strategy: 'native-bridge' }),
 }));
 
 const createTestWrapper = () => {
@@ -250,6 +253,66 @@ describe('AuthModal', () => {
 
       expect(screen.getByRole('button', { name: /^apple$/i })).toBeInTheDocument();
       expect(screen.queryByText(/To stay inside the app/i)).not.toBeInTheDocument();
+    });
+
+    it('clears stuck Google Redirecting state after installed-app OAuth returns without a session', async () => {
+      vi.spyOn(platformDetection, 'isInstalledApp').mockReturnValue(true);
+
+      const { supabase } = await import('@/integrations/supabase/client');
+      vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValue({
+        data: { url: 'https://oauth.example/authorize', provider: 'google' },
+        error: null,
+      });
+
+      render(<AuthModal isOpen={true} onClose={mockOnClose} />, {
+        wrapper: createTestWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /^google$/i })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: /^google$/i }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /^google$/i })).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText(/redirecting/i)).not.toBeInTheDocument();
+    });
+
+    it('switches to sign in when signup reports an existing email', async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: { user: null, session: null },
+        error: {
+          message: 'User already registered',
+          name: 'AuthApiError',
+          status: 400,
+        } as never,
+      });
+
+      render(<AuthModal isOpen={true} onClose={mockOnClose} initialMode="signup" />, {
+        wrapper: createTestWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: /create account/i })).toBeInTheDocument();
+      });
+
+      fireEvent.change(screen.getByPlaceholderText(/john/i), { target: { value: 'Jessica' } });
+      fireEvent.change(screen.getByPlaceholderText(/doe/i), { target: { value: 'Roy' } });
+      fireEvent.change(screen.getByPlaceholderText(/your@email.com/i), {
+        target: { value: 'jessicafrohman@gmail.com' },
+      });
+      fireEvent.change(screen.getByPlaceholderText(/••••••••/i), {
+        target: { value: 'Valentinesday83!' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: /chravelapp/i })).toBeInTheDocument();
+      });
     });
   });
 });

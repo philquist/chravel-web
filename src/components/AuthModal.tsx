@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Mail, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { authEvents } from '@/telemetry/events';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -46,6 +47,37 @@ export const AuthModal = ({
   // Track when we're waiting for auth state to update after successful sign-in
   const [awaitingAuth, setAwaitingAuth] = useState(false);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const oauthLoadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearOAuthLoading = () => {
+    if (oauthLoadingTimeoutRef.current) {
+      clearTimeout(oauthLoadingTimeoutRef.current);
+      oauthLoadingTimeoutRef.current = null;
+    }
+    setGoogleLoading(false);
+    setAppleLoading(false);
+  };
+
+  const startOAuthLoading = (provider: 'google' | 'apple') => {
+    if (oauthLoadingTimeoutRef.current) {
+      clearTimeout(oauthLoadingTimeoutRef.current);
+    }
+    if (provider === 'google') {
+      setGoogleLoading(true);
+      setAppleLoading(false);
+    } else {
+      setAppleLoading(true);
+      setGoogleLoading(false);
+    }
+    // Installed shells open an external auth session and return to this WebView.
+    // If the user dismisses Google/Apple without completing sign-in, loading must
+    // not stay stuck on "Redirecting…" (App Store 2.1a / passkey cancel path).
+    oauthLoadingTimeoutRef.current = setTimeout(() => {
+      oauthLoadingTimeoutRef.current = null;
+      setGoogleLoading(false);
+      setAppleLoading(false);
+    }, 45_000);
+  };
 
   const requestDismiss = () => {
     if (awaitingAuth) return;
@@ -77,7 +109,39 @@ export const AuthModal = ({
     setSuccess('');
     setResetEmailSent(false);
     setAwaitingAuth(false);
+    clearOAuthLoading();
   }, [isOpen, initialMode]);
+
+  // When an installed app returns from the external OAuth browser without a session,
+  // unstick provider buttons so email/password sign-in remains usable.
+  useEffect(() => {
+    if (!isOpen || (!googleLoading && !appleLoading)) return;
+
+    const handleResume = () => {
+      if (document.visibilityState !== 'visible') return;
+
+      window.setTimeout(() => {
+        void (async () => {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (session?.user) return;
+          clearOAuthLoading();
+          setError(prev => {
+            if (prev) return prev;
+            return "Sign-in didn't complete. Try Google again, or sign in with email.";
+          });
+        })();
+      }, 750);
+    };
+
+    document.addEventListener('visibilitychange', handleResume);
+    window.addEventListener('focus', handleResume);
+    return () => {
+      document.removeEventListener('visibilitychange', handleResume);
+      window.removeEventListener('focus', handleResume);
+    };
+  }, [isOpen, googleLoading, appleLoading]);
 
   // Close modal immediately if user is already authenticated when modal opens
   // Also close when user becomes authenticated after sign-in attempt
@@ -137,6 +201,15 @@ export const AuthModal = ({
           authEvents.loginFailed('email', result.error);
         }
         setError(result.error);
+        if (mode === 'signup' && result.error.toLowerCase().includes('already')) {
+          setMode('signin');
+        }
+        if (mode === 'signin' && result.error.toLowerCase().includes('invalid email or password')) {
+          setError(
+            'Invalid email or password. If you signed up with Google or Apple, use that option instead.',
+          );
+          return;
+        }
         return;
       }
 
@@ -495,24 +568,28 @@ export const AuthModal = ({
                   <button
                     type="button"
                     onClick={async () => {
-                      setGoogleLoading(true);
+                      startOAuthLoading('google');
                       setError('');
                       if (mode === 'signup') {
                         authEvents.signupStarted('google');
                       } else {
                         authEvents.loginStarted('google');
                       }
-                      const result = await signInWithGoogle(oauthReturnTo);
-                      if (result.error) {
-                        if (mode === 'signup') {
-                          authEvents.signupFailed('google', result.error);
-                        } else {
-                          authEvents.loginFailed('google', result.error);
+                      try {
+                        const result = await signInWithGoogle(oauthReturnTo);
+                        if (result.error) {
+                          if (mode === 'signup') {
+                            authEvents.signupFailed('google', result.error);
+                          } else {
+                            authEvents.loginFailed('google', result.error);
+                          }
+                          setError(result.error);
                         }
-                        setError(result.error);
-                        setGoogleLoading(false);
+                        // Installed shells keep this WebView mounted while OAuth runs
+                        // externally — always clear loading so the form stays usable.
+                      } finally {
+                        clearOAuthLoading();
                       }
-                      // If no error, browser will redirect to Google
                     }}
                     disabled={isLoading || googleLoading || appleLoading || awaitingAuth}
                     className="w-full flex items-center justify-center gap-2 bg-white/12 hover:bg-white/18 border border-white/15 text-white font-medium py-3 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all disabled:opacity-50 min-h-[48px]"
@@ -546,24 +623,26 @@ export const AuthModal = ({
                   <button
                     type="button"
                     onClick={async () => {
-                      setAppleLoading(true);
+                      startOAuthLoading('apple');
                       setError('');
                       if (mode === 'signup') {
                         authEvents.signupStarted('apple');
                       } else {
                         authEvents.loginStarted('apple');
                       }
-                      const result = await signInWithApple(oauthReturnTo);
-                      if (result.error) {
-                        if (mode === 'signup') {
-                          authEvents.signupFailed('apple', result.error);
-                        } else {
-                          authEvents.loginFailed('apple', result.error);
+                      try {
+                        const result = await signInWithApple(oauthReturnTo);
+                        if (result.error) {
+                          if (mode === 'signup') {
+                            authEvents.signupFailed('apple', result.error);
+                          } else {
+                            authEvents.loginFailed('apple', result.error);
+                          }
+                          setError(result.error);
                         }
-                        setError(result.error);
-                        setAppleLoading(false);
+                      } finally {
+                        clearOAuthLoading();
                       }
-                      // If no error, browser will redirect to Apple
                     }}
                     disabled={isLoading || appleLoading || googleLoading || awaitingAuth}
                     className="w-full flex items-center justify-center gap-2 bg-white/12 hover:bg-white/18 border border-white/15 text-white font-medium py-3 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all disabled:opacity-50 min-h-[48px]"
