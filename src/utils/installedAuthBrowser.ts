@@ -57,16 +57,21 @@ export type InstalledAuthBrowserResult =
  * the Apple/Google chain and strand the user (App Store 2.1(a)).
  */
 export async function openInstalledAuthBrowser(url: string): Promise<InstalledAuthBrowserResult> {
-  const browser = getCapacitorBrowser();
-  if (browser) {
-    await browser.open({ url, presentationStyle: 'fullscreen' });
-    return { strategy: 'capacitor' };
-  }
-
+  // Prefer the chravel-mobile ASWebAuthenticationSession bridge first: it auto-dismisses
+  // on the callback URL and hands the URL back to the main WebView so Supabase can
+  // complete PKCE with the same localStorage the initiator wrote. SFSafariViewController
+  // (Capacitor Browser) does NOT auto-dismiss on the callback, which strands the user
+  // on the Google account-picker screen ("keeps trying to sign me in").
   const native = getChravelNative();
   if (native?.openOAuthUrl) {
     await Promise.resolve(native.openOAuthUrl(url));
     return { strategy: 'native-bridge' };
+  }
+
+  const browser = getCapacitorBrowser();
+  if (browser) {
+    await browser.open({ url, presentationStyle: 'fullscreen' });
+    return { strategy: 'capacitor' };
   }
 
   // Native shell detected but no OAuth bridge — refuse the unsafe location.assign
